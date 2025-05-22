@@ -1,70 +1,127 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的個人網站</title>
-    <style>
-        body {
-            font-family: "Helvetica Neue", sans-serif;
-            background: #fdf6e3;
-            color: #333;
-            margin: 0;
-            padding: 0;
-            text-align: center;
-        }
-        header {
-            background: #ffcc00;
-            padding: 2em 0;
-        }
-        header h1 {
-            margin: 0;
-            font-size: 2.5em;
-        }
-        section {
-            padding: 2em;
-        }
-        a {
-            color: #0066cc;
-            text-decoration: none;
-        }
-        footer {
-            background: #eee;
-            padding: 1em;
-            font-size: 0.9em;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>我的個人介紹</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #1e3c72, #2a5298);
+      color: #fff;
+      min-height: 100vh;
+    }
+    header {
+      background: rgba(0, 0, 0, 0.6);
+      padding: 2em;
+      text-align: center;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+    }
+    header h1 {
+      font-size: 2.5em;
+    }
+    nav {
+      display: flex;
+      justify-content: center;
+      background: #111;
+    }
+    nav a {
+      color: #fff;
+      padding: 1em 2em;
+      text-decoration: none;
+      transition: background 0.3s;
+    }
+    nav a:hover, nav a.active {
+      background: #2a9df4;
+    }
+    .tab-content {
+      display: none;
+      padding: 2em;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    footer {
+      text-align: center;
+      padding: 1em;
+      background: rgba(0,0,0,0.4);
+    }
+    .button {
+      background: #2a9df4;
+      border: none;
+      padding: 0.7em 1.5em;
+      color: white;
+      font-size: 1em;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 1em;
+    }
+    .button:hover {
+      background: #1782d1;
+    }
+  </style>
 </head>
 <body>
+  <header>
+    <h1>你好，我是炫酷的我 ✨</h1>
+    <p>一個熱愛科技與創意的開發者</p>
+  </header>
 
-    <header>
-        <h1>你好，我是你的名字</h1>
-        <p>歡迎來到我的個人網站！</p>
-    </header>
+  <nav>
+    <a href="#" class="tab-link active" data-tab="about">關於我</a>
+    <a href="#" class="tab-link" data-tab="projects">作品集</a>
+    <a href="#" class="tab-link" data-tab="contact">聯絡我</a>
+  </nav>
 
-    <section>
-        <h2>關於我</h2>
-        <p>這裡是簡單的自我介紹。你可以寫你的專業、興趣、或正在學習的技術。</p>
-    </section>
+  <section id="about" class="tab-content active">
+    <h2>關於我</h2>
+    <p>我喜歡寫程式、設計網頁、探索新技術，也喜歡喝咖啡 ☕。</p>
+    <button class="button" onclick="alert('很高興認識你！😊')">打個招呼</button>
+  </section>
 
-    <section>
-        <h2>作品集</h2>
-        <ul style="list-style: none; padding: 0;">
-            <li><a href="#">🌟 專案一名稱</a></li>
-            <li><a href="#">📘 專案二名稱</a></li>
-            <li><a href="#">💡 專案三名稱</a></li>
-        </ul>
-    </section>
+  <section id="projects" class="tab-content">
+    <h2>我的作品集</h2>
+    <ul>
+      <li><a href="#" target="_blank">🔗 專案一：互動遊戲</a></li>
+      <li><a href="#" target="_blank">🔗 專案二：動畫簡歷</a></li>
+      <li><a href="#" target="_blank">🔗 專案三：即時天氣查詢</a></li>
+    </ul>
+  </section>
 
-    <section>
-        <h2>聯絡我</h2>
-        <p>Email: <a href="mailto:yourname@example.com">yourname@example.com</a></p>
-        <p>GitHub: <a href="https://github.com/your-username" target="_blank">your-username</a></p>
-    </section>
+  <section id="contact" class="tab-content">
+    <h2>聯絡方式</h2>
+    <p>Email: <a href="mailto:you@example.com">you@example.com</a></p>
+    <p>GitHub: <a href="https://github.com/yourusername" target="_blank">yourusername</a></p>
+  </section>
 
-    <footer>
-        &copy; 2025 你的名字. 保留所有權利。
-    </footer>
+  <footer>
+    &copy; 2025 炫酷的我 - 所有權利保留
+  </footer>
 
+  <script>
+    const tabs = document.querySelectorAll('.tab-link');
+    const contents = document.querySelectorAll('.tab-content');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        e.preventDefault();
+        tabs.forEach(t => t.classList.remove('active'));
+        contents.forEach(c => c.classList.remove('active'));
+
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+      });
+    });
+  </script>
 </body>
 </html>

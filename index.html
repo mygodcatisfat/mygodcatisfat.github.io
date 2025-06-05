@@ -7,21 +7,51 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap');
 
+        :root {
+            --bg-color: #fdf6e3;
+            --text-color: #333;
+            --header-bg: #ffcc00;
+            --footer-bg: #eee;
+        }
+
+        body.dark-mode {
+            --bg-color: #1c1c1c;
+            --text-color: #f0f0f0;
+            --header-bg: #333;
+            --footer-bg: #222;
+        }
+
         body {
             font-family: "Helvetica Neue", sans-serif;
-            background: #fdf6e3;
-            color: #333;
+            background: var(--bg-color);
+            color: var(--text-color);
             margin: 0;
             padding: 0;
             text-align: center;
+            transition: background 0.3s, color 0.3s;
+            overflow-x: hidden;
         }
+
         header {
-            background: #ffcc00;
+            background: var(--header-bg);
             padding: 2em 0;
         }
         header h1 {
             margin: 0;
             font-size: 2.5em;
+        }
+        nav {
+            background: #ffe680;
+            padding: 1em;
+        }
+        nav a {
+            margin: 0 1em;
+            text-decoration: none;
+            color: #555;
+            font-weight: bold;
+        }
+        nav a:hover {
+            text-decoration: underline;
         }
         section {
             padding: 2em;
@@ -49,7 +79,7 @@
             text-decoration: none;
         }
         footer {
-            background: #eee;
+            background: var(--footer-bg);
             padding: 1em;
             font-size: 0.9em;
         }
@@ -79,32 +109,70 @@
             max-width: 100%;
             width: 100%;
         }
+        .toggle-button {
+            position: fixed;
+            top: 1em;
+            right: 1em;
+            background: #222;
+            color: white;
+            border: none;
+            padding: 0.5em 1em;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 1000;
+        }
+
+        /* 可愛風粒子背景區域容器 */
+        #particles-js {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
     </style>
 </head>
 <body>
+    <div id="particles-js"></div>
+    <button class="toggle-button" onclick="toggleDarkMode()">🌙 切換夜間模式</button>
 
     <header>
         <h1>偶素一豬狼 嘎</h1>
         <p>歡迎來到偶的小天地</p>
     </header>
 
-    <section>
+    <nav>
+        <a href="#about">關於我</a>
+        <a href="#gallery">相簿</a>
+        <a href="#instagram">Instagram</a>
+        <a href="#portfolio">作品集</a>
+        <a href="#contact">聯絡我</a>
+    </nav>
+
+    <section id="about">
         <h2>關於我</h2>
         <p>這裡是簡單的自我介紹。你可以寫你的專業、興趣、或正在學習的技術。</p>
+    </section>
+
+    <section id="gallery">
         <div class="gallery">
             <img src="https://github.com/mygodcatisfat/mygodcatisfat.github.io/blob/main/wolf_eat_bun.jpg?raw=true" alt="自訂圖片">
             <img src="https://placebear.com/300/200" alt="圖片2">
             <img src="https://placebeard.it/300x200" alt="圖片3">
+            <img src="https://placebeard.it/300x200" alt="圖片4">
+            <img src="https://placebeard.it/300x200" alt="圖片5">
+            <img src="https://placebeard.it/300x200" alt="圖片6">
         </div>
     </section>
 
-    <section class="instagram-section">
+    <section id="instagram" class="instagram-section">
         <h2>📸 Instagram 貼文</h2>
         <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/DJwYUyWTY68/" data-instgrm-version="14" style="margin: auto;"></blockquote>
         <script async src="//www.instagram.com/embed.js"></script>
     </section>
 
-    <section>
+    <section id="portfolio">
         <h2>作品集</h2>
         <ul style="list-style: none; padding: 0;">
             <li><a href="#">🌟 專案一名稱</a></li>
@@ -113,7 +181,7 @@
         </ul>
     </section>
 
-    <section>
+    <section id="contact">
         <h2>聯絡我</h2>
         <p>Email: <a href="mailto:yourname@example.com">yourname@example.com</a></p>
         <p>GitHub: <a href="https://github.com/your-username" target="_blank">your-username</a></p>
@@ -128,6 +196,10 @@
     </footer>
 
     <script>
+        function toggleDarkMode() {
+            document.body.classList.toggle("dark-mode");
+        }
+
         const visitCountEl = document.getElementById("visitCount");
         const apiUrl = "https://script.google.com/macros/s/AKfycbw059wuvXTQhM4SBf8QRPd0l_dcN95PeK6VqD6FV1iN0xNnRRRuYpPLBV0yKyugTTc/exec";
 
@@ -148,6 +220,29 @@
               console.error("錯誤：", err.message);
           });
     </script>
-
+    <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+    <script>
+      particlesJS("particles-js", {
+        particles: {
+          number: { value: 60, density: { enable: true, value_area: 800 } },
+          color: { value: ["#f48fb1", "#fce4ec", "#ffd1dc"] },
+          shape: { type: "circle" },
+          opacity: { value: 0.7 },
+          size: { value: 6, random: true },
+          move: { enable: true, speed: 2 }
+        },
+        interactivity: {
+          events: {
+            onhover: { enable: true, mode: "repulse" },
+            onclick: { enable: true, mode: "push" }
+          },
+          modes: {
+            repulse: { distance: 100 },
+            push: { particles_nb: 4 }
+          }
+        },
+        retina_detect: true
+      });
+    </script>
 </body>
 </html>

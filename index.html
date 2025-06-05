@@ -74,18 +74,30 @@
         </div>
     </footer>
 
+    <!-- 使用 Google Apps Script 提供的 Web App 作為後端 API 讀寫 Sheet 資料 -->
     <script>
-        // 訪問次數計算（localStorage 模擬）
         const visitCountEl = document.getElementById("visitCount");
 
-        function updateVisitCount() {
-            let count = localStorage.getItem("visitCount") || 0;
-            count++;
-            localStorage.setItem("visitCount", count);
-            visitCountEl.textContent = count;
-        }
+        // 使用部署的 Google Apps Script Web App 作為 API
+        const apiUrl = "https://script.google.com/macros/s/AKfycbz3q391p7wNME-dv6Xw-TWILzwOchcU1Q9yxTRG_awEA7yzDe1snqAx96TKmdURwXxdTA/exec";
 
-        updateVisitCount();
+        // 呼叫 API 並更新瀏覽次數
+        fetch(apiUrl)
+          .then(res => {
+              if (!res.ok) throw new Error('伺服器回應失敗');
+              return res.json();
+          })
+          .then(data => {
+              if (typeof data.count === 'number') {
+                  visitCountEl.textContent = data.count;
+              } else {
+                  visitCountEl.textContent = "資料格式錯誤";
+              }
+          })
+          .catch(err => {
+              visitCountEl.textContent = "無法載入";
+              console.error("錯誤：", err.message);
+          });
     </script>
 
 </body>

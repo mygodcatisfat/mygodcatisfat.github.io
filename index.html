@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>歡迎來到偶的小天地</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap');
+
         body {
             font-family: "Helvetica Neue", sans-serif;
             background: #fdf6e3;
@@ -56,6 +58,27 @@
             font-size: 0.85em;
             color: #666;
         }
+        .instagram-section {
+            background: linear-gradient(135deg, #f6e27a, #f2c94c);
+            padding: 2em;
+            border-radius: 15px;
+            margin: 2em auto;
+            max-width: 600px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+            animation: fadeInUp 1s ease-out;
+        }
+        .instagram-section h2 {
+            font-family: 'Comic Neue', cursive;
+            font-weight: bold;
+        }
+        @keyframes fadeInUp {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .instagram-media {
+            max-width: 100%;
+            width: 100%;
+        }
     </style>
 </head>
 <body>
@@ -75,8 +98,8 @@
         </div>
     </section>
 
-    <section>
-        <h2>Instagram 貼文</h2>
+    <section class="instagram-section">
+        <h2>📸 Instagram 貼文</h2>
         <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/DJwYUyWTY68/" data-instgrm-version="14" style="margin: auto;"></blockquote>
         <script async src="//www.instagram.com/embed.js"></script>
     </section>

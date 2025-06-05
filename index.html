@@ -1,172 +1,92 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>我的個人介紹</title>
-  <style>
-    /* 基本重置與全域樣式 */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(to right, #1e3c72, #2a5298);
-      color: #fff;
-      min-height: 100vh;
-    }
-
-    /* 頁首樣式 */
-    header {
-      background: rgba(0, 0, 0, 0.6);
-      padding: 2em;
-      text-align: center;
-      box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
-      position: relative;
-    }
-    header h1 {
-      font-size: 2.5em;
-    }
-
-    /* 動態圖片樣式 */
-    .animated-image {
-      width: 150px;
-      height: 150px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 4px solid white;
-      animation: float 4s ease-in-out infinite;
-      position: absolute;
-      top: 1em;
-      right: 1em;
-    }
-
-    @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-10px); }
-    }
-
-    /* 導覽列樣式 */
-    nav {
-      display: flex;
-      justify-content: center;
-      background: #111;
-    }
-    nav a {
-      color: #fff;
-      padding: 1em 2em;
-      text-decoration: none;
-      transition: background 0.3s;
-    }
-    nav a:hover, nav a.active {
-      background: #2a9df4;
-    }
-
-    /* 分頁內容樣式 */
-    .tab-content {
-      display: none;
-      padding: 2em;
-      animation: fadeIn 0.5s ease-in-out;
-    }
-    .tab-content.active {
-      display: block;
-    }
-
-    /* 淡入動畫效果 */
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* 頁尾樣式 */
-    footer {
-      text-align: center;
-      padding: 1em;
-      background: rgba(0,0,0,0.4);
-    }
-
-    /* 按鈕樣式 */
-    .button {
-      background: #2a9df4;
-      border: none;
-      padding: 0.7em 1.5em;
-      color: white;
-      font-size: 1em;
-      border-radius: 8px;
-      cursor: pointer;
-      margin-top: 1em;
-    }
-    .button:hover {
-      background: #1782d1;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的個人網站</title>
+    <style>
+        body {
+            font-family: "Helvetica Neue", sans-serif;
+            background: #fdf6e3;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+        header {
+            background: #ffcc00;
+            padding: 2em 0;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 2.5em;
+        }
+        section {
+            padding: 2em;
+        }
+        a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        footer {
+            background: #eee;
+            padding: 1em;
+            font-size: 0.9em;
+        }
+        #stats {
+            margin-top: 0.5em;
+            font-size: 0.85em;
+            color: #666;
+        }
+    </style>
 </head>
 <body>
-  <!-- 頁首介紹 -->
-  <header>
-    <h1>你好，我是炫酷的我 ✨</h1>
-    <p>一個熱愛科技與創意的開發者</p>
-    <!-- 動態圖片放在右上角 -->
-    <img src="https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif" alt="動態頭像" class="animated-image">
-  </header>
 
-  <!-- 導覽列分頁連結 -->
-  <nav>
-    <a href="#" class="tab-link active" data-tab="about">關於我</a>
-    <a href="#" class="tab-link" data-tab="projects">作品集</a>
-    <a href="#" class="tab-link" data-tab="contact">聯絡我</a>
-  </nav>
+    <header>
+        <h1>你好，我是你的名字</h1>
+        <p>歡迎來到我的個人網站！</p>
+    </header>
 
-  <!-- 關於我分頁內容 -->
-  <section id="about" class="tab-content active">
-    <h2>關於我</h2>
-    <p>我喜歡寫程式、設計網頁、探索新技術，也喜歡喝咖啡 ☕。</p>
-    <!-- 按鈕點擊互動 -->
-    <button class="button" onclick="alert('很高興認識你！😊')">打個招呼</button>
-  </section>
+    <section>
+        <h2>關於我</h2>
+        <p>這裡是簡單的自我介紹。你可以寫你的專業、興趣、或正在學習的技術。</p>
+    </section>
 
-  <!-- 作品集分頁內容 -->
-  <section id="projects" class="tab-content">
-    <h2>我的作品集</h2>
-    <ul>
-      <li><a href="#" target="_blank">🔗 專案一：互動遊戲</a></li>
-      <li><a href="#" target="_blank">🔗 專案二：動畫簡歷</a></li>
-      <li><a href="#" target="_blank">🔗 專案三：即時天氣查詢</a></li>
-    </ul>
-  </section>
+    <section>
+        <h2>作品集</h2>
+        <ul style="list-style: none; padding: 0;">
+            <li><a href="#">🌟 專案一名稱</a></li>
+            <li><a href="#">📘 專案二名稱</a></li>
+            <li><a href="#">💡 專案三名稱</a></li>
+        </ul>
+    </section>
 
-  <!-- 聯絡資訊分頁內容 -->
-  <section id="contact" class="tab-content">
-    <h2>聯絡方式</h2>
-    <p>Email: <a href="mailto:you@example.com">you@example.com</a></p>
-    <p>GitHub: <a href="https://github.com/yourusername" target="_blank">yourusername</a></p>
-  </section>
+    <section>
+        <h2>聯絡我</h2>
+        <p>Email: <a href="mailto:yourname@example.com">yourname@example.com</a></p>
+        <p>GitHub: <a href="https://github.com/your-username" target="_blank">your-username</a></p>
+    </section>
 
-  <!-- 頁尾版權說明 -->
-  <footer>
-    &copy; 2025 炫酷的我 - 所有權利保留
-  </footer>
+    <footer>
+        &copy; 2025 你的名字. 保留所有權利。
+        <div id="stats">
+            👁️ 瀏覽次數：<span id="visitCount">載入中...</span>
+        </div>
+    </footer>
 
-  <!-- JavaScript：處理分頁切換邏輯 -->
-  <script>
-    const tabs = document.querySelectorAll('.tab-link'); // 所有分頁連結
-    const contents = document.querySelectorAll('.tab-content'); // 所有分頁內容
+    <script>
+        // 訪問次數計算（localStorage 模擬）
+        const visitCountEl = document.getElementById("visitCount");
 
-    tabs.forEach(tab => {
-      tab.addEventListener('click', (e) => {
-        e.preventDefault(); // 阻止預設跳轉
+        function updateVisitCount() {
+            let count = localStorage.getItem("visitCount") || 0;
+            count++;
+            localStorage.setItem("visitCount", count);
+            visitCountEl.textContent = count;
+        }
 
-        // 移除所有分頁的 active 樣式
-        tabs.forEach(t => t.classList.remove('active'));
-        contents.forEach(c => c.classList.remove('active'));
+        updateVisitCount();
+    </script>
 
-        // 為點擊的分頁加上 active 並顯示對應內容
-        tab.classList.add('active');
-        document.getElementById(tab.dataset.tab).classList.add('active');
-      });
-    });
-  </script>
 </body>
 </html>

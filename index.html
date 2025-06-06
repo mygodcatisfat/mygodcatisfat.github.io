@@ -64,7 +64,7 @@
         .gallery-marquee {
             display: flex;
             gap: 1em;
-            animation: scroll-marquee 30s linear infinite;
+            animation: scroll-marquee 15s linear infinite;
         }
         .gallery-marquee:hover {
             animation-play-state: paused;
@@ -202,45 +202,48 @@
 
     <header>
         <h1>偶素一豬狼 嘎</h1>
-        <p>歡迎來到偶的小天地</p>
+        <p>歡迎來到嘎豬窩</p>
     </header>
 
     <nav>
-        <a href="#about">關於我</a>
+        <a href="#about">關於嘎豬窩</a>
         <a href="#members">嘎豬窩成員介紹</a>
         <a href="#gallery">相簿</a>
         <a href="#instagram">Instagram</a>
-        <a href="#contact">聯絡我</a>
+        <a href="#contact">聯絡偶</a>
         <a href="gallery-only.html" target="_blank">📷 更多圖片</a>
     </nav>
 
     <section id="about">
-        <h2>關於我</h2>
-        <p>這裡是簡單的自我介紹。你可以寫你的專業、興趣、或正在學習的技術。</p>
+        <h2>關於嘎豬窩</h2>
+        <p>嘎豬窩成立於...</p>
     </section>
 
     <section id="members">
         <h2>嘎豬窩成員介紹</h2>
         <div class="member-grid">
             <div class="member-card">
-                <img src="https://placebear.com/200/200" alt="嘎豬本人" style="width: 100%; border-radius: 10px;">
-                <h3>嘎豬</h3>
-                <p>熱愛美食與發呆，是嘎豬窩的創始豬！</p>
+                <img src="https://raw.githubusercontent.com/mygodcatisfat/mygodcatisfat.github.io/refs/heads/main/wolf_eat_bun.jpg" alt="阿狼本狼" style="width: 100%; border-radius: 10px;">
+                <h3>阿狼</h3>
+                <p>綽號：解昆蟲、猴子、歐練</p>
+                <p>熱愛美食與發呆，是嘎豬窩的創始狼！</p>
             </div>
             <div class="member-card">
-                <img src="https://placekitten.com/200/200" alt="小貓成員" style="width: 100%; border-radius: 10px;">
-                <h3>喵小花</h3>
+                <img src="https://placekitten.com/200/200" alt="小豬" style="width: 100%; border-radius: 10px;">
+                <h3>豬排</h3>
                 <p>負責提醒大家要午睡，是個懶洋洋的小幫手。</p>
             </div>
             <div class="member-card">
                 <img src="https://placebeard.it/200x200" alt="毛茸茸夥伴" style="width: 100%; border-radius: 10px;">
-                <h3>熊大仁</h3>
-                <p>安靜內向，但總能帶來暖心的擁抱。</p>
+                <h3>王藍波</h3>
+                <p>綽號：昂藍波、灰塵、大老鼠</p>
+                <p>會用眼神殺死主人的英短，是阿狼的好朋友（兼坐騎？）。</p>
             </div>
         </div>
     </section>
 
     <section id="gallery">
+        <h2>相簿</h2>
         <div class="gallery-wrapper">
             <div class="gallery-marquee">
                 <img src="https://github.com/mygodcatisfat/mygodcatisfat.github.io/blob/main/wolf_eat_bun.jpg?raw=true" alt="自訂圖片">
@@ -251,7 +254,6 @@
                 <img src="https://placebeard.it/300x200" alt="圖片6">
                 <img src="https://placebear.com/300/200" alt="圖片7">
                 <img src="https://placebeard.it/300x200" alt="圖片8">
-                <!-- 複製一遍圖片，實現無縫跑馬燈 -->
                 <img src="https://github.com/mygodcatisfat/mygodcatisfat.github.io/blob/main/wolf_eat_bun.jpg?raw=true" alt="自訂圖片">
                 <img src="https://placebear.com/300/200" alt="圖片2">
                 <img src="https://placebeard.it/300x200" alt="圖片3">
@@ -266,13 +268,13 @@
     </section>
 
     <section id="instagram" class="instagram-section">
-        <h2>📸 Instagram 貼文</h2>
+        <h2>📸 Instagram</h2>
         <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/DKhigvLzoia/?igsh=MW83NTR4OWVvYWUxcw==" data-instgrm-version="14" style="margin: auto;"></blockquote>
         <script async src="//www.instagram.com/embed.js"></script>
     </section>
 
     <section id="contact">
-        <h2>聯絡我</h2>
+        <h2>聯絡偶</h2>
         <p>
             <a href="https://github.com/mygodcatisfat" target="_blank">
                 <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/github/github-original.svg" alt="GitHub" width="30" style="vertical-align: middle; margin-right: 8px;">
@@ -305,6 +307,43 @@
         function toggleDarkMode() {
             document.body.classList.toggle('dark-mode');
         }
+
+        // 平滑滾動腳本：點選 nav 錨點時加速啟動，接近目標時減速
+        document.querySelectorAll('nav a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                const targetId = this.getAttribute('href').substring(1);
+                const targetElement = document.getElementById(targetId);
+
+                if (!targetElement) return;
+
+                const targetPosition = targetElement.getBoundingClientRect().top + window.pageYOffset;
+                const startPosition = window.pageYOffset;
+                const distance = targetPosition - startPosition;
+                const duration = 1000;
+                let start = null;
+
+                function easeOutQuad(t) {
+                    return t * (2 - t);
+                }
+
+                function animation(currentTime) {
+                    if (!start) start = currentTime;
+                    const timeElapsed = currentTime - start;
+                    const progress = Math.min(timeElapsed / duration, 1);
+                    const easedProgress = easeOutQuad(progress);
+
+                    window.scrollTo(0, startPosition + distance * easedProgress);
+
+                    if (timeElapsed < duration) {
+                        requestAnimationFrame(animation);
+                    }
+                }
+
+                requestAnimationFrame(animation);
+            });
+        });
     </script>
 </body>
 </html>

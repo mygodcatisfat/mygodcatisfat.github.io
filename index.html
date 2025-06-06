@@ -62,6 +62,7 @@
             gap: 1em;
             flex-wrap: wrap;
             margin-top: 1em;
+            position: relative;
         }
         .gallery img {
             width: 300px;
@@ -73,6 +74,19 @@
         }
         .gallery img:hover {
             transform: scale(1.05);
+        }
+        .view-more {
+            position: absolute;
+            bottom: -2em;
+            right: 2em;
+            font-size: 0.95em;
+            background: #ffeb3b;
+            padding: 0.5em 1em;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            color: #333;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
         a {
             color: #0066cc;
@@ -122,7 +136,6 @@
             z-index: 1000;
         }
 
-        /* 可愛風粒子背景區域容器 */
         #particles-js {
             position: fixed;
             top: 0;
@@ -148,6 +161,7 @@
         <a href="#instagram">Instagram</a>
         <a href="#portfolio">作品集</a>
         <a href="#contact">聯絡我</a>
+        <a href="gallery-only.html" target="_blank">📷 更多圖片</a>
     </nav>
 
     <section id="about">
@@ -163,6 +177,7 @@
             <img src="https://placebeard.it/300x200" alt="圖片4">
             <img src="https://placebeard.it/300x200" alt="圖片5">
             <img src="https://placebeard.it/300x200" alt="圖片6">
+            <a href="gallery-only.html" class="view-more" target="_blank">✨ 查看更多圖片</a>
         </div>
     </section>
 

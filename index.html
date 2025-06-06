@@ -153,7 +153,6 @@
             z-index: -1;
         }
 
-        /* ▶ 新增動畫用樣式 */
         .member-card {
             max-width: 200px;
             background: #fffbe6;
@@ -220,7 +219,6 @@
         <p>這裡是簡單的自我介紹。你可以寫你的專業、興趣、或正在學習的技術。</p>
     </section>
 
-    <!-- ▶ 嘎豬窩成員介紹區塊 -->
     <section id="members">
         <h2>嘎豬窩成員介紹</h2>
         <div class="member-grid">
@@ -275,9 +273,14 @@
 
     <section id="contact">
         <h2>聯絡我</h2>
-        <p>Email: <a href="mailto:yourname@example.com">yourname@example.com</a></p>
-        <p>GitHub: <a href="https://github.com/mygodcatisfat" target="_blank">mygodcatisfat</a></p>
-        <p>Instagram: <a href="https://www.instagram.com/the_crab_wolf?igsh=Z29mYTlhcjFxdmp1&utm_source=qr" target="_blank">the_crab_wolf</a></p>
+        <p>
+            <a href="https://github.com/mygodcatisfat" target="_blank">
+                <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/github/github-original.svg" alt="GitHub" width="30" style="vertical-align: middle; margin-right: 8px;">
+            </a>
+            <a href="https://www.instagram.com/the_crab_wolf?igsh=Z29mYTlhcjFxdmp1&utm_source=qr" target="_blank">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" alt="Instagram" width="30" style="vertical-align: middle;">
+            </a>
+        </p>
     </section>
 
     <footer>
@@ -286,18 +289,16 @@
             👀 目前瀏覽次數：
             <span id="view-count">讀取中...</span>
         </div>
-        
         <script>
-        fetch("https://script.google.com/macros/s/AKfycbw059wuvXTQhM4SBf8QRPd0l_dcN95PeK6VqD6FV1iN0xNnRRRuYpPLBV0yKyugTTc/exec")
-            .then(res => res.json())// ✅ 解析為 JSON
-            .then(data => {
-                document.getElementById("view-count").innerText = data.count;
-            })
-            .catch(() => {
-                document.getElementById("view-count").innerText = "無法載入";
-            });
+            fetch("https://script.google.com/macros/s/AKfycbw059wuvXTQhM4SBf8QRPd0l_dcN95PeK6VqD6FV1iN0xNnRRRuYpPLBV0yKyugTTc/exec")
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById("view-count").innerText = data.count;
+                })
+                .catch(() => {
+                    document.getElementById("view-count").innerText = "無法載入";
+                });
         </script>
-
     </footer>
 
     <script>

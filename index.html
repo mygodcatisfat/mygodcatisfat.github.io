@@ -281,7 +281,23 @@
     </section>
 
     <footer>
-        &copy; 2025 你的名字. 保留所有權利。
+        &copy; 2025 嘎豬窩. 保留所有權利。
+        <div id="stats">
+            👀 目前瀏覽次數：
+            <span id="view-count">讀取中...</span>
+        </div>
+        
+        <script>
+        fetch("https://script.google.com/macros/s/AKfycbw059wuvXTQhM4SBf8QRPd0l_dcN95PeK6VqD6FV1iN0xNnRRRuYpPLBV0yKyugTTc/exec")
+            .then(res => res.json())// ✅ 解析為 JSON
+            .then(data => {
+                document.getElementById("view-count").innerText = data.count;
+            })
+            .catch(() => {
+                document.getElementById("view-count").innerText = "無法載入";
+            });
+        </script>
+
     </footer>
 
     <script>

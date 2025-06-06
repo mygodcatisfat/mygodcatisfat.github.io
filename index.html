@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>歡迎來到偶的小天地</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap');
@@ -57,15 +57,23 @@
         section {
             padding: 2em;
         }
-        .gallery {
-            display: flex;
-            justify-content: center;
-            gap: 1em;
-            flex-wrap: wrap;
-            margin-top: 1em;
+        .gallery-wrapper {
+            overflow: hidden;
             position: relative;
         }
-        .gallery img {
+        .gallery-marquee {
+            display: flex;
+            gap: 1em;
+            animation: scroll-marquee 30s linear infinite;
+        }
+        .gallery-marquee:hover {
+            animation-play-state: paused;
+        }
+        @keyframes scroll-marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        .gallery-marquee img {
             width: 450px;
             height: 300px;
             object-fit: cover;
@@ -73,13 +81,12 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             transition: transform 0.3s;
         }
-        .gallery img:hover {
+        .gallery-marquee img:hover {
             transform: scale(1.05);
         }
         .view-more {
-            position: absolute;
-            bottom: -2em;
-            right: 2em;
+            display: inline-block;
+            margin-top: 1em;
             font-size: 0.95em;
             background: #ffeb3b;
             padding: 0.5em 1em;
@@ -149,6 +156,8 @@
 </head>
 <body>
     <div id="particles-js"></div>
+
+    <!-- 夜間模式切換按鈕 -->
     <button class="toggle-button" onclick="toggleDarkMode()">🌙 切換夜間模式</button>
 
     <header>
@@ -170,15 +179,28 @@
     </section>
 
     <section id="gallery">
-        <div class="gallery">
-            <img src="https://github.com/mygodcatisfat/mygodcatisfat.github.io/blob/main/wolf_eat_bun.jpg?raw=true" alt="自訂圖片">
-            <img src="https://placebear.com/300/200" alt="圖片2">
-            <img src="https://placebeard.it/300x200" alt="圖片3">
-            <img src="https://placebeard.it/300x200" alt="圖片4">
-            <img src="https://placebeard.it/300x200" alt="圖片5">
-            <img src="https://placebeard.it/300x200" alt="圖片6">
-            <a href="gallery-only.html" class="view-more" target="_blank">✨ 查看更多圖片</a>
+        <div class="gallery-wrapper">
+            <div class="gallery-marquee">
+                <img src="https://github.com/mygodcatisfat/mygodcatisfat.github.io/blob/main/wolf_eat_bun.jpg?raw=true" alt="自訂圖片">
+                <img src="https://placebear.com/300/200" alt="圖片2">
+                <img src="https://placebeard.it/300x200" alt="圖片3">
+                <img src="https://placebeard.it/300x200" alt="圖片4">
+                <img src="https://placebeard.it/300x200" alt="圖片5">
+                <img src="https://placebeard.it/300x200" alt="圖片6">
+                <img src="https://placebear.com/300/200" alt="圖片7">
+                <img src="https://placebeard.it/300x200" alt="圖片8">
+                <!-- 複製一遍圖片，實現無縫跑馬燈 -->
+                <img src="https://github.com/mygodcatisfat/mygodcatisfat.github.io/blob/main/wolf_eat_bun.jpg?raw=true" alt="自訂圖片">
+                <img src="https://placebear.com/300/200" alt="圖片2">
+                <img src="https://placebeard.it/300x200" alt="圖片3">
+                <img src="https://placebeard.it/300x200" alt="圖片4">
+                <img src="https://placebeard.it/300x200" alt="圖片5">
+                <img src="https://placebeard.it/300x200" alt="圖片6">
+                <img src="https://placebear.com/300/200" alt="圖片7">
+                <img src="https://placebeard.it/300x200" alt="圖片8">
+            </div>
         </div>
+        <a href="gallery-only.html" class="view-more" target="_blank">✨ 查看更多圖片</a>
     </section>
 
     <section id="instagram" class="instagram-section">
@@ -186,7 +208,6 @@
         <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/C6dV8WGyBLX/?utm_source=ig_embed&amp;utm_campaign=loading" data-instgrm-version="14" style="margin: auto;"></blockquote>
         <script async src="//www.instagram.com/embed.js"></script>
     </section>
-
 
     <section id="contact">
         <h2>聯絡我</h2>
@@ -197,68 +218,14 @@
 
     <footer>
         &copy; 2025 你的名字. 保留所有權利。
-        <div id="stats">
-            👁️ 瀏覽次數：<span id="visitCount">載入中...</span>
-        </div>
     </footer>
 
     <script>
+        // 定義切換夜間模式函式，避免 ReferenceError
         function toggleDarkMode() {
-            document.body.classList.toggle("dark-mode");
+            document.body.classList.toggle('dark-mode');
         }
-
-        const visitCountEl = document.getElementById("visitCount");
-        const apiUrl = "https://script.google.com/macros/s/AKfycbw059wuvXTQhM4SBf8QRPd0l_dcN95PeK6VqD6FV1iN0xNnRRRuYpPLBV0yKyugTTc/exec";
-
-        fetch(apiUrl)
-          .then(res => {
-              if (!res.ok) throw new Error('伺服器回應失敗');
-              return res.json();
-          })
-          .then(data => {
-              if (typeof data.count === 'number') {
-                  visitCountEl.textContent = data.count;
-              } else {
-                  visitCountEl.textContent = "資料格式錯誤";
-              }
-          })
-          .catch(err => {
-              visitCountEl.textContent = "無法載入";
-              console.error("錯誤：", err.message);
-          });
-
-        document.querySelectorAll('nav a[href^="#"]').forEach(link => {
-            link.addEventListener("click", function(e) {
-                e.preventDefault();
-                document.querySelector(this.getAttribute("href")).scrollIntoView({
-                    behavior: "smooth"
-                });
-            });
-        });
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
-    <script>
-      particlesJS("particles-js", {
-        particles: {
-          number: { value: 60, density: { enable: true, value_area: 800 } },
-          color: { value: ["#f48fb1", "#fce4ec", "#ffd1dc"] },
-          shape: { type: "circle" },
-          opacity: { value: 0.7 },
-          size: { value: 6, random: true },
-          move: { enable: true, speed: 2 }
-        },
-        interactivity: {
-          events: {
-            onhover: { enable: true, mode: "repulse" },
-            onclick: { enable: true, mode: "push" }
-          },
-          modes: {
-            repulse: { distance: 100 },
-            push: { particles_nb: 4 }
-          }
-        },
-        retina_detect: true
-      });
-    </script>
+
 </body>
 </html>

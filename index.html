@@ -66,8 +66,8 @@
             position: relative;
         }
         .gallery img {
-            width: 300px;
-            height: 200px;
+            width: 450px;
+            height: 300px;
             object-fit: cover;
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
@@ -160,7 +160,6 @@
         <a href="#about">關於我</a>
         <a href="#gallery">相簿</a>
         <a href="#instagram">Instagram</a>
-        <a href="#portfolio">作品集</a>
         <a href="#contact">聯絡我</a>
         <a href="gallery-only.html" target="_blank">📷 更多圖片</a>
     </nav>
@@ -188,19 +187,11 @@
         <script async src="//www.instagram.com/embed.js"></script>
     </section>
 
-    <section id="portfolio">
-        <h2>作品集</h2>
-        <ul style="list-style: none; padding: 0;">
-            <li><a href="#">🌟 專案一名稱</a></li>
-            <li><a href="#">📘 專案二名稱</a></li>
-            <li><a href="#">💡 專案三名稱</a></li>
-        </ul>
-    </section>
 
     <section id="contact">
         <h2>聯絡我</h2>
         <p>Email: <a href="mailto:yourname@example.com">yourname@example.com</a></p>
-        <p>GitHub: <a href="https://github.com/your-username" target="_blank">your-username</a></p>
+        <p>GitHub: <a href="https://github.com/mygodcatisfat" target="_blank">mygodcatisfat</a></p>
         <p>Instagram: <a href="https://www.instagram.com/the_crab_wolf?igsh=Z29mYTlhcjFxdmp1&utm_source=qr" target="_blank">the_crab_wolf</a></p>
     </section>
 
@@ -236,45 +227,12 @@
               console.error("錯誤：", err.message);
           });
 
-        // 平滑自訂捲動動畫
-        function smoothScrollTo(targetId) {
-            const target = document.querySelector(targetId);
-            if (!target) return;
-
-            const startY = window.scrollY;
-            const endY = target.getBoundingClientRect().top + startY;
-            const distance = endY - startY;
-            const duration = 800;
-            let startTime = null;
-
-            function animation(currentTime) {
-                if (!startTime) startTime = currentTime;
-                const elapsed = currentTime - startTime;
-                let progress = elapsed / duration;
-
-                if (progress < 0.5) {
-                    progress = Math.pow(progress, 0.7);
-                } else {
-                    progress = 1 - Math.pow(1 - progress, 1.5);
-                }
-
-                const currentScroll = startY + distance * progress;
-                window.scrollTo(0, currentScroll);
-
-                if (elapsed < duration) {
-                    requestAnimationFrame(animation);
-                } else {
-                    window.scrollTo(0, endY);
-                }
-            }
-
-            requestAnimationFrame(animation);
-        }
-
         document.querySelectorAll('nav a[href^="#"]').forEach(link => {
             link.addEventListener("click", function(e) {
                 e.preventDefault();
-                smoothScrollTo(this.getAttribute("href"));
+                document.querySelector(this.getAttribute("href")).scrollIntoView({
+                    behavior: "smooth"
+                });
             });
         });
     </script>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>📷 更多圖片</title>
+    <style>
+        body {
+            font-family: 'Comic Neue', cursive;
+            background-color: #fffbe6;
+            color: #333;
+            margin: 0;
+            padding: 2em;
+            text-align: center;
+        }
+        h1 {
+            font-size: 2em;
+            margin-bottom: 1em;
+        }
+        .gallery {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1em;
+        }
+        .gallery img {
+            width: 300px;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        a.back {
+            display: inline-block;
+            margin-top: 2em;
+            text-decoration: none;
+            background: #ffd54f;
+            padding: 0.5em 1em;
+            border-radius: 8px;
+            color: #333;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>🌈 更多精彩圖片</h1>
+    <div class="gallery">
+        <img src="https://placekitten.com/300/200" alt="圖片A">
+        <img src="https://placebear.com/300/200" alt="圖片B">
+        <img src="https://placebeard.it/300x200" alt="圖片C">
+        <img src="https://placekitten.com/301/200" alt="圖片D">
+        <!-- 更多圖片可自由加入 -->
+    </div>
+    <a class="back" href="index.html">🔙 回到首頁</a>
+</body>
+</html>

@@ -152,12 +152,53 @@
             height: 100%;
             z-index: -1;
         }
+
+        /* ▶ 新增動畫用樣式 */
+        .member-card {
+            max-width: 200px;
+            background: #fffbe6;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 1em;
+            transition: transform 0.3s, box-shadow 0.3s;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeSlideIn 1s forwards;
+        }
+
+        .member-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+        }
+
+        .member-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 2em;
+        }
+
+        .member-card:nth-child(1) {
+            animation-delay: 0.2s;
+        }
+        .member-card:nth-child(2) {
+            animation-delay: 0.4s;
+        }
+        .member-card:nth-child(3) {
+            animation-delay: 0.6s;
+        }
+
+        @keyframes fadeSlideIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
     </style>
 </head>
 <body>
     <div id="particles-js"></div>
 
-    <!-- 夜間模式切換按鈕 -->
     <button class="toggle-button" onclick="toggleDarkMode()">🌙 切換夜間模式</button>
 
     <header>
@@ -167,6 +208,7 @@
 
     <nav>
         <a href="#about">關於我</a>
+        <a href="#members">嘎豬窩成員介紹</a>
         <a href="#gallery">相簿</a>
         <a href="#instagram">Instagram</a>
         <a href="#contact">聯絡我</a>
@@ -176,6 +218,28 @@
     <section id="about">
         <h2>關於我</h2>
         <p>這裡是簡單的自我介紹。你可以寫你的專業、興趣、或正在學習的技術。</p>
+    </section>
+
+    <!-- ▶ 嘎豬窩成員介紹區塊 -->
+    <section id="members">
+        <h2>嘎豬窩成員介紹</h2>
+        <div class="member-grid">
+            <div class="member-card">
+                <img src="https://placebear.com/200/200" alt="嘎豬本人" style="width: 100%; border-radius: 10px;">
+                <h3>嘎豬</h3>
+                <p>熱愛美食與發呆，是嘎豬窩的創始豬！</p>
+            </div>
+            <div class="member-card">
+                <img src="https://placekitten.com/200/200" alt="小貓成員" style="width: 100%; border-radius: 10px;">
+                <h3>喵小花</h3>
+                <p>負責提醒大家要午睡，是個懶洋洋的小幫手。</p>
+            </div>
+            <div class="member-card">
+                <img src="https://placebeard.it/200x200" alt="毛茸茸夥伴" style="width: 100%; border-radius: 10px;">
+                <h3>熊大仁</h3>
+                <p>安靜內向，但總能帶來暖心的擁抱。</p>
+            </div>
+        </div>
     </section>
 
     <section id="gallery">
@@ -221,11 +285,9 @@
     </footer>
 
     <script>
-        // 定義切換夜間模式函式，避免 ReferenceError
         function toggleDarkMode() {
             document.body.classList.toggle('dark-mode');
         }
     </script>
-
 </body>
 </html>

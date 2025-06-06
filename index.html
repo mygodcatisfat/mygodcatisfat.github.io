@@ -30,6 +30,7 @@
             text-align: center;
             transition: background 0.3s, color 0.3s;
             overflow-x: hidden;
+            scroll-behavior: auto;
         }
 
         header {
@@ -183,7 +184,7 @@
 
     <section id="instagram" class="instagram-section">
         <h2>📸 Instagram 貼文</h2>
-        <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/DJwYUyWTY68/" data-instgrm-version="14" style="margin: auto;"></blockquote>
+        <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/C6dV8WGyBLX/?utm_source=ig_embed&amp;utm_campaign=loading" data-instgrm-version="14" style="margin: auto;"></blockquote>
         <script async src="//www.instagram.com/embed.js"></script>
     </section>
 
@@ -234,6 +235,48 @@
               visitCountEl.textContent = "無法載入";
               console.error("錯誤：", err.message);
           });
+
+        // 平滑自訂捲動動畫
+        function smoothScrollTo(targetId) {
+            const target = document.querySelector(targetId);
+            if (!target) return;
+
+            const startY = window.scrollY;
+            const endY = target.getBoundingClientRect().top + startY;
+            const distance = endY - startY;
+            const duration = 800;
+            let startTime = null;
+
+            function animation(currentTime) {
+                if (!startTime) startTime = currentTime;
+                const elapsed = currentTime - startTime;
+                let progress = elapsed / duration;
+
+                if (progress < 0.5) {
+                    progress = Math.pow(progress, 0.7);
+                } else {
+                    progress = 1 - Math.pow(1 - progress, 1.5);
+                }
+
+                const currentScroll = startY + distance * progress;
+                window.scrollTo(0, currentScroll);
+
+                if (elapsed < duration) {
+                    requestAnimationFrame(animation);
+                } else {
+                    window.scrollTo(0, endY);
+                }
+            }
+
+            requestAnimationFrame(animation);
+        }
+
+        document.querySelectorAll('nav a[href^="#"]').forEach(link => {
+            link.addEventListener("click", function(e) {
+                e.preventDefault();
+                smoothScrollTo(this.getAttribute("href"));
+            });
+        });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
     <script>

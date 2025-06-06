@@ -193,6 +193,22 @@
                 transform: translateY(0);
             }
         }
+
+        /* 往上按鈕樣式 */
+        #back-to-top {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #ffeb3b;
+            color: #333;
+            border: none;
+            padding: 0.5em 0.8em;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            font-size: 1.2em;
+            z-index: 1000;
+        }
     </style>
 </head>
 <body>
@@ -303,13 +319,16 @@
         </script>
     </footer>
 
+    <!-- 回到最上方按鈕 -->
+    <button id="back-to-top" title="回到最上方">▲</button>
+
     <script>
         function toggleDarkMode() {
             document.body.classList.toggle('dark-mode');
         }
 
         // 平滑滾動腳本：點選 nav 錨點時加速啟動，接近目標時減速
-        document.querySelectorAll('nav a[href^="#"]').forEach(anchor => {
+        document.querySelectorAll('nav a[href^=\"#\"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
 
@@ -343,6 +362,33 @@
 
                 requestAnimationFrame(animation);
             });
+        });
+
+        // 回到最上方按鈕功能：點擊後快速滑動至頂端
+        document.getElementById('back-to-top').addEventListener('click', function() {
+            const startPosition = window.pageYOffset;
+            const distance = -startPosition;
+            const duration = 800;
+            let start = null;
+
+            function easeOutQuad(t) {
+                return t * (2 - t);
+            }
+
+            function scrollTopAnimation(currentTime) {
+                if (!start) start = currentTime;
+                const timeElapsed = currentTime - start;
+                const progress = Math.min(timeElapsed / duration, 1);
+                const easedProgress = easeOutQuad(progress);
+
+                window.scrollTo(0, startPosition + distance * easedProgress);
+
+                if (timeElapsed < duration) {
+                    requestAnimationFrame(scrollTopAnimation);
+                }
+            }
+
+            requestAnimationFrame(scrollTopAnimation);
         });
     </script>
 </body>

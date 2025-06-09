@@ -283,14 +283,40 @@
                 <img src="https://placebeard.it/300x200" alt="圖片8">
             </div>
         </div>
-        <a href="gallery-only.html" class="view-more" target="_blank">✨ 查看更多圖片</a>
+        <a href="gallery-only.html" class="view-more" target="_blank">查看更多圖片</a>
     </section>
 
     <section id="instagram" class="instagram-section">
-        <h2>📸 Instagram</h2>
-        <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/DKhigvLzoia/?igsh=MW83NTR4OWVvYWUxcw==" data-instgrm-version="14" style="margin: auto;"></blockquote>
-        <script async src="//www.instagram.com/embed.js"></script>
+        <h2>Instagram</h2>
+        <div id="ig-container">載入中...</div>
     </section>
+    
+    <script>
+        const sheetAPI = "https://script.google.com/macros/s/AKfycbw059wuvXTQhM4SBf8QRPd0l_dcN95PeK6VqD6FV1iN0xNnRRRuYpPLBV0yKyugTTc/exec"; // 替換成你的 Apps Script 網址
+    
+        fetch(sheetAPI)
+            .then(response => response.json())
+            .then(data => {
+                const permalink = data.url; // 假設 Apps Script 回傳格式為 { "url": "https://www.instagram.com/p/xxxx/" }
+                const igContainer = document.getElementById("ig-container");
+                igContainer.innerHTML = `
+                    <blockquote class="instagram-media" data-instgrm-permalink="${permalink}" data-instgrm-version="14" style="margin: auto;"></blockquote>
+                `;
+                if (window.instgrm) {
+                    window.instgrm.Embeds.process();
+                } else {
+                    const script = document.createElement("script");
+                    script.src = "https://www.instagram.com/embed.js";
+                    script.async = true;
+                    document.body.appendChild(script);
+                }
+            })
+            .catch(error => {
+                document.getElementById("ig-container").innerText = "無法載入 IG 內容";
+                console.error("取得 IG 連結錯誤：", error);
+            });
+    </script>
+
 
     <section id="contact">
         <h2>聯絡偶</h2>

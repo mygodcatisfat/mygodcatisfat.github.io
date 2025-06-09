@@ -292,29 +292,53 @@
     </section>
     
     <script>
-        const sheetAPI = "https://script.google.com/macros/s/AKfycbw059wuvXTQhM4SBf8QRPd0l_dcN95PeK6VqD6FV1iN0xNnRRRuYpPLBV0yKyugTTc/exec"; // 替換成你的 Apps Script 網址
+      const sheetAPI = "https://script.google.com/macros/s/AKfycbw059wuvXTQhM4SBf8QRPd0l_dcN95PeK6VqD6FV1iN0xNnRRRuYpPLBV0yKyugTTc/exec"; // 替換成你的 Apps Script 網址
+
     
-        fetch(sheetAPI)
-            .then(response => response.json())
-            .then(data => {
-                const permalink = data.url; // 假設 Apps Script 回傳格式為 { "url": "https://www.instagram.com/p/xxxx/" }
-                const igContainer = document.getElementById("ig-container");
-                igContainer.innerHTML = `
-                    <blockquote class="instagram-media" data-instgrm-permalink="${permalink}" data-instgrm-version="14" style="margin: auto;"></blockquote>
-                `;
-                if (window.instgrm) {
-                    window.instgrm.Embeds.process();
-                } else {
-                    const script = document.createElement("script");
-                    script.src = "https://www.instagram.com/embed.js";
-                    script.async = true;
-                    document.body.appendChild(script);
-                }
-            })
-            .catch(error => {
-                document.getElementById("ig-container").innerText = "無法載入 IG 內容";
-                console.error("取得 IG 連結錯誤：", error);
-            });
+      async function loadInstagramEmbed() {
+        try {
+          const res = await fetch(sheetAPI);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          console.log("從 Sheets 拿到的 URL：", data.url);
+    
+          // 確保 URL 以 "/" 結尾
+          let permalink = data.url.trim();
+          if (!permalink.endsWith("/")) {
+            permalink += "/";
+          }
+    
+          // 插入 blockquote
+          const igContainer = document.getElementById("ig-container");
+          igContainer.innerHTML = `
+            <blockquote class="instagram-media"
+                        data-instgrm-permalink="${permalink}"
+                        data-instgrm-version="14"
+                        style="margin: auto;"></blockquote>
+          `;
+    
+          // 重新載入 embed.js 或呼叫 process
+          if (window.instgrm && window.instgrm.Embeds && typeof window.instgrm.Embeds.process === "function") {
+            window.instgrm.Embeds.process();
+          } else {
+            const script = document.createElement("script");
+            script.src = "https://www.instagram.com/embed.js";
+            script.async = true;
+            script.onload = () => {
+              console.log("IG embed.js 載入完成，開始 process()");
+              window.instgrm.Embeds.process();
+            };
+            script.onerror = () => console.error("載入 embed.js 失敗");
+            document.body.appendChild(script);
+          }
+        } catch (err) {
+          console.error("載入 IG Embed 發生錯誤：", err);
+          document.getElementById("ig-container").innerText = "無法載入 IG 內容";
+        }
+      }
+    
+      // 頁面載入時執行
+      document.addEventListener("DOMContentLoaded", loadInstagramEmbed);
     </script>
 
 

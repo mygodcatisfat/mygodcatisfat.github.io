@@ -3,10 +3,15 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title data-i18n="page_title">歡迎來到偶的小天地</title>
+    <title data-i18n="page_title">歡迎來到偶的小天地 - 探索世界</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter font for new sections -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Comic Neue font from original file -->
+    <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap');
-
+        /* Original CSS from index.html, modified to ensure Tailwind compatibility and consistent theming */
         :root {
             --bg-color: #fdf6e3;
             --text-color: #333;
@@ -14,47 +19,55 @@
             --footer-bg: #eee;
             --sidebar-bg: #fff8dc;
             --sidebar-border: #ddd;
-            --menu-title-bg-start: #f6e27a; /* 新增變數 */
-            --menu-title-bg-end: #f2c94c; /* 新增變數 */
-            --menu-title-hover-bg-start: #f2c94c; /* 新增變數 */
-            --menu-title-hover-bg-end: #e6b800; /* 新增變數 */
-            --submenu-bg: rgba(255, 255, 255, 0.5); /* 新增變數 */
-            --submenu-item-border: rgba(0,0,0,0.1); /* 新增變數 */
-            --submenu-item-hover-bg: rgba(255, 235, 59, 0.3); /* 新增變數 */
-            --member-card-bg: #fffbe6; /* 新增變數 */
-            --dark-mode-toggle-bg: #222; /* 夜間模式切換按鈕背景 */
-            --dark-mode-toggle-color: white; /* 夜間模式切換按鈕文字 */
-            --language-button-bg: #f0f0f0; /* 語言按鈕背景 */
-            --language-button-color: #333; /* 語言按鈕文字 */
-            --language-options-bg: #f9f9f9; /* 語言選項背景 */
-            --language-option-hover-bg: #e0e0e0; /* 語言選項懸停背景 */
+            --menu-title-bg-start: #f6e27a;
+            --menu-title-bg-end: #f2c94c;
+            --menu-title-hover-bg-start: #f2c94c;
+            --menu-title-hover-bg-end: #e6b800;
+            --submenu-bg: rgba(255, 255, 255, 0.5);
+            --submenu-item-border: rgba(0,0,0,0.1);
+            --submenu-item-hover-bg: rgba(255, 235, 59, 0.3);
+            --member-card-bg: #fffbe6;
+            --dark-mode-toggle-bg: #222;
+            --dark-mode-toggle-color: white;
+            --language-button-bg: #f0f0f0;
+            --language-button-color: #333;
+            --language-options-bg: #f9f9f9;
+            --language-option-hover-bg: #e0e0e0;
+
+            /* New variables for consistency with blog section */
+            --accent-color-light: #eff6ff;
+            --accent-color-dark: #3182CE;
         }
 
         body.dark-mode {
             --bg-color: #1c1c1c;
-            --text-color: #f0f0f0; /* 調整為更亮的顏色 */
+            --text-color: #f0f0f0;
             --header-bg: #333;
             --footer-bg: #222;
             --sidebar-bg: #2a2a2a;
-            --sidebar-border: #666; /* 調整邊界顏色，使其在暗色模式下可見 */
-            --menu-title-bg-start: #555; /* 夜間模式下的菜單標題背景色 */
-            --menu-title-bg-end: #444; /* 夜間模式下的菜單標題背景色 */
-            --menu-title-hover-bg-start: #666; /* 夜間模式下的菜單標題懸停背景色 */
-            --menu-title-hover-bg-end: #555; /* 夜間模式下的菜單標題懸停背景色 */
-            --submenu-bg: rgba(50, 50, 50, 0.7); /* 夜間模式下的子菜單背景色 */
-            --submenu-item-border: rgba(255,255,255,0.1); /* 夜間模式下的子菜單項目邊框 */
-            --submenu-item-hover-bg: rgba(70, 70, 70, 0.5); /* 夜間模式下的子菜單項目懸停背景 */
-            --member-card-bg: #3a3a3a; /* 夜間模式下的成員卡片背景色 */
-            --dark-mode-toggle-bg: #ffeb3b; /* 夜間模式下切換按鈕背景色 */
-            --dark-mode-toggle-color: #333; /* 夜間模式下切換按鈕文字顏色 */
+            --sidebar-border: #666;
+            --menu-title-bg-start: #555;
+            --menu-title-bg-end: #444;
+            --menu-title-hover-bg-start: #666;
+            --menu-title-hover-bg-end: #555;
+            --submenu-bg: rgba(50, 50, 50, 0.7);
+            --submenu-item-border: rgba(255,255,255,0.1);
+            --submenu-item-hover-bg: rgba(70, 70, 70, 0.5);
+            --member-card-bg: #3a3a3a;
+            --dark-mode-toggle-bg: #ffeb3b;
+            --dark-mode-toggle-color: #333;
             --language-button-bg: #444;
             --language-button-color: #f0f0f0;
             --language-options-bg: #3a3a3a;
             --language-option-hover-bg: #555;
+
+            /* New variables for consistency with blog section in dark mode */
+            --accent-color-light: #2c5282;
+            --accent-color-dark: #63B3ED;
         }
 
         body {
-            font-family: "Helvetica Neue", sans-serif;
+            font-family: "Inter", "Helvetica Neue", sans-serif; /* Prioritize Inter, fallback to Helvetica Neue */
             background: var(--bg-color);
             color: var(--text-color);
             margin: 0;
@@ -62,10 +75,10 @@
             text-align: center;
             transition: background 0.3s, color 0.3s;
             overflow-x: hidden;
-            scroll-behavior: auto;
+            scroll-behavior: smooth; /* Changed to smooth for better UX */
         }
 
-        /* 左側選單樣式 */
+        /* Original Sidebar Styles */
         .sidebar {
             position: fixed;
             left: -280px;
@@ -145,7 +158,7 @@
         }
 
         .menu-section.expanded .submenu {
-            max-height: 300px;
+            max-height: 300px; /* Adjust as needed */
         }
 
         .submenu-item {
@@ -164,7 +177,7 @@
             border-bottom: none;
         }
 
-        /* 選單切換按鈕 */
+        /* Menu Toggle Button */
         .menu-toggle {
             position: fixed;
             top: 1em;
@@ -175,17 +188,18 @@
             padding: 0.5em 0.8em;
             border-radius: 5px;
             cursor: pointer;
-            z-index: 1002;
+            z-index: 9999; /* Increased z-index for visibility */
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
             font-size: 1.2em;
             transition: background 0.3s;
+            border: 2px solid limegreen; /* Temporary: for debugging visibility */
         }
 
         .menu-toggle:hover {
             background: #f2c94c;
         }
 
-        /* 遮罩層 */
+        /* Overlay */
         .sidebar-overlay {
             position: fixed;
             top: 0;
@@ -204,7 +218,7 @@
             visibility: visible;
         }
 
-        /* 調整主內容區域 */
+        /* Main Content Adjustment */
         .main-content {
             transition: margin-left 0.3s ease;
         }
@@ -218,25 +232,38 @@
             font-size: 2em;
             color: var(--text-color);
         }
-        nav {
+        /* Navbar styles, adjusted to be Tailwind friendly but preserve original look */
+        .main-nav-links {
             background: #ffe680;
             padding: 0.5em;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap; /* Allow links to wrap on smaller screens */
         }
-        body.dark-mode nav {
+        body.dark-mode .main-nav-links {
             background: #444;
         }
-        nav a {
+        .main-nav-links a {
             margin: 0 1em;
             text-decoration: none;
             color: #555;
             font-weight: bold;
+            padding: 0.5em 0.8em; /* Add padding for better touch targets */
+            border-radius: 5px; /* Rounded corners for links */
+            transition: background-color 0.3s, color 0.3s;
         }
-        body.dark-mode nav a {
+        body.dark-mode .main-nav-links a {
             color: #f0f0f0;
         }
-        nav a:hover {
-            text-decoration: underline;
+        .main-nav-links a:hover {
+            background-color: rgba(0,0,0,0.1); /* Subtle hover effect */
+            text-decoration: none; /* Remove underline on hover, prefer background change */
         }
+        body.dark-mode .main-nav-links a:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+
+        /* Existing Section Styles */
         section {
             padding: 2em;
         }
@@ -252,7 +279,7 @@
         
         @keyframes scroll-marquee {
             0% { transform: translateX(0); }
-            100% { transform: translateX(-100%); } /* Changed from -50% to -100% for continuous loop with duplicated images */
+            100% { transform: translateX(-100%); }
         }
         .gallery-marquee img {
             width: 450px;
@@ -349,7 +376,7 @@
             opacity: 0.9;
         }
 
-        /* 語言選擇菜單樣式 */
+        /* Language Selection Menu Styles */
         .language-selection-container {
             margin: 0.75em 1.5em;
             position: relative;
@@ -485,7 +512,7 @@
             color: #f0f0f0;
         }
 
-        /* 響應式設計 */
+        /* Responsive Design */
         @media (max-width: 768px) {
             .sidebar {
                 width: 250px;
@@ -496,10 +523,273 @@
                 font-size: 1em;
                 padding: 0.4em 0.6em;
             }
-            /* 手機版相簿動畫速度調整為網頁版的兩倍快 */
             .gallery-marquee {
-                animation-duration: 5s; /* Original was 10s, now 5s for mobile */
+                animation-duration: 5s; /* Faster for mobile */
             }
+        }
+
+        /* New Styles for Blog and AI sections, adapted to match original theme */
+        .hero-section {
+            /* Using placeholder image; consider replacing with an image from your site if available */
+            background-image: url('https://placehold.co/1200x400/FFCC00/333333?text=探索世界'); /* Using header-bg color */
+            background-size: cover;
+            background-position: center;
+            color: var(--text-color); /* Use text-color variable */
+            padding: 5em 1em; /* Adjust padding */
+            border-radius: 15px; /* Consistent with other sections */
+            margin: 2em auto;
+            max-width: 1200px; /* Max width for content consistency */
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+        }
+        body.dark-mode .hero-section {
+            background-image: url('https://placehold.co/1200x400/333333/F0F0F0?text=探索世界'); /* Dark mode background */
+        }
+        .hero-section .text-center {
+            background: rgba(0,0,0,0.3); /* Slightly darker overlay for text readability */
+            padding: 2em;
+            border-radius: 10px;
+        }
+        .hero-section h1 {
+            font-family: 'Comic Neue', cursive; /* Use original font */
+            font-size: 3em; /* Adjust size */
+            margin-bottom: 0.5em;
+            color: white; /* Always white for contrast */
+        }
+        .hero-section p {
+            font-size: 1.2em;
+            margin-bottom: 1.5em;
+            color: #eee;
+        }
+        .hero-section button {
+            background-color: #ffeb3b; /* Use your yellow accent color */
+            color: #333;
+            font-weight: bold;
+            padding: 0.8em 2em;
+            border-radius: 9999px; /* Full rounded */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+        .hero-section button:hover {
+            background-color: #f2c94c; /* Darker yellow on hover */
+            transform: translateY(-3px);
+        }
+
+        .blog-section {
+            padding: 2em;
+        }
+        .blog-section h2 {
+            font-family: 'Comic Neue', cursive;
+            font-weight: bold;
+            color: var(--text-color);
+            margin-bottom: 1.5em;
+        }
+        .post-card {
+            background: var(--member-card-bg); /* Use existing variable for consistency */
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 1.5em;
+            margin-bottom: 2em;
+            transition: transform 0.3s, box-shadow 0.3s;
+            color: var(--text-color);
+            text-align: left; /* Align text left */
+        }
+        .post-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+        .post-card img {
+            width: 100%;
+            height: 250px; /* Fixed height for consistency */
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 1em;
+        }
+        .post-card span.text-sm {
+            color: #666; /* Adjust color for readability */
+        }
+        body.dark-mode .post-card span.text-sm {
+            color: #aaa;
+        }
+        .post-card h3 {
+            font-family: 'Inter', sans-serif; /* Use Inter for blog titles */
+            font-weight: 600;
+            font-size: 1.8em; /* Adjust size */
+            margin-bottom: 0.8em;
+            color: var(--text-color);
+        }
+        .post-card p {
+            font-size: 1em;
+            line-height: 1.6;
+            margin-bottom: 1em;
+            color: var(--text-color);
+        }
+        .post-card a {
+            color: var(--header-bg); /* Use header accent color for links */
+            font-weight: bold;
+        }
+        body.dark-mode .post-card a {
+            color: var(--dark-mode-toggle-bg); /* Use dark mode accent color */
+        }
+        /* Style for the new .tag class for consistency */
+        .tag {
+            background-color: var(--submenu-item-hover-bg); /* Use a consistent light background */
+            color: var(--text-color); /* Use text color */
+            font-size: 0.75em; /* Adjust size */
+            padding: 0.3em 0.8em;
+            border-radius: 9999px;
+            display: inline-block; /* Ensure it respects margin/padding */
+            margin-right: 0.5em; /* Space between tags */
+            margin-bottom: 0.5em; /* Space for wrapping */
+        }
+        body.dark-mode .tag {
+            background-color: rgba(255, 235, 59, 0.1); /* Darker subtle background */
+            color: #ffeb3b; /* Accent color text */
+        }
+
+        #load-more-posts {
+            background: var(--language-button-bg); /* Consistent button style */
+            color: var(--language-button-color);
+            padding: 0.8em 1.5em;
+            border-radius: 9999px;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        #load-more-posts:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        .sidebar-widget {
+            background: var(--member-card-bg); /* Consistent with member cards */
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 1.5em;
+            margin-bottom: 2em;
+            text-align: left;
+            color: var(--text-color);
+        }
+        .sidebar-widget h3 {
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 1.5em;
+            margin-bottom: 1em;
+            color: var(--text-color);
+        }
+        .sidebar-widget input[type="text"], .sidebar-widget textarea, .sidebar-widget input[type="email"] {
+            background: var(--bg-color); /* Lighter background for inputs */
+            border: 1px solid var(--sidebar-border); /* Consistent border */
+            border-radius: 8px;
+            padding: 0.6em 1em;
+            width: 100%;
+            color: var(--text-color);
+        }
+        body.dark-mode .sidebar-widget input, body.dark-mode .sidebar-widget textarea {
+            background: #3a3a3a;
+            border-color: #555;
+        }
+        .sidebar-widget button {
+            background: var(--header-bg); /* Use header accent color */
+            color: #333;
+            font-weight: bold;
+            padding: 0.8em 1.5em;
+            border-radius: 9999px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        body.dark-mode .sidebar-widget button {
+            background: var(--dark-mode-toggle-bg);
+            color: var(--dark-mode-toggle-color);
+        }
+        .sidebar-widget button:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        .sidebar-widget ul li a {
+            color: var(--text-color); /* Default text color for links */
+            transition: color 0.3s, text-decoration 0.3s;
+        }
+        .sidebar-widget ul li a:hover {
+            color: var(--header-bg); /* Hover accent color */
+            text-decoration: underline;
+        }
+        body.dark-mode .sidebar-widget ul li a:hover {
+            color: var(--dark-mode-toggle-bg);
+        }
+        .sidebar-widget .flex.items-start img {
+            border-radius: 8px;
+            object-fit: cover;
+            width: 60px;
+            height: 60px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* Message Box Styles */
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: var(--bg-color); /* Use theme background */
+            color: var(--text-color);
+            padding: 2em;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            max-width: 90%;
+            text-align: center;
+            border: 1px solid var(--sidebar-border);
+        }
+        .message-box-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+        .message-box button {
+            background-color: var(--header-bg); /* Use theme accent */
+            color: #333;
+            padding: 0.8em 1.5em;
+            border-radius: 8px;
+            font-weight: bold;
+            margin-top: 1em;
+            transition: background-color 0.3s;
+        }
+        body.dark-mode .message-box button {
+            background-color: var(--dark-mode-toggle-bg);
+            color: var(--dark-mode-toggle-color);
+        }
+        .message-box button:hover {
+            opacity: 0.9;
+        }
+
+        /* Specific for AI Plan Output */
+        #plan-output {
+            background: var(--submenu-bg); /* Use a slightly translucent background */
+            border: 1px solid var(--submenu-item-border); /* Subtle border */
+            padding: 1em;
+            border-radius: 8px;
+            color: var(--text-color);
+            text-align: left;
+        }
+        #plan-output h4 {
+            color: var(--header-bg); /* Accent for title */
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            margin-bottom: 0.5em;
+        }
+        body.dark-mode #plan-output h4 {
+            color: var(--dark-mode-toggle-bg);
+        }
+        #plan-content ul {
+            list-style-type: disc;
+            padding-left: 1.5em;
+        }
+        #plan-content li {
+            margin-bottom: 0.3em;
         }
     </style>
 </head>
@@ -526,7 +816,7 @@
                 </div>
             </div>
             
-            <div class="menu-section">
+            <div class="menu-section expanded"> <!-- Keep travel expanded by default for easy access to AI -->
                 <button class="menu-title" onclick="toggleSubmenu(this)">
                     <span data-i18n="menu_travel">狼狼來了 | 旅遊</span>
                     <span class="menu-arrow">▶</span>
@@ -538,6 +828,34 @@
                     <div class="submenu-item" onclick="showContent('travel-germany')"><span data-i18n="travel_germany">德國</span></div>
                     <div class="submenu-item" onclick="showContent('travel-austria')"><span data-i18n="travel_austria">奧地利</span></div>
                     <div class="submenu-item" onclick="showContent('travel-czech')"><span data-i18n="travel_czech">捷克</span></div>
+                    <!-- New: Gemini-powered Travel Itinerary Generator (inline in sidebar for quick access) -->
+                    <div class="language-selection-container mt-4 p-2 bg-yellow-100 rounded-md">
+                        <h4 class="text-lg font-semibold mb-2 text-gray-800">✨ 旅行計劃生成器 ✨</h4>
+                        <div class="space-y-3 text-left">
+                            <div>
+                                <label for="destination-input" class="block text-gray-700 text-sm font-bold mb-1">目的地:</label>
+                                <input type="text" id="destination-input" placeholder="例如：日本東京" class="w-full border border-gray-300 rounded-lg py-1.5 px-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 text-gray-800">
+                            </div>
+                            <div>
+                                <label for="preferences-input" class="block text-gray-700 text-sm font-bold mb-1">旅行偏好/天數:</label>
+                                <textarea id="preferences-input" rows="2" placeholder="例如：3天，想體驗文化、美食和購物" class="w-full border border-gray-300 rounded-lg py-1.5 px-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 text-gray-800"></textarea>
+                            </div>
+                            <button id="generate-plan-button" class="bg-yellow-500 hover:bg-yellow-600 text-gray-800 font-bold py-2 px-4 rounded-full shadow transition duration-300 ease-in-out transform hover:scale-105 w-full text-sm">
+                                生成旅行計劃
+                            </button>
+                            <div id="loading-indicator" class="text-center text-gray-600 mt-2 hidden">
+                                <svg class="animate-spin h-4 w-4 mr-2 inline-block text-yellow-600" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                正在生成中...
+                            </div>
+                            <div id="plan-output" class="mt-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200 hidden">
+                                <h4 class="text-md font-semibold mb-1 text-gray-800">您的旅行計劃：</h4>
+                                <div id="plan-content" class="text-gray-700 text-xs leading-normal"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -577,7 +895,9 @@
             <h1 data-i18n="header_title">偶素一豬狼 嘎</h1>
         </header>
 
-        <nav>
+        <nav class="main-nav-links">
+            <a href="#hero-section" data-i18n="nav_blog_home">網誌首頁</a>
+            <a href="#latest-posts-section" data-i18n="nav_latest_posts">最新文章</a>
             <a href="#about" data-i18n="nav_about">關於嘎豬窩</a>
             <a href="#members" data-i18n="nav_members">嘎豬窩成員介紹</a>
             <a href="#gallery" data-i18n="nav_gallery">相簿</a>
@@ -585,6 +905,149 @@
             <a href="#contact" data-i18n="nav_contact">聯絡偶</a>
             <a href="gallery-only.html" target="_blank" data-i18n="nav_more_images">更多圖片</a>
         </nav>
+
+        <!-- New: Hero Section -->
+        <section id="hero-section" class="hero-section">
+            <div class="text-center">
+                <h1 data-i18n="hero_title">開始你的下一個冒險</h1>
+                <p data-i18n="hero_subtitle">分享旅行故事、探索新目的地、計劃難忘的旅程</p>
+                <button onclick="scrollToSection('latest-posts-section')" data-i18n="hero_button">閱讀最新網誌</button>
+            </div>
+        </section>
+
+        <!-- New: Blog Posts Section -->
+        <section id="latest-posts-section" class="container mx-auto my-12 px-6 grid grid-cols-1 md:grid-cols-3 gap-12">
+            <div class="md:col-span-2">
+                <h2 class="text-4xl font-bold mb-8 text-center md:text-left text-gray-800" data-i18n="latest_posts_title">最新網誌文章</h2>
+
+                <!-- Blog Post 1 -->
+                <article class="post-card">
+                    <img src="https://placehold.co/800x400/FFCC00/333333?text=日本櫻花之旅" alt="日本櫻花之旅" class="w-full h-auto rounded-lg mb-6 shadow-md">
+                    <span class="text-sm text-gray-500 mb-2 block">2023年4月15日 · 亞洲</span>
+                    <h3 class="text-3xl font-semibold text-gray-900 mb-4">日本櫻花之旅：粉色花海中的夢幻體驗</h3>
+                    <p class="text-gray-700 leading-relaxed mb-4">
+                        每年春天，日本都會變成一片粉色的海洋，吸引著來自世界各地的遊客。這篇文章將帶你深入東京、京都和大阪，體驗櫻花季節的獨特魅力，從傳統的賞櫻活動到美味的季節限定美食，一一為你呈現。
+                    </p>
+                    <a href="#" class="text-indigo-600 hover:text-indigo-800 font-bold transition duration-300">
+                        閱讀更多 &rarr;
+                    </a>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        <span class="tag" data-i18n="tag_culture">文化</span>
+                        <span class="tag" data-i18n="tag_food">美食</span>
+                        <span class="tag" data-i18n="tag_nature">自然</span>
+                    </div>
+                </article>
+
+                <!-- Blog Post 2 -->
+                <article class="post-card">
+                    <img src="https://placehold.co/800x400/FFCC00/333333?text=歐洲古城探險" alt="歐洲古城探險" class="w-full h-auto rounded-lg mb-6 shadow-md">
+                    <span class="text-sm text-gray-500 mb-2 block">2023年3月10日 · 歐洲</span>
+                    <h3 class="text-3xl font-semibold text-gray-900 mb-4">穿越時空：歐洲古城深度探險</h3>
+                    <p class="text-gray-700 leading-relaxed mb-4">
+                        從羅馬的競技場到布拉格的查理大橋，歐洲古城充滿了歷史的痕跡和迷人的故事。這篇文章將帶你漫步於這些古老的街道，探索隱藏的巷弄，品味當地的咖啡文化，感受歲月沉澱的魅力。
+                    </p>
+                    <a href="#" class="text-indigo-600 hover:text-indigo-800 font-bold transition duration-300">
+                        閱讀更多 &rarr;
+                    </a>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        <span class="tag" data-i18n="tag_history">歷史</span>
+                        <span class="tag" data-i18n="tag_architecture">建築</span>
+                        <span class="tag" data-i18n="tag_art">藝術</span>
+                    </div>
+                </article>
+
+                <!-- Blog Post 3 -->
+                <article class="post-card">
+                    <img src="https://placehold.co/800x400/FFCC00/333333?text=泰國海島度假" alt="泰國海島度假" class="w-full h-auto rounded-lg mb-6 shadow-md">
+                    <span class="text-sm text-gray-500 mb-2 block">2023年2月20日 · 東南亞</span>
+                    <h3 class="text-3xl font-semibold text-gray-900 mb-4">泰國海島度假：陽光、沙灘與熱帶風情</h3>
+                    <p class="text-gray-700 leading-relaxed mb-4">
+                        渴望陽光、沙灘和碧藍海水嗎？泰國的普吉島、蘇美島和PP島是理想的選擇。這篇文章將分享如何在這些熱帶天堂中享受浮潛、水上活動、泰式按摩和美味的海鮮大餐，讓你的度假之旅充滿活力。
+                    </p>
+                    <a href="#" class="text-indigo-600 hover:text-indigo-800 font-bold transition duration-300">
+                        閱讀更多 &rarr;
+                    </a>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        <span class="tag" data-i18n="tag_beach">海灘</span>
+                        <span class="tag" data-i18n="tag_water_activities">水上活動</span>
+                        <span class="tag" data-i18n="tag_relaxation">放鬆</span>
+                    </div>
+                </article>
+
+                <!-- Load More Button -->
+                <div class="text-center mt-8">
+                    <button id="load-more-posts" data-i18n="load_more_posts">
+                        載入更多文章
+                    </button>
+                </div>
+            </div>
+
+            <!-- New: Blog Sidebar (merged with original sidebar functionalities) -->
+            <aside class="md:col-span-1">
+                <!-- Search Widget -->
+                <div class="sidebar-widget">
+                    <h3 data-i18n="search_blog_title">搜尋網誌</h3>
+                    <div class="relative">
+                        <input type="text" placeholder="輸入關鍵字..." class="w-full pr-10">
+                        <button class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-indigo-600">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Categories Widget -->
+                <div class="sidebar-widget">
+                    <h3 data-i18n="categories_title">分類</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-700 hover:text-indigo-600 hover:underline">亞洲 (5)</a></li>
+                        <li><a href="#" class="text-gray-700 hover:text-indigo-600 hover:underline">歐洲 (3)</a></li>
+                        <li><a href="#" class="text-gray-700 hover:text-indigo-600 hover:underline">美洲 (2)</a></li>
+                        <li><a href="#" class="text-gray-700 hover:text-indigo-600 hover:underline">非洲 (1)</a></li>
+                        <li><a href="#" class="text-gray-700 hover:text-indigo-600 hover:underline">大洋洲 (2)</a></li>
+                    </ul>
+                </div>
+
+                <!-- Popular Posts Widget -->
+                <div class="sidebar-widget">
+                    <h3 data-i18n="popular_posts_title">熱門文章</h3>
+                    <ul class="space-y-4">
+                        <li class="flex items-start">
+                            <img src="https://placehold.co/60x60/A0AEC0/FFFFFF?text=京都" alt="京都秋色" class="rounded-md mr-3 shadow">
+                            <div>
+                                <a href="#" class="text-lg font-medium text-gray-900 hover:text-indigo-600">京都秋色：紅葉下的古都之美</a>
+                                <p class="text-sm text-gray-500">2022年11月5日</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <img src="https://placehold.co/60x60/CBD5E0/FFFFFF?text=冰島" alt="冰島極光" class="rounded-md mr-3 shadow">
+                            <div>
+                                <a href="#" class="text-lg font-medium text-gray-900 hover:text-indigo-600">冰島極光：追逐北極光的奇幻之旅</a>
+                                <p class="text-sm text-gray-500">2023年1月20日</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <img src="https://placehold.co/60x60/E2E8F0/FFFFFF?text=馬爾地夫" alt="馬爾地夫天堂" class="rounded-md mr-3 shadow">
+                            <div>
+                                <a href="#" class="text-lg font-medium text-gray-900 hover:text-indigo-600">馬爾地夫：藍色天堂的奢華享受</a>
+                                <p class="text-sm text-gray-500">2022年10月1日</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Newsletter Subscription -->
+                <div class="sidebar-widget bg-indigo-700 text-white text-center">
+                    <h3 class="text-2xl font-semibold mb-4 text-white" data-i18n="newsletter_title">訂閱我們的電子報</h3>
+                    <p class="mb-4 text-indigo-100" data-i18n="newsletter_subtitle">獲取最新旅遊資訊和獨家優惠！</p>
+                    <form class="flex flex-col space-y-4">
+                        <input type="email" placeholder="輸入您的電子郵件" class="w-full p-3 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                        <button type="submit" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105" data-i18n="newsletter_button">
+                            立即訂閱
+                        </button>
+                    </form>
+                </div>
+            </aside>
+        </section>
 
         <section id="about">
             <h2 data-i18n="about_us_title">關於嘎豬窩</h2>
@@ -673,6 +1136,7 @@
                 <span id="view-count">讀取中...</span>
             </div>
             <script>
+                // Original view count script (kept as is)
                 fetch("https://script.google.com/macros/s/AKfycbw059wuvXTQhM4SBf8QRPd0l_dcN95PeK6VqD6FV1iN0xNnRRRuYpPLBV0yKyugTTc/exec")
                     .then(res => res.json())
                     .then(data => {
@@ -686,6 +1150,9 @@
     </div>
 
     <button id="back-to-top" title="回到最上方" data-i18n="back_to_top_button">▲</button>
+
+    <!-- Custom Message Box Container -->
+    <div id="message-container"></div>
 
     <script>
         let currentLanguage = 'zh-Hant'; // 預設語言
@@ -733,12 +1200,25 @@
                         "lang_en": "English",
                         "toggle_dark_mode": "切換夜間模式",
                         "header_title": "偶素一豬狼 嘎",
+                        "nav_blog_home": "網誌首頁",
+                        "nav_latest_posts": "最新文章",
                         "nav_about": "關於嘎豬窩",
                         "nav_members": "嘎豬窩成員介紹",
                         "nav_gallery": "相簿",
                         "nav_instagram": "Instagram",
                         "nav_contact": "聯絡偶",
                         "nav_more_images": "更多圖片",
+                        "hero_title": "開始你的下一個冒險",
+                        "hero_subtitle": "分享旅行故事、探索新目的地、計劃難忘的旅程",
+                        "hero_button": "閱讀最新網誌",
+                        "latest_posts_title": "最新網誌文章",
+                        "load_more_posts": "載入更多文章",
+                        "search_blog_title": "搜尋網誌",
+                        "categories_title": "分類",
+                        "popular_posts_title": "熱門文章",
+                        "newsletter_title": "訂閱我們的電子報",
+                        "newsletter_subtitle": "獲取最新旅遊資訊和獨家優惠！",
+                        "newsletter_button": "立即訂閱",
                         "about_us_title": "關於嘎豬窩",
                         "about_us_content": "嘎豬窩成立於...",
                         "members_title": "嘎豬窩成員介紹",
@@ -760,10 +1240,20 @@
                         "contact_us_title": "聯絡偶",
                         "footer_copyright": "© 2025 嘎豬窩. 保留所有權利。",
                         "view_count_prefix": "👀 目前瀏覽次數：",
-                        "back_to_top_button": "▲"
+                        "back_to_top_button": "▲",
+                        "tag_culture": "文化",
+                        "tag_food": "美食",
+                        "tag_nature": "自然",
+                        "tag_history": "歷史",
+                        "tag_architecture": "建築",
+                        "tag_art": "藝術",
+                        "tag_beach": "海灘",
+                        "tag_water_activities": "水上活動",
+                        "tag_relaxation": "放鬆",
+                        "tag_adventure": "冒險"
                     },
                     "en": {
-                        "page_title": "Welcome to My Little World",
+                        "page_title": "Welcome to My Little World - Explore the World",
                         "sidebar_title": "🐺 The Wolf's World",
                         "menu_daily_life": "Wolf's Daily Life | Living",
                         "daily_morning": "Morning Time",
@@ -788,12 +1278,25 @@
                         "lang_en": "English",
                         "toggle_dark_mode": "Toggle Dark Mode",
                         "header_title": "I am a Pig Wolf, Ga",
+                        "nav_blog_home": "Blog Home",
+                        "nav_latest_posts": "Latest Posts",
                         "nav_about": "About GaPig Den",
                         "nav_members": "GaPig Den Members",
                         "nav_gallery": "Gallery",
                         "nav_instagram": "Instagram",
                         "nav_contact": "Contact Us",
                         "nav_more_images": "More Images",
+                        "hero_title": "Start Your Next Adventure",
+                        "hero_subtitle": "Share travel stories, explore new destinations, plan unforgettable journeys",
+                        "hero_button": "Read Latest Blog",
+                        "latest_posts_title": "Latest Blog Posts",
+                        "load_more_posts": "Load More Posts",
+                        "search_blog_title": "Search Blog",
+                        "categories_title": "Categories",
+                        "popular_posts_title": "Popular Posts",
+                        "newsletter_title": "Subscribe to Our Newsletter",
+                        "newsletter_subtitle": "Get the latest travel info and exclusive offers!",
+                        "newsletter_button": "Subscribe Now",
                         "about_us_title": "About GaPig Den",
                         "about_us_content": "GaPig Den was founded in...",
                         "members_title": "Introduction to GaPig Den Members",
@@ -803,7 +1306,7 @@
                         "member_wolf_desc": "Loves food and daydreaming, the founding wolf of GaPig Den! His catchphrase is 'Ga!'",
                         "member_pig_name": "Zhu-Pai (Pork Chop)",
                         "member_pig_desc": "A-Lang's younger sister, doesn't speak, but can communicate with A-Lang telepathically.",
-                        "member_bo_name": "Wang Lan Bo (Rambo)", // 專有名詞範例
+                        "member_bo_name": "Wang Lan Bo (Rambo)",
                         "member_bo_nickname": "Nicknames: Ang Lan Bo, Dust, Big Mouse",
                         "member_bo_desc": "A British Shorthair who can kill his owner with his eyes, A-Lang's good friend (and ride?).",
                         "member_chicken_name": "Ji-Bai (White Chicken)",
@@ -815,7 +1318,17 @@
                         "contact_us_title": "Contact Us",
                         "footer_copyright": "© 2025 GaPig Den. All rights reserved.",
                         "view_count_prefix": "👀 Current Views:",
-                        "back_to_top_button": "▲"
+                        "back_to_top_button": "▲",
+                        "tag_culture": "Culture",
+                        "tag_food": "Food",
+                        "tag_nature": "Nature",
+                        "tag_history": "History",
+                        "tag_architecture": "Architecture",
+                        "tag_art": "Art",
+                        "tag_beach": "Beach",
+                        "tag_water_activities": "Water Activities",
+                        "tag_relaxation": "Relaxation",
+                        "tag_adventure": "Adventure"
                     }
                 };
             }
@@ -833,69 +1346,124 @@
             // 特別處理語言按鈕文本
             const languageButtonText = document.getElementById('languageButtonText');
             if (lang === 'en') {
-                languageButtonText.innerText = '語言設定';
+                languageButtonText.innerText = 'Language Settings';
             } else {
-                languageButtonText.innerText = 'LANGUAGE';
+                languageButtonText.innerText = '語言設定';
             }
+        }
+
+        // Function to show a custom message box instead of alert()
+        function showMessageBox(message) {
+            const messageContainer = document.getElementById('message-container');
+            // Remove existing message box if any
+            if (messageContainer.hasChildNodes()) {
+                messageContainer.innerHTML = '';
+            }
+
+            const backdrop = document.createElement('div');
+            backdrop.classList.add('message-box-backdrop');
+
+            const messageBox = document.createElement('div');
+            messageBox.classList.add('message-box');
+            messageBox.innerHTML = `
+                <p class="text-lg font-medium mb-4">${message}</p>
+                <button class="bg-yellow-500 hover:bg-yellow-600 text-gray-800 font-bold py-2 px-4 rounded-md" onclick="closeMessageBox()">確認</button>
+            `;
+
+            messageContainer.appendChild(backdrop);
+            messageContainer.appendChild(messageBox);
+        }
+
+        // Function to close the custom message box
+        function closeMessageBox() {
+            const messageContainer = document.getElementById('message-container');
+            messageContainer.innerHTML = ''; // Clear content to hide message box and backdrop
         }
 
         // 頁面載入時執行
         document.addEventListener('DOMContentLoaded', async () => {
+            console.log('DOMContentLoaded fired.');
             await loadTranslations(); // 先載入翻譯數據
             const storedLang = localStorage.getItem('selectedLanguage') || 'zh-Hant'; // 從 localStorage 讀取或預設中文
             selectLanguage(storedLang, false); // 應用初始語言，不觸發 alert
+
+            // Mobile menu button event listener
+            const mobileMenuButton = document.querySelector('.menu-toggle');
+            if (mobileMenuButton) {
+                console.log('Hamburger menu button found:', mobileMenuButton);
+                mobileMenuButton.addEventListener('click', toggleSidebar);
+            } else {
+                console.error('Hamburger menu button not found!');
+            }
         });
 
         // 左側選單功能
         function toggleSidebar() {
+            console.log('toggleSidebar function called.');
             const sidebar = document.getElementById('sidebar');
             const overlay = document.querySelector('.sidebar-overlay');
             
-            sidebar.classList.toggle('open');
-            overlay.classList.toggle('active');
+            if (sidebar && overlay) {
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('active');
+                console.log('Sidebar "open" class status:', sidebar.classList.contains('open'));
+                console.log('Overlay "active" class status:', overlay.classList.contains('active'));
+            } else {
+                console.error('Sidebar or overlay element not found!');
+            }
         }
 
         function closeSidebar() {
+            console.log('closeSidebar function called.');
             const sidebar = document.getElementById('sidebar');
             const overlay = document.querySelector('.sidebar-overlay');
             
-            sidebar.classList.remove('open');
-            overlay.classList.remove('active');
-            // 關閉語言選單
-            document.getElementById('languageOptions').classList.remove('open');
-            document.getElementById('languageButton').querySelector('.menu-arrow').style.transform = 'rotate(0deg)';
+            if (sidebar && overlay) {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
+                // 關閉語言選單
+                const languageOptions = document.getElementById('languageOptions');
+                const languageButton = document.getElementById('languageButton');
+                if (languageOptions && languageButton) {
+                    languageOptions.classList.remove('open');
+                    languageButton.querySelector('.menu-arrow').style.transform = 'rotate(0deg)';
+                }
+            }
         }
 
         function toggleSubmenu(button) {
+            console.log('toggleSubmenu function called for:', button.innerText);
             const section = button.parentElement;
-            const isExpanded = section.classList.contains('expanded');
             
             // 關閉所有其他展開的選單 (包括語言選單)
             document.querySelectorAll('.menu-section.expanded').forEach(s => {
                 if (s !== section) {
                     s.classList.remove('expanded');
+                    s.querySelector('.menu-arrow').style.transform = 'rotate(0deg)'; // Reset arrow
                 }
             });
-            document.getElementById('languageOptions').classList.remove('open');
-            document.getElementById('languageButton').querySelector('.menu-arrow').style.transform = 'rotate(0deg)';
+            // Also explicitly close language options
+            const languageOptions = document.getElementById('languageOptions');
+            const languageButton = document.getElementById('languageButton');
+            if (languageOptions && languageButton) {
+                languageOptions.classList.remove('open');
+                languageButton.querySelector('.menu-arrow').style.transform = 'rotate(0deg)';
+            }
 
 
             // 切換當前選單
             section.classList.toggle('expanded');
+            const arrow = button.querySelector('.menu-arrow');
+            if (section.classList.contains('expanded')) {
+                arrow.style.transform = 'rotate(90deg)';
+            } else {
+                arrow.style.transform = 'rotate(0deg)';
+            }
         }
 
         function showContent(contentType) {
-            // 這裡可以根據 contentType 顯示不同的內容
             console.log('顯示內容:', contentType);
             
-            // 可以在這裡添加顯示特定內容的邏輯
-            // 例如：切換到對應的頁面區塊，或者動態載入內容
-            
-            // 關閉側邊欄
-            closeSidebar();
-            
-            // 顯示提示訊息（可以替換為實際的內容顯示邏輯）
-            // 注意：此處提示訊息也應該被翻譯
             const contentMap = translations[currentLanguage] ? {
                 'daily-morning': translations[currentLanguage]['daily_morning'],
                 'daily-meal': translations[currentLanguage]['daily_meal'],
@@ -915,32 +1483,41 @@
                 "food-tips": translations[currentLanguage]['food_tips']
             } : {};
             
-            alert((contentMap[contentType] || '內容載入中...') + ' (實際功能尚未實作)');
+            showMessageBox((contentMap[contentType] || '內容載入中...') + ' (實際功能尚未實作)');
+            closeSidebar();
         }
 
         function toggleDarkMode() {
             document.body.classList.toggle('dark-mode');
+            console.log('Dark mode toggled. Current status:', document.body.classList.contains('dark-mode') ? 'Dark' : 'Light');
         }
 
         // 語言選單功能
         function toggleLanguageOptions() {
+            console.log('toggleLanguageOptions function called.');
             const options = document.getElementById('languageOptions');
             const buttonArrow = document.getElementById('languageButton').querySelector('.menu-arrow');
             
-            options.classList.toggle('open');
-            if (options.classList.contains('open')) {
-                buttonArrow.style.transform = 'rotate(-90deg)'; // 向上展開時箭頭向上
-            } else {
-                buttonArrow.style.transform = 'rotate(0deg)'; // 收合時箭頭復原
-            }
+            if (options && buttonArrow) {
+                options.classList.toggle('open');
+                if (options.classList.contains('open')) {
+                    buttonArrow.style.transform = 'rotate(-90deg)'; // 向上展開時箭頭向上
+                } else {
+                    buttonArrow.style.transform = 'rotate(0deg)'; // 收合時箭頭復原
+                }
 
-            // 關閉其他展開的子選單
-            document.querySelectorAll('.menu-section.expanded').forEach(s => {
-                s.classList.remove('expanded');
-            });
+                // 關閉其他展開的子選單
+                document.querySelectorAll('.menu-section.expanded').forEach(s => {
+                    s.classList.remove('expanded');
+                    s.querySelector('.menu-arrow').style.transform = 'rotate(0deg)'; // Reset arrow
+                });
+            } else {
+                console.error('Language options or button arrow not found!');
+            }
         }
 
         function selectLanguage(lang, showAlert = true) {
+            console.log('selectLanguage function called with:', lang);
             currentLanguage = lang;
             localStorage.setItem('selectedLanguage', lang); // 將選擇的語言儲存到 localStorage
 
@@ -949,102 +1526,278 @@
             // 關閉語言選單
             const languageOptions = document.getElementById('languageOptions');
             const buttonArrow = document.getElementById('languageButton').querySelector('.menu-arrow');
-            languageOptions.classList.remove('open');
-            buttonArrow.style.transform = 'rotate(0deg)';
+            if (languageOptions && buttonArrow) {
+                languageOptions.classList.remove('open');
+                buttonArrow.style.transform = 'rotate(0deg)';
+            }
 
-            // 實際功能之後設計，這裡可以放置語言切換邏輯
             console.log('Selected language:', lang);
             if (showAlert) {
-                alert('已選擇語言：' + (lang === 'en' ? 'English' : '繁體中文'));
+                const message = (lang === 'en' ? 'Language selected: English' : '已選擇語言：繁體中文');
+                showMessageBox(message);
             }
         }
 
-        // 平滑滾動腳本
-        document.querySelectorAll('nav a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
+        // Smooth scroll function for new sections
+        function scrollToSection(id) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth' });
+                console.log('Scrolling to section:', id);
+            } else {
+                console.warn('Section not found for scrolling:', id);
+            }
+        }
 
-                const targetId = this.getAttribute('href').substring(1);
-                const targetElement = document.getElementById(targetId);
+        // JavaScript for "Load More" Posts (basic example)
+        const loadMoreButton = document.getElementById('load-more-posts');
+        if (loadMoreButton) {
+            loadMoreButton.addEventListener('click', () => {
+                console.log('Load More button clicked.');
+                const mainContent = document.querySelector('#latest-posts-section .md\\:col-span-2');
+                if (mainContent) {
+                    const newPost = document.createElement('article');
+                    newPost.classList.add('post-card');
+                    newPost.innerHTML = `
+                        <img src="https://placehold.co/800x400/FFCC00/333333?text=秘魯馬丘比丘" alt="秘魯馬丘比丘" class="w-full h-auto rounded-lg mb-6 shadow-md">
+                        <span class="text-sm text-gray-500 mb-2 block">2023年6月1日 · 南美洲</span>
+                        <h3 class="text-3xl font-semibold text-gray-900 mb-4">秘魯馬丘比丘：探訪失落的印加古城</h3>
+                        <p class="text-gray-700 leading-relaxed mb-4">
+                            秘魯的馬丘比丘，這座被譽為世界新七大奇蹟之一的印加古城，隱藏在安第斯山脈的雲霧之中。這篇文章將帶你穿越印加古道，探索這座神秘城市的歷史與文化，感受它令人窒息的壯麗景色。
+                        </p>
+                        <a href="#" class="text-indigo-600 hover:text-indigo-800 font-bold transition duration-300">
+                            閱讀更多 &rarr;
+                        </a>
+                        <div class="mt-4 flex flex-wrap gap-2">
+                            <span class="tag" data-i18n="tag_history">歷史</span>
+                            <span class="tag" data-i18n="tag_adventure">冒險</span>
+                            <span class="tag" data-i18n="tag_culture">文化</span>
+                        </div>
+                    `;
+                    // Insert the new post before the "Load More" button's parent div
+                    mainContent.insertBefore(newPost, loadMoreButton.closest('div'));
+                } else {
+                    console.error('Main content section for posts not found!');
+                }
+            });
+        }
 
-                if (!targetElement) return;
+        // Gemini API Integration: Travel Itinerary Generator
+        const generatePlanButton = document.getElementById('generate-plan-button');
+        const destinationInput = document.getElementById('destination-input');
+        const preferencesInput = document.getElementById('preferences-input');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const planOutput = document.getElementById('plan-output');
+        const planContent = document.getElementById('plan-content');
 
-                const targetPosition = targetElement.getBoundingClientRect().top + window.pageYOffset;
-                const startPosition = window.pageYOffset;
-                const distance = targetPosition - startPosition;
-                const duration = 1000;
-                let start = null;
+        if (generatePlanButton) {
+            generatePlanButton.addEventListener('click', async () => {
+                console.log('Generate Plan button clicked.');
+                const destination = destinationInput.value.trim();
+                const preferences = preferencesInput.value.trim();
 
-                function easeOutQuad(t) {
-                    return t * (2 - t);
+                if (!destination) {
+                    showMessageBox('請輸入目的地才能生成旅行計劃。');
+                    return;
                 }
 
-                function animation(currentTime) {
-                    if (!start) start = currentTime;
-                    const timeElapsed = currentTime - start;
-                    const progress = Math.min(timeElapsed / duration, 1);
-                    const easedProgress = easeOutQuad(progress);
+                // Show loading indicator and hide previous output
+                loadingIndicator.classList.remove('hidden');
+                planOutput.classList.add('hidden');
+                planContent.innerHTML = '';
 
-                    window.scrollTo(0, startPosition + distance * easedProgress);
+                try {
+                    let chatHistory = [];
+                    const prompt = `為我生成一個前往 ${destination} 的旅行計劃。我的偏好是：${preferences}。請以 JSON 格式回應，包含一個天的陣列，每個天都有一個 day 數字和一個 activities 陣列。例如：[{ "day": 1, "activities": ["活動1", "活動2"] }]。確保 JSON 格式正確，不要包含任何額外文字。`;
+                    chatHistory.push({ role: "user", parts: [{ text: prompt }] });
 
-                    if (timeElapsed < duration) {
-                        requestAnimationFrame(animation);
+                    const payload = {
+                        contents: chatHistory,
+                        generationConfig: {
+                            responseMimeType: "application/json",
+                            responseSchema: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        "day": { "type": "NUMBER" },
+                                        "activities": {
+                                            "type": "ARRAY",
+                                            "items": { "type": "STRING" }
+                                        }
+                                    },
+                                    "propertyOrdering": ["day", "activities"]
+                                }
+                            }
+                        }
+                    };
+
+                    const apiKey = ""; // Canvas will automatically provide this at runtime
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const result = await response.json();
+                    console.log('Gemini API Raw Response:', result); // Debugging: log the full response
+
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        
+                        const jsonText = result.candidates[0].content.parts[0].text;
+                        console.log('Gemini API JSON Text:', jsonText); // Debugging: log the JSON string
+                        const parsedPlan = JSON.parse(jsonText);
+
+                        let planHtml = '';
+                        if (Array.isArray(parsedPlan) && parsedPlan.length > 0) {
+                            parsedPlan.forEach(dayPlan => {
+                                planHtml += `<p class="font-semibold mt-3">第 ${dayPlan.day} 天:</p>`;
+                                if (Array.isArray(dayPlan.activities) && dayPlan.activities.length > 0) {
+                                    planHtml += '<ul class="list-disc pl-5">';
+                                    dayPlan.activities.forEach(activity => {
+                                        planHtml += `<li>${activity}</li>`;
+                                    });
+                                    planHtml += '</ul>';
+                                } else {
+                                    planHtml += '<p>無活動建議。</p>';
+                                }
+                            });
+                            planContent.innerHTML = planHtml;
+                            planOutput.classList.remove('hidden');
+                        } else {
+                            showMessageBox('無法生成有效的旅行計劃，請嘗試更具體的描述。');
+                        }
+                    } else {
+                        showMessageBox('生成旅行計劃時發生錯誤，請稍後再試。');
+                        console.error('Unexpected Gemini API response structure or empty content:', result);
+                    }
+
+                } catch (error) {
+                    showMessageBox('生成旅行計劃時發生錯誤: ' + error.message);
+                    console.error('Error generating travel plan:', error);
+                } finally {
+                    loadingIndicator.classList.add('hidden'); // Hide loading indicator
+                }
+            });
+        }
+    </script>
+    <!-- Particles.js script (kept as is) -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script>
+        /* particlesJS.load settings, adjust as needed for desired effect */
+        particlesJS("particles-js", {
+            "particles": {
+                "number": {
+                    "value": 80,
+                    "density": {
+                        "enable": true,
+                        "value_area": 800
+                    }
+                },
+                "color": {
+                    "value": "#ffeb3b" /* Your accent color */
+                },
+                "shape": {
+                    "type": "circle",
+                    "stroke": {
+                        "width": 0,
+                        "color": "#000000"
+                    },
+                    "polygon": {
+                        "nb_sides": 5
+                    },
+                    "image": {
+                        "src": "img/github.svg",
+                        "width": 100,
+                        "height": 100
+                    }
+                },
+                "opacity": {
+                    "value": 0.5,
+                    "random": false,
+                    "anim": {
+                        "enable": false,
+                        "speed": 1,
+                        "opacity_min": 0.1,
+                        "sync": false
+                    }
+                },
+                "size": {
+                    "value": 3,
+                    "random": true,
+                    "anim": {
+                        "enable": false,
+                        "speed": 40,
+                        "size_min": 0.1,
+                        "sync": false
+                    }
+                },
+                "line_linked": {
+                    "enable": true,
+                    "distance": 150,
+                    "color": "#ffcc00", /* Your header-bg color */
+                    "opacity": 0.4,
+                    "width": 1
+                },
+                "move": {
+                    "enable": true,
+                    "speed": 6,
+                    "direction": "none",
+                    "random": false,
+                    "straight": false,
+                    "out_mode": "out",
+                    "bounce": false,
+                    "attract": {
+                        "enable": false,
+                        "rotateX": 600,
+                        "rotateY": 1200
                     }
                 }
-
-                requestAnimationFrame(animation);
-            });
-        });
-
-        // 回到最上方按鈕功能
-        document.getElementById('back-to-top').addEventListener('click', function() {
-            const startPosition = window.pageYOffset;
-            const distance = -startPosition;
-            const duration = 800;
-            let start = null;
-
-            function easeOutQuad(t) {
-                return t * (2 - t);
-            }
-
-            function scrollTopAnimation(currentTime) {
-                if (!start) start = currentTime;
-                const timeElapsed = currentTime - start;
-                const progress = Math.min(timeElapsed / duration, 1);
-                const easedProgress = easeOutQuad(progress);
-
-                window.scrollTo(0, startPosition + distance * easedProgress);
-
-                if (timeElapsed < duration) {
-                    requestAnimationFrame(scrollTopAnimation);
+            },
+            "interactivity": {
+                "detect_on": "canvas",
+                "events": {
+                    "onhover": {
+                        "enable": true,
+                        "mode": "repulse"
+                    },
+                    "onclick": {
+                        "enable": true,
+                        "mode": "push"
+                    },
+                    "resize": true
+                },
+                "modes": {
+                    "grab": {
+                        "distance": 400,
+                        "line_linked": {
+                            "opacity": 1
+                        }
+                    },
+                    "bubble": {
+                        "distance": 400,
+                        "size": 40,
+                        "duration": 2,
+                        "opacity": 8,
+                        "speed": 3
+                    },
+                    "repulse": {
+                        "distance": 200,
+                        "duration": 0.4
+                    },
+                    "push": {
+                        "particles_nb": 4
+                    },
+                    "remove": {
+                        "particles_nb": 2
+                    }
                 }
-            }
-
-            requestAnimationFrame(scrollTopAnimation);
-        });
-
-        // 點擊頁面其他地方關閉側邊欄和語言選單
-        document.addEventListener('click', function(e) {
-            const sidebar = document.getElementById('sidebar');
-            const menuToggle = document.querySelector('.menu-toggle');
-            const languageOptions = document.getElementById('languageOptions');
-            const languageButton = document.getElementById('languageButton');
-            
-            // 關閉側邊欄
-            if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
-                if (sidebar.classList.contains('open')) {
-                    closeSidebar();
-                }
-            }
-
-            // 關閉語言選單
-            if (!languageOptions.contains(e.target) && !languageButton.contains(e.target) && !languageButton.contains(e.target.parentNode)) {
-                 // 檢查點擊是否在語言按鈕本身或其子元素上
-                if (languageOptions.classList.contains('open')) {
-                    languageOptions.classList.remove('open');
-                    languageButton.querySelector('.menu-arrow').style.transform = 'rotate(0deg)';
-                }
-            }
+            },
+            "retina_detect": true
         });
     </script>
 </body>

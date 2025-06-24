@@ -22,6 +22,8 @@
             --submenu-item-border: rgba(0,0,0,0.1); /* 新增變數 */
             --submenu-item-hover-bg: rgba(255, 235, 59, 0.3); /* 新增變數 */
             --member-card-bg: #fffbe6; /* 新增變數 */
+            --dark-mode-toggle-bg: #222; /* 夜間模式切換按鈕背景 */
+            --dark-mode-toggle-color: white; /* 夜間模式切換按鈕文字 */
         }
 
         body.dark-mode {
@@ -39,6 +41,8 @@
             --submenu-item-border: rgba(255,255,255,0.1); /* 夜間模式下的子菜單項目邊框 */
             --submenu-item-hover-bg: rgba(70, 70, 70, 0.5); /* 夜間模式下的子菜單項目懸停背景 */
             --member-card-bg: #3a3a3a; /* 夜間模式下的成員卡片背景色 */
+            --dark-mode-toggle-bg: #ffeb3b; /* 夜間模式下切換按鈕背景色 */
+            --dark-mode-toggle-color: #333; /* 夜間模式下切換按鈕文字顏色 */
         }
 
         body {
@@ -66,6 +70,8 @@
             transition: left 0.3s ease;
             overflow-y: auto;
             box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            display: flex; /* 新增 */
+            flex-direction: column; /* 新增 */
         }
 
         .sidebar.open {
@@ -87,6 +93,7 @@
 
         .sidebar-menu {
             padding: 1em 0;
+            flex-grow: 1; /* 新增 */
         }
 
         .menu-section {
@@ -317,21 +324,23 @@
             max-width: 100%;
             width: 100%;
         }
-        .toggle-button {
-            position: fixed;
-            top: 1em;
-            right: 1em;
-            background: #222;
-            color: white;
+        .toggle-button-sidebar { /* 更改類名 */
+            width: calc(100% - 3em); /* 調整寬度以配合 padding */
+            margin: 1.5em; /* 調整外邊距 */
+            background: var(--dark-mode-toggle-bg);
+            color: var(--dark-mode-toggle-color);
             border: none;
-            padding: 0.5em 1em;
+            padding: 0.8em 1em; /* 調整 padding */
             border-radius: 5px;
             cursor: pointer;
             z-index: 1000;
+            font-size: 1em; /* 調整字體大小 */
+            transition: background 0.3s, color 0.3s;
+            text-align: center; /* 確保文字置中 */
         }
-        body.dark-mode .toggle-button {
-            background: #ffeb3b; /* 夜間模式下切換按鈕背景色 */
-            color: #333; /* 夜間模式下切換按鈕文字顏色 */
+
+        .toggle-button-sidebar:hover {
+            opacity: 0.9;
         }
 
         #particles-js {
@@ -473,10 +482,10 @@
                 </div>
             </div>
         </div>
+        <button class="toggle-button-sidebar" onclick="toggleDarkMode()">切換夜間模式</button>
     </div>
 
     <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
-    <button class="toggle-button" onclick="toggleDarkMode()">切換夜間模式</button>
 
     <div class="main-content">
         <header>

@@ -51,7 +51,7 @@
     "instagram_title": "📸 Instagram",
     "contact_us_title": "聯絡偶",
     "footer_copyright": "&copy; 2025 嘎豬窩. 保留所有權利。",
-    "view_count_prefix": "👀 目前瀏覽次數：",
+    "view_count_prefix": "👀 目前瀏覽次數："
   },
   "en": {
     "page_title": "Welcome to WPC(Wolf Pig Cat)",
@@ -105,6 +105,6 @@
     "instagram_title": "📸 Instagram",
     "contact_us_title": "Contact Us",
     "footer_copyright": "&copy; 2025 WPC. All rights reserved.",
-    "view_count_prefix": "👀 Current Views:",
+    "view_count_prefix": "👀 Current Views:"
   }
 }

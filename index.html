@@ -14,15 +14,31 @@
             --footer-bg: #eee;
             --sidebar-bg: #fff8dc;
             --sidebar-border: #ddd;
+            --menu-title-bg-start: #f6e27a; /* 新增變數 */
+            --menu-title-bg-end: #f2c94c; /* 新增變數 */
+            --menu-title-hover-bg-start: #f2c94c; /* 新增變數 */
+            --menu-title-hover-bg-end: #e6b800; /* 新增變數 */
+            --submenu-bg: rgba(255, 255, 255, 0.5); /* 新增變數 */
+            --submenu-item-border: rgba(0,0,0,0.1); /* 新增變數 */
+            --submenu-item-hover-bg: rgba(255, 235, 59, 0.3); /* 新增變數 */
+            --member-card-bg: #fffbe6; /* 新增變數 */
         }
 
         body.dark-mode {
             --bg-color: #1c1c1c;
-            --text-color: #f0f0f0;
+            --text-color: #f0f0f0; /* 調整為更亮的顏色 */
             --header-bg: #333;
             --footer-bg: #222;
             --sidebar-bg: #2a2a2a;
-            --sidebar-border: #444;
+            --sidebar-border: #666; /* 調整邊界顏色，使其在暗色模式下可見 */
+            --menu-title-bg-start: #555; /* 夜間模式下的菜單標題背景色 */
+            --menu-title-bg-end: #444; /* 夜間模式下的菜單標題背景色 */
+            --menu-title-hover-bg-start: #666; /* 夜間模式下的菜單標題懸停背景色 */
+            --menu-title-hover-bg-end: #555; /* 夜間模式下的菜單標題懸停背景色 */
+            --submenu-bg: rgba(50, 50, 50, 0.7); /* 夜間模式下的子菜單背景色 */
+            --submenu-item-border: rgba(255,255,255,0.1); /* 夜間模式下的子菜單項目邊框 */
+            --submenu-item-hover-bg: rgba(70, 70, 70, 0.5); /* 夜間模式下的子菜單項目懸停背景 */
+            --member-card-bg: #3a3a3a; /* 夜間模式下的成員卡片背景色 */
         }
 
         body {
@@ -66,6 +82,7 @@
             margin: 0;
             font-family: 'Comic Neue', cursive;
             font-size: 1.3em;
+            color: var(--text-color); /* 確保標題文字顏色正確 */
         }
 
         .sidebar-menu {
@@ -78,7 +95,7 @@
 
         .menu-title {
             padding: 1em 1.5em;
-            background: linear-gradient(135deg, #f6e27a, #f2c94c);
+            background: linear-gradient(135deg, var(--menu-title-bg-start), var(--menu-title-bg-end)); /* 使用變數 */
             cursor: pointer;
             font-weight: bold;
             font-size: 1.1em;
@@ -89,10 +106,11 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            color: var(--text-color); /* 確保標題文字顏色正確 */
         }
 
         .menu-title:hover {
-            background: linear-gradient(135deg, #f2c94c, #e6b800);
+            background: linear-gradient(135deg, var(--menu-title-hover-bg-start), var(--menu-title-hover-bg-end)); /* 使用變數 */
         }
 
         .menu-arrow {
@@ -108,7 +126,7 @@
             max-height: 0;
             overflow: hidden;
             transition: max-height 0.3s ease;
-            background: rgba(255, 255, 255, 0.5);
+            background: var(--submenu-bg); /* 使用變數 */
         }
 
         .menu-section.expanded .submenu {
@@ -119,11 +137,12 @@
             padding: 0.8em 2em;
             cursor: pointer;
             transition: background 0.3s;
-            border-bottom: 1px solid rgba(0,0,0,0.1);
+            border-bottom: 1px solid var(--submenu-item-border); /* 使用變數 */
+            color: var(--text-color); /* 確保子菜單項目文字顏色正確 */
         }
 
         .submenu-item:hover {
-            background: rgba(255, 235, 59, 0.3);
+            background: var(--submenu-item-hover-bg); /* 使用變數 */
         }
 
         .submenu-item:last-child {
@@ -182,16 +201,23 @@
         header h1 {
             margin: 0;
             font-size: 2em;
+            color: var(--text-color); /* 確保標題文字顏色正確 */
         }
         nav {
             background: #ffe680;
             padding: 0.5em;
+        }
+        body.dark-mode nav {
+            background: #444; /* 夜間模式下導航欄背景色 */
         }
         nav a {
             margin: 0 1em;
             text-decoration: none;
             color: #555;
             font-weight: bold;
+        }
+        body.dark-mode nav a {
+            color: #f0f0f0; /* 夜間模式下導航鏈接顏色 */
         }
         nav a:hover {
             text-decoration: underline;
@@ -241,19 +267,30 @@
             color: #333;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
+        body.dark-mode .view-more {
+            background: #555;
+            color: #f0f0f0;
+        }
         a {
             color: #0066cc;
             text-decoration: none;
+        }
+        body.dark-mode a {
+            color: #99ccff; /* 夜間模式下鏈接顏色 */
         }
         footer {
             background: var(--footer-bg);
             padding: 1em;
             font-size: 0.9em;
+            color: var(--text-color); /* 確保頁腳文字顏色正確 */
         }
         #stats {
             margin-top: 0.5em;
             font-size: 0.85em;
             color: #666;
+        }
+        body.dark-mode #stats {
+            color: #aaa; /* 夜間模式下統計文字顏色 */
         }
         .instagram-section {
             background: linear-gradient(135deg, #f6e27a, #f2c94c);
@@ -264,9 +301,13 @@
             box-shadow: 0 8px 16px rgba(0,0,0,0.15);
             animation: fadeInUp 1s ease-out;
         }
+        body.dark-mode .instagram-section {
+            background: linear-gradient(135deg, #444, #333); /* 夜間模式下Instagram區塊背景 */
+        }
         .instagram-section h2 {
             font-family: 'Comic Neue', cursive;
             font-weight: bold;
+            color: var(--text-color); /* 確保標題文字顏色正確 */
         }
         @keyframes fadeInUp {
             0% { opacity: 0; transform: translateY(20px); }
@@ -288,6 +329,10 @@
             cursor: pointer;
             z-index: 1000;
         }
+        body.dark-mode .toggle-button {
+            background: #ffeb3b; /* 夜間模式下切換按鈕背景色 */
+            color: #333; /* 夜間模式下切換按鈕文字顏色 */
+        }
 
         #particles-js {
             position: fixed;
@@ -300,7 +345,7 @@
 
         .member-card {
             max-width: 200px;
-            background: #fffbe6;
+            background: var(--member-card-bg); /* 使用變數 */
             border-radius: 12px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             padding: 1em;
@@ -308,6 +353,7 @@
             opacity: 0;
             transform: translateY(30px);
             animation: fadeSlideIn 1s forwards;
+            color: var(--text-color); /* 確保成員卡片文字顏色正確 */
         }
 
         .member-card:hover {
@@ -331,6 +377,9 @@
         .member-card:nth-child(3) {
             animation-delay: 0.6s;
         }
+        .member-card:nth-child(4) {
+            animation-delay: 0.8s; /* 新增第四個卡片的動畫延遲 */
+        }
 
         @keyframes fadeSlideIn {
             to {
@@ -353,6 +402,10 @@
             font-size: 1.2em;
             z-index: 1000;
         }
+        body.dark-mode #back-to-top {
+            background: #555; /* 夜間模式下回到頂部按鈕背景色 */
+            color: #f0f0f0; /* 夜間模式下回到頂部按鈕文字顏色 */
+        }
 
         /* 響應式設計 */
         @media (max-width: 768px) {
@@ -371,7 +424,6 @@
 <body>
     <div id="particles-js"></div>
 
-    <!-- 左側選單 -->
     <div class="sidebar-overlay" onclick="closeSidebar()"></div>
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
@@ -479,7 +531,6 @@
             <h2>相簿</h2>
             <div class="gallery-wrapper">
                 <div class="gallery-marquee">
-                    <iframe src="https://drive.google.com/file/d/1chRyUCDUTOqVmeBr8XICTaWSp9fDcRIN/preview" width="480" height="480" allow="autoplay"></iframe>
                     <img src="https://raw.githubusercontent.com/mygodcatisfat/mygodcatisfat.github.io/refs/heads/main/wolf_eat_bun.jpg" alt="自訂圖片">
                     <img src="https://raw.githubusercontent.com/mygodcatisfat/mygodcatisfat.github.io/refs/heads/main/pic_wolf_pig.jpg" alt="圖片2">
                     <img src="https://raw.githubusercontent.com/mygodcatisfat/mygodcatisfat.github.io/refs/heads/main/pic_bo_sleep.jpg" alt="圖片3">
@@ -530,7 +581,6 @@
         </footer>
     </div>
 
-    <!-- 回到最上方按鈕 -->
     <button id="back-to-top" title="回到最上方">▲</button>
 
     <script>

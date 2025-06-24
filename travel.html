@@ -1,0 +1,1722 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title data-i18n="page_title">歡迎來到偶的小天地 - 探索世界</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter font for new sections (preferred for blog/AI, also for general body) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Comic Neue font from original file (for headers/titles where specified) -->
+    <link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
+    <style>
+        /* Original CSS variables from index.html, extended for new sections and consistency */
+        :root {
+            --bg-color: #fdf6e3;
+            --text-color: #333;
+            --header-bg: #ffcc00;
+            --footer-bg: #eee;
+            --sidebar-bg: #fff8dc;
+            --sidebar-border: #ddd;
+            --menu-title-bg-start: #f6e27a;
+            --menu-title-bg-end: #f2c94c;
+            --menu-title-hover-bg-start: #f2c94c;
+            --menu-title-hover-bg-end: #e6b800;
+            --submenu-bg: rgba(255, 255, 255, 0.5);
+            --submenu-item-border: rgba(0,0,0,0.1);
+            --submenu-item-hover-bg: rgba(255, 235, 59, 0.3);
+            --member-card-bg: #fffbe6; /* Renamed to more general 'card-bg' if no members */
+            --dark-mode-toggle-bg: #222;
+            --dark-mode-toggle-color: white;
+            --language-button-bg: #f0f0f0;
+            --language-button-color: #333;
+            --language-options-bg: #f9f9f9;
+            --language-option-hover-bg: #e0e0e0;
+
+            /* New variables for consistency across all sections */
+            --accent-color-light: #eff6ff; /* Used for light backgrounds in blog */
+            --accent-color-dark: #3182CE; /* Used for dark accents like buttons/links in blog */
+            --tag-bg: #ffeb3b; /* Unified tag background */
+            --tag-text: #333; /* Unified tag text color */
+        }
+
+        body.dark-mode {
+            --bg-color: #1c1c1c;
+            --text-color: #f0f0f0;
+            --header-bg: #333;
+            --footer-bg: #222;
+            --sidebar-bg: #2a2a2a;
+            --sidebar-border: #666;
+            --menu-title-bg-start: #555;
+            --menu-title-bg-end: #444;
+            --menu-title-hover-bg-start: #666;
+            --menu-title-hover-bg-end: #555;
+            --submenu-bg: rgba(50, 50, 50, 0.7);
+            --submenu-item-border: rgba(255,255,255,0.1);
+            --submenu-item-hover-bg: rgba(70, 70, 70, 0.5);
+            --member-card-bg: #3a3a3a; /* Consistent with other cards */
+            --dark-mode-toggle-bg: #ffeb3b; /* Still bright for visibility */
+            --dark-mode-toggle-color: #333;
+            --language-button-bg: #444;
+            --language-button-color: #f0f0f0;
+            --language-options-bg: #3a3a3a;
+            --language-option-hover-bg: #555;
+
+            /* Dark mode specific for new elements */
+            --accent-color-light: #2c5282;
+            --accent-color-dark: #63B3ED;
+            --tag-bg: #333; /* Darker tag background */
+            --tag-text: #ffeb3b; /* Bright accent for tag text */
+        }
+
+        body {
+            font-family: "Inter", sans-serif, "Helvetica Neue"; /* Prioritize Inter, fallback to Helvetica Neue */
+            background: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            text-align: center;
+            transition: background 0.3s, color 0.3s;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        /* Sidebar Styles (from original index.html) */
+        .sidebar {
+            position: fixed;
+            left: -280px;
+            top: 0;
+            width: 280px;
+            height: 100vh;
+            background: var(--sidebar-bg);
+            border-right: 2px solid var(--sidebar-border);
+            z-index: 1001;
+            transition: left 0.3s ease;
+            overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar.open {
+            left: 0;
+        }
+
+        .sidebar-header {
+            padding: 1.5em;
+            background: var(--header-bg);
+            border-bottom: 2px solid var(--sidebar-border);
+        }
+
+        .sidebar-header h3 {
+            margin: 0;
+            font-family: 'Comic Neue', cursive;
+            font-size: 1.3em;
+            color: var(--text-color);
+        }
+
+        .sidebar-menu {
+            padding: 1em 0;
+            flex-grow: 1;
+        }
+
+        .menu-section {
+            margin-bottom: 0.5em;
+        }
+
+        .menu-title {
+            padding: 1em 1.5em;
+            background: linear-gradient(135deg, var(--menu-title-bg-start), var(--menu-title-bg-end));
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.1em;
+            border: none;
+            width: 100%;
+            text-align: left;
+            transition: background 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-color);
+        }
+
+        .menu-title:hover {
+            background: linear-gradient(135deg, var(--menu-title-hover-bg-start), var(--menu-title-hover-bg-end));
+        }
+
+        .menu-arrow {
+            transition: transform 0.3s;
+            font-size: 0.8em;
+        }
+
+        .menu-section.expanded .menu-arrow {
+            transform: rotate(90deg);
+        }
+
+        .submenu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            background: var(--submenu-bg);
+        }
+
+        .menu-section.expanded .submenu {
+            max-height: 300px; /* Adjust as needed */
+        }
+
+        .submenu-item {
+            padding: 0.8em 2em;
+            cursor: pointer;
+            transition: background 0.3s;
+            border-bottom: 1px solid var(--submenu-item-border);
+            color: var(--text-color);
+        }
+
+        .submenu-item:hover {
+            background: var(--submenu-item-hover-bg);
+        }
+
+        .submenu-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Menu Toggle Button (from original index.html, z-index increased) */
+        .menu-toggle {
+            position: fixed;
+            top: 1em;
+            left: 1em;
+            background: #ffeb3b;
+            color: #333;
+            border: none;
+            padding: 0.5em 0.8em;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 9999; /* Increased z-index to ensure visibility */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            font-size: 1.2em;
+            transition: background 0.3s;
+        }
+
+        .menu-toggle:hover {
+            background: #f2c94c;
+        }
+
+        /* Overlay (from original index.html) */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+
+        .sidebar-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Main Content Adjustment (from original index.html) */
+        .main-content {
+            transition: margin-left 0.3s ease;
+        }
+
+        header {
+            background: var(--header-bg);
+            padding: 1em 0;
+        }
+        header h1 {
+            margin: 0;
+            font-family: 'Comic Neue', cursive; /* Keep original font */
+            font-size: 2em;
+            color: var(--text-color);
+        }
+        /* Main Navigation Links (from original index.html, enhanced with Tailwind for responsiveness) */
+        .main-nav-links {
+            background: #ffe680;
+            padding: 0.5em;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap; /* Allow links to wrap on smaller screens */
+        }
+        body.dark-mode .main-nav-links {
+            background: #444;
+        }
+        .main-nav-links a {
+            margin: 0 1em;
+            text-decoration: none;
+            color: #555;
+            font-weight: bold;
+            padding: 0.5em 0.8em; /* Add padding for better touch targets */
+            border-radius: 5px; /* Rounded corners for links */
+            transition: background-color 0.3s, color 0.3s;
+        }
+        body.dark-mode .main-nav-links a {
+            color: #f0f0f0;
+        }
+        .main-nav-links a:hover {
+            background-color: rgba(0,0,0,0.1); /* Subtle hover effect */
+            text-decoration: none; /* Remove underline on hover, prefer background change */
+        }
+        body.dark-mode .main-nav-links a:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+
+        /* Hero Section (from travel-blog-page, adapted to theme) */
+        .hero-section {
+            background-image: url('https://placehold.co/1200x400/FFCC00/333333?text=探索世界'); /* Using header-bg color from index.html */
+            background-size: cover;
+            background-position: center;
+            color: var(--text-color);
+            padding: 5em 1em;
+            border-radius: 15px;
+            margin: 2em auto;
+            max-width: 1200px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+        }
+        body.dark-mode .hero-section {
+            background-image: url('https://placehold.co/1200x400/333333/F0F0F0?text=探索世界');
+        }
+        .hero-section .text-center {
+            background: rgba(0,0,0,0.3);
+            padding: 2em;
+            border-radius: 10px;
+        }
+        .hero-section h1 {
+            font-family: 'Comic Neue', cursive; /* Use original font */
+            font-size: 3em;
+            margin-bottom: 0.5em;
+            color: white; /* Always white for contrast */
+        }
+        .hero-section p {
+            font-size: 1.2em;
+            margin-bottom: 1.5em;
+            color: #eee;
+        }
+        .hero-section button {
+            background-color: #ffeb3b; /* Use your yellow accent color */
+            color: #333;
+            font-weight: bold;
+            padding: 0.8em 2em;
+            border-radius: 9999px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+        .hero-section button:hover {
+            background-color: #f2c94c;
+            transform: translateY(-3px);
+        }
+
+        /* Blog Section & Post Cards (from travel-blog-page, adapted to theme) */
+        .blog-section {
+            padding: 2em;
+        }
+        .blog-section h2 {
+            font-family: 'Comic Neue', cursive; /* Keep original font */
+            font-weight: bold;
+            color: var(--text-color);
+            margin-bottom: 1.5em;
+        }
+        .post-card {
+            background: var(--member-card-bg); /* Consistent with member cards */
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 1.5em;
+            margin-bottom: 2em;
+            transition: transform 0.3s, box-shadow 0.3s;
+            color: var(--text-color);
+            text-align: left;
+        }
+        .post-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+        .post-card img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 1em;
+        }
+        .post-card span.text-sm {
+            color: #666;
+        }
+        body.dark-mode .post-card span.text-sm {
+            color: #aaa;
+        }
+        .post-card h3 {
+            font-family: 'Inter', sans-serif; /* Keep Inter for blog titles */
+            font-weight: 600;
+            font-size: 1.8em;
+            margin-bottom: 0.8em;
+            color: var(--text-color);
+        }
+        .post-card p {
+            font-size: 1em;
+            line-height: 1.6;
+            margin-bottom: 1em;
+            color: var(--text-color);
+        }
+        .post-card a {
+            color: var(--header-bg); /* Use header accent color for links */
+            font-weight: bold;
+        }
+        body.dark-mode .post-card a {
+            color: var(--dark-mode-toggle-bg); /* Use dark mode accent color */
+        }
+        /* Unified Tag Style */
+        .tag {
+            background-color: var(--tag-bg);
+            color: var(--tag-text);
+            font-size: 0.75em;
+            padding: 0.3em 0.8em;
+            border-radius: 9999px;
+            display: inline-block;
+            margin-right: 0.5em;
+            margin-bottom: 0.5em;
+        }
+        body.dark-mode .tag {
+            background-color: var(--tag-bg);
+            color: var(--tag-text);
+        }
+
+        #load-more-posts {
+            background: var(--language-button-bg); /* Consistent button style */
+            color: var(--language-button-color);
+            padding: 0.8em 1.5em;
+            border-radius: 9999px;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        #load-more-posts:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        /* Sidebar Widgets (from travel-blog-page, adapted to theme) */
+        .sidebar-widget {
+            background: var(--member-card-bg); /* Consistent with member cards */
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 1.5em;
+            margin-bottom: 2em;
+            text-align: left;
+            color: var(--text-color);
+        }
+        .sidebar-widget h3 {
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 1.5em;
+            margin-bottom: 1em;
+            color: var(--text-color);
+        }
+        .sidebar-widget input[type="text"], .sidebar-widget textarea, .sidebar-widget input[type="email"] {
+            background: var(--bg-color);
+            border: 1px solid var(--sidebar-border);
+            border-radius: 8px;
+            padding: 0.6em 1em;
+            width: 100%;
+            color: var(--text-color);
+        }
+        body.dark-mode .sidebar-widget input, body.dark-mode .sidebar-widget textarea {
+            background: #3a3a3a;
+            border-color: #555;
+        }
+        .sidebar-widget button {
+            background: var(--header-bg); /* Use header accent color */
+            color: #333;
+            font-weight: bold;
+            padding: 0.8em 1.5em;
+            border-radius: 9999px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        body.dark-mode .sidebar-widget button {
+            background: var(--dark-mode-toggle-bg);
+            color: var(--dark-mode-toggle-color);
+        }
+        .sidebar-widget button:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        .sidebar-widget ul li a {
+            color: var(--text-color);
+            transition: color 0.3s, text-decoration 0.3s;
+        }
+        .sidebar-widget ul li a:hover {
+            color: var(--header-bg);
+            text-decoration: underline;
+        }
+        body.dark-mode .sidebar-widget ul li a:hover {
+            color: var(--dark-mode-toggle-bg);
+        }
+        .sidebar-widget .flex.items-start img {
+            border-radius: 8px;
+            object-fit: cover;
+            width: 60px;
+            height: 60px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* Message Box Styles (from travel-blog-page) */
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 2em;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            z-index: 10000; /* Higher z-index to be on top of everything */
+            max-width: 90%;
+            text-align: center;
+            border: 1px solid var(--sidebar-border);
+        }
+        .message-box-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 9999; /* Higher z-index */
+        }
+        .message-box button {
+            background-color: var(--header-bg);
+            color: #333;
+            padding: 0.8em 1.5em;
+            border-radius: 8px;
+            font-weight: bold;
+            margin-top: 1em;
+            transition: background-color 0.3s;
+        }
+        body.dark-mode .message-box button {
+            background-color: var(--dark-mode-toggle-bg);
+            color: var(--dark-mode-toggle-color);
+        }
+        .message-box button:hover {
+            opacity: 0.9;
+        }
+
+        /* Specific for AI Plan Output (from travel-blog-page) */
+        #plan-output {
+            background: var(--submenu-bg);
+            border: 1px solid var(--submenu-item-border);
+            padding: 1em;
+            border-radius: 8px;
+            color: var(--text-color);
+            text-align: left;
+        }
+        #plan-output h4 {
+            color: var(--header-bg);
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            margin-bottom: 0.5em;
+        }
+        body.dark-mode #plan-output h4 {
+            color: var(--dark-mode-toggle-bg);
+        }
+        #plan-content ul {
+            list-style-type: disc;
+            padding-left: 1.5em;
+        }
+        #plan-content li {
+            margin-bottom: 0.3em;
+        }
+
+        /* Existing Section Styles (from original index.html) - These will be removed from HTML */
+        /* .gallery-wrapper, .gallery-marquee, .member-card, .member-grid, .instagram-section */
+        /* Keeping generic section styles but specifics will be gone with HTML elements */
+        section {
+            padding: 2em; /* Ensure consistent padding */
+            margin: 2em auto; /* Centering sections */
+            max-width: 1200px; /* Max width for consistency */
+        }
+        
+        .view-more {
+            display: inline-block;
+            margin-top: 1em;
+            font-size: 0.95em;
+            background: #ffeb3b;
+            padding: 0.5em 1em;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            color: #333;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        body.dark-mode .view-more {
+            background: #555;
+            color: #f0f0f0;
+        }
+        a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        body.dark-mode a {
+            color: #99ccff;
+        }
+        footer {
+            background: var(--footer-bg);
+            padding: 1em;
+            font-size: 0.9em;
+            color: var(--text-color);
+        }
+        #stats {
+            margin-top: 0.5em;
+            font-size: 0.85em;
+            color: #666;
+        }
+        body.dark-mode #stats {
+            color: #aaa;
+        }
+        
+        .toggle-button-sidebar {
+            width: calc(100% - 3em);
+            margin: 0.75em 1.5em;
+            background: var(--dark-mode-toggle-bg);
+            color: var(--dark-mode-toggle-color);
+            border: none;
+            padding: 0.8em 1em;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 1000;
+            font-size: 1em;
+            transition: background 0.3s, color 0.3s;
+            text-align: center;
+        }
+
+        .toggle-button-sidebar:hover {
+            opacity: 0.9;
+        }
+
+        /* Language Selection Menu Styles (from original index.html) */
+        .language-selection-container {
+            margin: 0.75em 1.5em;
+            position: relative;
+            z-index: 1;
+        }
+
+        .language-button {
+            width: 100%;
+            background: var(--language-button-bg);
+            color: var(--language-button-color);
+            border: none;
+            padding: 0.8em 1em;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            text-align: center;
+            transition: background 0.3s, color 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .language-button:hover {
+            opacity: 0.9;
+        }
+
+        .language-options {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            background: var(--language-options-bg);
+            border-radius: 5px;
+            margin-top: 0.5em;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .language-options.open {
+            max-height: 100px;
+        }
+
+        .language-option-item {
+            padding: 0.8em 1em;
+            cursor: pointer;
+            color: var(--text-color);
+            transition: background 0.2s;
+            text-align: left;
+        }
+
+        .language-option-item:hover {
+            background: var(--language-option-hover-bg);
+        }
+
+        .language-option-item:first-child {
+            border-top-left-radius: 5px;
+            border-top-right-radius: 5px;
+        }
+
+        .language-option-item:last-child {
+            border-bottom-left-radius: 5px;
+            border-bottom-right-radius: 5px;
+        }
+
+        #particles-js {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        /* Responsive Design (from original index.html) */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 250px;
+                left: -250px;
+            }
+            
+            .menu-toggle {
+                font-size: 1em;
+                padding: 0.4em 0.6em;
+            }
+            .gallery-marquee { /* This class will no longer exist in HTML, but keeping for reference */
+                animation-duration: 5s; /* Faster for mobile */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="particles-js"></div>
+
+    <div class="sidebar-overlay" onclick="closeSidebar()"></div>
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h3 data-i18n="sidebar_title">🐺 狼狼的世界</h3>
+        </div>
+        <div class="sidebar-menu">
+            <div class="menu-section">
+                <button class="menu-title" onclick="toggleSubmenu(this)">
+                    <span data-i18n="menu_daily_life">狼的日常 | 生活</span>
+                    <span class="menu-arrow">▶</span>
+                </button>
+                <div class="submenu">
+                    <div class="submenu-item" onclick="showContent('daily-morning')">🌤️ <span data-i18n="daily_morning">晨間時光</span></div>
+                    <div class="submenu-item" onclick="showContent('daily-meal')">🍽️ <span data-i18n="daily_meal">用餐時間</span></div>
+                    <div class="submenu-item" onclick="showContent('daily-nap')">😴 <span data-i18n="daily_nap">午休小憩</span></div>
+                    <div class="submenu-item" onclick="showContent('daily-play')">🎮 <span data-i18n="daily_play">遊戲時光</span></div>
+                    <div class="submenu-item" onclick="showContent('daily-evening')">🌙 <span data-i18n="daily_evening">夜晚活動</span></div>
+                </div>
+            </div>
+            
+            <div class="menu-section expanded"> <!-- Keep travel expanded by default for easy access to AI -->
+                <button class="menu-title" onclick="toggleSubmenu(this)">
+                    <span data-i18n="menu_travel">狼狼來了 | 旅遊</span>
+                    <span class="menu-arrow">▶</span>
+                </button>
+                <div class="submenu">
+                    <div class="submenu-item" onclick="showContent('travel-taiwan')"><span data-i18n="travel_taiwan">臺灣</span></div>
+                    <div class="submenu-item" onclick="showContent('travel-osaka')"><span data-i18n="travel_osaka">大阪</span></div>
+                    <div class="submenu-item" onclick="showContent('travel-tokyo')"><span data-i18n="travel_tokyo">東京</span></div>
+                    <div class="submenu-item" onclick="showContent('travel-germany')"><span data-i18n="travel_germany">德國</span></div>
+                    <div class="submenu-item" onclick="showContent('travel-austria')"><span data-i18n="travel_austria">奧地利</span></div>
+                    <div class="submenu-item" onclick="showContent('travel-czech')"><span data-i18n="travel_czech">捷克</span></div>
+                    <!-- New: Gemini-powered Travel Itinerary Generator (inline in sidebar for quick access) -->
+                    <div class="language-selection-container mt-4 p-2 bg-yellow-100 rounded-md">
+                        <h4 class="text-lg font-semibold mb-2 text-gray-800" data-i18n="itinerary_generator_title">✨ 旅行計劃生成器 ✨</h4>
+                        <div class="space-y-3 text-left">
+                            <div>
+                                <label for="destination-input" class="block text-gray-700 text-sm font-bold mb-1" data-i18n="itinerary_generator_destination_label">目的地:</label>
+                                <input type="text" id="destination-input" placeholder="例如：日本東京" class="w-full border border-gray-300 rounded-lg py-1.5 px-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 text-gray-800">
+                            </div>
+                            <div>
+                                <label for="preferences-input" class="block text-gray-700 text-sm font-bold mb-1" data-i18n="itinerary_generator_preferences_label">旅行偏好/天數:</label>
+                                <textarea id="preferences-input" rows="2" placeholder="例如：3天，想體驗文化、美食和購物" class="w-full border border-gray-300 rounded-lg py-1.5 px-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 text-gray-800"></textarea>
+                            </div>
+                            <button id="generate-plan-button" class="bg-yellow-500 hover:bg-yellow-600 text-gray-800 font-bold py-2 px-4 rounded-full shadow transition duration-300 ease-in-out transform hover:scale-105 w-full text-sm" data-i18n="itinerary_generator_button">
+                                生成旅行計劃
+                            </button>
+                            <div id="loading-indicator" class="text-center text-gray-600 mt-2 hidden">
+                                <svg class="animate-spin h-4 w-4 mr-2 inline-block text-yellow-600" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span data-i18n="itinerary_generator_loading">正在生成中...</span>
+                            </div>
+                            <div id="plan-output" class="mt-3 p-3 bg-yellow-50 rounded-lg border border-yellow-200 hidden">
+                                <h4 class="text-md font-semibold mb-1 text-gray-800" data-i18n="itinerary_generator_output_title">您的旅行計劃：</h4>
+                                <div id="plan-content" class="text-gray-700 text-xs leading-normal"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="menu-section">
+                <button class="menu-title" onclick="toggleSubmenu(this)">
+                    <span data-i18n="menu_food">狼吞虎嚥 | 食記</span>
+                    <span class="menu-arrow">▶</span>
+                </button>
+                <div class="submenu">
+                    <div class="submenu-item" onclick="showContent('food-favorites')">⭐ <span data-i18n="food_favorites">最愛美食</span></div>
+                    <div class="submenu-item" onclick="showContent('food-recipes')">👨‍🍳 <span data-i18n="food_recipes">食譜分享</span></div>
+                    <div class="submenu-item" onclick="showContent('food-reviews')">📝 <span data-i18n="food_reviews">美食評論</span></div>
+                    <div class="submenu-item" onclick="showContent('food-hunting')">🔍 <span data-i18n="food_hunting">覓食地圖</span></div>
+                    <div class="submenu-item" onclick="showContent('food-tips')">💡 <span data-i18n="food_tips">美食小貼士</span></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="language-selection-container">
+            <button class="language-button" id="languageButton" onclick="toggleLanguageOptions()">
+                <span id="languageButtonText">LANGUAGE</span>
+                <span class="menu-arrow">▶</span>
+            </button>
+            <div class="language-options" id="languageOptions">
+                <div class="language-option-item" onclick="selectLanguage('zh-Hant')"><span data-i18n="lang_zh">繁體中文</span></div>
+                <div class="language-option-item" onclick="selectLanguage('en')"><span data-i18n="lang_en">English</span></div>
+            </div>
+        </div>
+
+        <button class="toggle-button-sidebar" onclick="toggleDarkMode()" data-i18n="toggle_dark_mode">切換夜間模式</button>
+    </div>
+
+    <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+
+    <div class="main-content">
+        <header>
+            <h1 data-i18n="header_title">偶素一豬狼 嘎</h1>
+        </header>
+
+        <nav class="main-nav-links">
+            <a href="#hero-section" data-i18n="nav_blog_home">網誌首頁</a>
+            <a href="#latest-posts-section" data-i18n="nav_latest_posts">最新文章</a>
+            <!-- Removed: About, Members, Gallery, Instagram, Contact links -->
+        </nav>
+
+        <!-- New: Hero Section (from travel-blog-page) -->
+        <section id="hero-section" class="hero-section">
+            <div class="text-center">
+                <h1 data-i18n="hero_title">開始你的下一個冒險</h1>
+                <p data-i18n="hero_subtitle">分享旅行故事、探索新目的地、計劃難忘的旅程</p>
+                <button onclick="scrollToSection('latest-posts-section')" data-i18n="hero_button">閱讀最新網誌</button>
+            </div>
+        </section>
+
+        <!-- New: Blog Posts Section (from travel-blog-page, adapted to grid layout) -->
+        <section id="latest-posts-section" class="container mx-auto my-12 px-6 grid grid-cols-1 md:grid-cols-3 gap-12">
+            <div class="md:col-span-2"> <!-- Blog posts go here -->
+                <h2 class="text-4xl font-bold mb-8 text-center md:text-left text-gray-800" data-i18n="latest_posts_title">最新網誌文章</h2>
+
+                <!-- Blog Post 1 -->
+                <article class="post-card">
+                    <img src="https://placehold.co/800x400/FFCC00/333333?text=日本櫻花之旅" alt="日本櫻花之旅" class="w-full h-auto rounded-lg mb-6 shadow-md">
+                    <span class="text-sm text-gray-500 mb-2 block">2023年4月15日 · 亞洲</span>
+                    <h3 class="text-3xl font-semibold text-gray-900 mb-4">日本櫻花之旅：粉色花海中的夢幻體驗</h3>
+                    <p class="text-gray-700 leading-relaxed mb-4">
+                        每年春天，日本都會變成一片粉色的海洋，吸引著來自世界各地的遊客。這篇文章將帶你深入東京、京都和大阪，體驗櫻花季節的獨特魅力，從傳統的賞櫻活動到美味的季節限定美食，一一為你呈現。
+                    </p>
+                    <a href="#" class="text-indigo-600 hover:text-indigo-800 font-bold transition duration-300">
+                        閱讀更多 &rarr;
+                    </a>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        <span class="tag" data-i18n="tag_culture">文化</span>
+                        <span class="tag" data-i18n="tag_food">美食</span>
+                        <span class="tag" data-i18n="tag_nature">自然</span>
+                    </div>
+                </article>
+
+                <!-- Blog Post 2 -->
+                <article class="post-card">
+                    <img src="https://placehold.co/800x400/FFCC00/333333?text=歐洲古城探險" alt="歐洲古城探險" class="w-full h-auto rounded-lg mb-6 shadow-md">
+                    <span class="text-sm text-gray-500 mb-2 block">2023年3月10日 · 歐洲</span>
+                    <h3 class="text-3xl font-semibold text-gray-900 mb-4">穿越時空：歐洲古城深度探險</h3>
+                    <p class="text-gray-700 leading-relaxed mb-4">
+                        從羅馬的競技場到布拉格的查理大橋，歐洲古城充滿了歷史的痕跡和迷人的故事。這篇文章將帶你漫步於這些古老的街道，探索隱藏的巷弄，品味當地的咖啡文化，感受歲月沉澱的魅力。
+                    </p>
+                    <a href="#" class="text-indigo-600 hover:text-indigo-800 font-bold transition duration-300">
+                        閱讀更多 &rarr;
+                    </a>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        <span class="tag" data-i18n="tag_history">歷史</span>
+                        <span class="tag" data-i18n="tag_architecture">建築</span>
+                        <span class="tag" data-i18n="tag_art">藝術</span>
+                    </div>
+                </article>
+
+                <!-- Blog Post 3 -->
+                <article class="post-card">
+                    <img src="https://placehold.co/800x400/FFCC00/333333?text=泰國海島度假" alt="泰國海島度假" class="w-full h-auto rounded-lg mb-6 shadow-md">
+                    <span class="text-sm text-gray-500 mb-2 block">2023年2月20日 · 東南亞</span>
+                    <h3 class="text-3xl font-semibold text-gray-900 mb-4">泰國海島度假：陽光、沙灘與熱帶風情</h3>
+                    <p class="text-gray-700 leading-relaxed mb-4">
+                        渴望陽光、沙灘和碧藍海水嗎？泰國的普吉島、蘇美島和PP島是理想的選擇。這篇文章將分享如何在這些熱帶天堂中享受浮潛、水上活動、泰式按摩和美味的海鮮大餐，讓你的度假之旅充滿活力。
+                    </p>
+                    <a href="#" class="text-indigo-600 hover:text-indigo-800 font-bold transition duration-300">
+                        閱讀更多 &rarr;
+                    </a>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        <span class="tag" data-i18n="tag_beach">海灘</span>
+                        <span class="tag" data-i18n="tag_water_activities">水上活動</span>
+                        <span class="tag" data-i18n="tag_relaxation">放鬆</span>
+                    </div>
+                </article>
+
+                <!-- Load More Button -->
+                <div class="text-center mt-8">
+                    <button id="load-more-posts" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-full shadow-md transition duration-300 ease-in-out" data-i18n="load_more_posts">
+                        載入更多文章
+                    </button>
+                </div>
+            </div>
+
+            <!-- New: Blog Sidebar (from travel-blog-page, now on the right side of main content) -->
+            <aside class="md:col-span-1">
+                <!-- Search Widget -->
+                <div class="sidebar-widget">
+                    <h3 data-i18n="search_blog_title">搜尋網誌</h3>
+                    <div class="relative">
+                        <input type="text" placeholder="輸入關鍵字..." class="w-full pr-10">
+                        <button class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-indigo-600">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- New: Gemini-powered Destination Fact Finder -->
+                <div class="sidebar-widget">
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-4" data-i18n="fact_finder_title">✨ 目的地資訊快查 ✨</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="fact-destination-input" class="block text-gray-700 text-sm font-bold mb-2" data-i18n="fact_finder_label">目的地:</label>
+                            <input type="text" id="fact-destination-input" placeholder="例如：法國巴黎" class="w-full border border-gray-300 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-yellow-500 text-gray-800">
+                        </div>
+                        <button id="get-facts-button" class="bg-yellow-500 hover:bg-yellow-600 text-gray-800 font-bold py-3 px-6 rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-105 w-full" data-i18n="fact_finder_button">
+                            獲取資訊
+                        </button>
+                        <div id="fact-loading-indicator" class="text-center text-gray-600 mt-4 hidden">
+                            <svg class="animate-spin h-5 w-5 mr-3 inline-block text-yellow-600" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span data-i18n="fact_finder_loading">正在查詢中...</span>
+                        </div>
+                        <div id="fact-output" class="mt-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200 hidden">
+                            <h4 class="text-lg font-semibold mb-2 text-gray-800" data-i18n="fact_finder_output_title">目的地概覽：</h4>
+                            <div id="fact-content" class="text-gray-700 text-sm leading-relaxed"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Categories Widget -->
+                <div class="sidebar-widget">
+                    <h3 data-i18n="categories_title">分類</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-700 hover:text-indigo-600 hover:underline">亞洲 (5)</a></li>
+                        <li><a href="#" class="text-gray-700 hover:text-indigo-600 hover:underline">歐洲 (3)</a></li>
+                        <li><a href="#" class="text-gray-700 hover:text-indigo-600 hover:underline">美洲 (2)</a></li>
+                        <li><a href="#" class="text-gray-700 hover:text-indigo-600 hover:underline">非洲 (1)</a></li>
+                        <li><a href="#" class="text-gray-700 hover:text-indigo-600 hover:underline">大洋洲 (2)</a></li>
+                    </ul>
+                </div>
+
+                <!-- Popular Posts Widget -->
+                <div class="sidebar-widget">
+                    <h3 data-i18n="popular_posts_title">熱門文章</h3>
+                    <ul class="space-y-4">
+                        <li class="flex items-start">
+                            <img src="https://placehold.co/60x60/A0AEC0/FFFFFF?text=京都" alt="京都秋色" class="rounded-md mr-3 shadow">
+                            <div>
+                                <a href="#" class="text-lg font-medium text-gray-900 hover:text-indigo-600">京都秋色：紅葉下的古都之美</a>
+                                <p class="text-sm text-gray-500">2022年11月5日</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <img src="https://placehold.co/60x60/CBD5E0/FFFFFF?text=冰島" alt="冰島極光" class="rounded-md mr-3 shadow">
+                            <div>
+                                <a href="#" class="text-lg font-medium text-gray-900 hover:text-indigo-600">冰島極光：追逐北極光的奇幻之旅</a>
+                                <p class="text-sm text-gray-500">2023年1月20日</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <img src="https://placehold.co/60x60/E2E8F0/FFFFFF?text=馬爾地夫" alt="馬爾地夫天堂" class="rounded-md mr-3 shadow">
+                            <div>
+                                <a href="#" class="text-lg font-medium text-gray-900 hover:text-indigo-600">馬爾地夫：藍色天堂的奢華享受</a>
+                                <p class="text-sm text-gray-500">2022年10月1日</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Newsletter Subscription -->
+                <div class="sidebar-widget bg-yellow-500 text-gray-800 text-center">
+                    <h3 class="text-2xl font-semibold mb-4" data-i18n="newsletter_title">訂閱我們的電子報</h3>
+                    <p class="mb-4 text-gray-700" data-i18n="newsletter_subtitle">獲取最新旅遊資訊和獨家優惠！</p>
+                    <form class="flex flex-col space-y-4">
+                        <input type="email" placeholder="輸入您的電子郵件" class="w-full p-3 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-700">
+                        <button type="submit" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105" data-i18n="newsletter_button">
+                            立即訂閱
+                        </button>
+                    </form>
+                </div>
+            </aside>
+        </section>
+
+        <!-- Removed: About, Members, Gallery, Instagram, Contact sections -->
+        <!-- Footer will follow directly after the latest-posts-section -->
+
+        <footer>
+            <span data-i18n="footer_copyright">© 2025 嘎豬窩. 保留所有權利。</span>
+            <div id="stats">
+                <span data-i18n="view_count_prefix">👀 目前瀏覽次數：</span>
+                <span id="view-count">讀取中...</span>
+            </div>
+            <script>
+                // Original view count script (kept as is)
+                fetch("https://script.google.com/macros/s/AKfycbw059wuvXTQhM4SBf8QRPd0l_dcN95PeK6VqD6FV1iN0xNnRRRuYpPLBV0yKyugTTc/exec")
+                    .then(res => res.json())
+                    .then(data => {
+                        document.getElementById("view-count").innerText = data.count;
+                    })
+                    .catch(() => {
+                        document.getElementById("view-count").innerText = "無法載入";
+                    });
+            </script>
+        </footer>
+    </div>
+
+    <button id="back-to-top" title="回到最上方" data-i18n="back_to_top_button">▲</button>
+
+    <!-- Custom Message Box Container -->
+    <div id="message-container"></div>
+
+    <script>
+        let currentLanguage = 'zh-Hant'; // 預設語言
+        let translations = {}; // 儲存所有語言的翻譯數據
+
+        const JSON_URL = 'https://raw.githubusercontent.com/mygodcatisfat/mygodcatisfat.github.io/refs/heads/main/translations.json'; // 外部 JSON 檔案連結
+
+        // 載入翻譯數據
+        async function loadTranslations() {
+            try {
+                const response = await fetch(JSON_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                translations = data;
+                console.log('Translations loaded successfully:', translations);
+            } catch (error) {
+                console.error('Error loading translations from external JSON:', error);
+                // 如果外部載入失敗，使用預設的硬編碼翻譯數據作為備用
+                translations = {
+                    "zh-Hant": {
+                        "page_title": "歡迎來到偶的小天地 - 探索世界",
+                        "sidebar_title": "🐺 狼狼的世界",
+                        "menu_daily_life": "狼的日常 | 生活",
+                        "daily_morning": "晨間時光",
+                        "daily_meal": "用餐時間",
+                        "daily_nap": "午休小憩",
+                        "daily_play": "遊戲時光",
+                        "daily_evening": "夜晚活動",
+                        "menu_travel": "狼狼來了 | 旅遊",
+                        "travel_taiwan": "臺灣",
+                        "travel_osaka": "大阪",
+                        "travel_tokyo": "東京",
+                        "travel_germany": "德國",
+                        "travel_austria": "奧地利",
+                        "travel_czech": "捷克",
+                        "menu_food": "狼吞虎嚥 | 食記",
+                        "food_favorites": "最愛美食",
+                        "food_recipes": "食譜分享",
+                        "food_reviews": "美食評論",
+                        "food_hunting": "覓食地圖",
+                        "food_tips": "美食小貼士",
+                        "lang_zh": "繁體中文",
+                        "lang_en": "English",
+                        "toggle_dark_mode": "切換夜間模式",
+                        "header_title": "偶素一豬狼 嘎",
+                        "nav_blog_home": "網誌首頁",
+                        "nav_latest_posts": "最新文章",
+                        /* Removed old navigation keys:
+                        "nav_about": "關於嘎豬窩",
+                        "nav_members": "嘎豬窩成員介紹",
+                        "nav_gallery": "相簿",
+                        "nav_instagram": "Instagram",
+                        "nav_contact": "聯絡偶",
+                        */
+                        "nav_more_images": "更多圖片", // This link could be removed or repurposed
+                        "hero_title": "開始你的下一個冒險",
+                        "hero_subtitle": "分享旅行故事、探索新目的地、計劃難忘的旅程",
+                        "hero_button": "閱讀最新網誌",
+                        "latest_posts_title": "最新網誌文章",
+                        "load_more_posts": "載入更多文章",
+                        "search_blog_title": "搜尋網誌",
+                        "categories_title": "分類",
+                        "popular_posts_title": "熱門文章",
+                        "newsletter_title": "訂閱我們的電子報",
+                        "newsletter_subtitle": "獲取最新旅遊資訊和獨家優惠！",
+                        "newsletter_button": "立即訂閱",
+                        /* Removed old section titles:
+                        "about_us_title": "關於嘎豬窩",
+                        "about_us_content": "嘎豬窩成立於...",
+                        "members_title": "嘎豬窩成員介紹",
+                        "member_wolf_name": "阿狼",
+                        "member_wolf_real_name": "本名：解昆蟲",
+                        "member_wolf_nickname": "綽號：猴子、歐練",
+                        "member_wolf_desc": "熱愛美食與發呆，是嘎豬窩的創始狼！語助詞是「嘎！」",
+                        "member_pig_name": "豬排",
+                        "member_pig_desc": "阿狼的妹妹，不會講話，但是可以用念力跟阿狼溝通。",
+                        "member_bo_name": "王藍波",
+                        "member_bo_nickname": "綽號：昂藍波、灰塵、大老鼠",
+                        "member_bo_desc": "會用眼神殺死主人的英短，是阿狼的好朋友（兼坐騎？）。",
+                        "member_chicken_name": "雞白",
+                        "member_chicken_nickname": "綽號：無",
+                        "member_chicken_desc": "原本住在老媽學姊家，後來招兵買馬來的",
+                        "gallery_title": "相簿",
+                        "view_more_images": "✨ 查看更多圖片",
+                        "instagram_title": "📸 Instagram",
+                        "contact_us_title": "聯絡偶",
+                        */
+                        "footer_copyright": "© 2025 嘎豬窩. 保留所有權利。",
+                        "view_count_prefix": "👀 目前瀏覽次數：",
+                        "back_to_top_button": "▲",
+                        "tag_culture": "文化",
+                        "tag_food": "美食",
+                        "tag_nature": "自然",
+                        "tag_history": "歷史",
+                        "tag_architecture": "建築",
+                        "tag_art": "藝術",
+                        "tag_beach": "海灘",
+                        "tag_water_activities": "水上活動",
+                        "tag_relaxation": "放鬆",
+                        "tag_adventure": "冒險",
+                        "fact_finder_title": "✨ 目的地資訊快查 ✨",
+                        "fact_finder_label": "目的地:",
+                        "fact_finder_button": "獲取資訊",
+                        "fact_finder_loading": "正在查詢中...",
+                        "fact_finder_output_title": "目的地概覽：",
+                        "itinerary_generator_title": "✨ 旅行計劃生成器 ✨",
+                        "itinerary_generator_destination_label": "目的地:",
+                        "itinerary_generator_preferences_label": "旅行偏好/天數:",
+                        "itinerary_generator_button": "生成旅行計劃",
+                        "itinerary_generator_loading": "正在生成中...",
+                        "itinerary_generator_output_title": "您的旅行計劃：",
+                        "message_input_destination": "請輸入目的地才能獲取資訊。",
+                        "message_generation_error": "生成旅行計劃時發生錯誤，請稍後再試。",
+                        "message_invalid_plan": "無法生成有效的旅行計劃，請嘗試更具體的描述。",
+                        "message_facts_error": "獲取目的地資訊時發生錯誤，請稍後再試。",
+                        "message_input_destination_for_plan": "請輸入目的地才能生成旅行計劃。"
+
+                    },
+                    "en": {
+                        "page_title": "Welcome to My Little World - Explore the World",
+                        "sidebar_title": "🐺 The Wolf's World",
+                        "menu_daily_life": "Wolf's Daily Life | Living",
+                        "daily_morning": "Morning Time",
+                        "daily_meal": "Meal Time",
+                        "daily_nap": "Afternoon Nap",
+                        "daily_play": "Gaming Time",
+                        "daily_evening": "Evening Activities",
+                        "menu_travel": "Wolf is Coming | Travel",
+                        "travel_taiwan": "Taiwan",
+                        "travel_osaka": "Osaka",
+                        "travel_tokyo": "Tokyo",
+                        "travel_germany": "Germany",
+                        "travel_austria": "Austria",
+                        "travel_czech": "Czech Republic",
+                        "menu_food": "Wolf's Appetite | Food Review",
+                        "food_favorites": "Favorite Foods",
+                        "food_recipes": "Recipe Sharing",
+                        "food_reviews": "Food Reviews",
+                        "food_hunting": "Food Hunting Map",
+                        "food_tips": "Food Tips",
+                        "lang_zh": "Traditional Chinese",
+                        "lang_en": "English",
+                        "toggle_dark_mode": "Toggle Dark Mode",
+                        "header_title": "I am a Pig Wolf, Ga",
+                        "nav_blog_home": "Blog Home",
+                        "nav_latest_posts": "Latest Posts",
+                        /* Removed old navigation keys:
+                        "nav_about": "About GaPig Den",
+                        "nav_members": "GaPig Den Members",
+                        "nav_gallery": "Gallery",
+                        "nav_instagram": "Instagram",
+                        "nav_contact": "Contact Us",
+                        */
+                        "nav_more_images": "More Images",
+                        "hero_title": "Start Your Next Adventure",
+                        "hero_subtitle": "Share travel stories, explore new destinations, plan unforgettable journeys",
+                        "hero_button": "Read Latest Blog",
+                        "latest_posts_title": "Latest Blog Posts",
+                        "load_more_posts": "Load More Posts",
+                        "search_blog_title": "Search Blog",
+                        "categories_title": "Categories",
+                        "popular_posts_title": "Popular Posts",
+                        "newsletter_title": "Subscribe to Our Newsletter",
+                        "newsletter_subtitle": "Get the latest travel info and exclusive offers!",
+                        "newsletter_button": "Subscribe Now",
+                        /* Removed old section titles:
+                        "about_us_title": "About GaPig Den",
+                        "about_us_content": "GaPig Den was founded in...",
+                        "members_title": "Introduction to GaPig Den Members",
+                        "member_wolf_name": "A-Lang (The Wolf)",
+                        "member_wolf_real_name": "Real Name: Jie Kun-Chong",
+                        "member_wolf_nickname": "Nicknames: Monkey, O-Lian",
+                        "member_wolf_desc": "Loves food and daydreaming, the founding wolf of GaPig Den! His catchphrase is 'Ga!'",
+                        "member_pig_name": "Zhu-Pai (Pork Chop)",
+                        "member_pig_desc": "A-Lang's younger sister, doesn't speak, but can communicate with A-Lang telepathically.",
+                        "member_bo_name": "Wang Lan Bo (Rambo)",
+                        "member_bo_nickname": "Nicknames: Ang Lan Bo, Dust, Big Mouse",
+                        "member_bo_desc": "A British Shorthair who can kill his owner with his eyes, A-Lang's good friend (and ride?).",
+                        "member_chicken_name": "Ji-Bai (White Chicken)",
+                        "member_chicken_nickname": "Nicknames: None",
+                        "member_chicken_desc": "Originally lived at Mom's senior sister's house, then recruited to join.",
+                        "gallery_title": "Gallery",
+                        "view_more_images": "✨ View More Images",
+                        "instagram_title": "📸 Instagram",
+                        "contact_us_title": "Contact Us",
+                        */
+                        "footer_copyright": "© 2025 GaPig Den. All rights reserved.",
+                        "view_count_prefix": "👀 Current Views:",
+                        "back_to_top_button": "▲",
+                        "tag_culture": "Culture",
+                        "tag_food": "Food",
+                        "tag_nature": "Nature",
+                        "tag_history": "History",
+                        "tag_architecture": "Architecture",
+                        "tag_art": "Art",
+                        "tag_beach": "Beach",
+                        "tag_water_activities": "Water Activities",
+                        "tag_relaxation": "Relaxation",
+                        "tag_adventure": "Adventure",
+                        "fact_finder_title": "✨ Destination Quick Facts ✨",
+                        "fact_finder_label": "Destination:",
+                        "fact_finder_button": "Get Info",
+                        "fact_finder_loading": "Querying...",
+                        "fact_finder_output_title": "Destination Overview:",
+                        "itinerary_generator_title": "✨ Travel Plan Generator ✨",
+                        "itinerary_generator_destination_label": "Destination:",
+                        "itinerary_generator_preferences_label": "Travel Preferences/Days:",
+                        "itinerary_generator_button": "Generate Plan",
+                        "itinerary_generator_loading": "Generating...",
+                        "itinerary_generator_output_title": "Your Travel Plan:",
+                        "message_input_destination": "Please enter a destination to get information.",
+                        "message_generation_error": "An error occurred while generating the travel plan. Please try again later.",
+                        "message_invalid_plan": "Could not generate a valid travel plan. Please try a more specific description.",
+                        "message_facts_error": "An error occurred while fetching destination information. Please try again later.",
+                        "message_input_destination_for_plan": "Please enter a destination to generate a travel plan."
+                    }
+                };
+            }
+        }
+
+        // 應用翻譯到頁面
+        function applyTranslations(lang) {
+            const elements = document.querySelectorAll('[data-i18n]');
+            elements.forEach(element => {
+                const key = element.getAttribute('data-i18n');
+                if (translations[lang] && translations[lang][key]) {
+                    element.innerText = translations[lang][key];
+                }
+            });
+            // 特別處理語言按鈕文本
+            const languageButtonText = document.getElementById('languageButtonText');
+            if (languageButtonText) {
+                 if (lang === 'en') {
+                    languageButtonText.innerText = 'Language Settings';
+                } else {
+                    languageButtonText.innerText = '語言設定';
+                }
+            }
+        }
+
+        // Function to show a custom message box instead of alert()
+        function showMessageBox(messageKey) {
+            const messageContainer = document.getElementById('message-container');
+            // Remove existing message box if any
+            if (messageContainer.hasChildNodes()) {
+                messageContainer.innerHTML = '';
+            }
+
+            const backdrop = document.createElement('div');
+            backdrop.classList.add('message-box-backdrop');
+
+            const messageText = translations[currentLanguage] ? translations[currentLanguage][messageKey] : messageKey; // Get translated message
+
+            const messageBox = document.createElement('div');
+            messageBox.classList.add('message-box');
+            messageBox.innerHTML = `
+                <p class="text-lg font-medium mb-4">${messageText}</p>
+                <button class="bg-yellow-500 hover:bg-yellow-600 text-gray-800 font-bold py-2 px-4 rounded-md" onclick="closeMessageBox()">確認</button>
+            `;
+
+            messageContainer.appendChild(backdrop);
+            messageContainer.appendChild(messageBox);
+        }
+
+        // Function to close the custom message box
+        function closeMessageBox() {
+            const messageContainer = document.getElementById('message-container');
+            messageContainer.innerHTML = ''; // Clear content to hide message box and backdrop
+        }
+
+        // 頁面載入時執行
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadTranslations(); // 先載入翻譯數據
+            const storedLang = localStorage.getItem('selectedLanguage') || 'zh-Hant'; // 從 localStorage 讀取或預設中文
+            selectLanguage(storedLang, false); // 應用初始語言，不觸發 alert
+
+            // Mobile menu button event listener
+            const mobileMenuButton = document.querySelector('.menu-toggle');
+            if (mobileMenuButton) {
+                mobileMenuButton.addEventListener('click', toggleSidebar);
+            }
+        });
+
+        // 左側選單功能
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.querySelector('.sidebar-overlay');
+            
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        }
+
+        function closeSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.querySelector('.sidebar-overlay');
+            
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+            // 關閉語言選單
+            const languageOptions = document.getElementById('languageOptions');
+            const languageButton = document.getElementById('languageButton');
+            if (languageOptions && languageButton) { // Ensure elements exist
+                languageOptions.classList.remove('open');
+                languageButton.querySelector('.menu-arrow').style.transform = 'rotate(0deg)';
+            }
+        }
+
+        function toggleSubmenu(button) {
+            const section = button.parentElement;
+            
+            // 關閉所有其他展開的選單 (包括語言選單)
+            document.querySelectorAll('.menu-section.expanded').forEach(s => {
+                if (s !== section) {
+                    s.classList.remove('expanded');
+                    s.querySelector('.menu-arrow').style.transform = 'rotate(0deg)'; // Reset arrow
+                }
+            });
+            // Explicitly close language options if open
+            const languageOptions = document.getElementById('languageOptions');
+            const languageButton = document.getElementById('languageButton');
+            if (languageOptions && languageButton) {
+                languageOptions.classList.remove('open');
+                languageButton.querySelector('.menu-arrow').style.transform = 'rotate(0deg)';
+            }
+
+
+            // 切換當前選單
+            section.classList.toggle('expanded');
+            const arrow = button.querySelector('.menu-arrow');
+            if (section.classList.contains('expanded')) {
+                arrow.style.transform = 'rotate(90deg)';
+            } else {
+                arrow.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        function showContent(contentType) {
+            console.log('顯示內容:', contentType);
+            
+            const contentMap = translations[currentLanguage] ? {
+                'daily-morning': translations[currentLanguage]['daily_morning'],
+                'daily-meal': translations[currentLanguage]['daily_meal'],
+                'daily-nap': translations[currentLanguage]['daily_nap'],
+                'daily-play': translations[currentLanguage]['daily_play'],
+                'daily-evening': translations[currentLanguage]['daily_evening'],
+                'travel-taiwan': translations[currentLanguage]['travel_taiwan'],
+                'travel-osaka': translations[currentLanguage]['travel_osaka'],
+                'travel-tokyo': translations[currentLanguage]['travel_tokyo'],
+                'travel-germany': translations[currentLanguage]['travel_germany'],
+                'travel-austria': translations[currentLanguage]['travel_austria'],
+                'travel-czech': translations[currentLanguage]['travel_czech'],
+                'food-favorites': translations[currentLanguage]['food_favorites'],
+                "food-recipes": translations[currentLanguage]['food_recipes'],
+                "food-reviews": translations[currentLanguage]['food_reviews'],
+                "food-hunting": translations[currentLanguage]['food_hunting'],
+                "food-tips": translations[currentLanguage]['food_tips']
+            } : {};
+            
+            showMessageBox('內容載入中...'); // Use the message box for all alerts
+            closeSidebar();
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+        }
+
+        // 語言選單功能
+        function toggleLanguageOptions() {
+            const options = document.getElementById('languageOptions');
+            const buttonArrow = document.getElementById('languageButton').querySelector('.menu-arrow');
+            
+            if (options && buttonArrow) { // Ensure elements exist
+                options.classList.toggle('open');
+                if (options.classList.contains('open')) {
+                    buttonArrow.style.transform = 'rotate(-90deg)'; // 向上展開時箭頭向上
+                } else {
+                    buttonArrow.style.transform = 'rotate(0deg)'; // 收合時箭頭復原
+                }
+
+                // 關閉其他展開的子選單
+                document.querySelectorAll('.menu-section.expanded').forEach(s => {
+                    s.classList.remove('expanded');
+                    s.querySelector('.menu-arrow').style.transform = 'rotate(0deg)'; // Reset arrow
+                });
+            }
+        }
+
+        function selectLanguage(lang, showAlert = true) {
+            currentLanguage = lang;
+            localStorage.setItem('selectedLanguage', lang); // 將選擇的語言儲存到 localStorage
+
+            applyTranslations(lang); // 應用翻譯到整個頁面
+            
+            // 關閉語言選單
+            const languageOptions = document.getElementById('languageOptions');
+            const buttonArrow = document.getElementById('languageButton').querySelector('.menu-arrow');
+            if (languageOptions && buttonArrow) { // Ensure elements exist
+                languageOptions.classList.remove('open');
+                buttonArrow.style.transform = 'rotate(0deg)';
+            }
+
+            console.log('Selected language:', lang);
+            if (showAlert) {
+                showMessageBox(lang === 'en' ? 'Language selected: English' : '已選擇語言：繁體中文');
+            }
+        }
+
+        // Smooth scroll function for new sections and existing ones
+        function scrollToSection(id) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // JavaScript for "Load More" Posts (basic example)
+        const loadMoreButton = document.getElementById('load-more-posts');
+        if (loadMoreButton) {
+            loadMoreButton.addEventListener('click', () => {
+                const mainContent = document.querySelector('#latest-posts-section .md\\:col-span-2');
+                if (mainContent) {
+                    const newPost = document.createElement('article');
+                    newPost.classList.add('post-card');
+                    newPost.innerHTML = `
+                        <img src="https://placehold.co/800x400/FFCC00/333333?text=秘魯馬丘比丘" alt="秘魯馬丘比丘" class="w-full h-auto rounded-lg mb-6 shadow-md">
+                        <span class="text-sm text-gray-500 mb-2 block">2023年6月1日 · 南美洲</span>
+                        <h3 class="text-3xl font-semibold text-gray-900 mb-4">秘魯馬丘比丘：探訪失落的印加古城</h3>
+                        <p class="text-gray-700 leading-relaxed mb-4">
+                            秘魯的馬丘比丘，這座被譽為世界新七大奇蹟之一的印加古城，隱藏在安第斯山脈的雲霧之中。這篇文章將帶你穿越印加古道，探索這座神秘城市的歷史與文化，感受它令人窒息的壯麗景色。
+                        </p>
+                        <a href="#" class="text-indigo-600 hover:text-indigo-800 font-bold transition duration-300">
+                            閱讀更多 &rarr;
+                        </a>
+                        <div class="mt-4 flex flex-wrap gap-2">
+                            <span class="tag" data-i18n="tag_history">歷史</span>
+                            <span class="tag" data-i18n="tag_adventure">冒險</span>
+                            <span class="tag" data-i18n="tag_culture">文化</span>
+                        </div>
+                    `;
+                    // Insert the new post before the "Load More" button's parent div
+                    mainContent.insertBefore(newPost, loadMoreButton.closest('div'));
+                }
+            });
+        }
+
+        // Gemini API Integration: Destination Fact Finder
+        const getFactsButton = document.getElementById('get-facts-button');
+        const factDestinationInput = document.getElementById('fact-destination-input');
+        const factLoadingIndicator = document.getElementById('fact-loading-indicator');
+        const factOutput = document.getElementById('fact-output');
+        const factContent = document.getElementById('fact-content');
+
+        if (getFactsButton) {
+            getFactsButton.addEventListener('click', async () => {
+                const destination = factDestinationInput.value.trim();
+
+                if (!destination) {
+                    showMessageBox('message_input_destination');
+                    return;
+                }
+
+                // Show loading indicator and hide previous output
+                factLoadingIndicator.classList.remove('hidden');
+                factOutput.classList.add('hidden');
+                factContent.innerHTML = '';
+
+                try {
+                    let chatHistory = [];
+                    const prompt = `請提供關於 ${destination} 的一些有趣事實或簡要旅遊資訊。請以清晰、分點的文字格式回應，不需要 JSON。`;
+                    chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+                    const payload = {
+                        contents: chatHistory,
+                        generationConfig: {
+                            responseMimeType: "text/plain"
+                        }
+                    };
+
+                    const apiKey = ""; // Canvas will automatically provide this at runtime
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        
+                        const text = result.candidates[0].content.parts[0].text;
+                        factContent.innerHTML = text.replace(/\n/g, '<br>'); // Display newlines as breaks
+                        factOutput.classList.remove('hidden');
+                    } else {
+                        showMessageBox('message_facts_error');
+                        console.error('Unexpected Gemini API response structure for Fact Finder:', result);
+                    }
+
+                } catch (error) {
+                    showMessageBox('message_facts_error');
+                    console.error('Error getting destination facts:', error);
+                } finally {
+                    factLoadingIndicator.classList.add('hidden'); // Hide loading indicator
+                }
+            });
+        }
+
+        // Gemini API Integration: Travel Itinerary Generator
+        const generatePlanButton = document.getElementById('generate-plan-button');
+        const destinationInput = document.getElementById('destination-input');
+        const preferencesInput = document.getElementById('preferences-input');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const planOutput = document.getElementById('plan-output');
+        const planContent = document.getElementById('plan-content');
+
+        if (generatePlanButton) {
+            generatePlanButton.addEventListener('click', async () => {
+                const destination = destinationInput.value.trim();
+                const preferences = preferencesInput.value.trim();
+
+                if (!destination) {
+                    showMessageBox('message_input_destination_for_plan');
+                    return;
+                }
+
+                // Show loading indicator and hide previous output
+                loadingIndicator.classList.remove('hidden');
+                planOutput.classList.add('hidden');
+                planContent.innerHTML = '';
+
+                try {
+                    let chatHistory = [];
+                    const prompt = `為我生成一個前往 ${destination} 的旅行計劃。我的偏好是：${preferences}。請以 JSON 格式回應，包含一個天的陣列，每個天都有一個 day 數字和一個 activities 陣列。例如：[{ "day": 1, "activities": ["活動1", "活動2"] }]。確保 JSON 格式正確，不要包含任何額外文字。`;
+                    chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+                    const payload = {
+                        contents: chatHistory,
+                        generationConfig: {
+                            responseMimeType: "application/json",
+                            responseSchema: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        "day": { "type": "NUMBER" },
+                                        "activities": {
+                                            "type": "ARRAY",
+                                            "items": { "type": "STRING" }
+                                        }
+                                    },
+                                    "propertyOrdering": ["day", "activities"]
+                                }
+                            }
+                        }
+                    };
+
+                    const apiKey = ""; // Canvas will automatically provide this at runtime
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const result = await response.json();
+                    console.log('Gemini API Response:', result); // Debugging: log the full response
+
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        
+                        const jsonText = result.candidates[0].content.parts[0].text;
+                        const parsedPlan = JSON.parse(jsonText);
+
+                        let planHtml = '';
+                        if (Array.isArray(parsedPlan) && parsedPlan.length > 0) {
+                            parsedPlan.forEach(dayPlan => {
+                                planHtml += `<p class="font-semibold mt-3">第 ${dayPlan.day} 天:</p>`;
+                                if (Array.isArray(dayPlan.activities) && dayPlan.activities.length > 0) {
+                                    planHtml += '<ul class="list-disc pl-5">';
+                                    dayPlan.activities.forEach(activity => {
+                                        planHtml += `<li>${activity}</li>`;
+                                    });
+                                    planHtml += '</ul>';
+                                } else {
+                                    planHtml += '<p>無活動建議。</p>';
+                                }
+                            });
+                            planContent.innerHTML = planHtml;
+                            planOutput.classList.remove('hidden');
+                        } else {
+                            showMessageBox('message_invalid_plan');
+                        }
+                    } else {
+                        showMessageBox('message_generation_error');
+                        console.error('Unexpected Gemini API response structure:', result);
+                    }
+
+                } catch (error) {
+                    showMessageBox('message_generation_error');
+                    console.error('Error generating travel plan:', error);
+                } finally {
+                    loadingIndicator.classList.add('hidden'); // Hide loading indicator
+                }
+            });
+        }
+    </script>
+    <!-- Particles.js script (kept as is) -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script>
+        /* particlesJS.load settings, adjust as needed for desired effect */
+        particlesJS("particles-js", {
+            "particles": {
+                "number": {
+                    "value": 80,
+                    "density": {
+                        "enable": true,
+                        "value_area": 800
+                    }
+                },
+                "color": {
+                    "value": "#ffeb3b" /* Your accent color */
+                },
+                "shape": {
+                    "type": "circle",
+                    "stroke": {
+                        "width": 0,
+                        "color": "#000000"
+                    },
+                    "polygon": {
+                        "nb_sides": 5
+                    },
+                    "image": {
+                        "src": "img/github.svg",
+                        "width": 100,
+                        "height": 100
+                    }
+                },
+                "opacity": {
+                    "value": 0.5,
+                    "random": false,
+                    "anim": {
+                        "enable": false,
+                        "speed": 1,
+                        "opacity_min": 0.1,
+                        "sync": false
+                    }
+                },
+                "size": {
+                    "value": 3,
+                    "random": true,
+                    "anim": {
+                        "enable": false,
+                        "speed": 40,
+                        "size_min": 0.1,
+                        "sync": false
+                    }
+                },
+                "line_linked": {
+                    "enable": true,
+                    "distance": 150,
+                    "color": "#ffcc00", /* Your header-bg color */
+                    "opacity": 0.4,
+                    "width": 1
+                },
+                "move": {
+                    "enable": true,
+                    "speed": 6,
+                    "direction": "none",
+                    "random": false,
+                    "straight": false,
+                    "out_mode": "out",
+                    "bounce": false,
+                    "attract": {
+                        "enable": false,
+                        "rotateX": 600,
+                        "rotateY": 1200
+                    }
+                }
+            },
+            "interactivity": {
+                "detect_on": "canvas",
+                "events": {
+                    "onhover": {
+                        "enable": true,
+                        "mode": "repulse"
+                    },
+                    "onclick": {
+                        "enable": true,
+                        "mode": "push"
+                    },
+                    "resize": true
+                },
+                "modes": {
+                    "grab": {
+                        "distance": 400,
+                        "line_linked": {
+                            "opacity": 1
+                        }
+                    },
+                    "bubble": {
+                        "distance": 400,
+                        "size": 40,
+                        "duration": 2,
+                        "opacity": 8,
+                        "speed": 3
+                    },
+                    "repulse": {
+                        "distance": 200,
+                        "duration": 0.4
+                    },
+                    "push": {
+                        "particles_nb": 4
+                    },
+                    "remove": {
+                        "particles_nb": 2
+                    }
+                }
+            },
+            "retina_detect": true
+        });
+    </script>
+</body>
+</html>

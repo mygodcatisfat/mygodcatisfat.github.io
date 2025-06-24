@@ -248,10 +248,9 @@
             display: flex;
             gap: 1em;
             animation: scroll-marquee 10s linear infinite;
+            /* 移除 :hover 暫停，因為手機上沒有 hover */
         }
-        .gallery-marquee:hover {
-            animation-play-state: paused;
-        }
+        
         @keyframes scroll-marquee {
             0% { transform: translateX(0); }
             100% { transform: translateX(-50%); }
@@ -498,6 +497,8 @@
                 font-size: 1em;
                 padding: 0.4em 0.6em;
             }
+            /* 手機版相簿動畫速度與網頁版一致，不需要額外調整 */
+            /* 複製圖片後，會自然流暢滾動 */
         }
     </style>
 </head>
@@ -632,6 +633,15 @@
                     <img src="https://lh3.googleusercontent.com/pw/AP1GczNZi2ask4E6Mi5mJ75_4naa5p7jS96DkQIpAMRG6tS4tt2bgn-LEqAUVETvNpNvGEp0u_dGbrgYeJPkguZqvbonLx2GpHNf3fAvD8wYV-5_waLJ2j56DXtDEFVbRe7cRraEWhCPIVLgn6jWO4vo7IuGkg=w517-h919-s-no-gm?authuser=0" alt="圖片2">
                     <img src="https://raw.githubusercontent.com/mygodcatisfat/mygodcatisfat.github.io/refs/heads/main/pic_bo_sleep.jpg" alt="圖片3">
                     <img src="https://raw.githubusercontent.com/mygodcatisfat/mygodcatisfat.github.io/refs/heads/main/pic_chikwhite.jpg" alt="圖片4">
+                    <img src="https://lh3.googleusercontent.com/pw/AP1GczNJxSPXC_qp9w-DR8tQUNNQfUxB7G4wBhQcqn_sMyAJ2WHL6-a0ZkMtBbS612-HVNoESf7EbyLzDzn7toApgLrHc5aCEaTzcDhSbwnCTJH9T2ChlkKcqwSRvIor0AFRxape_ZsXORiAYI27wFgSBlI-GQ=w1153-h649-s-no-gm?authuser=0" alt="自訂圖片">
+                    <img src="https://lh3.googleusercontent.com/pw/AP1GczNcmcEIsGoe8pHZM202CCvXNk0g4mu6l8f7-DRV2RyzYvBlN8QGDEpB7cfOrhZNY2-WrFerZ8HXvsE-Lef-O5Bs5jvazTz_pUvrWRVUUDCZsBNa8ie0zUV75gRotx4W10FnaO8lF_uhe2VPnedbUO_G6A=w1225-h919-s-no-gm?authuser=0" alt="圖片2">
+                    <img src="https://lh3.googleusercontent.com/pw/AP1GczONK3sXHB9bpPpRa7tx7QrScdSOtJkVuzZAt-8aeubEG8whqhlMtLCvqomMmNW8WYW1wSjDe33ynxO4BrnuZDVZL3LDYFpD1xwm1z98wB-Tc0t27Lqy1oB0eZuEqGxtfSVGN8HIyCYuKKdZNEG5h_weRg=w662-h883-s-no" alt="圖片2">
+                    <img src="https://lh3.googleusercontent.com/pw/AP1GczMks49RqLSLwSNGteKdBd83kRl8hDyCiQc2ao7U0eujShXioGmB2HFLZS74my6ZaokEf-_7ogxqIDDpCy3qqvUlwWTSakM-0wJHMvfKfnE4AMa632wJy3zLF5331pU1nQU7D65hwgwg1WS_ajJx35TE8g=w689-h919-s-no-gm?authuser=0" alt="圖片3">
+                    <img src="https://lh3.googleusercontent.com/pw/AP1GczOQpUYZr5J40kIVzCKHPTKXV2ggdrTQ-dhQM1QOljs13JH6UHisrN7geU8bFm8CVGp8jWu6BsDEa-mOvw-knXrnMZdIUmfrqeG1Nw1ZsGJP_ULBLJH077mWxwJPtb-n3fZ7_vxi01DzGmdS0KZxqP9JDg=w517-h919-s-no-gm?authuser=0" alt="圖片4">
+                    <img src="https://lh3.googleusercontent.com/pw/AP1GczNrQt1sCser_sduMhGeGRjlbg8xSaE2Q6rEFbALl4KBgZhYbxJdO-FJUGkdmAthJBgj7NOE1Pu0bl8XB7ZgE3yXCBlLb4XXOD3wKVyovE7yG0eHW-R_hVRCK6jVpaMc_-e1rguZL16psLyusvxPZMKLgQ=w1153-h865-s-no-gm?authuser=0" alt="自訂圖片">
+                    <img src="https://lh3.googleusercontent.com/pw/AP1GczNZi2ask4E6Mi5mJ75_4naa5p7jS96DkQIpAMRG6tS4tt2bgn-LEqAUVETvNpNvGEp0u_dGbrgYeJPkguZqvbonLx2GpHNf3fAvD8wYV-5_waLJ2j56DXtDEFVbRe7cRraEWhCPIVLgn6jWO4vo7IuGkg=w517-h919-s-no-gm?authuser=0" alt="圖片2">
+                    <img src="https://raw.githubusercontent.com/mygodcatisfat/mygodcatisfat.github.io/refs/heads/main/pic_bo_sleep.jpg" alt="圖片3">
+                    <img src="https://raw.githubusercontent.com/mygodcatisfat/mygodcatisfat.github.io/refs/heads/main/pic_chikwhite.jpg" alt="圖片4">
                 </div>
             </div>
             <a href="gallery-only.html" class="view-more" target="_blank" data-i18n="view_more_images">✨ 查看更多圖片</a>
@@ -656,7 +666,7 @@
         </section>
 
         <footer>
-            <span data-i18n="footer_copyright">&copy; 2025 嘎豬窩. 保留所有權利。</span>
+            <span data-i18n="footer_copyright">© 2025 嘎豬窩. 保留所有權利。</span>
             <div id="stats">
                 <span data-i18n="view_count_prefix">👀 目前瀏覽次數：</span>
                 <span id="view-count">讀取中...</span>
@@ -747,7 +757,7 @@
                         "view_more_images": "✨ 查看更多圖片",
                         "instagram_title": "📸 Instagram",
                         "contact_us_title": "聯絡偶",
-                        "footer_copyright": "&copy; 2025 嘎豬窩. 保留所有權利。",
+                        "footer_copyright": "© 2025 嘎豬窩. 保留所有權利。",
                         "view_count_prefix": "👀 目前瀏覽次數：",
                         "back_to_top_button": "▲"
                     },
@@ -802,7 +812,7 @@
                         "view_more_images": "✨ View More Images",
                         "instagram_title": "📸 Instagram",
                         "contact_us_title": "Contact Us",
-                        "footer_copyright": "&copy; 2025 GaPig Den. All rights reserved.",
+                        "footer_copyright": "© 2025 GaPig Den. All rights reserved.",
                         "view_count_prefix": "👀 Current Views:",
                         "back_to_top_button": "▲"
                     }

@@ -248,12 +248,11 @@
             display: flex;
             gap: 1em;
             animation: scroll-marquee 10s linear infinite;
-            /* 移除 :hover 暫停，因為手機上沒有 hover */
         }
         
         @keyframes scroll-marquee {
             0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
+            100% { transform: translateX(-100%); } /* Changed from -50% to -100% for continuous loop with duplicated images */
         }
         .gallery-marquee img {
             width: 450px;
@@ -497,8 +496,10 @@
                 font-size: 1em;
                 padding: 0.4em 0.6em;
             }
-            /* 手機版相簿動畫速度與網頁版一致，不需要額外調整 */
-            /* 複製圖片後，會自然流暢滾動 */
+            /* 手機版相簿動畫速度調整為網頁版的兩倍快 */
+            .gallery-marquee {
+                animation-duration: 5s; /* Original was 10s, now 5s for mobile */
+            }
         }
     </style>
 </head>
@@ -909,9 +910,9 @@
                 'travel-czech': translations[currentLanguage]['travel_czech'],
                 'food-favorites': translations[currentLanguage]['food_favorites'],
                 'food-recipes': translations[currentLanguage]['food_recipes'],
-                'food-reviews': translations[currentLanguage]['food_reviews'],
-                'food-hunting': translations[currentLanguage]['food_hunting'],
-                'food-tips': translations[currentLanguage]['food_tips']
+                "food-reviews": translations[currentLanguage]['food_reviews'],
+                "food-hunting": translations[currentLanguage]['food_hunting'],
+                "food-tips": translations[currentLanguage]['food_tips']
             } : {};
             
             alert((contentMap[contentType] || '內容載入中...') + ' (實際功能尚未實作)');

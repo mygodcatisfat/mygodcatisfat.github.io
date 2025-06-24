@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>歡迎來到偶的小天地</title>
+    <title data-i18n="page_title">歡迎來到偶的小天地</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap');
 
@@ -24,6 +24,10 @@
             --member-card-bg: #fffbe6; /* 新增變數 */
             --dark-mode-toggle-bg: #222; /* 夜間模式切換按鈕背景 */
             --dark-mode-toggle-color: white; /* 夜間模式切換按鈕文字 */
+            --language-button-bg: #f0f0f0; /* 語言按鈕背景 */
+            --language-button-color: #333; /* 語言按鈕文字 */
+            --language-options-bg: #f9f9f9; /* 語言選項背景 */
+            --language-option-hover-bg: #e0e0e0; /* 語言選項懸停背景 */
         }
 
         body.dark-mode {
@@ -43,6 +47,10 @@
             --member-card-bg: #3a3a3a; /* 夜間模式下的成員卡片背景色 */
             --dark-mode-toggle-bg: #ffeb3b; /* 夜間模式下切換按鈕背景色 */
             --dark-mode-toggle-color: #333; /* 夜間模式下切換按鈕文字顏色 */
+            --language-button-bg: #444;
+            --language-button-color: #f0f0f0;
+            --language-options-bg: #3a3a3a;
+            --language-option-hover-bg: #555;
         }
 
         body {
@@ -70,8 +78,8 @@
             transition: left 0.3s ease;
             overflow-y: auto;
             box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-            display: flex; /* 新增 */
-            flex-direction: column; /* 新增 */
+            display: flex;
+            flex-direction: column;
         }
 
         .sidebar.open {
@@ -88,12 +96,12 @@
             margin: 0;
             font-family: 'Comic Neue', cursive;
             font-size: 1.3em;
-            color: var(--text-color); /* 確保標題文字顏色正確 */
+            color: var(--text-color);
         }
 
         .sidebar-menu {
             padding: 1em 0;
-            flex-grow: 1; /* 新增 */
+            flex-grow: 1;
         }
 
         .menu-section {
@@ -102,7 +110,7 @@
 
         .menu-title {
             padding: 1em 1.5em;
-            background: linear-gradient(135deg, var(--menu-title-bg-start), var(--menu-title-bg-end)); /* 使用變數 */
+            background: linear-gradient(135deg, var(--menu-title-bg-start), var(--menu-title-bg-end));
             cursor: pointer;
             font-weight: bold;
             font-size: 1.1em;
@@ -113,11 +121,11 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            color: var(--text-color); /* 確保標題文字顏色正確 */
+            color: var(--text-color);
         }
 
         .menu-title:hover {
-            background: linear-gradient(135deg, var(--menu-title-hover-bg-start), var(--menu-title-hover-bg-end)); /* 使用變數 */
+            background: linear-gradient(135deg, var(--menu-title-hover-bg-start), var(--menu-title-hover-bg-end));
         }
 
         .menu-arrow {
@@ -133,7 +141,7 @@
             max-height: 0;
             overflow: hidden;
             transition: max-height 0.3s ease;
-            background: var(--submenu-bg); /* 使用變數 */
+            background: var(--submenu-bg);
         }
 
         .menu-section.expanded .submenu {
@@ -144,12 +152,12 @@
             padding: 0.8em 2em;
             cursor: pointer;
             transition: background 0.3s;
-            border-bottom: 1px solid var(--submenu-item-border); /* 使用變數 */
-            color: var(--text-color); /* 確保子菜單項目文字顏色正確 */
+            border-bottom: 1px solid var(--submenu-item-border);
+            color: var(--text-color);
         }
 
         .submenu-item:hover {
-            background: var(--submenu-item-hover-bg); /* 使用變數 */
+            background: var(--submenu-item-hover-bg);
         }
 
         .submenu-item:last-child {
@@ -208,14 +216,14 @@
         header h1 {
             margin: 0;
             font-size: 2em;
-            color: var(--text-color); /* 確保標題文字顏色正確 */
+            color: var(--text-color);
         }
         nav {
             background: #ffe680;
             padding: 0.5em;
         }
         body.dark-mode nav {
-            background: #444; /* 夜間模式下導航欄背景色 */
+            background: #444;
         }
         nav a {
             margin: 0 1em;
@@ -224,7 +232,7 @@
             font-weight: bold;
         }
         body.dark-mode nav a {
-            color: #f0f0f0; /* 夜間模式下導航鏈接顏色 */
+            color: #f0f0f0;
         }
         nav a:hover {
             text-decoration: underline;
@@ -283,13 +291,13 @@
             text-decoration: none;
         }
         body.dark-mode a {
-            color: #99ccff; /* 夜間模式下鏈接顏色 */
+            color: #99ccff;
         }
         footer {
             background: var(--footer-bg);
             padding: 1em;
             font-size: 0.9em;
-            color: var(--text-color); /* 確保頁腳文字顏色正確 */
+            color: var(--text-color);
         }
         #stats {
             margin-top: 0.5em;
@@ -297,7 +305,7 @@
             color: #666;
         }
         body.dark-mode #stats {
-            color: #aaa; /* 夜間模式下統計文字顏色 */
+            color: #aaa;
         }
         .instagram-section {
             background: linear-gradient(135deg, #f6e27a, #f2c94c);
@@ -309,12 +317,12 @@
             animation: fadeInUp 1s ease-out;
         }
         body.dark-mode .instagram-section {
-            background: linear-gradient(135deg, #444, #333); /* 夜間模式下Instagram區塊背景 */
+            background: linear-gradient(135deg, #444, #333);
         }
         .instagram-section h2 {
             font-family: 'Comic Neue', cursive;
             font-weight: bold;
-            color: var(--text-color); /* 確保標題文字顏色正確 */
+            color: var(--text-color);
         }
         @keyframes fadeInUp {
             0% { opacity: 0; transform: translateY(20px); }
@@ -324,23 +332,86 @@
             max-width: 100%;
             width: 100%;
         }
-        .toggle-button-sidebar { /* 更改類名 */
-            width: calc(100% - 3em); /* 調整寬度以配合 padding */
-            margin: 1.5em; /* 調整外邊距 */
+        .toggle-button-sidebar {
+            width: calc(100% - 3em);
+            margin: 0.75em 1.5em;
             background: var(--dark-mode-toggle-bg);
             color: var(--dark-mode-toggle-color);
             border: none;
-            padding: 0.8em 1em; /* 調整 padding */
+            padding: 0.8em 1em;
             border-radius: 5px;
             cursor: pointer;
             z-index: 1000;
-            font-size: 1em; /* 調整字體大小 */
+            font-size: 1em;
             transition: background 0.3s, color 0.3s;
-            text-align: center; /* 確保文字置中 */
+            text-align: center;
         }
 
         .toggle-button-sidebar:hover {
             opacity: 0.9;
+        }
+
+        /* 語言選擇菜單樣式 */
+        .language-selection-container {
+            margin: 0.75em 1.5em;
+            position: relative;
+            z-index: 1;
+        }
+
+        .language-button {
+            width: 100%;
+            background: var(--language-button-bg);
+            color: var(--language-button-color);
+            border: none;
+            padding: 0.8em 1em;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            text-align: center;
+            transition: background 0.3s, color 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .language-button:hover {
+            opacity: 0.9;
+        }
+
+        .language-options {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            background: var(--language-options-bg);
+            border-radius: 5px;
+            margin-top: 0.5em;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .language-options.open {
+            max-height: 100px;
+        }
+
+        .language-option-item {
+            padding: 0.8em 1em;
+            cursor: pointer;
+            color: var(--text-color);
+            transition: background 0.2s;
+            text-align: left;
+        }
+
+        .language-option-item:hover {
+            background: var(--language-option-hover-bg);
+        }
+
+        .language-option-item:first-child {
+            border-top-left-radius: 5px;
+            border-top-right-radius: 5px;
+        }
+
+        .language-option-item:last-child {
+            border-bottom-left-radius: 5px;
+            border-bottom-right-radius: 5px;
         }
 
         #particles-js {
@@ -354,7 +425,7 @@
 
         .member-card {
             max-width: 200px;
-            background: var(--member-card-bg); /* 使用變數 */
+            background: var(--member-card-bg);
             border-radius: 12px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             padding: 1em;
@@ -362,7 +433,7 @@
             opacity: 0;
             transform: translateY(30px);
             animation: fadeSlideIn 1s forwards;
-            color: var(--text-color); /* 確保成員卡片文字顏色正確 */
+            color: var(--text-color);
         }
 
         .member-card:hover {
@@ -387,7 +458,7 @@
             animation-delay: 0.6s;
         }
         .member-card:nth-child(4) {
-            animation-delay: 0.8s; /* 新增第四個卡片的動畫延遲 */
+            animation-delay: 0.8s;
         }
 
         @keyframes fadeSlideIn {
@@ -412,8 +483,8 @@
             z-index: 1000;
         }
         body.dark-mode #back-to-top {
-            background: #555; /* 夜間模式下回到頂部按鈕背景色 */
-            color: #f0f0f0; /* 夜間模式下回到頂部按鈕文字顏色 */
+            background: #555;
+            color: #f0f0f0;
         }
 
         /* 響應式設計 */
@@ -436,108 +507,120 @@
     <div class="sidebar-overlay" onclick="closeSidebar()"></div>
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <h3>🐺 狼狼的世界</h3>
+            <h3 data-i18n="sidebar_title">🐺 狼狼的世界</h3>
         </div>
         <div class="sidebar-menu">
             <div class="menu-section">
                 <button class="menu-title" onclick="toggleSubmenu(this)">
-                    狼的日常 | 生活
+                    <span data-i18n="menu_daily_life">狼的日常 | 生活</span>
                     <span class="menu-arrow">▶</span>
                 </button>
                 <div class="submenu">
-                    <div class="submenu-item" onclick="showContent('daily-morning')">🌤️ 晨間時光</div>
-                    <div class="submenu-item" onclick="showContent('daily-meal')">🍽️ 用餐時間</div>
-                    <div class="submenu-item" onclick="showContent('daily-nap')">😴 午休小憩</div>
-                    <div class="submenu-item" onclick="showContent('daily-play')">🎮 遊戲時光</div>
-                    <div class="submenu-item" onclick="showContent('daily-evening')">🌙 夜晚活動</div>
+                    <div class="submenu-item" onclick="showContent('daily-morning')">🌤️ <span data-i18n="daily_morning">晨間時光</span></div>
+                    <div class="submenu-item" onclick="showContent('daily-meal')">🍽️ <span data-i18n="daily_meal">用餐時間</span></div>
+                    <div class="submenu-item" onclick="showContent('daily-nap')">😴 <span data-i18n="daily_nap">午休小憩</span></div>
+                    <div class="submenu-item" onclick="showContent('daily-play')">🎮 <span data-i18n="daily_play">遊戲時光</span></div>
+                    <div class="submenu-item" onclick="showContent('daily-evening')">🌙 <span data-i18n="daily_evening">夜晚活動</span></div>
                 </div>
             </div>
             
             <div class="menu-section">
                 <button class="menu-title" onclick="toggleSubmenu(this)">
-                    狼狼來了 | 旅遊
+                    <span data-i18n="menu_travel">狼狼來了 | 旅遊</span>
                     <span class="menu-arrow">▶</span>
                 </button>
                 <div class="submenu">
-                    <div class="submenu-item" onclick="showContent('travel-taiwan')">臺灣</div>
-                    <div class="submenu-item" onclick="showContent('travel-osaka')">大阪</div>
-                    <div class="submenu-item" onclick="showContent('travel-tokyo')">東京</div>
-                    <div class="submenu-item" onclick="showContent('travel-germany')">德國</div>
-                    <div class="submenu-item" onclick="showContent('travel-austria')">奧地利</div>
-                    <div class="submenu-item" onclick="showContent('travel-czech')">捷克</div>
+                    <div class="submenu-item" onclick="showContent('travel-taiwan')"><span data-i18n="travel_taiwan">臺灣</span></div>
+                    <div class="submenu-item" onclick="showContent('travel-osaka')"><span data-i18n="travel_osaka">大阪</span></div>
+                    <div class="submenu-item" onclick="showContent('travel-tokyo')"><span data-i18n="travel_tokyo">東京</span></div>
+                    <div class="submenu-item" onclick="showContent('travel-germany')"><span data-i18n="travel_germany">德國</span></div>
+                    <div class="submenu-item" onclick="showContent('travel-austria')"><span data-i18n="travel_austria">奧地利</span></div>
+                    <div class="submenu-item" onclick="showContent('travel-czech')"><span data-i18n="travel_czech">捷克</span></div>
                 </div>
             </div>
             
             <div class="menu-section">
                 <button class="menu-title" onclick="toggleSubmenu(this)">
-                    狼吞虎嚥 | 食記
+                    <span data-i18n="menu_food">狼吞虎嚥 | 食記</span>
                     <span class="menu-arrow">▶</span>
                 </button>
                 <div class="submenu">
-                    <div class="submenu-item" onclick="showContent('food-favorites')">⭐ 最愛美食</div>
-                    <div class="submenu-item" onclick="showContent('food-recipes')">👨‍🍳 食譜分享</div>
-                    <div class="submenu-item" onclick="showContent('food-reviews')">📝 美食評論</div>
-                    <div class="submenu-item" onclick="showContent('food-hunting')">🔍 覓食地圖</div>
-                    <div class="submenu-item" onclick="showContent('food-tips')">💡 美食小貼士</div>
+                    <div class="submenu-item" onclick="showContent('food-favorites')">⭐ <span data-i18n="food_favorites">最愛美食</span></div>
+                    <div class="submenu-item" onclick="showContent('food-recipes')">👨‍🍳 <span data-i18n="food_recipes">食譜分享</span></div>
+                    <div class="submenu-item" onclick="showContent('food-reviews')">📝 <span data-i18n="food_reviews">美食評論</span></div>
+                    <div class="submenu-item" onclick="showContent('food-hunting')">🔍 <span data-i18n="food_hunting">覓食地圖</span></div>
+                    <div class="submenu-item" onclick="showContent('food-tips')">💡 <span data-i18n="food_tips">美食小貼士</span></div>
                 </div>
             </div>
         </div>
-        <button class="toggle-button-sidebar" onclick="toggleDarkMode()">切換夜間模式</button>
+        
+        <div class="language-selection-container">
+            <button class="language-button" id="languageButton" onclick="toggleLanguageOptions()">
+                <span id="languageButtonText">LANGUAGE</span>
+                <span class="menu-arrow">▶</span>
+            </button>
+            <div class="language-options" id="languageOptions">
+                <div class="language-option-item" onclick="selectLanguage('zh-Hant')"><span data-i18n="lang_zh">繁體中文</span></div>
+                <div class="language-option-item" onclick="selectLanguage('en')"><span data-i18n="lang_en">English</span></div>
+            </div>
+        </div>
+
+        <button class="toggle-button-sidebar" onclick="toggleDarkMode()" data-i18n="toggle_dark_mode">切換夜間模式</button>
     </div>
 
     <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
 
     <div class="main-content">
         <header>
-            <h1>偶素一豬狼 嘎</h1>
+            <h1 data-i18n="header_title">偶素一豬狼 嘎</h1>
         </header>
 
         <nav>
-            <a href="#about">關於嘎豬窩</a>
-            <a href="#members">嘎豬窩成員介紹</a>
-            <a href="#gallery">相簿</a>
-            <a href="#instagram">Instagram</a>
-            <a href="#contact">聯絡偶</a>
-            <a href="gallery-only.html" target="_blank">更多圖片</a>
+            <a href="#about" data-i18n="nav_about">關於嘎豬窩</a>
+            <a href="#members" data-i18n="nav_members">嘎豬窩成員介紹</a>
+            <a href="#gallery" data-i18n="nav_gallery">相簿</a>
+            <a href="#instagram" data-i18n="nav_instagram">Instagram</a>
+            <a href="#contact" data-i18n="nav_contact">聯絡偶</a>
+            <a href="gallery-only.html" target="_blank" data-i18n="nav_more_images">更多圖片</a>
         </nav>
 
         <section id="about">
-            <h2>關於嘎豬窩</h2>
-            <p>嘎豬窩成立於...</p>
+            <h2 data-i18n="about_us_title">關於嘎豬窩</h2>
+            <p data-i18n="about_us_content">嘎豬窩成立於...</p>
         </section>
 
         <section id="members">
-            <h2>嘎豬窩成員介紹</h2>
+            <h2 data-i18n="members_title">嘎豬窩成員介紹</h2>
             <div class="member-grid">
                 <div class="member-card">
                     <img src="https://raw.githubusercontent.com/mygodcatisfat/mygodcatisfat.github.io/refs/heads/main/wolf_eat_bun.jpg" alt="阿狼本狼" style="width: 100%; border-radius: 10px;">
-                    <h3>阿狼</h3>
-                    <p>本名：解昆蟲</p>
-                    <p>綽號：猴子、歐練</p>
-                    <p>熱愛美食與發呆，是嘎豬窩的創始狼！語助詞是「嘎！」</p>
+                    <h3 data-i18n="member_wolf_name">阿狼</h3>
+                    <p data-i18n="member_wolf_real_name">本名：解昆蟲</p>
+                    <p data-i18n="member_wolf_nickname">綽號：猴子、歐練</p>
+                    <p data-i18n="member_wolf_desc">熱愛美食與發呆，是嘎豬窩的創始狼！語助詞是「嘎！」</p>
                 </div>
                 <div class="member-card">
                     <img src="https://raw.githubusercontent.com/mygodcatisfat/mygodcatisfat.github.io/refs/heads/main/pic_wolf_pig.jpg" alt="小豬" style="width: 100%; border-radius: 10px;">
-                    <h3>豬排</h3>
-                    <p>阿狼的妹妹，不會講話，但是可以用念力跟阿狼溝通。</p>
+                    <h3 data-i18n="member_pig_name">豬排</h3>
+                    <p data-i18n="member_pig_desc">阿狼的妹妹，不會講話，但是可以用念力跟阿狼溝通。</p>
                 </div>
                 <div class="member-card">
                     <img src="https://raw.githubusercontent.com/mygodcatisfat/mygodcatisfat.github.io/refs/heads/main/pic_bo_sleep.jpg" alt="英國短毛貓" style="width: 100%; border-radius: 10px;">
-                    <h3>王藍波</h3>
-                    <p>綽號：昂藍波、灰塵、大老鼠</p>
-                    <p>會用眼神殺死主人的英短，是阿狼的好朋友（兼坐騎？）。</p>
+                    <h3 data-i18n="member_bo_name">王藍波</h3>
+                    <p data-i18n="member_bo_nickname">綽號：昂藍波、灰塵、大老鼠</p>
+                    <p data-i18n="member_bo_desc">會用眼神殺死主人的英短，是阿狼的好朋友（兼坐騎？）。</p>
                 </div>
                 <div class="member-card">
                     <img src="https://raw.githubusercontent.com/mygodcatisfat/mygodcatisfat.github.io/refs/heads/main/pic_chikwhite.jpg" alt="白毛雞" style="width: 100%; border-radius: 10px;">
-                    <h3>雞白</h3>
-                    <p>綽號：無</p>
-                    <p>原本住在老媽學姊家，後來招兵買馬來的</p>
+                    <h3 data-i18n="member_chicken_name">雞白</h3>
+                    <p data-i18n="member_chicken_nickname">綽號：無</p>
+                    <p data-i18n="member_chicken_desc">原本住在老媽學姊家，後來招兵買馬來的</p>
                 </div>
             </div>
         </section>
 
         <section id="gallery">
-            <h2>相簿</h2>
+            <h2 data-i18n="gallery_title">相簿</h2>
             <div class="gallery-wrapper">
                 <div class="gallery-marquee">
                     <img src="https://raw.githubusercontent.com/mygodcatisfat/mygodcatisfat.github.io/refs/heads/main/wolf_eat_bun.jpg" alt="自訂圖片">
@@ -550,17 +633,17 @@
                     <img src="https://raw.githubusercontent.com/mygodcatisfat/mygodcatisfat.github.io/refs/heads/main/pic_chikwhite.jpg" alt="圖片4">
                 </div>
             </div>
-            <a href="gallery-only.html" class="view-more" target="_blank">✨ 查看更多圖片</a>
+            <a href="gallery-only.html" class="view-more" target="_blank" data-i18n="view_more_images">✨ 查看更多圖片</a>
         </section>
 
         <section id="instagram" class="instagram-section">
-            <h2>📸 Instagram</h2>
+            <h2 data-i18n="instagram_title">📸 Instagram</h2>
             <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/p/DKhigvLzoia/?igsh=MW83NTR4OWVvYWUxcw==" data-instgrm-version="14" style="margin: auto;"></blockquote>
             <script async src="//www.instagram.com/embed.js"></script>
         </section>
 
         <section id="contact">
-            <h2>聯絡偶</h2>
+            <h2 data-i18n="contact_us_title">聯絡偶</h2>
             <p>
                 <a href="https://github.com/mygodcatisfat" target="_blank">
                     <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/github/github-original.svg" alt="GitHub" width="30" style="vertical-align: middle; margin-right: 8px;">
@@ -572,9 +655,9 @@
         </section>
 
         <footer>
-            &copy; 2025 嘎豬窩. 保留所有權利。
+            <span data-i18n="footer_copyright">&copy; 2025 嘎豬窩. 保留所有權利。</span>
             <div id="stats">
-                👀 目前瀏覽次數：
+                <span data-i18n="view_count_prefix">👀 目前瀏覽次數：</span>
                 <span id="view-count">讀取中...</span>
             </div>
             <script>
@@ -590,9 +673,167 @@
         </footer>
     </div>
 
-    <button id="back-to-top" title="回到最上方">▲</button>
+    <button id="back-to-top" title="回到最上方" data-i18n="back_to_top_button">▲</button>
 
     <script>
+        let currentLanguage = 'zh-Hant'; // 預設語言
+        let translations = {}; // 儲存所有語言的翻譯數據
+
+        const JSON_URL = 'https://123.com'; // 外部 JSON 檔案連結
+
+        // 載入翻譯數據
+        async function loadTranslations() {
+            try {
+                const response = await fetch(JSON_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                translations = data;
+                console.log('Translations loaded successfully:', translations);
+            } catch (error) {
+                console.error('Error loading translations from external JSON:', error);
+                // 如果外部載入失敗，使用預設的硬編碼翻譯數據作為備用
+                translations = {
+                    "zh-Hant": {
+                        "page_title": "歡迎來到偶的小天地",
+                        "sidebar_title": "🐺 狼狼的世界",
+                        "menu_daily_life": "狼的日常 | 生活",
+                        "daily_morning": "晨間時光",
+                        "daily_meal": "用餐時間",
+                        "daily_nap": "午休小憩",
+                        "daily_play": "遊戲時光",
+                        "daily_evening": "夜晚活動",
+                        "menu_travel": "狼狼來了 | 旅遊",
+                        "travel_taiwan": "臺灣",
+                        "travel_osaka": "大阪",
+                        "travel_tokyo": "東京",
+                        "travel_germany": "德國",
+                        "travel_austria": "奧地利",
+                        "travel_czech": "捷克",
+                        "menu_food": "狼吞虎嚥 | 食記",
+                        "food_favorites": "最愛美食",
+                        "food_recipes": "食譜分享",
+                        "food_reviews": "美食評論",
+                        "food_hunting": "覓食地圖",
+                        "food_tips": "美食小貼士",
+                        "lang_zh": "繁體中文",
+                        "lang_en": "English",
+                        "toggle_dark_mode": "切換夜間模式",
+                        "header_title": "偶素一豬狼 嘎",
+                        "nav_about": "關於嘎豬窩",
+                        "nav_members": "嘎豬窩成員介紹",
+                        "nav_gallery": "相簿",
+                        "nav_instagram": "Instagram",
+                        "nav_contact": "聯絡偶",
+                        "nav_more_images": "更多圖片",
+                        "about_us_title": "關於嘎豬窩",
+                        "about_us_content": "嘎豬窩成立於...",
+                        "members_title": "嘎豬窩成員介紹",
+                        "member_wolf_name": "阿狼",
+                        "member_wolf_real_name": "本名：解昆蟲",
+                        "member_wolf_nickname": "綽號：猴子、歐練",
+                        "member_wolf_desc": "熱愛美食與發呆，是嘎豬窩的創始狼！語助詞是「嘎！」",
+                        "member_pig_name": "豬排",
+                        "member_pig_desc": "阿狼的妹妹，不會講話，但是可以用念力跟阿狼溝通。",
+                        "member_bo_name": "王藍波",
+                        "member_bo_nickname": "綽號：昂藍波、灰塵、大老鼠",
+                        "member_bo_desc": "會用眼神殺死主人的英短，是阿狼的好朋友（兼坐騎？）。",
+                        "member_chicken_name": "雞白",
+                        "member_chicken_nickname": "綽號：無",
+                        "member_chicken_desc": "原本住在老媽學姊家，後來招兵買馬來的",
+                        "gallery_title": "相簿",
+                        "view_more_images": "✨ 查看更多圖片",
+                        "instagram_title": "📸 Instagram",
+                        "contact_us_title": "聯絡偶",
+                        "footer_copyright": "&copy; 2025 嘎豬窩. 保留所有權利。",
+                        "view_count_prefix": "👀 目前瀏覽次數：",
+                        "back_to_top_button": "▲"
+                    },
+                    "en": {
+                        "page_title": "Welcome to My Little World",
+                        "sidebar_title": "🐺 The Wolf's World",
+                        "menu_daily_life": "Wolf's Daily Life | Living",
+                        "daily_morning": "Morning Time",
+                        "daily_meal": "Meal Time",
+                        "daily_nap": "Afternoon Nap",
+                        "daily_play": "Gaming Time",
+                        "daily_evening": "Evening Activities",
+                        "menu_travel": "Wolf is Coming | Travel",
+                        "travel_taiwan": "Taiwan",
+                        "travel_osaka": "Osaka",
+                        "travel_tokyo": "Tokyo",
+                        "travel_germany": "Germany",
+                        "travel_austria": "Austria",
+                        "travel_czech": "Czech Republic",
+                        "menu_food": "Wolf's Appetite | Food Review",
+                        "food_favorites": "Favorite Foods",
+                        "food_recipes": "Recipe Sharing",
+                        "food_reviews": "Food Reviews",
+                        "food_hunting": "Food Hunting Map",
+                        "food_tips": "Food Tips",
+                        "lang_zh": "Traditional Chinese",
+                        "lang_en": "English",
+                        "toggle_dark_mode": "Toggle Dark Mode",
+                        "header_title": "I am a Pig Wolf, Ga",
+                        "nav_about": "About GaPig Den",
+                        "nav_members": "GaPig Den Members",
+                        "nav_gallery": "Gallery",
+                        "nav_instagram": "Instagram",
+                        "nav_contact": "Contact Us",
+                        "nav_more_images": "More Images",
+                        "about_us_title": "About GaPig Den",
+                        "about_us_content": "GaPig Den was founded in...",
+                        "members_title": "Introduction to GaPig Den Members",
+                        "member_wolf_name": "A-Lang (The Wolf)",
+                        "member_wolf_real_name": "Real Name: Jie Kun-Chong",
+                        "member_wolf_nickname": "Nicknames: Monkey, O-Lian",
+                        "member_wolf_desc": "Loves food and daydreaming, the founding wolf of GaPig Den! His catchphrase is 'Ga!'",
+                        "member_pig_name": "Zhu-Pai (Pork Chop)",
+                        "member_pig_desc": "A-Lang's younger sister, doesn't speak, but can communicate with A-Lang telepathically.",
+                        "member_bo_name": "Wang Lan Bo (Rambo)", // 專有名詞範例
+                        "member_bo_nickname": "Nicknames: Ang Lan Bo, Dust, Big Mouse",
+                        "member_bo_desc": "A British Shorthair who can kill his owner with his eyes, A-Lang's good friend (and ride?).",
+                        "member_chicken_name": "Ji-Bai (White Chicken)",
+                        "member_chicken_nickname": "Nicknames: None",
+                        "member_chicken_desc": "Originally lived at Mom's senior sister's house, then recruited to join.",
+                        "gallery_title": "Gallery",
+                        "view_more_images": "✨ View More Images",
+                        "instagram_title": "📸 Instagram",
+                        "contact_us_title": "Contact Us",
+                        "footer_copyright": "&copy; 2025 GaPig Den. All rights reserved.",
+                        "view_count_prefix": "👀 Current Views:",
+                        "back_to_top_button": "▲"
+                    }
+                };
+            }
+        }
+
+        // 應用翻譯到頁面
+        function applyTranslations(lang) {
+            const elements = document.querySelectorAll('[data-i18n]');
+            elements.forEach(element => {
+                const key = element.getAttribute('data-i18n');
+                if (translations[lang] && translations[lang][key]) {
+                    element.innerText = translations[lang][key];
+                }
+            });
+            // 特別處理語言按鈕文本
+            const languageButtonText = document.getElementById('languageButtonText');
+            if (lang === 'en') {
+                languageButtonText.innerText = '語言設定';
+            } else {
+                languageButtonText.innerText = 'LANGUAGE';
+            }
+        }
+
+        // 頁面載入時執行
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadTranslations(); // 先載入翻譯數據
+            const storedLang = localStorage.getItem('selectedLanguage') || 'zh-Hant'; // 從 localStorage 讀取或預設中文
+            selectLanguage(storedLang, false); // 應用初始語言，不觸發 alert
+        });
+
         // 左側選單功能
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
@@ -608,19 +849,25 @@
             
             sidebar.classList.remove('open');
             overlay.classList.remove('active');
+            // 關閉語言選單
+            document.getElementById('languageOptions').classList.remove('open');
+            document.getElementById('languageButton').querySelector('.menu-arrow').style.transform = 'rotate(0deg)';
         }
 
         function toggleSubmenu(button) {
             const section = button.parentElement;
             const isExpanded = section.classList.contains('expanded');
             
-            // 關閉所有其他展開的選單
+            // 關閉所有其他展開的選單 (包括語言選單)
             document.querySelectorAll('.menu-section.expanded').forEach(s => {
                 if (s !== section) {
                     s.classList.remove('expanded');
                 }
             });
-            
+            document.getElementById('languageOptions').classList.remove('open');
+            document.getElementById('languageButton').querySelector('.menu-arrow').style.transform = 'rotate(0deg)';
+
+
             // 切換當前選單
             section.classList.toggle('expanded');
         }
@@ -636,30 +883,68 @@
             closeSidebar();
             
             // 顯示提示訊息（可以替換為實際的內容顯示邏輯）
-            const contentMap = {
-                'daily-morning': '🌤️ 晨間時光：阿狼的清晨日常',
-                'daily-meal': '🍽️ 用餐時間：美食饗宴時刻',
-                'daily-nap': '😴 午休小憩：懶洋洋的午後',
-                'daily-play': '🎮 遊戲時光：歡樂遊戲時間',
-                'daily-evening': '🌙 夜晚活動：夜貓子狼的時光',
-                'travel-taiwan': '臺灣：阿狼遊記',
-                'travel-osaka': '大阪：阿狼遊記',
-                'travel-tokyo': '東京：阿狼遊記',
-                'travel-germany': '德國：阿狼遊記',
-                'travel-austria': '奧地利：阿狼遊記',
-                'travel-czech': '捷克：阿狼遊記',
-                'food-favorites': '⭐ 最愛美食：阿狼的私房推薦',
-                'food-recipes': '👨‍🍳 食譜分享：狼式料理秘方',
-                'food-reviews': '📝 美食評論：食物評鑑心得',
-                'food-hunting': '🔍 覓食地圖：美食探險地點',
-                'food-tips': '💡 美食小貼士：料理與品嚐技巧'
-            };
+            // 注意：此處提示訊息也應該被翻譯
+            const contentMap = translations[currentLanguage] ? {
+                'daily-morning': translations[currentLanguage]['daily_morning'],
+                'daily-meal': translations[currentLanguage]['daily_meal'],
+                'daily-nap': translations[currentLanguage]['daily_nap'],
+                'daily-play': translations[currentLanguage]['daily_play'],
+                'daily-evening': translations[currentLanguage]['daily_evening'],
+                'travel-taiwan': translations[currentLanguage]['travel_taiwan'],
+                'travel-osaka': translations[currentLanguage]['travel_osaka'],
+                'travel-tokyo': translations[currentLanguage]['travel_tokyo'],
+                'travel-germany': translations[currentLanguage]['travel_germany'],
+                'travel-austria': translations[currentLanguage]['travel_austria'],
+                'travel-czech': translations[currentLanguage]['travel_czech'],
+                'food-favorites': translations[currentLanguage]['food_favorites'],
+                'food-recipes': translations[currentLanguage]['food_recipes'],
+                'food-reviews': translations[currentLanguage]['food_reviews'],
+                'food-hunting': translations[currentLanguage]['food_hunting'],
+                'food-tips': translations[currentLanguage]['food_tips']
+            } : {};
             
-            alert(contentMap[contentType] || '內容載入中...');
+            alert((contentMap[contentType] || '內容載入中...') + ' (實際功能尚未實作)');
         }
 
         function toggleDarkMode() {
             document.body.classList.toggle('dark-mode');
+        }
+
+        // 語言選單功能
+        function toggleLanguageOptions() {
+            const options = document.getElementById('languageOptions');
+            const buttonArrow = document.getElementById('languageButton').querySelector('.menu-arrow');
+            
+            options.classList.toggle('open');
+            if (options.classList.contains('open')) {
+                buttonArrow.style.transform = 'rotate(-90deg)'; // 向上展開時箭頭向上
+            } else {
+                buttonArrow.style.transform = 'rotate(0deg)'; // 收合時箭頭復原
+            }
+
+            // 關閉其他展開的子選單
+            document.querySelectorAll('.menu-section.expanded').forEach(s => {
+                s.classList.remove('expanded');
+            });
+        }
+
+        function selectLanguage(lang, showAlert = true) {
+            currentLanguage = lang;
+            localStorage.setItem('selectedLanguage', lang); // 將選擇的語言儲存到 localStorage
+
+            applyTranslations(lang); // 應用翻譯到整個頁面
+            
+            // 關閉語言選單
+            const languageOptions = document.getElementById('languageOptions');
+            const buttonArrow = document.getElementById('languageButton').querySelector('.menu-arrow');
+            languageOptions.classList.remove('open');
+            buttonArrow.style.transform = 'rotate(0deg)';
+
+            // 實際功能之後設計，這裡可以放置語言切換邏輯
+            console.log('Selected language:', lang);
+            if (showAlert) {
+                alert('已選擇語言：' + (lang === 'en' ? 'English' : '繁體中文'));
+            }
         }
 
         // 平滑滾動腳本
@@ -726,14 +1011,26 @@
             requestAnimationFrame(scrollTopAnimation);
         });
 
-        // 點擊頁面其他地方關閉側邊欄
+        // 點擊頁面其他地方關閉側邊欄和語言選單
         document.addEventListener('click', function(e) {
             const sidebar = document.getElementById('sidebar');
             const menuToggle = document.querySelector('.menu-toggle');
+            const languageOptions = document.getElementById('languageOptions');
+            const languageButton = document.getElementById('languageButton');
             
+            // 關閉側邊欄
             if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
                 if (sidebar.classList.contains('open')) {
                     closeSidebar();
+                }
+            }
+
+            // 關閉語言選單
+            if (!languageOptions.contains(e.target) && !languageButton.contains(e.target) && !languageButton.contains(e.target.parentNode)) {
+                 // 檢查點擊是否在語言按鈕本身或其子元素上
+                if (languageOptions.classList.contains('open')) {
+                    languageOptions.classList.remove('open');
+                    languageButton.querySelector('.menu-arrow').style.transform = 'rotate(0deg)';
                 }
             }
         });

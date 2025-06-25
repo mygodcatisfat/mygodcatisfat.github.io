@@ -53,6 +53,10 @@
             --language-option-hover-bg: #555;
         }
 
+        html {
+            scroll-behavior: smooth; /* 添加平滑滾動 */
+        }
+
         body {
             font-family: "Helvetica Neue", sans-serif;
             background: var(--bg-color);
@@ -62,7 +66,7 @@
             text-align: center;
             transition: background 0.3s, color 0.3s;
             overflow-x: hidden;
-            scroll-behavior: auto;
+            /* scroll-behavior: auto; */ /* 移除或註解此行，因為已在 html 設置 scroll-behavior: smooth */
         }
 
         /* 左側選單樣式 */
@@ -500,6 +504,11 @@
             .gallery-marquee {
                 animation-duration: 5s; /* Original was 10s, now 5s for mobile */
             }
+            /* 在手機版讓圖片寬度依據視窗寬度調整 */
+            .gallery-marquee img {
+                width: 90vw; 
+                height: auto; /* 自動調整高度以保持比例 */
+            }
         }
     </style>
 </head>
@@ -558,7 +567,7 @@
         
         <div class="language-selection-container">
             <button class="language-button" id="languageButton" onclick="toggleLanguageOptions()">
-                <span id="languageButtonText">LANGUAGE</span>
+                <span data-i18n="language_button_text">LANGUAGE</span> <!-- 將語言按鈕的文本也設為 data-i18n -->
                 <span class="menu-arrow">▶</span>
             </button>
             <div class="language-options" id="languageOptions">
@@ -572,7 +581,8 @@
 
     <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
 
-    <div class="main-content">
+    <!-- 將主要內容區域包裹在 <main> 標籤中 -->
+    <main class="main-content">
         <header>
             <h1 data-i18n="header_title">偶素一豬狼 嘎</h1>
         </header>
@@ -595,19 +605,19 @@
             <h2 data-i18n="members_title">嘎豬窩成員介紹</h2>
             <div class="member-grid">
                 <div class="member-card">
-                    <img src="https://raw.githubusercontent.com/mygodcatisfat/mygodcatisfat.github.io/refs/heads/main/wolf_eat_bun.jpg" alt="阿狼本狼" style="width: 100%; border-radius: 10px;">
+                    <img src="https://raw.githubusercontent.com/mygodcatisfat/mygodcatisfat.github.io/refs/heads/main/wolf_eat_bun.jpg" alt="阿狼吃包子" style="width: 100%; border-radius: 10px;">
                     <h3 data-i18n="member_wolf_name">阿狼</h3>
                     <p data-i18n="member_wolf_real_name">本名：解昆蟲</p>
                     <p data-i18n="member_wolf_nickname">綽號：猴子、歐練</p>
                     <p data-i18n="member_wolf_desc">熱愛美食與發呆，是嘎豬窩的創始狼！語助詞是「嘎！」</p>
                 </div>
                 <div class="member-card">
-                    <img src="https://raw.githubusercontent.com/mygodcatisfat/mygodcatisfat.github.io/refs/heads/main/pic_wolf_pig.jpg" alt="小豬" style="width: 100%; border-radius: 10px;">
+                    <img src="https://raw.githubusercontent.com/mygodcatisfat/mygodcatisfat.github.io/refs/heads/main/pic_wolf_pig.jpg" alt="小豬與狼" style="width: 100%; border-radius: 10px;">
                     <h3 data-i18n="member_pig_name">豬排</h3>
                     <p data-i18n="member_pig_desc">阿狼的妹妹，不會講話，但是可以用念力跟阿狼溝通。</p>
                 </div>
                 <div class="member-card">
-                    <img src="https://raw.githubusercontent.com/mygodcatisfat/mygodcatisfat.github.io/refs/heads/main/pic_bo_sleep.jpg" alt="英國短毛貓" style="width: 100%; border-radius: 10px;">
+                    <img src="https://raw.githubusercontent.com/mygodcatisfat/mygodcatisfat.github.io/refs/heads/main/pic_bo_sleep.jpg" alt="熟睡的英國短毛貓" style="width: 100%; border-radius: 10px;">
                     <h3 data-i18n="member_bo_name">王藍波</h3>
                     <p data-i18n="member_bo_nickname">綽號：昂藍波、灰塵、大老鼠</p>
                     <p data-i18n="member_bo_desc">會用眼神殺死主人的英短，是阿狼的好朋友（兼坐騎？）。</p>
@@ -625,24 +635,24 @@
             <h2 data-i18n="gallery_title">相簿</h2>
             <div class="gallery-wrapper">
                 <div class="gallery-marquee">
-                    <img src="https://lh3.googleusercontent.com/pw/AP1GczNJxSPXC_qp9w-DR8tQUNNQfUxB7G4wBhQcqn_sMyAJ2WHL6-a0ZkMtBbS612-HVNoESf7EbyLzDzn7toApgLrHc5aCEaTzcDhSbwnCTJH9T2ChlkKcqwSRvIor0AFRxape_ZsXORiAYI27wFgSBlI-GQ=w1153-h649-s-no-gm?authuser=0" alt="自訂圖片">
-                    <img src="https://lh3.googleusercontent.com/pw/AP1GczNcmcEIsGoe8pHZM202CCvXNk0g4mu6l8f7-DRV2RyzYvBlN8QGDEpB7cfOrhZNY2-WrFerZ8HXvsE-Lef-O5Bs5jvazTz_pUvrWRVUUDCZsBNa8ie0zUV75gRotx4W10FnaO8lF_uhe2VPnedbUO_G6A=w1225-h919-s-no-gm?authuser=0" alt="圖片2">
-                    <img src="https://lh3.googleusercontent.com/pw/AP1GczONK3sXHB9bpPpRa7tx7QrScdSOtJkVuzZAt-8aeubEG8whqhlMtLCvqomMmNW8WYW1wSjDe33ynxO4BrnuZDVZL3LDYFpD1xwm1z98wB-Tc0t27Lqy1oB0eZuEqGxtfSVGN8HIyCYuKKdZNEG5h_weRg=w662-h883-s-no" alt="圖片2">
-                    <img src="https://lh3.googleusercontent.com/pw/AP1GczMks49RqLSLwSNGteKdBd83kRl8hDyCiQc2ao7U0eujShXioGmB2HFLZS74my6ZaokEf-_7ogxqIDDpCy3qqvUlwWTSakM-0wJHMvfKfnE4AMa632wJy3zLF5331pU1nQU7D65hwgwg1WS_ajJx35TE8g=w689-h919-s-no-gm?authuser=0" alt="圖片3">
-                    <img src="https://lh3.googleusercontent.com/pw/AP1GczOQpUYZr5J40kIVzCKHPTKXV2ggdrTQ-dhQM1QOljs13JH6UHisrN7geU8bFm8CVGp8jWu6BsDEa-mOvw-knXrnMZdIUmfrqeG1Nw1ZsGJP_ULBLJH077mWxwJPtb-n3fZ7_vxi01DzGmdS0KZxqP9JDg=w517-h919-s-no-gm?authuser=0" alt="圖片4">
-                    <img src="https://lh3.googleusercontent.com/pw/AP1GczNrQt1sCser_sduMhGeGRjlbg8xSaE2Q6rEFbALl4KBgZhYbxJdO-FJUGkdmAthJBgj7NOE1Pu0bl8XB7ZgE3yXCBlLb4XXOD3wKVyovE7yG0eHW-R_hVRCK6jVpaMc_-e1rguZL16psLyusvxPZMKLgQ=w1153-h865-s-no-gm?authuser=0" alt="自訂圖片">
-                    <img src="https://lh3.googleusercontent.com/pw/AP1GczNZi2ask4E6Mi5mJ75_4naa5p7jS96DkQIpAMRG6tS4tt2bgn-LEqAUVETvNpNvGEp0u_dGbrgYeJPkguZqvbonLx2GpHNf3fAvD8wYV-5_waLJ2j56DXtDEFVbRe7cRraEWhCPIVLgn6jWO4vo7IuGkg=w517-h919-s-no-gm?authuser=0" alt="圖片2">
-                    <img src="https://raw.githubusercontent.com/mygodcatisfat/mygodcatisfat.github.io/refs/heads/main/pic_bo_sleep.jpg" alt="圖片3">
-                    <img src="https://raw.githubusercontent.com/mygodcatisfat/mygodcatisfat.github.io/refs/heads/main/pic_chikwhite.jpg" alt="圖片4">
-                    <img src="https://lh3.googleusercontent.com/pw/AP1GczNJxSPXC_qp9w-DR8tQUNNQfUxB7G4wBhQcqn_sMyAJ2WHL6-a0ZkMtBbS612-HVNoESf7EbyLzDzn7toApgLrHc5aCEaTzcDhSbwnCTJH9T2ChlkKcqwSRvIor0AFRxape_ZsXORiAYI27wFgSBlI-GQ=w1153-h649-s-no-gm?authuser=0" alt="自訂圖片">
-                    <img src="https://lh3.googleusercontent.com/pw/AP1GczNcmcEIsGoe8pHZM202CCvXNk0g4mu6l8f7-DRV2RyzYvBlN8QGDEpB7cfOrhZNY2-WrFerZ8HXvsE-Lef-O5Bs5jvazTz_pUvrWRVUUDCZsBNa8ie0zUV75gRotx4W10FnaO8lF_uhe2VPnedbUO_G6A=w1225-h919-s-no-gm?authuser=0" alt="圖片2">
-                    <img src="https://lh3.googleusercontent.com/pw/AP1GczONK3sXHB9bpPpRa7tx7QrScdSOtJkVuzZAt-8aeubEG8whqhlMtLCvqomMmNW8WYW1wSjDe33ynxO4BrnuZDVZL3LDYFpD1xwm1z98wB-Tc0t27Lqy1oB0eZuEqGxtfSVGN8HIyCYuKKdZNEG5h_weRg=w662-h883-s-no" alt="圖片2">
-                    <img src="https://lh3.googleusercontent.com/pw/AP1GczMks49RqLSLwSNGteKdBd83kRl8hDyCiQc2ao7U0eujShXioGmB2HFLZS74my6ZaokEf-_7ogxqIDDpCy3qqvUlwWTSakM-0wJHMvfKfnE4AMa632wJy3zLF5331pU1nQU7D65hwgwg1WS_ajJx35TE8g=w689-h919-s-no-gm?authuser=0" alt="圖片3">
-                    <img src="https://lh3.googleusercontent.com/pw/AP1GczOQpUYZr5J40kIVzCKHPTKXV2ggdrTQ-dhQM1QOljs13JH6UHisrN7geU8bFm8CVGp8jWu6BsDEa-mOvw-knXrnMZdIUmfrqeG1Nw1ZsGJP_ULBLJH077mWxwJPtb-n3fZ7_vxi01DzGmdS0KZxqP9JDg=w517-h919-s-no-gm?authuser=0" alt="圖片4">
-                    <img src="https://lh3.googleusercontent.com/pw/AP1GczNrQt1sCser_sduMhGeGRjlbg8xSaE2Q6rEFbALl4KBgZhYbxJdO-FJUGkdmAthJBgj7NOE1Pu0bl8XB7ZgE3yXCBlLb4XXOD3wKVyovE7yG0eHW-R_hVRCK6jVpaMc_-e1rguZL16psLyusvxPZMKLgQ=w1153-h865-s-no-gm?authuser=0" alt="自訂圖片">
-                    <img src="https://lh3.googleusercontent.com/pw/AP1GczNZi2ask4E6Mi5mJ75_4naa5p7jS96DkQIpAMRG6tS4tt2bgn-LEqAUVETvNpNvGEp0u_dGbrgYeJPkguZqvbonLx2GpHNf3fAvD8wYV-5_waLJ2j56DXtDEFVbRe7cRraEWhCPIVLgn6jWO4vo7IuGkg=w517-h919-s-no-gm?authuser=0" alt="圖片2">
-                    <img src="https://raw.githubusercontent.com/mygodcatisfat/mygodcatisfat.github.io/refs/heads/main/pic_bo_sleep.jpg" alt="圖片3">
-                    <img src="https://raw.githubusercontent.com/mygodcatisfat/mygodcatisfat.github.io/refs/heads/main/pic_chikwhite.jpg" alt="圖片4">
+                    <img src="https://lh3.googleusercontent.com/pw/AP1GczNJxSPXC_qp9w-DR8tQUNNQfUxB7G4wBhQcqn_sMyAJ2WHL6-a0ZkMtBbS612-HVNoESf7EbyLzDzn7toApgLrHc5aCEaTzcDhSbwnCTJH9T2ChlkKcqwSRvIor0AFRxape_ZsXORiAYI27wFgSBlI-GQ=w1153-h649-s-no-gm?authuser=0" alt="可愛的小狗">
+                    <img src="https://lh3.googleusercontent.com/pw/AP1GczNcmcEIsGoe8pHZM202CCvXNk0g4mu6l8f7-DRV2RyzYvBlN8QGDEpB7cfOrhZNY2-WrFerZ8HXvsE-Lef-O5Bs5jvazTz_pUvrWRVUUDCZsBNa8ie0zUV75gRotx4W10FnaO8lF_uhe2VPnedbUO_G6A=w1225-h919-s-no-gm?authuser=0" alt="美麗的風景">
+                    <img src="https://lh3.googleusercontent.com/pw/AP1GczONK3sXHB9bpPpRa7tx7QrScdSOtJkVuzZAt-8aeubEG6whqhlMtLCvqomMmNW8WYW1wSjDe33ynxO4BrnuZDVZL3LDYFpD1xwm1z98wB-Tc0t27Lqy1oB0eZuEqGxtfSVGN8HIyCYuKKdZNEG5h_weRg=w662-h883-s-no" alt="可愛的貓咪">
+                    <img src="https://lh3.googleusercontent.com/pw/AP1GczMks49RqLSLwSNGteKdBd83kRl8hDyCiQc2ao7U0eujShXioGmB2HFLZS74my6ZaokEf-_7ogxqIDDpCy3qqvUlwWTSakM-0wJHMvfKfnE4AMa632wJy3zLF5331pU1nQU7D65hwgwg1WS_ajJx35TE8g=w689-h919-s-no-gm?authuser=0" alt="美味的食物">
+                    <img src="https://lh3.googleusercontent.com/pw/AP1GczOQpUYZr5J40kIVzCKHPTKXV2ggdrTQ-dhQM1QOljs13JH6UHisrN7geU8bFm8CVGp8jWu6BsDEa-mOvw-knXrnMZdIUmfrqeG1Nw1ZsGJP_ULBLJH077mWxwJPtb-n3fZ7_vxi01DzGmdS0KZxqP9JDg=w517-h919-s-no-gm?authuser=0" alt="有趣的建築">
+                    <img src="https://lh3.googleusercontent.com/pw/AP1GczNrQt1sCser_sduMhGeGRjlbg8xSaE2Q6rEFbALl4KBgZhYbxJdO-FJUGkdmAthJBgj7NOE1Pu0bl8XB7ZgE3yXCBlLb4XXOD3wKVyovE7yG0eHW-R_hVRCK6jVpaMc_-e1rguZL16psLyusvxPZMKLgQ=w1153-h865-s-no-gm?authuser=0" alt="日落景色">
+                    <img src="https://lh3.googleusercontent.com/pw/AP1GczNZi2ask4E6Mi5mJ75_4naa5p7jS96DkQIpAMRG6tS4tt2bgn-LEqAUVETvNpNvGEp0u_dGbrgYeJPkguZqvbonLx2GpHNf3fAvD8wYV-5_waLJ2j56DXtDEFVbRe7cRraEWhCPIVLgn6jWO4vo7IuGkg=w517-h919-s-no-gm?authuser=0" alt="城市夜景">
+                    <img src="https://raw.githubusercontent.com/mygodcatisfat/mygodcatisfat.github.io/refs/heads/main/pic_bo_sleep.jpg" alt="熟睡的狗">
+                    <img src="https://raw.githubusercontent.com/mygodcatisfat/mygodcatisfat.github.io/refs/heads/main/pic_chikwhite.jpg" alt="白色小雞">
+                    <img src="https://lh3.googleusercontent.com/pw/AP1GczNJxSPXC_qp9w-DR8tQUNNQfUxB7G4wBhQcqn_sMyAJ2WHL6-a0ZkMtBbS612-HVNoESf7EbyLzDzn7toApgLrHc5aCEaTzcDhSbwnCTJH9T2ChlkKcqwSRvIor0AFRxape_ZsXORiAYI27wFgSBlI-GQ=w1153-h649-s-no-gm?authuser=0" alt="可愛的小狗">
+                    <img src="https://lh3.googleusercontent.com/pw/AP1GczNcmcEIsGoe8pHZM202CCvXNk0g4mu6l8f7-DRV2RyzYvBlN8QGDEpB7cfOrhZNY2-WrFerZ8HXvsE-Lef-O5Bs5jvazTz_pUvrWRVUUDCZsBNa8ie0zUV75gRotx4W10FnaO8lF_uhe2VPnedbUO_G6A=w1225-h919-s-no-gm?authuser=0" alt="美麗的風景">
+                    <img src="https://lh3.googleusercontent.com/pw/AP1GczONK3sXHB9bpPpRa7tx7QrScdSOtJkVuzZAt-8aeubEG6whqhlMtLCvqomMmNW8WYW1wSjDe33ynxO4BrnuZDVZL3LDYFpD1xwm1z98wB-Tc0t27Lqy1oB0eZuEqGxtfSVGN8HIyCYuKKdZNEG5h_weRg=w662-h883-s-no" alt="可愛的貓咪">
+                    <img src="https://lh3.googleusercontent.com/pw/AP1GczMks49RqLSLwSNGteKdBd83kRl8hDyCiQc2ao7U0eujShXioGmB2HFLZS74my6ZaokEf-_7ogxqIDDpCy3qqvUlwWTSakM-0wJHMvfKfnE4AMa632wJy3zLF5331pU1nQU7D65hwgwg1WS_ajJx35TE8g=w689-h919-s-no-gm?authuser=0" alt="美味的食物">
+                    <img src="https://lh3.googleusercontent.com/pw/AP1GczOQpUYZr5J40kIVzCKHPTKXV2ggdrTQ-dhQM1QOljs13JH6UHisrN7geU8bFm8CVGp8jWu6BsDEa-mOvw-knXrnMZdIUmfrqeG1Nw1ZsGJP_ULBLJH077mWxwJPtb-n3fZ7_vxi01DzGmdS0KZxqP9JDg=w517-h919-s-no-gm?authuser=0" alt="有趣的建築">
+                    <img src="https://lh3.googleusercontent.com/pw/AP1GczNrQt1sCser_sduMhGeGRjlbg8xSaE2Q6rEFbALl4KBgZhYbxJdO-FJUGkdmAthJBgj7NOE1Pu0bl8XB7ZgE3yXCBlLb4XXOD3wKVyovE7yG0eHW-R_hVRCK6jVpaMc_-e1rguZL16psLyusvxPZMKLgQ=w1153-h865-s-no-gm?authuser=0" alt="日落景色">
+                    <img src="https://lh3.googleusercontent.com/pw/AP1GczNZi2ask4E6Mi5mJ75_4naa5p7jS96DkQIpAMRG6tS4tt2bgn-LEqAUVETvNpNvGEp0u_dGbrgYeJPkguZqvbonLx2GpHNf3fAvD8wYV-5_waLJ2j56DXtDEFVbRe7cRraEWhCPIVLgn6jWO4vo7IuGkg=w517-h919-s-no-gm?authuser=0" alt="城市夜景">
+                    <img src="https://raw.githubusercontent.com/mygodcatisfat/mygodcatisfat.github.io/refs/heads/main/pic_bo_sleep.jpg" alt="熟睡的狗">
+                    <img src="https://raw.githubusercontent.com/mygodcatisfat/mygodcatisfat.github.io/refs/heads/main/pic_chikwhite.jpg" alt="白色小雞">
                 </div>
             </div>
             <a href="gallery-only.html" class="view-more" target="_blank" data-i18n="view_more_images">✨ 查看更多圖片</a>
@@ -658,10 +668,10 @@
             <h2 data-i18n="contact_us_title">聯絡偶</h2>
             <p>
                 <a href="https://github.com/mygodcatisfat" target="_blank">
-                    <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/github/github-original.svg" alt="GitHub" width="30" style="vertical-align: middle; margin-right: 8px;">
+                    <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/github/github-original.svg" alt="GitHub 圖示" width="30" style="vertical-align: middle; margin-right: 8px;">
                 </a>
                 <a href="https://www.instagram.com/the_crab_wolf?igsh=Z29mYTlhcjFxdmp1&utm_source=qr" target="_blank">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" alt="Instagram" width="30" style="vertical-align: middle;">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" alt="Instagram 圖示" width="30" style="vertical-align: middle;">
                 </a>
             </p>
         </section>
@@ -683,7 +693,7 @@
                     });
             </script>
         </footer>
-    </div>
+    </main> <!-- </main> 標籤結束 -->
 
     <button id="back-to-top" title="回到最上方" data-i18n="back_to_top_button">▲</button>
 
@@ -731,6 +741,7 @@
                         "food_tips": "美食小貼士",
                         "lang_zh": "繁體中文",
                         "lang_en": "English",
+                        "language_button_text": "語言設定", // 添加語言按鈕的翻譯
                         "toggle_dark_mode": "切換夜間模式",
                         "header_title": "偶素一豬狼 嘎",
                         "nav_about": "關於嘎豬窩",
@@ -760,7 +771,8 @@
                         "contact_us_title": "聯絡偶",
                         "footer_copyright": "© 2025 嘎豬窩. 保留所有權利。",
                         "view_count_prefix": "👀 目前瀏覽次數：",
-                        "back_to_top_button": "▲"
+                        "back_to_top_button": "▲",
+                        "content_loading": "內容載入中... (實際功能尚未實作)" // 針對 showContent 添加翻譯
                     },
                     "en": {
                         "page_title": "Welcome to My Little World",
@@ -786,6 +798,7 @@
                         "food_tips": "Food Tips",
                         "lang_zh": "Traditional Chinese",
                         "lang_en": "English",
+                        "language_button_text": "LANGUAGE", // 添加語言按鈕的翻譯
                         "toggle_dark_mode": "Toggle Dark Mode",
                         "header_title": "I am a Pig Wolf, Ga",
                         "nav_about": "About GaPig Den",
@@ -815,7 +828,8 @@
                         "contact_us_title": "Contact Us",
                         "footer_copyright": "© 2025 GaPig Den. All rights reserved.",
                         "view_count_prefix": "👀 Current Views:",
-                        "back_to_top_button": "▲"
+                        "back_to_top_button": "▲",
+                        "content_loading": "Content loading... (actual function not yet implemented)" // 針對 showContent 添加翻譯
                     }
                 };
             }
@@ -830,13 +844,13 @@
                     element.innerText = translations[lang][key];
                 }
             });
-            // 特別處理語言按鈕文本
-            const languageButtonText = document.getElementById('languageButtonText');
-            if (lang === 'en') {
-                languageButtonText.innerText = '語言設定';
-            } else {
-                languageButtonText.innerText = 'LANGUAGE';
-            }
+            // 語言按鈕文本現在由 data-i18n 處理，無需此處特別處理
+            // const languageButtonText = document.getElementById('languageButtonText');
+            // if (lang === 'en') {
+            //     languageButtonText.innerText = '語言設定';
+            // } else {
+            //     languageButtonText.innerText = 'LANGUAGE';
+            // }
         }
 
         // 頁面載入時執行
@@ -864,6 +878,11 @@
             // 關閉語言選單
             document.getElementById('languageOptions').classList.remove('open');
             document.getElementById('languageButton').querySelector('.menu-arrow').style.transform = 'rotate(0deg)';
+
+            // 關閉所有展開的子選單
+            document.querySelectorAll('.menu-section.expanded').forEach(s => {
+                s.classList.remove('expanded');
+            });
         }
 
         function toggleSubmenu(button) {
@@ -915,7 +934,9 @@
                 "food-tips": translations[currentLanguage]['food_tips']
             } : {};
             
-            alert((contentMap[contentType] || '內容載入中...') + ' (實際功能尚未實作)');
+            // 將 alert 替換為 console.log 或未來自定義的 UI 提示
+            console.log((contentMap[contentType] || translations[currentLanguage]['content_loading'])); 
+            // alert((contentMap[contentType] || '內容載入中...') + ' (實際功能尚未實作)'); // 註解或移除此行
         }
 
         function toggleDarkMode() {
@@ -955,13 +976,21 @@
             // 實際功能之後設計，這裡可以放置語言切換邏輯
             console.log('Selected language:', lang);
             if (showAlert) {
-                alert('已選擇語言：' + (lang === 'en' ? 'English' : '繁體中文'));
+                // 將 alert 替換為 console.log 或未來自定義的 UI 提示
+                console.log('已選擇語言：' + (lang === 'en' ? translations[currentLanguage]['lang_en'] : translations[currentLanguage]['lang_zh']));
+                // alert('已選擇語言：' + (lang === 'en' ? 'English' : '繁體中文')); // 註解或移除此行
             }
         }
 
         // 平滑滾動腳本
+        // 已在 CSS 中設置 scroll-behavior: smooth，此 JavaScript 作為舊版瀏覽器備援
         document.querySelectorAll('nav a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
+                // 檢查瀏覽器是否支援 CSS scroll-behavior
+                if ('scrollBehavior' in document.documentElement.style) {
+                    return; // 如果支援，則使用 CSS 原生功能，無需 JavaScript
+                }
+
                 e.preventDefault();
 
                 const targetId = this.getAttribute('href').substring(1);
@@ -998,6 +1027,12 @@
 
         // 回到最上方按鈕功能
         document.getElementById('back-to-top').addEventListener('click', function() {
+            // 檢查瀏覽器是否支援 CSS scroll-behavior
+            if ('scrollBehavior' in document.documentElement.style) {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return; // 如果支援，則使用 CSS 原生功能，無需 JavaScript
+            }
+
             const startPosition = window.pageYOffset;
             const distance = -startPosition;
             const duration = 800;
@@ -1046,6 +1081,130 @@
                 }
             }
         });
+
+        // particles.js 初始化 (確保 particles.js 腳本已載入)
+        // 您需要在 <body> 結束標籤前載入 particles.js 腳本，例如：
+        // <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+        // 然後在 DOMContentLoaded 之後或單獨的 script 標籤中初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof particlesJS !== 'undefined') {
+                particlesJS('particles-js', {
+                    "particles": {
+                        "number": {
+                            "value": 80,
+                            "density": {
+                                "enable": true,
+                                "value_area": 800
+                            }
+                        },
+                        "color": {
+                            "value": "#ffe680"
+                        },
+                        "shape": {
+                            "type": "circle",
+                            "stroke": {
+                                "width": 0,
+                                "color": "#000000"
+                            },
+                            "polygon": {
+                                "nb_sides": 5
+                            },
+                            "image": {
+                                "src": "img/github.svg",
+                                "width": 100,
+                                "height": 100
+                            }
+                        },
+                        "opacity": {
+                            "value": 0.5,
+                            "random": false,
+                            "anim": {
+                                "enable": false,
+                                "speed": 1,
+                                "opacity_min": 0.1,
+                                "sync": false
+                            }
+                        },
+                        "size": {
+                            "value": 3,
+                            "random": true,
+                            "anim": {
+                                "enable": false,
+                                "speed": 40,
+                                "size_min": 0.1,
+                                "sync": false
+                            }
+                        },
+                        "line_linked": {
+                            "enable": true,
+                            "distance": 150,
+                            "color": "#ffcc00",
+                            "opacity": 0.4,
+                            "width": 1
+                        },
+                        "move": {
+                            "enable": true,
+                            "speed": 6,
+                            "direction": "none",
+                            "random": false,
+                            "straight": false,
+                            "out_mode": "out",
+                            "bounce": false,
+                            "attract": {
+                                "enable": false,
+                                "rotateX": 600,
+                                "rotateY": 1200
+                            }
+                        }
+                    },
+                    "interactivity": {
+                        "detect_on": "canvas",
+                        "events": {
+                            "onhover": {
+                                "enable": true,
+                                "mode": "repulse"
+                            },
+                            "onclick": {
+                                "enable": true,
+                                "mode": "push"
+                            },
+                            "resize": true
+                        },
+                        "modes": {
+                            "grab": {
+                                "distance": 400,
+                                "line_linked": {
+                                    "opacity": 1
+                                }
+                            },
+                            "bubble": {
+                                "distance": 400,
+                                "size": 40,
+                                "duration": 2,
+                                "opacity": 8,
+                                "speed": 3
+                            },
+                            "repulse": {
+                                "distance": 200,
+                                "duration": 0.4
+                            },
+                            "push": {
+                                "particles_nb": 4
+                            },
+                            "remove": {
+                                "particles_nb": 2
+                            }
+                        }
+                    },
+                    "retina_detect": true
+                });
+            } else {
+                console.warn("particles.js 函式庫未載入。請確保在 script 標籤之前載入。");
+            }
+        });
+
     </script>
+    <!-- 請確保在 </body> 結束標籤前載入 particles.js 函式庫 -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
 </body>
 </html>

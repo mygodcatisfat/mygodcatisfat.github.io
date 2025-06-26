@@ -1,3 +1,4 @@
+// 控制「回到最上方」按鈕的動畫滾動效果
 document.getElementById('back-to-top').addEventListener('click', function() {
     const startPosition = window.pageYOffset;
     const distance = -startPosition;

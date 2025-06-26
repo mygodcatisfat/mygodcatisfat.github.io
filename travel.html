@@ -670,6 +670,25 @@
             z-index: -1;
         }
 
+        #back-to-top {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #ffeb3b;
+            color: #333;
+            border: none;
+            padding: 0.5em 0.8em;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            font-size: 1.2em;
+            z-index: 1000;
+        }
+        body.dark-mode #back-to-top {
+            background: #555;
+            color: #f0f0f0;
+        }
+        
         /* Responsive Design (from original index.html) */
         @media (max-width: 768px) {
             .sidebar {

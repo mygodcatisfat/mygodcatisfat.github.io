@@ -1,3 +1,6 @@
+/*
+處理主選單點擊後，滑順地滾動到指定區塊（如成員介紹、相簿等）
+*/
 document.querySelectorAll('nav a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
         e.preventDefault();

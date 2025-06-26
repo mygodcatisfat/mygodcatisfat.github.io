@@ -1,3 +1,9 @@
+/*
+監聽整個頁面的點擊事件，用於：
+    點擊頁面其它區域時自動關閉側邊欄
+    點擊非語言選單時自動收合語言選單
+控制語言選單的展開/收合
+*/
 // 關閉側邊欄和語言選單的全域點擊事件
 document.addEventListener('click', function(e) {
     const sidebar = document.getElementById('sidebar');

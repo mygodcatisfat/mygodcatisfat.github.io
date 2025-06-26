@@ -513,7 +513,7 @@
         </div>
         <div class="sidebar-menu">
             <div class="menu-section">
-                <button class="menu-title" onclick="toggleSubmenu(this)">
+                <button class="menu-title">
                     <span data-i18n="menu_daily_life">狼的日常 | 生活</span>
                     <span class="menu-arrow">▶</span>
                 </button>
@@ -527,7 +527,7 @@
             </div>
             
             <div class="menu-section">
-                <button class="menu-title" onclick="toggleSubmenu(this)">
+                <button class="menu-title">
                     <span data-i18n="menu_travel">狼狼來了 | 旅遊</span>
                     <span class="menu-arrow">▶</span>
                 </button>
@@ -542,7 +542,7 @@
             </div>
             
             <div class="menu-section">
-                <button class="menu-title" onclick="toggleSubmenu(this)">
+                <button class="menu-title">
                     <span data-i18n="menu_food">狼吞虎嚥 | 食記</span>
                     <span class="menu-arrow">▶</span>
                 </button>
@@ -860,23 +860,19 @@
             document.getElementById('languageButton').querySelector('.menu-arrow').style.transform = 'rotate(0deg)';
         }
     
-        function toggleSubmenu(button) {
-            const section = button.parentElement;
-            const isExpanded = section.classList.contains('expanded');
-            
-            // 關閉所有其他展開的選單 (包括語言選單)
-            document.querySelectorAll('.menu-section.expanded').forEach(s => {
-                if (s !== section) {
-                    s.classList.remove('expanded');
-                }
-            });
-            document.getElementById('languageOptions').classList.remove('open');
-            document.getElementById('languageButton').querySelector('.menu-arrow').style.transform = 'rotate(0deg)';
-    
-    
-            // 切換當前選單
-            section.classList.toggle('expanded');
-        }
+        document.querySelector('.sidebar-menu').addEventListener('click', function(e) {
+            if (e.target.classList.contains('menu-title')) {
+                const section = e.target.parentElement;
+                section.classList.toggle('expanded');
+                // 關閉其他展開的
+                document.querySelectorAll('.menu-section.expanded').forEach(sec => {
+                    if (sec !== section) sec.classList.remove('expanded');
+                });
+                // 關閉語言選單
+                document.getElementById('languageOptions').classList.remove('open');
+                document.getElementById('languageButton').querySelector('.menu-arrow').style.transform = 'rotate(0deg)';
+            }
+        });
     
         function showContent(contentType) {
             // 關閉側邊欄

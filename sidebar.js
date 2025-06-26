@@ -1,6 +1,7 @@
 /*
 控制側邊欄開啟/關閉
 處理側邊欄選單的展開、收合互動
+讓 sidebar 關閉事件更現代
 根據選單點擊顯示不同內容或導頁
 */
 function toggleSidebar() {
@@ -18,6 +19,8 @@ function closeSidebar() {
     document.getElementById('languageOptions').classList.remove('open');
     document.getElementById('languageButton').querySelector('.menu-arrow').style.transform = 'rotate(0deg)';
 }
+
+document.querySelector('.sidebar-overlay').addEventListener('click', closeSidebar);
 
 document.querySelector('.sidebar-menu').addEventListener('click', function(e) {
     const menuTitle = e.target.closest('.menu-title');

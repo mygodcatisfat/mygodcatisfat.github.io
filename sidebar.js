@@ -1,3 +1,8 @@
+/*
+控制側邊欄開啟/關閉
+處理側邊欄選單的展開、收合互動
+根據選單點擊顯示不同內容或導頁
+*/
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.querySelector('.sidebar-overlay');

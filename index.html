@@ -926,8 +926,16 @@
                 s.classList.remove('expanded');
             });
         }
-    
-        function selectLanguage(lang, showAlert = true) {
+
+        function selectLanguage(lang) {
+            if (!translations[lang]) return;
+            currentLanguage = lang;
+            localStorage.setItem('selectedLanguage', lang);
+            applyTranslations(lang);
+            // 可加 toast 訊息取代 alert
+            showToast(lang === 'en' ? 'Switched to English' : '已切換為繁體中文');
+        }
+        /*function selectLanguage(lang, showAlert = true) {
             currentLanguage = lang;
             localStorage.setItem('selectedLanguage', lang); // 將選擇的語言儲存到 localStorage
     
@@ -944,7 +952,7 @@
             if (showAlert) {
                 alert('已選擇語言：' + (lang === 'en' ? 'English' : '繁體中文'));
             }
-        }
+        }*/
     
         // 平滑滾動腳本
         document.querySelectorAll('nav a[href^="#"]').forEach(anchor => {

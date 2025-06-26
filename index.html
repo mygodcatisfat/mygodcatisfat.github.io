@@ -852,8 +852,9 @@
         }
     
         document.querySelector('.sidebar-menu').addEventListener('click', function(e) {
-            if (e.target.classList.contains('menu-title')) {
-                const section = e.target.parentElement;
+            const menuTitle = e.target.closest('.menu-title');
+            if (menuTitle) {
+                const section = menuTitle.parentElement;
                 section.classList.toggle('expanded');
                 // 關閉其他展開的
                 document.querySelectorAll('.menu-section.expanded').forEach(sec => {

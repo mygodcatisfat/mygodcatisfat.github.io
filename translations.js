@@ -1,3 +1,8 @@
+/*
+載入外部 JSON 翻譯檔
+根據使用者選擇切換語言
+將對應語言的文字套用到有 data-i18n 屬性的元素上
+*/
 let currentLanguage = 'zh-Hant';
 let translations = {};
 const JSON_URL = 'https://raw.githubusercontent.com/mygodcatisfat/mygodcatisfat.github.io/refs/heads/main/translations.json';

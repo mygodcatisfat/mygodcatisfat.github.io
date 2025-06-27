@@ -213,6 +213,7 @@
             background: var(--header-bg);
             padding: 1em 0;
         }
+        
         header h1 {
             margin: 0;
             font-size: 2em;
@@ -223,6 +224,7 @@
             justify-content: center; /* 可選，讓標題置中 */
             font-family: 'Comic Neue', "Helvetica Neue", Arial, "Noto Sans TC", "Noto Sans", sans-serif; /* Noto Sans TC 是 Google 的開源中文字型，英文也會有一致的高度 */
         }
+        
         nav {
             background: #ffe680;
             padding: 0;            /* 改為 0，可用 height 控制高度 */
@@ -235,9 +237,11 @@
             white-space: nowrap;
             -webkit-overflow-scrolling: touch;
         }
+        
         body.dark-mode nav {
             background: #444;
         }
+        
         nav a {
             display: inline-block;
             white-space: nowrap;
@@ -253,27 +257,32 @@
             transition: background-color 0.3s, color 0.3s;
             box-sizing: border-box;
         }
+        
         body.dark-mode nav a {
             color: #f0f0f0;
         }
-        nav a:hover,
-        nav a:focus {
+        
+        nav a:hover, nav a:focus {
             color: var(--nav-link-hover-color);
             background-color: var(--nav-link-bg-hover);
             outline: none;
         }
+        
         nav a:active {
             background-color: #e0e0e0; /* 或你想要的灰色 */
             color: #222;
             outline: none; /* focus 狀態去除預設框線 */
         }
+        
         section {
             padding: 2em;
         }
+        
         .gallery-wrapper {
             overflow: hidden;
             position: relative;
         }
+        
         .gallery-marquee {
             display: flex;
             gap: 1em;
@@ -284,6 +293,7 @@
             0% { transform: translateX(0); }
             100% { transform: translateX(-100%); } /* Changed from -50% to -100% for continuous loop with duplicated images */
         }
+        
         .gallery-marquee img {
             width: 450px;
             height: 300px;
@@ -293,11 +303,13 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             transition: transform 0.3s, object-fit 0.3s, object-position 0.3s;
         }
+        
         .gallery-marquee img:hover {
             transform: scale(1.05);
             object-fit: contain;
             background-color: #000;
         }
+        
         .view-more {
             display: inline-block;
             margin-top: 1em;
@@ -310,31 +322,38 @@
             color: #333;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
+        
         body.dark-mode .view-more {
             background: #555;
             color: #f0f0f0;
         }
+        
         a {
             color: #0066cc;
             text-decoration: none;
         }
+        
         body.dark-mode a {
             color: #99ccff;
         }
+        
         footer {
             background: var(--footer-bg);
             padding: 1em;
             font-size: 0.9em;
             color: var(--text-color);
         }
+        
         #stats {
             margin-top: 0.5em;
             font-size: 0.85em;
             color: #666;
         }
+        
         body.dark-mode #stats {
             color: #aaa;
         }
+        
         .instagram-section {
             background: linear-gradient(135deg, #f6e27a, #f2c94c);
             padding: 2em;
@@ -344,22 +363,27 @@
             box-shadow: 0 8px 16px rgba(0,0,0,0.15);
             animation: fadeInUp 1s ease-out;
         }
+        
         body.dark-mode .instagram-section {
             background: linear-gradient(135deg, #444, #333);
         }
+        
         .instagram-section h2 {
             font-family: 'Comic Neue', cursive;
             font-weight: bold;
             color: var(--text-color);
         }
+        
         @keyframes fadeInUp {
             0% { opacity: 0; transform: translateY(20px); }
             100% { opacity: 1; transform: translateY(0); }
         }
+        
         .instagram-media {
             max-width: 100%;
             width: 100%;
         }
+        
         .toggle-button-sidebar {
             width: calc(100% - 3em);
             margin: 0.75em 1.5em;
@@ -548,7 +572,6 @@
 </head>
 <body>
     <div id="particles-js"></div>
-
     <div class="sidebar-overlay"></div>
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
@@ -568,7 +591,6 @@
                     <div class="submenu-item" onclick="showContent('daily-evening')">🌙 <span data-i18n="daily_evening">夜晚活動</span></div>
                 </div>
             </div>
-            
             <div class="menu-section">
                 <button class="menu-title">
                     <span data-i18n="menu_travel">狼狼來了 | 旅遊</span>

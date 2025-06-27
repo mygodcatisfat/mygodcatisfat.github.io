@@ -39,7 +39,6 @@ function selectLanguage(lang) {
     currentLanguage = lang;
     localStorage.setItem('selectedLanguage', lang);
     applyTranslations(lang);
-    showToast(lang === 'en' ? 'Switched to English' : '已切換為繁體中文');
 }
 
 document.addEventListener('DOMContentLoaded', async () => {

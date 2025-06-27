@@ -139,7 +139,7 @@ function selectLanguage(lang) {
     localStorage.setItem('selectedLanguage', lang);
     applyTranslations(lang);
     // 可加 toast 訊息取代 alert
-    showToast(lang === 'en' ? 'Switched to English' : '已切換為繁體中文');
+    // showToast(lang === 'en' ? 'Switched to English' : '已切換為繁體中文');
 }
 
 // 輪播複製程式

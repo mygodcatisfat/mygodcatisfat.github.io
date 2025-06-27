@@ -773,15 +773,18 @@
         <button class="toggle-button-sidebar" onclick="toggleDarkMode()" data-i18n="toggle_dark_mode">切換夜間模式</button>
     </div>
     <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+    
     <div class="main-content">
         <header>
-            <h1 data-i18n="header_title"><b>偶素一豬狼 嘎</b></h1>
+            <h1 data-i18n="header_title">偶素一豬狼 嘎</h1>
         </header>
-        <nav class="main-nav-links">
+        
+        <nav>
             <a href="https://mygodcatisfat.github.io/">回到首頁</a>
             <a href="#hero-section" data-i18n="nav_blog_home">網誌首頁</a>
             <a href="#latest-posts-section" data-i18n="nav_latest_posts">最新文章</a>
         </nav>
+        
         <section id="hero-section" class="hero-section">
             <div class="text-center">
                 <h1 data-i18n="hero_title">開始你的下一個冒險</h1>
@@ -789,6 +792,7 @@
                 <button onclick="scrollToSection('latest-posts-section')" data-i18n="hero_button">閱讀最新網誌</button>
             </div>
         </section>
+        
         <section id="latest-posts-section" class="container mx-auto my-12 px-6 grid grid-cols-1 md:grid-cols-3 gap-12">
             <div class="md:col-span-2">
                 <h2 class="text-4xl font-bold mb-8 text-center md:text-left text-gray-800" data-i18n="latest_posts_title">最新網誌文章</h2>
@@ -948,7 +952,9 @@
             </script>
         </footer>
     </div>
+    
     <button id="back-to-top" title="回到最上方" data-i18n="back_to_top_button">▲</button>
+    
     <div id="message-container"></div>
     <script>
         /*let currentLanguage = 'zh-Hant';

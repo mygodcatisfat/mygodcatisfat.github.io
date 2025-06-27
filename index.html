@@ -243,15 +243,24 @@
             height: 100%;
             display: flex;
             align-items: center;
-            padding: 0.5em 0.8em; /* Add padding for better touch targets */
-            border-radius: 5px; /* Rounded corners for links */
-            transition: background-color 0.3s, color 0.3s;
+            padding: var(--nav-link-padding);
+            border-radius: var(--nav-link-radius);
+            transition: var(--nav-link-transition);
+            box-sizing: border-box;
         }
         body.dark-mode nav a {
             color: #f0f0f0;
         }
-        nav a:hover {
-            text-decoration: underline;
+        nav a:hover,
+        nav a:focus {
+            color: var(--nav-link-hover-color);
+            background-color: var(--nav-link-bg-hover);
+            outline: none;
+        }
+        nav a:active,
+        nav a[aria-current="page"] {
+            background-color: var(--nav-link-bg-active);
+            color: var(--nav-link-hover-color);
         }
         section {
             padding: 2em;
@@ -515,6 +524,10 @@
             /* 手機版相簿動畫速度調整為網頁版的兩倍快 */
             .gallery-marquee {
                 animation-duration: 5s; /* Original was 10s, now 5s for mobile */
+            }
+            nav a {
+                padding: 0.7em 1em;
+                font-size: 1.05em;
             }
         }
     </style>

@@ -236,16 +236,15 @@
             background: #444;
         }
         nav a {
-            margin: 0;
+            margin: 0 0.2em;                /* 讓每個 a 有點左右間距 */
             text-decoration: none;
             color: #555;
             font-weight: bold;
-            height: 100%;
             display: flex;
-            align-items: center;
-            padding: var(--nav-link-padding);
-            border-radius: var(--nav-link-radius);
-            transition: var(--nav-link-transition);
+            align-items: center;             /* 垂直置中 */
+            padding: 0.4em 1em;              /* 調整 padding 決定圓角形狀和觸控範圍 */
+            border-radius: 8px;              /* 圓角更明顯 */
+            transition: background-color 0.3s, color 0.3s;
             box-sizing: border-box;
         }
         body.dark-mode nav a {

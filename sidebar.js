@@ -7,7 +7,7 @@
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.querySelector('.sidebar-overlay');
-    const hamburgerButton = document.getElementById('hamburgerButton'); // 取得漢堡按鈕
+    const hamburgerButton = document.getElementById('hamburgerButton') || document.querySelector(".menu-toggle"); // 取得漢堡按鈕
 
     sidebar.classList.toggle('open');
     overlay.classList.toggle('active');

@@ -231,11 +231,17 @@
             align-items: center;   /* 垂直置中 */
             justify-content: center;
             gap: 1em;              /* 讓每個 a 之間有間距 */
+            overflow-x: auto;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
         }
         body.dark-mode nav {
             background: #444;
         }
         nav a {
+            display: inline-block;
+            white-space: nowrap;
+            min-width: max-content;
             margin: 0 0.2em;                /* 讓每個 a 有點左右間距 */
             text-decoration: none;
             color: #555;
@@ -524,9 +530,18 @@
             .gallery-marquee {
                 animation-duration: 5s; /* Original was 10s, now 5s for mobile */
             }
+            nav {
+                overflow-x: auto;
+                white-space: nowrap;
+                padding: 0.2em 0;
+            }
             nav a {
-                padding: 0.7em 1em;
-                font-size: 1.05em;
+                display: inline-block;
+                white-space: nowrap;
+                min-width: max-content;
+                font-size: 1em;
+                padding: 0.4em 0.8em;
+                margin: 0 0.1em;
             }
         }
     </style>

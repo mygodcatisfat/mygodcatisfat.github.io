@@ -1025,7 +1025,7 @@
                     }
                 };
             }
-        }*/
+        }
         function applyTranslations(lang) {
             const elements = document.querySelectorAll('[data-i18n]');
             elements.forEach(element => {
@@ -1038,8 +1038,8 @@
             if (languageButtonText) {
                 languageButtonText.innerText = (lang === 'en') ? 'Language Settings' : '語言設定';
             }
-        }
-        function showMessageBox(messageKey) {
+        }*/
+        /*function showMessageBox(messageKey) {
             const messageContainer = document.getElementById('message-container');
             if (messageContainer.hasChildNodes()) messageContainer.innerHTML = '';
             const backdrop = document.createElement('div');
@@ -1056,21 +1056,21 @@
         }
         function closeMessageBox() {
             document.getElementById('message-container').innerHTML = '';
-        }
-        document.addEventListener('DOMContentLoaded', async () => {
+        }*/
+        /*document.addEventListener('DOMContentLoaded', async () => {
             await loadTranslations();
             const storedLang = localStorage.getItem('selectedLanguage') || 'zh-Hant';
             selectLanguage(storedLang, false);
             const mobileMenuButton = document.querySelector('.menu-toggle');
             if (mobileMenuButton) mobileMenuButton.addEventListener('click', toggleSidebar);
-        });
-        function toggleSidebar() {
+        });*/
+        /*function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.querySelector('.sidebar-overlay');
             sidebar.classList.toggle('open');
             overlay.classList.toggle('active');
-        }
-        function closeSidebar() {
+        }*/
+        /*function closeSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.querySelector('.sidebar-overlay');
             sidebar.classList.remove('open');
@@ -1081,7 +1081,7 @@
                 languageOptions.classList.remove('open');
                 languageButton.querySelector('.menu-arrow').style.transform = 'rotate(0deg)';
             }
-        }
+        }*/
         function toggleSubmenu(button) {
             const section = button.parentElement;
             document.querySelectorAll('.menu-section.expanded').forEach(s => {

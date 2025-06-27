@@ -161,7 +161,7 @@
         }
 
         .menu-section.expanded .submenu {
-            max-height: 300px; /* Adjust as needed */
+            max-height: 300px;
         }
 
         .submenu-item {
@@ -180,7 +180,7 @@
             border-bottom: none;
         }
 
-        /* Menu Toggle Button (from original index.html, z-index increased) */
+        /* 選單切換按鈕 */
         .menu-toggle {
             position: fixed;
             top: 1em;
@@ -191,7 +191,7 @@
             padding: 0.5em 0.8em;
             border-radius: 5px;
             cursor: pointer;
-            z-index: 9999; /* Increased z-index to ensure visibility */
+            z-index: 1002; /* Increased z-index to ensure visibility */
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
             font-size: 1.2em;
             transition: background 0.3s;
@@ -201,7 +201,7 @@
             background: #f2c94c;
         }
 
-        /* Overlay (from original index.html) */
+        /* 遮罩層 */
         .sidebar-overlay {
             position: fixed;
             top: 0;
@@ -220,7 +220,7 @@
             visibility: visible;
         }
 
-        /* Main Content Adjustment (from original index.html) */
+        /* 調整主內容區域 */
         .main-content {
             transition: margin-left 0.3s ease;
         }
@@ -259,20 +259,25 @@
             height: 100%;
             display: flex;
             align-items: center;
-            padding: 0.5em 0.8em; /* Add padding for better touch targets */
-            border-radius: 5px; /* Rounded corners for links */
-            transition: background-color 0.3s, color 0.3s;
+            padding: var(--nav-link-padding);
+            border-radius: var(--nav-link-radius);
+            transition: var(--nav-link-transition);
+            box-sizing: border-box;
         }
         body.dark-mode nav a {
             color: #f0f0f0;
         }
-        nav a:hover {
-            background-color: rgba(0,0,0,0.1); /* Subtle hover effect */
-            text-decoration: none; /* Remove underline on hover, prefer background change */
+        nav a:hover,
+        nav a:focus {
+            color: var(--nav-link-hover-color);
+            background-color: var(--nav-link-bg-hover);
+            outline: none;
         }
-        /*body.dark-mode .main-nav-links a:hover {
-            background-color: rgba(255,255,255,0.1);
-        }*/
+        nav a:active {
+            background-color: #e0e0e0; /* 或你想要的灰色 */
+            color: #222;
+            outline: none; /* focus 狀態去除預設框線 */
+        }
 
         /* Hero Section (from travel-blog-page, adapted to theme) */
         .hero-section {

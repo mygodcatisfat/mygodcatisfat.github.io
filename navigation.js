@@ -1,5 +1,6 @@
 /*
 處理主選單點擊後，滑順地滾動到指定區塊（如成員介紹、相簿等）
+nav橫向卷軸預設最左側
 */
 document.querySelectorAll('nav a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
@@ -23,4 +24,8 @@ document.querySelectorAll('nav a[href^="#"]').forEach(anchor => {
         }
         requestAnimationFrame(animation);
     });
+});
+document.addEventListener('DOMContentLoaded', function () {
+    const nav = document.querySelector('nav');
+    if (nav) nav.scrollLeft = 0;
 });

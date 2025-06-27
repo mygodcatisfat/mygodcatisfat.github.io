@@ -7,17 +7,28 @@
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.querySelector('.sidebar-overlay');
+    const hamburgerButton = document.getElementById('hamburgerButton'); // 取得漢堡按鈕
+
     sidebar.classList.toggle('open');
     overlay.classList.toggle('active');
+
+    if (sidebar.classList.contains('open')) {
+        hamburgerButton.style.display = 'none'; // 隱藏漢堡按鈕
+    } else {
+        hamburgerButton.style.display = ''; // 顯示漢堡按鈕
+    }
 }
 
 function closeSidebar() {
     const sidebar = document.getElementById('sidebar');
     const overlay = document.querySelector('.sidebar-overlay');
+    const hamburgerButton = document.getElementById('hamburgerButton'); // 取得漢堡按鈕
+
     sidebar.classList.remove('open');
     overlay.classList.remove('active');
     document.getElementById('languageOptions').classList.remove('open');
     document.getElementById('languageButton').querySelector('.menu-arrow').style.transform = 'rotate(0deg)';
+    hamburgerButton.style.display = ''; // 關閉時顯示漢堡按鈕
 }
 
 document.querySelector('.sidebar-overlay').addEventListener('click', closeSidebar);

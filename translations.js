@@ -3,35 +3,31 @@
 根據使用者選擇切換語言
 將對應語言的文字套用到有 data-i18n 屬性的元素上
 */
-let currentLanguage = 'zh-Hant';
-let translations = {};
+// 載入外部 JSON 翻譯檔，根據使用者選擇切換語言並套用到 data-i18n 屬性元素
 const JSON_URL = 'https://raw.githubusercontent.com/mygodcatisfat/mygodcatisfat.github.io/refs/heads/main/translations.json';
+let translations = {};
+let currentLanguage = 'zh-Hant';
 
 async function loadTranslations() {
     try {
         const response = await fetch(JSON_URL);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         translations = await response.json();
-        console.log('Translations loaded successfully:', translations);
+        console.log('Translations loaded:', translations);
     } catch (error) {
-        console.error('Error loading translations from external JSON:', error);
+        console.error('載入翻譯檔失敗:', error);
     }
 }
 
 function applyTranslations(lang) {
-    const elements = document.querySelectorAll('[data-i18n]');
-    elements.forEach(element => {
+    const langData = translations[lang];
+    if (!langData) return;
+    document.querySelectorAll('[data-i18n]').forEach(element => {
         const key = element.getAttribute('data-i18n');
-        if (translations[lang] && translations[lang][key]) {
-            element.innerText = translations[lang][key];
-        }
+        if (langData[key]) element.innerText = langData[key];
     });
-    const languageButtonText = document.getElementById('languageButtonText');
-    if (lang === 'en') {
-        languageButtonText.innerText = '語言設定';
-    } else {
-        languageButtonText.innerText = 'LANGUAGE';
-    }
+    const btn = document.getElementById('languageButtonText');
+    if (btn) btn.innerText = lang === 'zh-Hant' ? '語言設定' : 'LANGUAGE';
 }
 
 function selectLanguage(lang) {
@@ -44,5 +40,5 @@ function selectLanguage(lang) {
 document.addEventListener('DOMContentLoaded', async () => {
     await loadTranslations();
     const storedLang = localStorage.getItem('selectedLanguage') || 'zh-Hant';
-    selectLanguage(storedLang, false);
+    selectLanguage(storedLang);
 });

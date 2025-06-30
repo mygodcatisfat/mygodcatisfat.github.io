@@ -4,6 +4,35 @@
     點擊非語言選單時自動收合語言選單
 控制語言選單的展開/收合
 */
+
+// 每次頁面載入時會自動播放動畫。
+// 每次使用者點擊 h1 也會播放動畫（即使動畫還沒播完也能重新觸發）。
+document.addEventListener("DOMContentLoaded", function() {
+    // 取得 h1
+    const title = document.getElementById("animated-title");
+    // 定義動畫 class
+    const animationClass = "animate__rubberBand";
+
+    // 觸發動畫函式
+    function triggerAnimation() {
+        title.classList.remove(animationClass); // 先移除
+        // 強制 reflow，確保動畫能重新觸發
+        void title.offsetWidth;
+        title.classList.add(animationClass);
+    }
+
+    // 網頁載入時觸發
+    triggerAnimation();
+
+    // 點擊時觸發
+    title.addEventListener("click", triggerAnimation);
+
+    // 動畫結束時移除 class (保持乾淨)
+    title.addEventListener("animationend", function() {
+        title.classList.remove(animationClass);
+    });
+});
+
 // 關閉側邊欄和語言選單的全域點擊事件
 document.addEventListener('click', function(e) {
     const sidebar = document.getElementById('sidebar');

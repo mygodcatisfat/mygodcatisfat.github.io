@@ -1,4 +1,4 @@
-fetch("https://script.google.com/macros/s/你的scriptID/exec")
+fetch("https://script.google.com/macros/s/AKfycbyCQe89ZyDiyt7WCMxBkNd4TnvcScx88UMOrFoWsI8bBxCAva6bHlqvyCnuSvptuTR8rw/exec")
   .then(res => res.json())
   .then(posts => {
     // 依你的前端結構動態渲染

@@ -70,7 +70,7 @@
             text-align: center;
             transition: background 0.3s, color 0.3s;
             overflow-x: hidden;
-            scroll-behavior: auto; /*smooth*/
+            scroll-behavior: smooth;
         }
         
         .sidebar {
@@ -929,14 +929,15 @@
                 <span id="view-count">讀取中...</span>
             </div>
             <script>
-                fetch("https://script.google.com/macros/s/AKfycbw059wuvXTQhM4SBf8QRPd0l_dcN95PeK6VqD6FV1iN0xNnRRRuYpPLBV0yKyugTTc/exec")
-                    .then(res => res.json())
-                    .then(data => {
+                (async function() {
+                    try {
+                        const res = await fetch("https://script.google.com/macros/s/AKfycbw059wuvXTQhM4SBf8QRPd0l_dcN95PeK6VqD6FV1iN0xNnRRRuYpPLBV0yKyugTTc/exec");
+                        const data = await res.json();
                         document.getElementById("view-count").innerText = data.count;
-                    })
-                    .catch(() => {
+                    } catch {
                         document.getElementById("view-count").innerText = "無法載入";
-                    });
+                    }
+                })();
             </script>
         </footer>
     </div>

@@ -411,6 +411,15 @@ body.dark-mode #stats { color: #aaa; }
     max-width: 17.5rem;
     z-index: 1001;
   }
+  nav {
+    justify-content: flex-start !important;
+    overflow-x: auto;
+    white-space: nowrap;
+    text-align: left !important;
+  }
+  nav a {
+    flex: 0 0 auto;
+  }
 }
 
 /* Small devices */

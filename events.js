@@ -8,8 +8,8 @@
 // 每次頁面載入時會自動播放動畫。
 // 每次使用者點擊 h1 也會播放動畫（即使動畫還沒播完也能重新觸發）。
 document.addEventListener("DOMContentLoaded", function() {
-    const title = document.getElementById("animated-title");
-    const animationClass = "animate__rubberBand";
+    var title = document.getElementById("animated-title");
+    var animationClass = "animate__rubberBand";
 
     function triggerAnimation(e) {
         // 防止手機點兩下放大

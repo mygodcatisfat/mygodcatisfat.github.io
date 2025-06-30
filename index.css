@@ -403,13 +403,11 @@ body.dark-mode #stats { color: #aaa; }
 /* Responsive design */
 /* Extra small devices */
 @media (max-width: 575.98px) {
-  .sidebar {
-    display: none;
-  }
+  .sidebar { display: none; }
   .sidebar.open {
-    display: block;
+    display: flex;
     left: 0;
-    width: 85vw; /* 或你想要的寬度 */
+    width: 85vw; 
     max-width: 17.5rem;
     z-index: 1001;
   }

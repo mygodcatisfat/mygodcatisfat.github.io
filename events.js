@@ -5,39 +5,6 @@
 控制語言選單的展開/收合
 */
 
-// 每次頁面載入時會自動播放動畫。
-// 每次使用者點擊 h1 也會播放動畫（即使動畫還沒播完也能重新觸發）。
-document.addEventListener("DOMContentLoaded", function() {
-    const title = document.getElementById("animated-title");
-    const animationClass = "animate__rubberBand";
-
-    function triggerAnimation(e) {
-        console.log("click");
-        // 防止手機點兩下放大
-        if (e) e.preventDefault();
-        // if (e && e.type === "touchstart") e.preventDefault();
-        // 先移除動畫 class
-        title.classList.remove(animationClass);
-        // 強制 reflow，確保動畫能重新觸發        
-        void title.offsetWidth;
-        // 再加回動畫 class
-        title.classList.add(animationClass);
-    }
-
-    // 載入時播放動畫
-    triggerAnimation();
-    
-    // 桌面點擊
-    title.addEventListener("click", triggerAnimation, false);
-    // 手機觸控
-    title.addEventListener("touchstart", triggerAnimation, false);
-
-    // 動畫結束後移除 class
-    title.addEventListener("animationend", function() {
-        title.classList.remove(animationClass);
-    });
-});
-
 // 關閉側邊欄和語言選單的全域點擊事件
 document.addEventListener('click', function(e) {
     const sidebar = document.getElementById('sidebar');
@@ -69,3 +36,36 @@ function toggleLanguageOptions() {
     }
     document.querySelectorAll('.menu-section.expanded').forEach(s => s.classList.remove('expanded'));
 }
+
+// 每次頁面載入時會自動播放動畫。
+// 每次使用者點擊 h1 也會播放動畫（即使動畫還沒播完也能重新觸發）。
+document.addEventListener("DOMContentLoaded", function() {
+    const title = document.getElementById("animated-title");
+    const animationClass = "animate__rubberBand";
+
+    function triggerAnimation(e) {
+        console.log("click");
+        // 防止手機點兩下放大
+        // if (e) e.preventDefault();
+        if (e && e.type === "touchstart") e.preventDefault();
+        // 先移除動畫 class
+        title.classList.remove(animationClass);
+        // 強制 reflow，確保動畫能重新觸發        
+        void title.offsetWidth;
+        // 再加回動畫 class
+        title.classList.add(animationClass);
+    }
+
+    // 載入時播放動畫
+    triggerAnimation();
+    
+    // 桌面點擊
+    title.addEventListener("click", triggerAnimation, false);
+    // 手機觸控
+    title.addEventListener("touchstart", triggerAnimation, false);
+
+    // 動畫結束後移除 class
+    title.addEventListener("animationend", function() {
+        title.classList.remove(animationClass);
+    });
+});

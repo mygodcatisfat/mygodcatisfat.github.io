@@ -24,13 +24,34 @@ async function loadTranslations(retries = 3) {
     }
 }
 
+// fragment：在記憶體先組裝所有 DOM 變更，最後一次性加入頁面，減少操作 DOM 的次數。
+// batch update：一次處理多個 DOM 更新，避免多次重繪(reflow/repaint)。
 function applyTranslations(lang) {
     const langData = translations[lang];
     if (!langData) return;
-    document.querySelectorAll('[data-i18n]').forEach(element => {
+
+    // fragment 批次處理 DOM
+    const elements = document.querySelectorAll('[data-i18n]');
+    const fragment = document.createDocumentFragment();
+    const elementClones = [];
+
+    elements.forEach(element => {
         const key = element.getAttribute('data-i18n');
-        if (langData[key]) element.innerText = langData[key];
+        if (langData[key]) {
+            // 複製節點，暫存到 fragment
+            const clone = element.cloneNode(true);
+            clone.innerText = langData[key];
+            fragment.appendChild(clone);
+            elementClones.push({original: element, clone});
+        }
     });
+
+    // batch update: 一次性替換所有內容
+    elementClones.forEach(({original, clone}) => {
+        original.parentNode.replaceChild(clone, original);
+    });
+
+    // 語言切換按鈕單獨處理（因為它可能沒有 data-i18n）
     const btn = document.getElementById('languageButtonText');
     if (btn) btn.innerText = lang === 'zh-Hant' ? '語言設定' : 'LANGUAGE';
 }

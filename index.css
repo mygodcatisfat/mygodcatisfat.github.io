@@ -461,12 +461,18 @@ body.dark-mode #stats { color: #aaa; }
 
 /* Large devices */
 @media (min-width: 992px) and (max-width: 1199.98px) {
-  .sidebar { width: 240px; left: -240px; }
-  .main-content { margin-left: 240px; }
+  .main-content {
+    margin-left: 0 !important;
+    transition: margin-left 0.3s;
+  }
+  .sidebar.open ~ .main-content {
+    margin-left: 240px !important;
+  }
 }
 
 /* Extra large devices */
 @media (min-width: 1200px) {
-  .sidebar { width: 280px; left: -280px; }
-  .main-content { margin-left: 280px; }
+  .sidebar.open ~ .main-content {
+    margin-left: 280px !important;
+  }
 }

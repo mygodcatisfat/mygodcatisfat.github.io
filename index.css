@@ -227,6 +227,7 @@ section { padding: 2rem; }
   display: flex;
   gap: 1em;
   animation: scroll-marquee 10s linear infinite;
+  will-change: transform;
 }
 @keyframes scroll-marquee {
   0% { transform: translateX(0); }

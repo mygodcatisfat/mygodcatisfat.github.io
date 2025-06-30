@@ -5,6 +5,8 @@
 */
 // 載入外部 JSON 翻譯檔，根據使用者選擇切換語言並套用到 data-i18n 屬性元素
 const JSON_URL = 'https://raw.githubusercontent.com/mygodcatisfat/mygodcatisfat.github.io/refs/heads/main/translations.json';
+const browserLang = navigator.language || navigator.userLanguage;
+const defaultLang = ['zh-Hant', 'en'].includes(browserLang) ? browserLang : 'zh-Hant';
 let translations = {};
 let currentLanguage = 'zh-Hant';
 

@@ -26,9 +26,9 @@ document.addEventListener("DOMContentLoaded", function() {
     triggerAnimation();
     
     // 桌面點擊
-    title.addEventListener("click", triggerAnimation);
+    title.addEventListener("click", triggerAnimation, false);
     // 手機觸控
-    title.addEventListener("touchstart", triggerAnimation);
+    title.addEventListener("touchstart", triggerAnimation, false);
 
     // 動畫結束後移除 class
     title.addEventListener("animationend", function() {

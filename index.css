@@ -417,7 +417,18 @@ body.dark-mode #stats { color: #aaa; }
 @media (min-width: 576px) and (max-width: 767.98px) {
   .sidebar { width: 180px; left: -180px; }
   .gallery-marquee { animation-duration: 6s; }
-  nav a { font-size: 0.95em; }
+  nav {
+    display: flex;
+    justify-content: flex-start !important;
+    overflow-x: auto;
+    white-space: nowrap;
+    text-align: left !important;
+    /* 保證一開始就靠左，不會自動置中 */
+    scroll-behavior: smooth;
+  }
+  nav a {
+    flex: 0 0 auto;
+  }
 }
 
 /* Medium devices */
@@ -425,6 +436,18 @@ body.dark-mode #stats { color: #aaa; }
   .sidebar { width: 200px; left: -200px; }
   .main-content { margin-left: 0; }
   .gallery-marquee { animation-duration: 8s; }
+  nav {
+    display: flex;
+    justify-content: flex-start !important;
+    overflow-x: auto;
+    white-space: nowrap;
+    text-align: left !important;
+    /* 保證一開始就靠左，不會自動置中 */
+    scroll-behavior: smooth;
+  }
+  nav a {
+    flex: 0 0 auto;
+  }
 }
 
 /* Large devices */

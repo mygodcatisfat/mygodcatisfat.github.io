@@ -784,13 +784,153 @@
             <a href="#hero-section" data-i18n="nav_blog_home">網誌首頁</a>
             <a href="#latest-posts-section" data-i18n="nav_latest_posts">最新文章</a>
         </nav>
-
+        
         <section>
-            <h2>來自 Google Sheet 的網誌</h2>
-            <div id="blog-posts"></div>
+          <h2>來自 Google Sheet 的網誌</h2>
+          <div id="blog-posts"></div>
         </section>
         
-        
+        <section id="latest-posts-section" class="container mx-auto my-12 px-6 grid grid-cols-1 md:grid-cols-3 gap-12">
+            <div class="md:col-span-2">
+                <h2 class="text-4xl font-bold mb-8 text-center md:text-left text-gray-800" data-i18n="latest_posts_title">最新網誌文章</h2>
+                <!-- Blog Post 1 -->
+                <article class="post-card">
+                    <img src="https://placehold.co/800x400/FFCC00/333333?text=日本櫻花之旅" alt="日本櫻花之旅" class="w-full h-auto rounded-lg mb-6 shadow-md">
+                    <span class="text-sm text-gray-500 mb-2 block">2023年4月15日 · 亞洲</span>
+                    <h3 class="text-3xl font-semibold text-gray-900 mb-4">日本櫻花之旅：粉色花海中的夢幻體驗</h3>
+                    <p class="text-gray-700 leading-relaxed mb-4">
+                        每年春天，日本都會變成一片粉色的海洋，吸引著來自世界各地的遊客。這篇文章將帶你深入東京、京都和大阪，體驗櫻花季節的獨特魅力，從傳統的賞櫻活動到美味的季節限定美食，一一為你呈現。
+                    </p>
+                    <a href="#" class="text-indigo-600 hover:text-indigo-800 font-bold transition duration-300">
+                        閱讀更多 &rarr;
+                    </a>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        <span class="tag" data-i18n="tag_culture">文化</span>
+                        <span class="tag" data-i18n="tag_food">美食</span>
+                        <span class="tag" data-i18n="tag_nature">自然</span>
+                    </div>
+                </article>
+                <!-- Blog Post 2 -->
+                <article class="post-card">
+                    <img src="https://placehold.co/800x400/FFCC00/333333?text=歐洲古城探險" alt="歐洲古城探險" class="w-full h-auto rounded-lg mb-6 shadow-md">
+                    <span class="text-sm text-gray-500 mb-2 block">2023年3月10日 · 歐洲</span>
+                    <h3 class="text-3xl font-semibold text-gray-900 mb-4">穿越時空：歐洲古城深度探險</h3>
+                    <p class="text-gray-700 leading-relaxed mb-4">
+                        從羅馬的競技場到布拉格的查理大橋，歐洲古城充滿了歷史的痕跡和迷人的故事。這篇文章將帶你漫步於這些古老的街道，探索隱藏的巷弄，品味當地的咖啡文化，感受歲月沉澱的魅力。
+                    </p>
+                    <a href="#" class="text-indigo-600 hover:text-indigo-800 font-bold transition duration-300">
+                        閱讀更多 &rarr;
+                    </a>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        <span class="tag" data-i18n="tag_history">歷史</span>
+                        <span class="tag" data-i18n="tag_architecture">建築</span>
+                        <span class="tag" data-i18n="tag_art">藝術</span>
+                    </div>
+                </article>
+                <!-- Blog Post 3 -->
+                <article class="post-card">
+                    <img src="https://placehold.co/800x400/FFCC00/333333?text=泰國海島度假" alt="泰國海島度假" class="w-full h-auto rounded-lg mb-6 shadow-md">
+                    <span class="text-sm text-gray-500 mb-2 block">2023年2月20日 · 東南亞</span>
+                    <h3 class="text-3xl font-semibold text-gray-900 mb-4">泰國海島度假：陽光、沙灘與熱帶風情</h3>
+                    <p class="text-gray-700 leading-relaxed mb-4">
+                        渴望陽光、沙灘和碧藍海水嗎？泰國的普吉島、蘇美島和PP島是理想的選擇。這篇文章將分享如何在這些熱帶天堂中享受浮潛、水上活動、泰式按摩和美味的海鮮大餐，讓你的度假之旅充滿活力。
+                    </p>
+                    <a href="#" class="text-indigo-600 hover:text-indigo-800 font-bold transition duration-300">
+                        閱讀更多 &rarr;
+                    </a>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        <span class="tag" data-i18n="tag_beach">海灘</span>
+                        <span class="tag" data-i18n="tag_water_activities">水上活動</span>
+                        <span class="tag" data-i18n="tag_relaxation">放鬆</span>
+                    </div>
+                </article>
+                <div class="text-center mt-8">
+                    <button id="load-more-posts" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-full shadow-md transition duration-300 ease-in-out" data-i18n="load_more_posts">
+                        載入更多文章
+                    </button>
+                </div>
+            </div>
+            <aside class="md:col-span-1">
+                <div class="sidebar-widget">
+                    <h3 data-i18n="search_blog_title">搜尋網誌</h3>
+                    <div class="relative">
+                        <input type="text" placeholder="輸入關鍵字..." class="w-full pr-10">
+                        <button class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-indigo-600">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="sidebar-widget">
+                    <h3 class="text-2xl font-semibold text-gray-800 mb-4" data-i18n="fact_finder_title">✨ 目的地資訊快查 ✨</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="fact-destination-input" class="block text-gray-700 text-sm font-bold mb-2" data-i18n="fact_finder_label">目的地:</label>
+                            <input type="text" id="fact-destination-input" placeholder="例如：法國巴黎" class="w-full border border-gray-300 rounded-lg py-2 px-4 focus:outline-none focus:ring-2 focus:ring-yellow-500 text-gray-800">
+                        </div>
+                        <button id="get-facts-button" class="bg-yellow-500 hover:bg-yellow-600 text-gray-800 font-bold py-3 px-6 rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-105 w-full" data-i18n="fact_finder_button">
+                            獲取資訊
+                        </button>
+                        <div id="fact-loading-indicator" class="text-center text-gray-600 mt-4 hidden">
+                            <svg class="animate-spin h-5 w-5 mr-3 inline-block text-yellow-600" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span data-i18n="fact_finder_loading">正在查詢中...</span>
+                        </div>
+                        <div id="fact-output" class="mt-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200 hidden">
+                            <h4 class="text-lg font-semibold mb-2 text-gray-800" data-i18n="fact_finder_output_title">目的地概覽：</h4>
+                            <div id="fact-content" class="text-gray-700 text-sm leading-relaxed"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="sidebar-widget">
+                    <h3 data-i18n="categories_title">分類</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-700 hover:text-indigo-600 hover:underline">亞洲 (5)</a></li>
+                        <li><a href="#" class="text-gray-700 hover:text-indigo-600 hover:underline">歐洲 (3)</a></li>
+                        <li><a href="#" class="text-gray-700 hover:text-indigo-600 hover:underline">美洲 (2)</a></li>
+                        <li><a href="#" class="text-gray-700 hover:text-indigo-600 hover:underline">非洲 (1)</a></li>
+                        <li><a href="#" class="text-gray-700 hover:text-indigo-600 hover:underline">大洋洲 (2)</a></li>
+                    </ul>
+                </div>
+                <div class="sidebar-widget">
+                    <h3 data-i18n="popular_posts_title">熱門文章</h3>
+                    <ul class="space-y-4">
+                        <li class="flex items-start">
+                            <img src="https://placehold.co/60x60/A0AEC0/FFFFFF?text=京都" alt="京都秋色" class="rounded-md mr-3 shadow">
+                            <div>
+                                <a href="#" class="text-lg font-medium text-gray-900 hover:text-indigo-600">京都秋色：紅葉下的古都之美</a>
+                                <p class="text-sm text-gray-500">2022年11月5日</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <img src="https://placehold.co/60x60/CBD5E0/FFFFFF?text=冰島" alt="冰島極光" class="rounded-md mr-3 shadow">
+                            <div>
+                                <a href="#" class="text-lg font-medium text-gray-900 hover:text-indigo-600">冰島極光：追逐北極光的奇幻之旅</a>
+                                <p class="text-sm text-gray-500">2023年1月20日</p>
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <img src="https://placehold.co/60x60/E2E8F0/FFFFFF?text=馬爾地夫" alt="馬爾地夫天堂" class="rounded-md mr-3 shadow">
+                            <div>
+                                <a href="#" class="text-lg font-medium text-gray-900 hover:text-indigo-600">馬爾地夫：藍色天堂的奢華享受</a>
+                                <p class="text-sm text-gray-500">2022年10月1日</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="sidebar-widget bg-yellow-500 text-gray-800 text-center">
+                    <h3 class="text-2xl font-semibold mb-4" data-i18n="newsletter_title">訂閱我們的電子報</h3>
+                    <p class="mb-4 text-gray-700" data-i18n="newsletter_subtitle">獲取最新旅遊資訊和獨家優惠！</p>
+                    <form class="flex flex-col space-y-4">
+                        <input type="email" placeholder="輸入您的電子郵件" class="w-full p-3 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-yellow-700">
+                        <button type="submit" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105" data-i18n="newsletter_button">
+                            立即訂閱
+                        </button>
+                    </form>
+                </div>
+            </aside>
+        </section>
         <footer>
             <span data-i18n="footer_copyright">© 2025 嘎豬窩. 保留所有權利。</span>
             <div id="stats">

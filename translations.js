@@ -8,14 +8,17 @@ const JSON_URL = 'https://raw.githubusercontent.com/mygodcatisfat/mygodcatisfat.
 let translations = {};
 let currentLanguage = 'zh-Hant';
 
-async function loadTranslations() {
-    try {
-        const response = await fetch(JSON_URL);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        translations = await response.json();
-        console.log('Translations loaded:', translations);
-    } catch (error) {
-        console.error('載入翻譯檔失敗:', error);
+async function loadTranslations(retries = 3) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const response = await fetch(JSON_URL);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            translations = await response.json();
+            console.log('Translations loaded:', translations);
+            return;
+        } catch (error) {
+            if (i === retries - 1) console.error('載入翻譯檔失敗:', error);
+        }
     }
 }
 

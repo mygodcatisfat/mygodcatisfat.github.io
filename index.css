@@ -403,11 +403,16 @@ body.dark-mode #stats { color: #aaa; }
 /* Responsive design */
 /* Extra small devices */
 @media (max-width: 575.98px) {
-  .sidebar { display: none; }
-  nav { flex-direction: column; height: auto; }
-  .gallery-marquee { animation-duration: 4s; }
-  .member-grid { gap: 0.5rem; }
-  body { font-size: 0.95rem; }
+  .sidebar {
+    display: none;
+  }
+  .sidebar.open {
+    display: block;
+    left: 0;
+    width: 85vw; /* 或你想要的寬度 */
+    max-width: 17.5rem;
+    z-index: 1001;
+  }
 }
 
 /* Small devices */

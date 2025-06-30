@@ -12,6 +12,7 @@ document.addEventListener("DOMContentLoaded", function() {
     var animationClass = "animate__rubberBand";
 
     function triggerAnimation(e) {
+        console.log("click");
         // 防止手機點兩下放大
         if (e && e.type === "touchstart") e.preventDefault();
         // 先移除動畫 class

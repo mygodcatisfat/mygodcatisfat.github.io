@@ -400,6 +400,10 @@ body.dark-mode .instagram-section {
 }
 body.dark-mode #stats { color: #aaa; }
 
+#animated-title {
+    cursor: pointer;
+}
+
 /* Responsive design */
 /* Extra small devices */
 @media (max-width: 575.98px) {

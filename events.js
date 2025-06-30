@@ -14,15 +14,17 @@ document.addEventListener("DOMContentLoaded", function() {
     function triggerAnimation(e) {
         // 防止手機點兩下放大
         if (e && e.type === "touchstart") e.preventDefault();
-
+        // 先移除動畫 class
         title.classList.remove(animationClass);
-        void title.offsetWidth; // 強制 reflow
+        // 強制 reflow，確保動畫能重新觸發        
+        void title.offsetWidth;
+        // 再加回動畫 class
         title.classList.add(animationClass);
     }
 
     // 載入時播放動畫
     triggerAnimation();
-
+    
     // 桌面點擊
     title.addEventListener("click", triggerAnimation);
     // 手機觸控

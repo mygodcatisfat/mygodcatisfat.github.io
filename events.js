@@ -8,26 +8,27 @@
 // 每次頁面載入時會自動播放動畫。
 // 每次使用者點擊 h1 也會播放動畫（即使動畫還沒播完也能重新觸發）。
 document.addEventListener("DOMContentLoaded", function() {
-    // 取得 h1
     const title = document.getElementById("animated-title");
-    // 定義動畫 class
     const animationClass = "animate__rubberBand";
 
-    // 觸發動畫函式
-    function triggerAnimation() {
-        title.classList.remove(animationClass); // 先移除
-        // 強制 reflow，確保動畫能重新觸發
-        void title.offsetWidth;
+    function triggerAnimation(e) {
+        // 防止手機點兩下放大
+        if (e && e.type === "touchstart") e.preventDefault();
+
+        title.classList.remove(animationClass);
+        void title.offsetWidth; // 強制 reflow
         title.classList.add(animationClass);
     }
 
-    // 網頁載入時觸發
+    // 載入時播放動畫
     triggerAnimation();
 
-    // 點擊時觸發
+    // 桌面點擊
     title.addEventListener("click", triggerAnimation);
+    // 手機觸控
+    title.addEventListener("touchstart", triggerAnimation);
 
-    // 動畫結束時移除 class (保持乾淨)
+    // 動畫結束後移除 class
     title.addEventListener("animationend", function() {
         title.classList.remove(animationClass);
     });

@@ -29,6 +29,8 @@ body、a 樣式
   --language-option-hover-bg: #e0e0e0;
   --nav-link-hover-color: #222;
   --nav-link-bg-hover: #ffe082;
+  --tag-bg: #ffeb3b;
+  --tag-text: #333;
 }
 body {
   font-family: 'Comic Neue', 'Noto Sans TC', 'Noto Sans', Arial, sans-serif;

@@ -1,9 +1,9 @@
-/* 
+/*
 字體設定（font-family）
 變數（:root, .dark-mode）
 body、a 樣式
 全域背景、顏色、過渡動畫
-＊／
+*/
 @import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap');
 
 :root {

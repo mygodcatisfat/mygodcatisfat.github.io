@@ -98,3 +98,18 @@
   transition: opacity 0.3s, visibility 0.3s;
 }
 .sidebar-overlay.active { opacity: 1; visibility: visible; }
+.toggle-button-sidebar {
+  width: calc(100% - 3em);
+  margin: 0.75em 1.5em;
+  background: var(--dark-mode-toggle-bg);
+  color: var(--dark-mode-toggle-color);
+  border: none;
+  padding: 0.8em 1em;
+  border-radius: 5px;
+  cursor: pointer;
+  z-index: 1000;
+  font-size: 1em;
+  transition: background 0.3s, color 0.3s;
+  text-align: center;
+}
+.toggle-button-sidebar:hover, { opacity: 0.9; }

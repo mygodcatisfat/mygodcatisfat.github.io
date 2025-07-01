@@ -1,0 +1,25 @@
+/* 
+Instagram 區塊（.instagram-section, .instagram-section h2, .instagram-media, @keyframes fadeInUp）
+*/
+.instagram-section {
+  background: linear-gradient(135deg, #f6e27a, #f2c94c);
+  padding: 2rem;
+  border-radius: 15px;
+  margin: 2rem auto;
+  max-width: 37.5rem;
+  box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+  animation: fadeInUp 1s ease;
+}
+.instagram-section h2 {
+  font-family: inherit;
+  font-weight: bold;
+  color: var(--text-color);
+}
+@keyframes fadeInUp {
+  0% { opacity: 0; transform: translateY(20px);}
+  100% { opacity: 1; transform: translateY(0);}
+}
+.instagram-media {
+  max-width: 100%;
+  width: 100%;
+}

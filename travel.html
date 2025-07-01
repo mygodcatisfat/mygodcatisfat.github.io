@@ -11,6 +11,7 @@
     <!-- Comic Neue font from original file (for headers/titles where specified) -->
     <!-- link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap" rel="stylesheet"-->
     <link rel="stylesheet" href="css_base.css">
+    <link rel="stylesheet" href="css_button.css">
     <style>
         /*:root {
             --bg-color: #fdf6e3;
@@ -527,6 +528,19 @@
         }
         
         .view-more {
+            /*
+            display: inline-block;
+            background: #ffeb3b;
+            color: #333;
+            padding: 0.5em 1em;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.95em;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            border: none;
+            transition: background 0.3s, color 0.3s;
+            */
+            
             display: inline-block;
             margin-top: 1em;
             font-size: 0.95em;
@@ -644,6 +658,17 @@
         }
         
         #back-to-top {
+            display: inline-block;
+            background: #ffeb3b;
+            color: #333;
+            padding: 0.5em 1em;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 0.95em;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            border: none;
+            transition: background 0.3s, color 0.3s;
+            /* 
             position: fixed;
             bottom: 20px;
             right: 20px;
@@ -655,7 +680,7 @@
             cursor: pointer;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
             font-size: 1.2em;
-            z-index: 1000;
+            z-index: 1000;*/
         }
         body.dark-mode #back-to-top { background: #555; color: #f0f0f0; }
 

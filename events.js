@@ -51,7 +51,7 @@ document.addEventListener("DOMContentLoaded", function() {
             // if (e) e.preventDefault();
             if (e && e.type === "touchstart") e.preventDefault();
             // 先移除動畫 class
-            title.classList.remove(animationClass);
+            title.classList.remove(baseClass, animationClass);
             // 強制 reflow，確保動畫能重新觸發        
             void title.offsetWidth;
             // 再加回動畫 class
@@ -62,13 +62,13 @@ document.addEventListener("DOMContentLoaded", function() {
         triggerAnimation();
     
         // 桌面點擊
-        title.addEventListener("click", triggerAnimation, false);
+        title.addEventListener("click", triggerAnimation(), false);
         // 手機觸控
-        title.addEventListener("touchstart", triggerAnimation, false);
+        title.addEventListener("touchstart", triggerAnimation(), false);
     
         // 動畫結束後移除 class
         title.addEventListener("animationend", function() {
-            title.classList.remove(animationClass);
+            title.classList.remove(baseClass, animationClass);
         });
     }
 });

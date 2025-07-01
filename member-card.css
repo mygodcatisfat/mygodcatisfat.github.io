@@ -1,0 +1,30 @@
+/* 成員卡片（.member-card, .member-card:hover, .member-grid, @keyframes fadeSlideIn） */
+.member-card {
+  max-width: 12.5rem;
+  background: var(--member-card-bg);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  padding: 1rem;
+  transition: transform 0.3s, box-shadow 0.3s;
+  opacity: 0;
+  transform: translateY(30px);
+  animation: fadeSlideIn 1s forwards;
+  color: var(--text-color);
+}
+.member-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+}
+.member-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2rem;
+}
+.member-card:nth-child(1) { animation-delay: 0.2s; }
+.member-card:nth-child(2) { animation-delay: 0.4s; }
+.member-card:nth-child(3) { animation-delay: 0.6s; }
+.member-card:nth-child(4) { animation-delay: 0.8s; }
+@keyframes fadeSlideIn {
+  to { opacity: 1; transform: translateY(0);}
+}

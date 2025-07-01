@@ -41,6 +41,7 @@ function toggleLanguageOptions() {
 // 每次使用者點擊 h1 也會播放動畫（即使動畫還沒播完也能重新觸發）。
 document.addEventListener("DOMContentLoaded", function() {
     const title = document.getElementById("animated-title");
+    const baseClass = "animate__animated";
     const animationClass = "animate__rubberBand";
     if (title) {
 
@@ -54,11 +55,11 @@ document.addEventListener("DOMContentLoaded", function() {
             // 強制 reflow，確保動畫能重新觸發        
             void title.offsetWidth;
             // 再加回動畫 class
-            title.classList.add(animationClass);
+            title.classList.add(baseClass, animationClass);
         }
 
         // 載入時播放動畫
-        // triggerAnimation();
+        triggerAnimation();
     
         // 桌面點擊
         title.addEventListener("click", triggerAnimation, false);

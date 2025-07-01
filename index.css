@@ -321,7 +321,7 @@ body.dark-mode .instagram-section {
 .toggle-button-sidebar:hover, .language-button:hover { opacity: 0.9; }
 
 .language-selection-container { 
-  margin: 0.75em 1.5em; 
+  margin: 0; 
   margin-bottom: 1em;
   position: relative; 
   z-index: 1; 

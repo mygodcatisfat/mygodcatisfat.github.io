@@ -1,0 +1,74 @@
+/* 響應式 */
+/* Extra small devices */
+@media (max-width: 575.98px) {
+  .sidebar { display: none; }
+  .sidebar.open {
+    display: flex;
+    left: 0;
+    width: 85vw; 
+    max-width: 17.5rem;
+    z-index: 1001;
+  }
+  nav {
+    justify-content: flex-start !important;
+    overflow-x: auto;
+    white-space: nowrap;
+    text-align: left !important;
+  }
+  nav a {
+    flex: 0 0 auto;
+  }
+}
+
+/* Small devices */
+@media (min-width: 576px) and (max-width: 767.98px) {
+  .sidebar { width: 180px; left: -180px; }
+  .gallery-marquee { animation-duration: 6s; }
+  nav {
+    display: flex;
+    justify-content: flex-start !important;
+    overflow-x: auto;
+    white-space: nowrap;
+    text-align: left !important;
+    scroll-behavior: smooth;
+  }
+  nav a {
+    flex: 0 0 auto;
+  }
+}
+
+/* Medium devices */
+@media (min-width: 768px) and (max-width: 991.98px) {
+  .sidebar { width: 200px; left: -200px; }
+  .main-content { margin-left: 0; }
+  .gallery-marquee { animation-duration: 8s; }
+  nav {
+    display: flex;
+    justify-content: flex-start !important;
+    overflow-x: auto;
+    white-space: nowrap;
+    text-align: left !important;
+    scroll-behavior: smooth;
+  }
+  nav a {
+    flex: 0 0 auto;
+  }
+}
+
+/* Large devices */
+@media (min-width: 992px) and (max-width: 1199.98px) {
+  .main-content {
+    margin-left: 0 !important;
+    transition: margin-left 0.3s;
+  }
+  .sidebar.open ~ .main-content {
+    margin-left: 240px !important;
+  }
+}
+
+/* Extra large devices */
+@media (min-width: 1200px) {
+  .sidebar.open ~ .main-content {
+    margin-left: 280px !important;
+  }
+}

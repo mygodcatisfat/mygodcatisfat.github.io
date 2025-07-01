@@ -42,32 +42,32 @@ function toggleLanguageOptions() {
 document.addEventListener("DOMContentLoaded", function() {
     const title = document.getElementById("animated-title");
     const animationClass = "animate__rubberBand";
+    if (title) {
 
-    function triggerAnimation(e) {
-        console.log("click");
-        // 防止手機點兩下放大
-        // if (e) e.preventDefault();
-        if (e && e.type === "touchstart") e.preventDefault();
-        // 先移除動畫 class
-        title.classList.remove(animationClass);
-        // 強制 reflow，確保動畫能重新觸發        
-        void title.offsetWidth;
-        // 再加回動畫 class
-        title.classList.add(animationClass);
-    }
+        function triggerAnimation(e) {
+            console.log("click");
+            // 防止手機點兩下放大
+            // if (e) e.preventDefault();
+            if (e && e.type === "touchstart") e.preventDefault();
+            // 先移除動畫 class
+            title.classList.remove(animationClass);
+            // 強制 reflow，確保動畫能重新觸發        
+            void title.offsetWidth;
+            // 再加回動畫 class
+            title.classList.add(animationClass);
+        }
 
-    // 載入時播放動畫
-    triggerAnimation();
+        // 載入時播放動畫
+        // triggerAnimation();
     
-    // 桌面點擊
-    title.addEventListener("click", triggerAnimation, false);
-    // 手機觸控
-    title.addEventListener("touchstart", triggerAnimation, false);
-
-    // 動畫結束後移除 class
-    title.addEventListener("animationend", function() {
-        title.classList.remove(animationClass);
-    });
-
-       
+        // 桌面點擊
+        title.addEventListener("click", triggerAnimation, false);
+        // 手機觸控
+        title.addEventListener("touchstart", triggerAnimation, false);
+    
+        // 動畫結束後移除 class
+        title.addEventListener("animationend", function() {
+            title.classList.remove(animationClass);
+        });
+    }
 });

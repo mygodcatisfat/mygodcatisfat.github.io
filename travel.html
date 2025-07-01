@@ -12,6 +12,7 @@
     <!-- link href="https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap" rel="stylesheet"-->
     <link rel="stylesheet" href="css_base.css">
     <link rel="stylesheet" href="css_button.css">
+    <link rel="stylesheet" href="css_nav.css">
     <style>
         /*:root {
             --bg-color: #fdf6e3;
@@ -224,44 +225,44 @@
             justify-content: center;
             font-family: 'Comic Neue', "Helvetica Neue", Arial, "Noto Sans TC", "Noto Sans", sans-serif;
         }
-        
+        /*
         nav {
             background: #ffe680;
-            padding: 0;            /* 改為 0，可用 height 控制高度 */
-            height: 48px;          /* 設一個你想要的固定高度，48px 是常見高度，可微調 */
+            padding: 0;          
+            height: 48px;         
             display: flex;
-            align-items: center;   /* 垂直置中 */
+            align-items: center;  
             justify-content: center;
-            gap: 1em;              /* 讓每個 a 之間有間距 */
+            gap: 1em;            
             overflow-x: auto;
             white-space: nowrap;
             -webkit-overflow-scrolling: touch;
         }
-        
+        */
         body.dark-mode nav { 
             background: #444; 
         }
-        
+        /* 
         nav a {
             display: inline-block;
             white-space: nowrap;
             min-width: max-content;
-            margin: 0 0.2em;                /* 讓每個 a 有點左右間距 */
+            margin: 0 0.2em;              
             text-decoration: none;
             color: #555;
             font-weight: bold;
             display: flex;
-            align-items: center;             /* 垂直置中 */
-            padding: 0.4em 1em;              /* 調整 padding 決定圓角形狀和觸控範圍 */
-            border-radius: 8px;              /* 圓角更明顯 */
+            align-items: center;        
+            padding: 0.4em 1em;            
+            border-radius: 8px;           
             transition: background-color 0.3s, color 0.3s;
             box-sizing: border-box;
-        }
+        }*/
         
         body.dark-mode nav a { 
             color: #f0f0f0; 
         }
-        
+        /* 
         nav a:hover, nav a:focus {
             color: var(--nav-link-hover-color);
             background-color: var(--nav-link-bg-hover);
@@ -272,7 +273,7 @@
             background-color: #e0e0e0;
             color: #222;
             outline: none;
-        }
+        }*/
         
         .hero-section {
             background-image: url('https://placehold.co/1200x400/FFCC00/333333?text=探索世界');
@@ -527,8 +528,8 @@
             max-width: 1200px;
         }
         
-        .view-more {
-            /*
+        /*.view-more {
+            
             display: inline-block;
             background: #ffeb3b;
             color: #333;
@@ -539,7 +540,7 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
             border: none;
             transition: background 0.3s, color 0.3s;
-            */
+            
             
             display: inline-block;
             margin-top: 1em;
@@ -551,7 +552,7 @@
             font-weight: bold;
             color: #333;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
+        }*/
         
         body.dark-mode .view-more {
             background: #555;
@@ -656,7 +657,7 @@
             height: 100%;
             z-index: -1;
         }
-        
+        /* 
         #back-to-top {
             display: inline-block;
             background: #ffeb3b;
@@ -668,7 +669,7 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
             border: none;
             transition: background 0.3s, color 0.3s;
-            /* 
+            
             position: fixed;
             bottom: 20px;
             right: 20px;
@@ -680,8 +681,8 @@
             cursor: pointer;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
             font-size: 1.2em;
-            z-index: 1000;*/
-        }
+            z-index: 1000;
+        }*/
         body.dark-mode #back-to-top { background: #555; color: #f0f0f0; }
 
         /* 響應式設計 */

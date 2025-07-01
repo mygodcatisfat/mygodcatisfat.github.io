@@ -1,0 +1,53 @@
+/* 
+字體設定（font-family）
+變數（:root, .dark-mode）
+body、a 樣式
+全域背景、顏色、過渡動畫
+＊／
+@import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@700&display=swap');
+
+:root {
+  --bg-color: #fdf6e3;
+  --text-color: #333;
+  --header-bg: #ffcc00;
+  --footer-bg: #eee;
+  --sidebar-bg: #fff8dc;
+  --sidebar-border: #ddd;
+  --menu-title-bg-start: #f6e27a;
+  --menu-title-bg-end: #f2c94c;
+  --menu-title-hover-bg-start: #f2c94c;
+  --menu-title-hover-bg-end: #e6b800;
+  --submenu-bg: rgba(255,255,255,0.5);
+  --submenu-item-border: rgba(0,0,0,0.1);
+  --submenu-item-hover-bg: rgba(255,235,59,0.3);
+  --member-card-bg: #fffbe6;
+  --dark-mode-toggle-bg: #222;
+  --dark-mode-toggle-color: #fff;
+  --language-button-bg: #f0f0f0;
+  --language-button-color: #333;
+  --language-options-bg: #f9f9f9;
+  --language-option-hover-bg: #e0e0e0;
+  --nav-link-hover-color: #222;
+  --nav-link-bg-hover: #ffe082;
+}
+body {
+  font-family: 'Comic Neue', 'Noto Sans TC', 'Noto Sans', Arial, sans-serif;
+  background: var(--bg-color);
+  color: var(--text-color);
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  transition: background 0.3s, color 0.3s;
+  overflow-x: hidden;
+  scroll-behavior: auto;
+}
+a { color: #0066cc; text-decoration: none; }
+footer {
+  background: var(--footer-bg);
+  padding: 1em;
+  font-size: 0.9em;
+  color: var(--text-color);
+}
+#animated-title {
+    cursor: pointer;
+}

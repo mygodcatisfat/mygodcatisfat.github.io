@@ -69,20 +69,5 @@ document.addEventListener("DOMContentLoaded", function() {
         title.classList.remove(animationClass);
     });
 
-    // ========== 新增「偶素一豬狼 嘎」動畫觸發 ==========
-    const pigwolf = document.getElementById("animated-title");
-    if (pigwolf) {
-        const pigwolfAnimClass = "animate__bounce"; // 你也可以換成其他 animate.css 動畫
-        function triggerPigwolfAnim(e) {
-            if (e && e.type === "touchstart") e.preventDefault();
-            pigwolf.classList.remove(pigwolfAnimClass);
-            void pigwolf.offsetWidth;
-            pigwolf.classList.add(pigwolfAnimClass);
-        }
-        pigwolf.addEventListener("click", triggerPigwolfAnim, false);
-        pigwolf.addEventListener("touchstart", triggerPigwolfAnim, false);
-        pigwolf.addEventListener("animationend", function() {
-            pigwolf.classList.remove(pigwolfAnimClass);
-        });
-    }    
+       
 });

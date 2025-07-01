@@ -335,6 +335,14 @@ body.dark-mode .instagram-section {
   border-radius: 5px;
   margin-top: 0.5em;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+
+  /* 新增以下確保寬度與按鈕一致並定位 */
+  width: 100%;
+  min-width: 0;   /* 防止被內容撐寬 */
+  box-sizing: border-box;
+  position: absolute;
+  left: 0;
+  top: 100%;
 }
 .language-options.open { max-height: 100px; }
 .language-option-item {

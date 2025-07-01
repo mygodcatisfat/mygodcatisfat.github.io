@@ -305,8 +305,9 @@ body.dark-mode .instagram-section {
 
 /* Sidebar toggle & language select */
 .toggle-button-sidebar, .language-button {
-  width: calc(100% - 3em);
-  margin: 0.75em 1.5em;
+  width: calc(100% - 3em) !important;
+  margin: 0.75em 1.5em !important;
+  box-sizing: border-box;
   background: var(--dark-mode-toggle-bg);
   color: var(--dark-mode-toggle-color);
   border: none;

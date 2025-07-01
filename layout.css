@@ -1,0 +1,27 @@
+/* 
+主體布局（.main-content, section, footer）
+header 樣式（header, header h1）
+響應式設計（@media）
+*/
+header {
+  background: var(--header-bg);
+  padding: 1rem 0;
+}
+header h1 {
+  margin: 0;
+  font-size: 2rem;
+  color: var(--text-color);
+  min-height: 3.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+}
+.main-content { transition: margin-left 0.3s; }
+section { padding: 2rem; }
+footer {
+  background: var(--footer-bg);
+  padding: 1em;
+  font-size: 0.9em;
+  color: var(--text-color);
+}

@@ -1,0 +1,36 @@
+/* 深色模式調整（body.dark-mode 相關選擇器） */
+body.dark-mode {
+  --bg-color: #1c1c1c;
+  --text-color: #f0f0f0;
+  --header-bg: #333;
+  --footer-bg: #222;
+  --sidebar-bg: #2a2a2a;
+  --sidebar-border: #666;
+  --menu-title-bg-start: #555;
+  --menu-title-bg-end: #444;
+  --menu-title-hover-bg-start: #666;
+  --menu-title-hover-bg-end: #555;
+  --submenu-bg: rgba(50,50,50,0.7);
+  --submenu-item-border: rgba(255,255,255,0.1);
+  --submenu-item-hover-bg: rgba(70,70,70,0.5);
+  --member-card-bg: #3a3a3a;
+  --dark-mode-toggle-bg: #ffeb3b;
+  --dark-mode-toggle-color: #333;
+  --language-button-bg: #444;
+  --language-button-color: #f0f0f0;
+  --language-options-bg: #3a3a3a;
+  --language-option-hover-bg: #555;
+  --nav-link-hover-color: #fffde7;
+  --nav-link-bg-hover: #444;
+}
+body.dark-mode a { color: #99ccff; }
+body.dark-mode nav { background: #444; }
+body.dark-mode nav a { color: #f0f0f0; }
+body.dark-mode .view-more, body.dark-mode #back-to-top {
+  background: #555;
+  color: #f0f0f0;
+}
+body.dark-mode .instagram-section {
+  background: linear-gradient(135deg, #444, #333);
+}
+body.dark-mode #stats { color: #aaa; }

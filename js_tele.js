@@ -1,11 +1,11 @@
-// 取得 category（例如 travel-tokyo），這裡預設從網址 query string 取得
+// 取得 category（例："travel-tokyo"），這裡預設從網址 query string 取得
 function getCategoryFromURL() {
   const urlParams = new URLSearchParams(window.location.search);
   return urlParams.get('category'); // 例：travel-tokyo
 }
 
-// category 對應的地區關鍵字
-const categoryToArea = {
+// category 對應的關鍵字
+const categoryToKeyword = {
   "travel-taiwan": "臺灣",
   "travel-osaka": "日本",
   "travel-tokyo": "東京",
@@ -15,22 +15,26 @@ const categoryToArea = {
   // 你可依 sidebar 類型自行增加
 };
 
-// 主程式
 fetch('blog_posts.json')
   .then(res => res.json())
   .then(data => {
     let container = document.getElementById('blog-posts-container');
 
-    // 取得目前 category
+    // 根據 category 取得篩選關鍵字
     let category = getCategoryFromURL();
-    let areaKeyword = categoryToArea[category] || "";
+    let keyword = categoryToKeyword[category] || "";
 
-    // 如果有指定要篩選的地區關鍵字，才做過濾
-    let filtered = areaKeyword
-      ? data.filter(row => (row['地區'] || '').includes(areaKeyword))
+    // 進行篩選：只要「地區」或「tag」欄位包含關鍵字就符合
+    let filtered = keyword
+      ? data.filter(row => {
+          let region = row['地區'] || "";
+          let tag = row['tag'] || "";
+          // tag 欄位用全字串模糊搜尋（可自訂為陣列比對）
+          return region.includes(keyword) || tag.includes(keyword);
+        })
       : data;
 
-    // 清空容器，避免重複渲染
+    // 清空容器
     container.innerHTML = "";
 
     filtered.forEach(row => {

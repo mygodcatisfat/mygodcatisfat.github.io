@@ -12,7 +12,7 @@ const categoryToKeyword = {
   "travel-germany": "德國",
   "travel-austria": "奧地利",
   "travel-czech": "捷克",
-  // 你可依 sidebar 需求自由擴充
+  // 可依需求擴充其它對應
 };
 
 let filtered = [];
@@ -42,10 +42,7 @@ function renderPosts(start, count) {
   }
   currentIndex = end;
   // 控制按鈕顯示
-  const loadMoreBtn = document.getElementById('load-more-posts');
-  if (loadMoreBtn) {
-    loadMoreBtn.style.display = currentIndex >= filtered.length ? 'none' : 'block';
-  }
+  document.getElementById('load-more-posts').style.display = currentIndex >= filtered.length ? 'none' : 'block';
 }
 
 fetch('blog_posts.json')
@@ -70,20 +67,9 @@ fetch('blog_posts.json')
     // 初始載入5篇
     currentIndex = 0;
     renderPosts(currentIndex, pageSize);
-
-    // 按鈕狀態更新（如果一開始就沒文章或少於5篇）
-    const loadMoreBtn = document.getElementById('load-more-posts');
-    if (loadMoreBtn) {
-      loadMoreBtn.style.display = filtered.length > pageSize ? 'block' : (filtered.length === 0 ? 'none' : 'block');
-    }
   });
 
 // 綁定「載入更多」按鈕
-document.addEventListener('DOMContentLoaded', function() {
-  const loadMoreBtn = document.getElementById('load-more-posts');
-  if (loadMoreBtn) {
-    loadMoreBtn.addEventListener('click', function() {
-      renderPosts(currentIndex, pageSize);
-    });
-  }
+document.getElementById('load-more-posts').addEventListener('click', function() {
+  renderPosts(currentIndex, pageSize);
 });

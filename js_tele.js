@@ -11,7 +11,7 @@ const categoryToArea = {
   "travel-tokyo": "東京",
   "travel-germany": "德國",
   "travel-austria": "奧地利",
-  "travel-czech": "捷克",
+  "travel-czech": "捷克"
   // 你可依 sidebar 類型自行增加
 };
 

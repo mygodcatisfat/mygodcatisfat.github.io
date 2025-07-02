@@ -332,7 +332,7 @@
         </div>
         <div class="sidebar-menu">
             <div class="menu-section">
-                <button class="menu-title" onclick="toggleSubmenu(this)">
+                <button class="menu-title">
                     <span data-i18n="menu_daily_life">狼的日常 | 生活</span>
                     <span class="menu-arrow">▶</span>
                 </button>
@@ -345,7 +345,7 @@
                 </div>
             </div>
             <div class="menu-section expanded">
-                <button class="menu-title" onclick="toggleSubmenu(this)">
+                <button class="menu-title">
                     <span data-i18n="menu_travel">狼狼來了 | 旅遊</span>
                     <span class="menu-arrow">▶</span>
                 </button>
@@ -386,7 +386,7 @@
                 </div>
             </div>
             <div class="menu-section">
-                <button class="menu-title" onclick="toggleSubmenu(this)">
+                <button class="menu-title">
                     <span data-i18n="menu_food">狼吞虎嚥 | 食記</span>
                     <span class="menu-arrow">▶</span>
                 </button>
@@ -415,7 +415,7 @@
     
     <div class="main-content">
         <header>
-            <h1 data-i18n="header_title">偶素一豬狼 嘎</h1>
+            <h1 id="animated-title" data-i18n="header_title" class="animate__animated">偶素一豬狼 嘎</h1>
         </header>
         
         <nav>
@@ -567,6 +567,7 @@
                 </div>
             </aside>
         </section>
+        
         <footer>
             <span data-i18n="footer_copyright">© 2025 嘎豬窩. 保留所有權利。</span>
             <div id="stats">

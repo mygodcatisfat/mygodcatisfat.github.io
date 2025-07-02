@@ -1,4 +1,4 @@
-fetch('https://script.google.com/macros/s/AKfycbyCQe89ZyDiyt7WCMxBkNd4TnvcScx88UMOrFoWsI8bBxCAva6bHlqvyCnuSvptuTR8rw/exec')
+fetch('blog_posts.json') // 或填上你的 JSON 檔案網址
   .then(res => res.json())
   .then(data => {
     let container = document.getElementById('blog-posts-container');

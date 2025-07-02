@@ -53,7 +53,7 @@ fetch('blog_posts.json')
     let keyword = categoryToKeyword[category] || "";
 
     // 進行篩選：只要「地區」或「tag」欄位包含關鍵字就符合
-    let filtered = keyword
+    filtered = keyword
       ? data.filter(row => {
           let region = row['地區'] || "";
           let tag = row['tag'] || "";

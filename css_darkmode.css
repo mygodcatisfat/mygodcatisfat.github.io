@@ -22,6 +22,8 @@ body.dark-mode {
   --language-option-hover-bg: #555;
   --nav-link-hover-color: #fffde7;
   --nav-link-bg-hover: #444;
+  --tag-bg: #333;
+  --tag-text: #ffeb3b;
 }
 body.dark-mode a { color: #99ccff; }
 body.dark-mode nav { background: #444; }

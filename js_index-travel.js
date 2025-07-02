@@ -10,7 +10,7 @@ function scrollToSection(id) {
 }
 
 // 新增文章卡片
-function addNewPostCard() {
+/*function addNewPostCard() {
     const mainContent = $('#latest-posts-section .md\\:col-span-2');
     const loadMoreButton = $('#load-more-posts');
     if (!mainContent || !loadMoreButton) return;
@@ -34,7 +34,7 @@ function addNewPostCard() {
         </div>
     `;
     mainContent.insertBefore(newPost, loadMoreButton.closest('div'));
-}
+}*/
 
 // 公用 API 請求
 async function fetchGeminiContent(apiKey, payload, type = 'text') {

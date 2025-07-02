@@ -53,7 +53,7 @@ fetch('blog_posts.json')
     let keyword = categoryToKeyword[category] || "";
 
     // 進行篩選：只要「地區」或「tag」欄位包含關鍵字就符合
-    filtered = keyword
+    let filtered = keyword
       ? data.filter(row => {
           let region = row['地區'] || "";
           let tag = row['tag'] || "";
@@ -61,6 +61,16 @@ fetch('blog_posts.json')
         })
       : data;
 
+    // 這裡動態設定標題
+    let titleElement = document.querySelector('h2[data-i18n="latest_posts_title"]');
+    if (titleElement) {
+      if (keyword) {
+        titleElement.textContent = `總共搜尋到${filtered.length}篇${keyword}相關熱門文章`;
+      } else {
+        titleElement.textContent = `總共搜尋到${filtered.length}篇熱門文章`;
+      }
+    }
+    
     // 清空容器
     container.innerHTML = "";
 

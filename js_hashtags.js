@@ -62,15 +62,10 @@ function handleTagClick(tagText) {
                 <div class="post-card mb-6">
                     <img src="${post['圖片連結']}" alt="${post['圖片註解'] || ''}">
                     <div class="post-content">
-                        <span class="text-sm text-gray-500 mb-2 block">${row['日期']} · ${row['地區']}</span>
-                        <h3 class="text-3xl font-semibold text-gray-900 mb-4">${row['文章標題']}</h3>
-                        <p class="text-gray-700 leading-relaxed mb-4">${row['文章摘要']}</p>
-                        <a href="${row['文章連結']}" class="text-indigo-600 hover:text-indigo-800 font-bold transition duration-300" target="_blank">
-                            閱讀更多 &rarr;
-                        </a>
-                        <div class="mt-4 flex flex-wrap gap-2">
-                            ${(row['tag'] || '').split(',').map(tag => `<span class="tag">${tag.trim()}</span>`).join('')}
-                        </div>
+                        <h3>${post['文章標題']}</h3>
+                        <span class="text-sm">${post['日期'] || ''} | ${post['地區'] || ''}</span>
+                        <p>${post['文章摘要'] || ''}</p>
+                        <a href="${post['文章連結'] || '#'}" class="text-blue-700 hover:underline" target="_blank" rel="noopener">閱讀更多</a>
                     </div>
                 </div>
             `;

@@ -9,33 +9,6 @@ function scrollToSection(id) {
     if (element) element.scrollIntoView({ behavior: 'smooth' });
 }
 
-// 新增文章卡片
-/*function addNewPostCard() {
-    const mainContent = $('#latest-posts-section .md\\:col-span-2');
-    const loadMoreButton = $('#load-more-posts');
-    if (!mainContent || !loadMoreButton) return;
-
-    const newPost = document.createElement('article');
-    newPost.className = 'post-card';
-    newPost.innerHTML = `
-        <img src="https://placehold.co/800x400/FFCC00/333333?text=秘魯馬丘比丘" alt="秘魯馬丘比丘" class="w-full h-auto rounded-lg mb-6 shadow-md">
-        <span class="text-sm text-gray-500 mb-2 block">2023年6月1日 · 南美洲</span>
-        <h3 class="text-3xl font-semibold text-gray-900 mb-4">秘魯馬丘比丘：探訪失落的印加古城</h3>
-        <p class="text-gray-700 leading-relaxed mb-4">
-            秘魯的馬丘比丘，這座被譽為世界新七大奇蹟之一的印加古城，隱藏在安第斯山脈的雲霧之中。這篇文章將帶你穿越印加古道，[...]
-        </p>
-        <a href="#" class="text-indigo-600 hover:text-indigo-800 font-bold transition duration-300">
-            閱讀更多 &rarr;
-        </a>
-        <div class="mt-4 flex flex-wrap gap-2">
-            <span class="tag" data-i18n="tag_history">歷史</span>
-            <span class="tag" data-i18n="tag_adventure">冒險</span>
-            <span class="tag" data-i18n="tag_culture">文化</span>
-        </div>
-    `;
-    mainContent.insertBefore(newPost, loadMoreButton.closest('div'));
-}*/
-
 // 公用 API 請求
 async function fetchGeminiContent(apiKey, payload, type = 'text') {
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;

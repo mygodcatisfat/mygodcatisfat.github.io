@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const titleElement = document.querySelector('h2[data-i18n="latest_posts_title"]');
     if (titleElement) {
       if (keyword) {
-        titleElement.textContent = `總共搜尋到${filtered.length}篇「${keyword}」相關熱門文章`;
+        titleElement.textContent = `總共搜尋到${filtered.length}篇${keyword}相關熱門文章`;
       } else {
         titleElement.textContent = `總共搜尋到${filtered.length}篇熱門文章`;
       }

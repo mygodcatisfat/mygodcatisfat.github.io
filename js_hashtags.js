@@ -1,4 +1,3 @@
-// 載入所有 tag 並渲染為可點擊按鈕
 async function loadAllTags() {
     try {
         const res = await fetch('blog_posts.json');
@@ -18,14 +17,13 @@ async function loadAllTags() {
         // 排序 tag
         const tags = Array.from(tagSet).sort();
 
-        // 儲存全文章資料到全域變數，供後續查詢
+        // 儲存全文章資料到全域變數
         window.allPosts = posts;
 
         // 輸出到側邊欄（製作成 button）
         const listEl = document.getElementById('hashtag-list');
         listEl.innerHTML = '';
         tags.forEach(tag => {
-            // 處理 tag 前的 #
             const tagText = tag.startsWith('#') ? tag.slice(1) : tag;
             const btn = document.createElement('button');
             btn.className = 'tag px-3 py-1 bg-yellow-200 hover:bg-yellow-300 rounded-full font-semibold transition';
@@ -38,45 +36,54 @@ async function loadAllTags() {
     }
 }
 
-// 點擊 tag 時，顯示包含該 tag 的文章
+// 點擊 tag 時，顯示包含該 tag 的文章於「熱門文章」區
 function handleTagClick(tagText) {
-    // 檢查或建立顯示區塊
-    let sidebar = document.getElementById('tag-result-sidebar');
-    if (!sidebar) {
-        sidebar = document.createElement('div');
-        sidebar.className = 'sidebar-widget';
-        sidebar.id = 'tag-result-sidebar';
-        sidebar.innerHTML = `
-            <h3 class="font-bold mb-2">#<span id="selected-tag"></span> 相關文章</h3>
-            <ul id="tag-post-list" class="space-y-2"></ul>
-        `;
-        // 插入在 hashtag-list 下面
-        let container = document.getElementById('hashtag-list');
-        container.parentNode.insertBefore(sidebar, container.nextSibling);
-    }
-    sidebar.classList.remove('hidden');
-    document.getElementById('selected-tag').textContent = tagText;
-
     // 過濾包含此 tag 的文章
     const posts = window.allPosts || [];
-    // 支援逗號分隔、tag 前後空白
     const filtered = posts.filter(post =>
         post.tag && post.tag.split(',').some(t =>
             t.trim().replace(/^#/, '') === tagText
         )
     );
 
-    // 顯示結果
-    const list = document.getElementById('tag-post-list');
-    list.innerHTML = '';
+    // 尋找 sidebar 熱門文章區塊
+    // 假設只有一個熱門文章區，且h3標題有data-i18n="popular_posts_title"
+    const sidebarWidgets = document.querySelectorAll('.sidebar-widget');
+    let popularWidget = null;
+    sidebarWidgets.forEach(widget => {
+        const h3 = widget.querySelector('h3[data-i18n="popular_posts_title"]');
+        if (h3) popularWidget = widget;
+    });
+    if (!popularWidget) return; // 找不到就不處理
+
+    // 修改標題下內容
+    let infoBox = popularWidget.querySelector('.tag-search-info');
+    if (!infoBox) {
+        infoBox = document.createElement('div');
+        infoBox.className = 'tag-search-info text-sm text-gray-700 my-2';
+        popularWidget.insertBefore(infoBox, popularWidget.querySelector('ul,ol'));
+    }
+    infoBox.innerHTML = `共搜尋到 <span class="font-bold">${filtered.length}</span> 篇 <span class="font-bold">${tagText}</span> 相關熱門文章`;
+
+    // 修改文章列表
+    const ul = popularWidget.querySelector('ul,ol');
+    ul.innerHTML = '';
     if (filtered.length === 0) {
-        list.innerHTML = '<li>沒有相關文章</li>';
+        ul.innerHTML = '<li>沒有相關文章</li>';
     } else {
         filtered.forEach(post => {
             const li = document.createElement('li');
-            // 文章標題與連結
-            li.innerHTML = `<a href="${post['文章連結'] || '#'}" class="text-blue-700 hover:underline" target="_blank" rel="noopener">${post['文章標題']}</a>`;
-            list.appendChild(li);
+            li.className = "flex items-start";
+            li.innerHTML = `
+                <img src="${post['圖片連結']}" alt="${post['圖片註解'] || ''}" class="rounded-md mr-3 shadow" style="width:60px;height:60px;object-fit:cover;">
+                <div>
+                    <a href="${post['文章連結'] || '#'}" class="text-lg font-medium text-gray-900 hover:text-indigo-600" target="_blank" rel="noopener">
+                        ${post['文章標題']}
+                    </a>
+                    <p class="text-sm text-gray-500">${post['日期'] || ''}</p>
+                </div>
+            `;
+            ul.appendChild(li);
         });
     }
 }

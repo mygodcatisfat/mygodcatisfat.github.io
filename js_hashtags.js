@@ -36,9 +36,8 @@ async function loadAllTags() {
     }
 }
 
-// 點擊 tag 時，顯示包含該 tag 的文章於「熱門文章」區
+// 點擊 tag，顯示於主文章區左側
 function handleTagClick(tagText) {
-    // 過濾包含此 tag 的文章
     const posts = window.allPosts || [];
     const filtered = posts.filter(post =>
         post.tag && post.tag.split(',').some(t =>
@@ -46,46 +45,36 @@ function handleTagClick(tagText) {
         )
     );
 
-    // 尋找 sidebar 熱門文章區塊
-    // 假設只有一個熱門文章區，且h3標題有data-i18n="popular_posts_title"
-    const sidebarWidgets = document.querySelectorAll('.sidebar-widget');
-    let popularWidget = null;
-    sidebarWidgets.forEach(widget => {
-        const h3 = widget.querySelector('h3[data-i18n="popular_posts_title"]');
-        if (h3) popularWidget = widget;
-    });
-    if (!popularWidget) return; // 找不到就不處理
-
-    // 修改標題下內容
-    let infoBox = popularWidget.querySelector('.tag-search-info');
-    if (!infoBox) {
-        infoBox = document.createElement('div');
-        infoBox.className = 'tag-search-info text-sm text-gray-700 my-2';
-        popularWidget.insertBefore(infoBox, popularWidget.querySelector('ul,ol'));
+    // 標題：共搜尋到X篇[tag]相關熱門文章
+    const titleEl = document.getElementById('dynamic-post-title');
+    if (titleEl) {
+        titleEl.textContent = `共搜尋到${filtered.length}篇${tagText}相關熱門文章`;
     }
-    infoBox.innerHTML = `共搜尋到 <span class="font-bold">${filtered.length}</span> 篇 <span class="font-bold">${tagText}</span> 相關熱門文章`;
 
-    // 修改文章列表
-    const ul = popularWidget.querySelector('ul,ol');
-    ul.innerHTML = '';
+    // 文章列表
+    const container = document.getElementById('blog-posts-container');
+    container.innerHTML = '';
     if (filtered.length === 0) {
-        ul.innerHTML = '<li>沒有相關文章</li>';
+        container.innerHTML = `<div class="text-gray-500 text-center py-8">沒有相關文章</div>`;
     } else {
         filtered.forEach(post => {
-            const li = document.createElement('li');
-            li.className = "flex items-start";
-            li.innerHTML = `
-                <img src="${post['圖片連結']}" alt="${post['圖片註解'] || ''}" class="rounded-md mr-3 shadow" style="width:60px;height:60px;object-fit:cover;">
-                <div>
-                    <a href="${post['文章連結'] || '#'}" class="text-lg font-medium text-gray-900 hover:text-indigo-600" target="_blank" rel="noopener">
-                        ${post['文章標題']}
-                    </a>
-                    <p class="text-sm text-gray-500">${post['日期'] || ''}</p>
+            container.innerHTML += `
+                <div class="post-card mb-6">
+                    <img src="${post['圖片連結']}" alt="${post['圖片註解'] || ''}">
+                    <div class="post-content">
+                        <h3>${post['文章標題']}</h3>
+                        <span class="text-sm">${post['日期'] || ''} | ${post['地區'] || ''}</span>
+                        <p>${post['文章摘要'] || ''}</p>
+                        <a href="${post['文章連結'] || '#'}" class="text-blue-700 hover:underline" target="_blank" rel="noopener">閱讀更多</a>
+                    </div>
                 </div>
             `;
-            ul.appendChild(li);
         });
     }
+
+    // 若有「載入更多」按鈕可選擇隱藏
+    const loadMoreBtn = document.getElementById('load-more-posts');
+    if (loadMoreBtn) loadMoreBtn.style.display = 'none';
 }
 
 // 頁面載入後執行

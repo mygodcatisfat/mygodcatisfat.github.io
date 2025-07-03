@@ -261,22 +261,40 @@
                 display: flex;
                 flex-direction: row;
                 align-items: stretch;
-                gap: 2em; /* 圖片與文字間距 */
+                gap: 2em;
             }
             .post-card img {
-                width: 300px;       /* 或用固定寬度，例如 300px */
-                height: auto;       /* 高度自動，維持比例 */
-                object-fit: cover;  /* 裁切填滿 */
+                width: 320px;
+                height: 220px;
+                object-fit: cover;
+                margin-bottom: 0;
                 border-radius: 8px;
-                flex-shrink: 0;     /* 不要被壓縮 */
+                flex-shrink: 0;
             }
-            .post-card .post-content {
-                flex: 1 1 0;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
+            .post-card span,
+            .post-card h3,
+            .post-card p,
+            .post-card a,
+            .post-card div {
+                /* 讓文字內容靠左排列 */
+                text-align: left;
+            }
+            .post-card > *:not(img) {
+                /* 除了圖片的部分都丟進右邊（包起來效果更好，可進階調整） */
+                flex: 1;
             }
         }
+        @media (max-width: 899px) {
+            .post-card {
+                display: block;
+            }
+            .post-card img {
+                width: 100%;
+                height: 250px;
+                margin-bottom: 1em;
+            }
+        }
+
     </style>
 </head>
 <body>

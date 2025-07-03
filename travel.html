@@ -271,16 +271,10 @@
                 border-radius: 8px;
                 flex-shrink: 0;
             }
-            .post-card span,
-            .post-card h3,
-            .post-card p,
-            .post-card a,
-            .post-card div {
-                /* 讓文字內容靠左排列 */
-                text-align: left;
-            }
-            .post-card > *:not(img) {
-                /* 除了圖片的部分都丟進右邊（包起來效果更好，可進階調整） */
+            .post-card .post-content {
+                display: flex;
+                flex-direction: column;      /* 讓文字區塊內是上下排列 */
+                justify-content: center;     /* 讓文字群整體垂直置中（可選） */
                 flex: 1;
             }
         }

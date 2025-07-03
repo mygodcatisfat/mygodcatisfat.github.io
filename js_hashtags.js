@@ -50,7 +50,7 @@ function handleTagClick(tagText) {
             <h3 class="font-bold mb-2">#<span id="selected-tag"></span> 相關文章</h3>
             <ul id="tag-post-list" class="space-y-2"></ul>
         `;
-        // 插入在 hashtag-list 下面（或根據你喜好插入）
+        // 插入在 hashtag-list 下面
         let container = document.getElementById('hashtag-list');
         container.parentNode.insertBefore(sidebar, container.nextSibling);
     }
@@ -59,7 +59,7 @@ function handleTagClick(tagText) {
 
     // 過濾包含此 tag 的文章
     const posts = window.allPosts || [];
-    // 支援逗號分隔、#tag 或純 tag
+    // 支援逗號分隔、tag 前後空白
     const filtered = posts.filter(post =>
         post.tag && post.tag.split(',').some(t =>
             t.trim().replace(/^#/, '') === tagText
@@ -73,9 +73,9 @@ function handleTagClick(tagText) {
         list.innerHTML = '<li>沒有相關文章</li>';
     } else {
         filtered.forEach(post => {
-            // 你可以根據實際結構調整 post.title/post.url
             const li = document.createElement('li');
-            li.innerHTML = `<a href="${post.url || '#'}" class="text-blue-700 hover:underline">${post.title}</a>`;
+            // 文章標題與連結
+            li.innerHTML = `<a href="${post['文章連結'] || '#'}" class="text-blue-700 hover:underline" target="_blank" rel="noopener">${post['文章標題']}</a>`;
             list.appendChild(li);
         });
     }

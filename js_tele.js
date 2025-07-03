@@ -1,87 +1,81 @@
-// 取得 category（例："travel-tokyo"），這裡預設從網址 query string 取得
-function getCategoryFromURL() {
-  const urlParams = new URLSearchParams(window.location.search);
-  return urlParams.get('category'); // 例：travel-tokyo
-}
+async function loadAllTags() {
+    try {
+        const res = await fetch('blog_posts.json');
+        const posts = await res.json();
 
-// category 對應的關鍵字
-const categoryToKeyword = {
-  "travel-tokyo": "東京",
-  "travel-taiwan": "臺灣",
-  "travel-osaka": "大阪",
-  "travel-germany": "德國",
-  "travel-austria": "奧地利",
-  "travel-czech": "捷克",
-  // 可依需求擴充其它對應
-};
+        // 收集所有文章的 tag，去除重複與前後空白
+        const tagSet = new Set();
+        posts.forEach(post => {
+            if (post.tag) {
+                post.tag.split(',').forEach(tag => {
+                    const cleanTag = tag.trim();
+                    if (cleanTag) tagSet.add(cleanTag);
+                });
+            }
+        });
 
-let filtered = [];
-let currentIndex = 0;
-const pageSize = 5;
+        // 排序 tag
+        const tags = Array.from(tagSet).sort();
 
-function renderPosts(start, count) {
-  let container = document.getElementById('blog-posts-container');
-  const end = Math.min(start + count, filtered.length);
-  for (let i = start; i < end; i++) {
-    const row = filtered[i];
-    let html = `
-      <article class="post-card">
-        <img src="${row['圖片連結']}" alt="${row['圖片註解']}" class="w-full h-auto rounded-lg mb-6 shadow-md">
-        <div class="post-content">
-          <span class="text-sm text-gray-500 mb-2 block">${row['日期']} · ${row['地區']}</span>
-          <h3 class="text-3xl font-semibold text-gray-900 mb-4">${row['文章標題']}</h3>
-          <p class="text-gray-700 leading-relaxed mb-4">${row['文章摘要']}</p>
-          <a href="${row['文章連結']}" class="text-indigo-600 hover:text-indigo-800 font-bold transition duration-300" target="_blank">
-            閱讀更多 &rarr;
-          </a>
-          <div class="mt-4 flex flex-wrap gap-2">
-            ${(row['tag'] || '').split(',').map(tag => `<span class="tag">${tag.trim()}</span>`).join('')}
-          </div>
-        </div>
-      </article>
-    `;
-    container.innerHTML += html;
-  }
-  currentIndex = end;
-  // 控制按鈕顯示
-  document.getElementById('load-more-posts').style.display = currentIndex >= filtered.length ? 'none' : 'block';
-}
+        // 儲存全文章資料到全域變數
+        window.allPosts = posts;
 
-fetch('blog_posts.json')
-  .then(res => res.json())
-  .then(data => {
-    let container = document.getElementById('blog-posts-container');
-    let category = getCategoryFromURL();
-    let keyword = categoryToKeyword[category] || "";
-
-    // 進行篩選：只要「地區」或「tag」欄位包含關鍵字就符合
-    filtered = keyword
-      ? data.filter(row => {
-          let region = row['地區'] || "";
-          let tag = row['tag'] || "";
-          return region.includes(keyword) || tag.includes(keyword);
-        })
-      : data;
-
-    // 這裡動態設定標題
-    let titleElement = document.querySelector('h2[data-i18n="latest_posts_title"]');
-    if (titleElement) {
-      if (keyword) {
-        titleElement.textContent = `總共搜尋到${filtered.length}篇${keyword}相關熱門文章`;
-      } else {
-        titleElement.textContent = `總共搜尋到${filtered.length}篇熱門文章`;
-      }
+        // 輸出到側邊欄（製作成 button）
+        const listEl = document.getElementById('hashtag-list');
+        listEl.innerHTML = '';
+        tags.forEach(tag => {
+            const tagText = tag.startsWith('#') ? tag.slice(1) : tag;
+            const btn = document.createElement('button');
+            btn.className = 'tag px-3 py-1 bg-yellow-200 hover:bg-yellow-300 rounded-full font-semibold transition';
+            btn.textContent = tagText;
+            btn.onclick = () => handleTagClick(tagText);
+            listEl.appendChild(btn);
+        });
+    } catch (e) {
+        document.getElementById('hashtag-list').innerText = '載入失敗';
     }
-    
-    // 清空容器
-    container.innerHTML = "";
+}
 
-    // 初始載入5篇
-    currentIndex = 0;
-    renderPosts(currentIndex, pageSize);
-  });
+// 點擊 tag，顯示於主文章區左側
+function handleTagClick(tagText) {
+    const posts = window.allPosts || [];
+    const filtered = posts.filter(post =>
+        post.tag && post.tag.split(',').some(t =>
+            t.trim().replace(/^#/, '') === tagText
+        )
+    );
 
-// 綁定「載入更多」按鈕
-document.getElementById('load-more-posts').addEventListener('click', function() {
-  renderPosts(currentIndex, pageSize);
-});
+    // 標題：共搜尋到X篇[tag]相關熱門文章
+    const titleEl = document.getElementById('dynamic-post-title');
+    if (titleEl) {
+        titleEl.textContent = `共搜尋到${filtered.length}篇${tagText}相關熱門文章`;
+    }
+
+    // 文章列表
+    const container = document.getElementById('blog-posts-container');
+    container.innerHTML = '';
+    if (filtered.length === 0) {
+        container.innerHTML = `<div class="text-gray-500 text-center py-8">沒有相關文章</div>`;
+    } else {
+        filtered.forEach(post => {
+            container.innerHTML += `
+                <div class="post-card mb-6">
+                    <img src="${post['圖片連結']}" alt="${post['圖片註解'] || ''}">
+                    <div class="post-content">
+                        <h3>${post['文章標題']}</h3>
+                        <span class="text-sm">${post['日期'] || ''} | ${post['地區'] || ''}</span>
+                        <p>${post['文章摘要'] || ''}</p>
+                        <a href="${post['文章連結'] || '#'}" class="text-blue-700 hover:underline" target="_blank" rel="noopener">閱讀更多</a>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    // 若有「載入更多」按鈕可選擇隱藏
+    const loadMoreBtn = document.getElementById('load-more-posts');
+    if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+}
+
+// 頁面載入後執行
+document.addEventListener('DOMContentLoaded', loadAllTags);

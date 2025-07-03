@@ -59,6 +59,13 @@
             border-radius: 8px;
             margin-bottom: 1em;
         }
+
+        .post-card .post-content {
+            display: flex;
+            flex-direction: column; /* 這一行很重要！確保內容是由上到下 */
+            justify-content: center; /* 讓內容垂直置中（可選） */
+            flex: 1;
+        }
         
         .post-card span.text-sm { color: #666; }
         body.dark-mode .post-card span.text-sm { color: #aaa; }

@@ -1,17 +1,31 @@
 async function loadAllTags() {
-    // 假設你有文章列表 json，例如 posts/index.json
-    const articleList = await fetch('posts/index.json').then(r => r.json());
-    const tagSet = new Set();
-    for (const post of articleList) {
-        // 假設每篇文章 json 有 tags 屬性，為陣列
-        if (post.tags && Array.isArray(post.tags)) {
-            post.tags.forEach(tag => tagSet.add(tag));
-        }
+    try {
+        const res = await fetch('blog_posts.json');
+        const posts = await res.json();
+
+        // 收集所有文章的 tag，去除重複與前後空白
+        const tagSet = new Set();
+        posts.forEach(post => {
+            if (post.tag) {
+                post.tag.split(',').forEach(tag => {
+                    const cleanTag = tag.trim();
+                    if (cleanTag) tagSet.add(cleanTag);
+                });
+            }
+        });
+
+        // 排序tag（可選）
+        const tags = Array.from(tagSet).sort();
+
+        // 輸出到側邊欄
+        const listEl = document.getElementById('hashtag-list');
+        listEl.innerHTML = tags.map(tag =>
+            `<span class="tag">#${tag}</span>`
+        ).join('');
+    } catch (e) {
+        document.getElementById('hashtag-list').innerText = '載入失敗';
     }
-    // 顯示不重複 tag
-    const hashtagList = document.getElementById('hashtag-list');
-    hashtagList.innerHTML = [...tagSet].map(tag =>
-        `<span class="tag">#${tag}</span>`
-    ).join('');
 }
-loadAllTags();
+
+// 頁面載入後執行
+document.addEventListener('DOMContentLoaded', loadAllTags);

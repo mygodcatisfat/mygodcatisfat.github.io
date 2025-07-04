@@ -12,14 +12,14 @@ function getTranslatedBlogField(serial, field) {
 // 通用工具：文章渲染
 function renderPosts(posts, start, count, containerId = 'blog-posts-container') {
   if (!translations || !translations[currentLanguage]) return;
-  let container = document.getElementById(containerId);
-  const end = Math.min(start + count, posts.length);
-  for (let i = start; i < end; i++) {
-    const post = posts[i];
-    const serial = post['序號'];
-    const title = getTranslatedBlogField(serial, 'title') || post['文章標題'];
-    const summary = getTranslatedBlogField(serial, 'summary') || post['文章摘要'];
-    let html = `
+  var container = document.getElementById(containerId);
+  var end = Math.min(start + count, posts.length);
+  for (var i = start; i < end; i++) {
+    var post = posts[i];
+    var serial = post['序號'];
+    var title = getTranslatedBlogField(serial, 'title') || post['文章標題'];
+    var summary = getTranslatedBlogField(serial, 'summary') || post['文章摘要'];
+    var html = `
       <article class="post-card">
         <img src="${post['圖片連結']}" alt="${post['圖片註解'] || ''}" class="w-full h-auto rounded-lg mb-6 shadow-md">
         <div class="post-content">
@@ -30,7 +30,7 @@ function renderPosts(posts, start, count, containerId = 'blog-posts-container') 
             ${(translations && translations[currentLanguage] && translations[currentLanguage]['read_more']) ? translations[currentLanguage]['read_more'] : '閱讀更多'} &rarr;
           </a>
           <div class="mt-4 flex flex-wrap gap-2">
-            ${(post['tag'] || '').split(',').map(tag => `<span class="tag">${tag.trim()}</span>`).join('')}
+            ${(post['tag'] || '').split(',').map(function(tag){return `<span class="tag">${tag.trim()}</span>`;}).join('')}
           </div>
         </div>
       </article>
@@ -40,43 +40,46 @@ function renderPosts(posts, start, count, containerId = 'blog-posts-container') 
 }
 
 // 通用工具：文章篩選（多條件）
-function filterPosts(posts, { keyword = '', tag = '', region = '' }) {
-  return posts.filter(post => {
-    let cond = true;
+function filterPosts(posts, options) {
+  var keyword = options.keyword || '';
+  var tag = options.tag || '';
+  var region = options.region || '';
+  return posts.filter(function(post){
+    var cond = true;
     if (keyword) {
       cond = cond && (
-        (post['地區'] || '').includes(keyword) ||
-        (post['tag'] || '').includes(keyword) ||
-        (post['文章摘要'] || '').includes(keyword) ||
-        (post['文章標題'] || '').includes(keyword)
+        (post['地區'] || '').indexOf(keyword) !== -1 ||
+        (post['tag'] || '').indexOf(keyword) !== -1 ||
+        (post['文章摘要'] || '').indexOf(keyword) !== -1 ||
+        (post['文章標題'] || '').indexOf(keyword) !== -1
       );
     }
     if (tag) {
-      cond = cond && (post['tag'] || '').split(',').map(t => t.trim().replace(/^#/, '')).includes(tag);
+      cond = cond && (post['tag'] || '').split(',').map(function(t){return t.trim().replace(/^#/, '');}).indexOf(tag) !== -1;
     }
     if (region) {
-      cond = cond && (post['地區'] || '').includes(region);
+      cond = cond && (post['地區'] || '').indexOf(region) !== -1;
     }
     return cond;
   });
 }
 
 // 分頁控制
-function updateLoadMoreButton(currentIndex, totalLength, btnId = 'load-more-posts') {
-  const btn = document.getElementById(btnId);
+function updateLoadMoreButton(currentIndex, totalLength, btnId) {
+  btnId = btnId || 'load-more-posts';
+  var btn = document.getElementById(btnId);
   if (btn) btn.style.display = currentIndex >= totalLength ? 'none' : 'block';
 }
 
 // 標題更新
-function updateTitle(filteredLength, keyword = '', containerSelector = 'h2[data-i18n="latest_posts_title"]') {
-  const titleElement = document.querySelector(containerSelector);
+function updateTitle(filteredLength, keyword, containerSelector) {
+  containerSelector = containerSelector || 'h2[data-i18n="latest_posts_title"]';
+  var titleElement = document.querySelector(containerSelector);
   if (titleElement) {
     if (keyword) {
-      titleElement.textContent = `總共搜尋到${filteredLength}篇${keyword}相關熱門文章`;
+      titleElement.textContent = '總共搜尋到' + filteredLength + '篇' + keyword + '相關熱門文章';
     } else {
-      titleElement.textContent = `總共搜尋到${filteredLength}篇熱門文章`;
+      titleElement.textContent = '總共搜尋到' + filteredLength + '篇熱門文章';
     }
   }
 }
-
-export { getTranslatedBlogField, renderPosts, filterPosts, updateLoadMoreButton, updateTitle };

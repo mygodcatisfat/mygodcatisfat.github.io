@@ -27,6 +27,9 @@ function renderPosts(start, count) {
   const end = Math.min(start + count, filtered.length);
   for (let i = start; i < end; i++) {
     const row = filtered[i];
+    const serial = row['序號'];
+    const title = getTranslatedBlogField(serial, 'title') || row['文章標題'];
+    const summary = getTranslatedBlogField(serial, 'summary') || row['文章摘要'];
     let html = `
       <article class="post-card">
         <img src="${row['圖片連結']}" alt="${row['圖片註解']}" class="w-full h-auto rounded-lg mb-6 shadow-md">

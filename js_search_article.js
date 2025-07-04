@@ -1,13 +1,13 @@
-import { getTranslatedBlogField, renderPosts, filterPosts, updateLoadMoreButton, updateTitle } from './js_utils.js';
+// 請確保 utils.js 已經先載入
 
-let allPosts = [];
-let filtered = [];
-let currentIndex = 0;
-const pageSize = 5;
+var allPosts = [];
+var filtered = [];
+var currentIndex = 0;
+var pageSize = 5;
 
 function filterPostsByKeyword(keyword) {
   keyword = keyword.trim();
-  filtered = filterPosts(allPosts, { keyword });
+  filtered = filterPosts(allPosts, { keyword: keyword });
   document.getElementById('blog-posts-container').innerHTML = "";
   currentIndex = 0;
   renderPosts(filtered, currentIndex, pageSize);
@@ -18,8 +18,8 @@ function filterPostsByKeyword(keyword) {
 
 document.addEventListener('DOMContentLoaded', function() {
   fetch('blog_posts.json')
-    .then(res => res.json())
-    .then(data => {
+    .then(function(res){ return res.json(); })
+    .then(function(data){
       allPosts = data;
       filtered = allPosts;
       currentIndex = 0;
@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
   document.getElementById('search-btn').addEventListener('click', function() {
-    let keyword = document.getElementById('search-input').value;
+    var keyword = document.getElementById('search-input').value;
     filterPostsByKeyword(keyword);
   });
 

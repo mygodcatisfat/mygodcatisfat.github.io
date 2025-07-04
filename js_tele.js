@@ -35,8 +35,8 @@ function renderPosts(start, count) {
         <img src="${row['圖片連結']}" alt="${row['圖片註解']}" class="w-full h-auto rounded-lg mb-6 shadow-md">
         <div class="post-content">
           <span class="text-sm text-gray-500 mb-2 block">${row['日期']} · ${row['地區']}</span>
-          <h3 class="text-3xl font-semibold text-gray-900 mb-4">${row['文章標題']}</h3>
-          <p class="text-gray-700 leading-relaxed mb-4">${row['文章摘要']}</p>
+          <h3 class="text-3xl font-semibold text-gray-900 mb-4">${title}</h3>
+          <p class="text-gray-700 leading-relaxed mb-4">${summary}</p>
           <a href="${row['文章連結']}" class="text-indigo-600 hover:text-indigo-800 font-bold transition duration-300" target="_blank">
             ${translations && translations[currentLanguage] && translations[currentLanguage]['read_more'] ? translations[currentLanguage]['read_more'] : '閱讀更多'} &rarr;
           </a>

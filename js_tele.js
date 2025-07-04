@@ -1,34 +1,31 @@
-import { getTranslatedBlogField, renderPosts, filterPosts, updateLoadMoreButton, updateTitle } from './js_utils.js';
+// 請確保 utils.js 已經先載入
 
-
-// category 對應的關鍵字
-const categoryToKeyword = {
+var categoryToKeyword = {
   "travel-tokyo": "東京",
   "travel-taiwan": "臺灣",
   "travel-osaka": "大阪",
   "travel-germany": "德國",
   "travel-austria": "奧地利",
-  "travel-czech": "捷克",
-  // 可依需求擴充其它對應
+  "travel-czech": "捷克"
 };
 
-let allPosts = [];
-let filtered = [];
-let currentIndex = 0;
-const pageSize = 5;
+var allPosts = [];
+var filtered = [];
+var currentIndex = 0;
+var pageSize = 5;
 
 function getCategoryFromURL() {
-  const urlParams = new URLSearchParams(window.location.search);
+  var urlParams = new URLSearchParams(window.location.search);
   return urlParams.get('category');
 }
 
 document.addEventListener('DOMContentLoaded', function() {
   fetch('blog_posts.json')
-    .then(res => res.json())
-    .then(data => {
+    .then(function(res){ return res.json(); })
+    .then(function(data){
       allPosts = data;
-      let category = getCategoryFromURL();
-      let keyword = categoryToKeyword[category] || "";
+      var category = getCategoryFromURL();
+      var keyword = categoryToKeyword[category] || "";
 
       filtered = keyword
         ? filterPosts(allPosts, { region: keyword })

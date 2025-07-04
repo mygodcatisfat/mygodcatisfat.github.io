@@ -20,6 +20,9 @@ let currentIndex = 0;
 const pageSize = 5;
 
 function renderPosts(start, count) {
+  // 確保翻譯已經載入才渲染
+  if (!translations || !translations[currentLanguage]) return;
+  
   let container = document.getElementById('blog-posts-container');
   const end = Math.min(start + count, filtered.length);
   for (let i = start; i < end; i++) {

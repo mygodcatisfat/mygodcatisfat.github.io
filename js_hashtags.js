@@ -88,7 +88,7 @@ function handleTagClick(tagText) {
                         <h3 class="text-3xl font-semibold text-gray-900 mb-4">${post['文章標題']}</h3>
                         <p class="text-gray-700 leading-relaxed mb-4">${post['文章摘要'] || ''}</p>
                         <a href="${post['文章連結'] || '#'}" class="text-indigo-600 hover:text-indigo-800 font-bold transition duration-300" target="_blank">
-                            閱讀更多 &rarr;
+                            ${translations && translations[currentLanguage] && translations[currentLanguage]['read_more'] ? translations[currentLanguage]['read_more'] : '閱讀更多'} &rarr;
                         </a>
                         <div class="mt-4 flex flex-wrap gap-2">
                             ${tagsHtml}

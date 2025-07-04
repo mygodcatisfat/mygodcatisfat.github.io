@@ -61,6 +61,7 @@ function selectLanguage(lang) {
     currentLanguage = lang;
     localStorage.setItem('selectedLanguage', lang);
     applyTranslations(lang);
+    window.dispatchEvent(new Event('languageChanged')); // 新增這行
 }
 
 document.addEventListener('DOMContentLoaded', async () => {

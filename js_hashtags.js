@@ -36,6 +36,17 @@ async function loadAllTags() {
     }
 }
 
+// 多語文章欄位輔助函式
+function getTranslatedBlogField(serial, field) {
+    if (typeof translations === 'object' && translations[currentLanguage]) {
+        const key = `blog_${serial}_${field}`;
+        if (translations[currentLanguage][key]) {
+            return translations[currentLanguage][key];
+        }
+    }
+    return null;
+}
+
 // 點擊 tag，顯示於主文章區左側
 function handleTagClick(tagText) {
     const posts = window.allPosts || [];
@@ -48,6 +59,7 @@ function handleTagClick(tagText) {
     // 標題：共搜尋到X篇[tag]相關熱門文章
     const titleEl = document.getElementById('dynamic-post-title');
     if (titleEl) {
+        // 可根據多語需求自行調整
         titleEl.textContent = `共搜尋到${filtered.length}篇${tagText}相關熱門文章`;
     }
 
@@ -58,6 +70,9 @@ function handleTagClick(tagText) {
         container.innerHTML = `<div class="text-gray-500 text-center py-8">沒有相關文章</div>`;
     } else {
         filtered.forEach(post => {
+            const serial = post['序號'];
+            const title = getTranslatedBlogField(serial, 'title') || post['文章標題'];
+            const summary = getTranslatedBlogField(serial, 'summary') || post['文章摘要'];
             // 加入 tag 標籤顯示
             const tagsHtml = (post['tag'] || '').split(',')
                 .map(tag => `<span class="tag">${tag.trim()}</span>`)

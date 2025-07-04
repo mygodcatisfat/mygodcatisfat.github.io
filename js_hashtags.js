@@ -1,4 +1,4 @@
-import { getTranslatedBlogField, renderPosts, filterPosts, updateLoadMoreButton, updateTitle } from './utils.js';
+import { getTranslatedBlogField, renderPosts, filterPosts, updateLoadMoreButton, updateTitle } from 'js_utils.js';
 
 let allPosts = [];
 let filtered = [];

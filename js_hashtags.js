@@ -49,6 +49,9 @@ function getTranslatedBlogField(serial, field) {
 
 // 點擊 tag，顯示於主文章區左側
 function handleTagClick(tagText) {
+    // 確保翻譯已經載入才渲染
+    if (!translations || !translations[currentLanguage]) return;
+    
     const posts = window.allPosts || [];
     const filtered = posts.filter(post =>
         post.tag && post.tag.split(',').some(t =>

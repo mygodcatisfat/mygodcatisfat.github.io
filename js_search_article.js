@@ -3,6 +3,19 @@ document.addEventListener('DOMContentLoaded', function() {
   let currentIndex = 0;
   const pageSize = 5;
   let allPosts = []; // 儲存所有文章資料
+
+  // ⬇⬇⬇ 新增：取得翻譯文章欄位 ⬇⬇⬇
+  function getTranslatedBlogField(serial, field) {
+    // field: 'title' 或 'summary'
+    if (typeof translations === 'object' && translations[currentLanguage]) {
+      const key = `blog_${serial}_${field}`;
+      if (translations[currentLanguage][key]) {
+        return translations[currentLanguage][key];
+      }
+    }
+    return null;
+  }
+  // ⬆⬆⬆ 新增 end ⬆⬆⬆
   
   function renderPosts(start, count) {
     let container = document.getElementById('blog-posts-container');
@@ -91,4 +104,19 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('load-more-posts').addEventListener('click', function() {
     renderPosts(currentIndex, pageSize);
   });
+
+  // 載入更多
+  document.getElementById('load-more-posts').addEventListener('click', function() {
+    renderPosts(currentIndex, pageSize);
+  });
+
+  // ⬇⬇⬇ 支援語言切換時自動重新渲染文章 ⬇⬇⬇
+  if (typeof window !== 'undefined') {
+    window.addEventListener('languageChanged', function() {
+      document.getElementById('blog-posts-container').innerHTML = "";
+      currentIndex = 0;
+      renderPosts(currentIndex, pageSize);
+    });
+  }
+  // ⬆⬆⬆ 支援語言切換 end ⬆⬆⬆
 });

@@ -1,4 +1,5 @@
-import { getTranslatedBlogField, renderPosts, filterPosts, updateLoadMoreButton, updateTitle } from 'js_utils.js';
+import { getTranslatedBlogField, renderPosts, filterPosts, updateLoadMoreButton, updateTitle } from './js_utils.js';
+
 
 // category 對應的關鍵字
 const categoryToKeyword = {

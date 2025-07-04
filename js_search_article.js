@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const pageSize = 5;
   let allPosts = []; // 儲存所有文章資料
 
-  // ⬇⬇⬇ 新增：取得翻譯文章欄位 ⬇⬇⬇
+  // 取得翻譯文章欄位
   function getTranslatedBlogField(serial, field) {
     // field: 'title' 或 'summary'
     if (typeof translations === 'object' && translations[currentLanguage]) {
@@ -15,7 +15,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     return null;
   }
-  // ⬆⬆⬆ 新增 end ⬆⬆⬆
   
   function renderPosts(start, count) {
     // 確保翻譯已經載入才渲染
@@ -25,15 +24,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const end = Math.min(start + count, filtered.length);
     for (let i = start; i < end; i++) {
       const row = filtered[i];
+      const serial = row['序號'];
+      const title = getTranslatedBlogField(serial, 'title') || row['文章標題'];
+      const summary = getTranslatedBlogField(serial, 'summary') || row['文章摘要'];
       let html = `
         <article class="post-card">
           <img src="${row['圖片連結']}" alt="${row['圖片註解']}" class="w-full h-auto rounded-lg mb-6 shadow-md">
           <div class="post-content">
             <span class="text-sm text-gray-500 mb-2 block">${row['日期']} · ${row['地區']}</span>
-            <h3 class="text-3xl font-semibold text-gray-900 mb-4">${row['文章標題']}</h3>
-            <p class="text-gray-700 leading-relaxed mb-4">${row['文章摘要']}</p>
+            <h3 class="text-3xl font-semibold text-gray-900 mb-4">${title}</h3>
+            <p class="text-gray-700 leading-relaxed mb-4">${summary}</p>
             <a href="${row['文章連結']}" class="text-indigo-600 hover:text-indigo-800 font-bold transition duration-300" target="_blank">
-              閱讀更多 &rarr;
+              ${translations && translations[currentLanguage] && translations[currentLanguage]['read_more'] ? translations[currentLanguage]['read_more'] : '閱讀更多'} &rarr;
             </a>
             <div class="mt-4 flex flex-wrap gap-2">
               ${(row['tag'] || '').split(',').map(tag => `<span class="tag">${tag.trim()}</span>`).join('')}
@@ -69,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
         let tag = row['tag'] || "";
         let summary = row['文章摘要'] || "";
         let title = row['文章標題'] || "";
-        // 支援多欄位搜尋（你可依需求增減）
+        // 支援多欄位搜尋（可依需求增減）
         return region.includes(keyword) || tag.includes(keyword) || summary.includes(keyword) || title.includes(keyword);
       });
     }

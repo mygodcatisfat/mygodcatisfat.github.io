@@ -20,17 +20,26 @@ function renderPosts(posts, start, count, containerId = 'blog-posts-container') 
     var title = getTranslatedBlogField(serial, 'title') || post['文章標題'];
     var summary = getTranslatedBlogField(serial, 'summary') || post['文章摘要'];
     var html = `
-      <article class="post-card">
-        <img src="${post['圖片連結']}" alt="${post['圖片註解'] || ''}" class="w-full aspect-square rounded-lg mb-6 shadow-md bg-white hover:shadow-lg transition duration-300">
-        <div class="post-content">
+      <article class="post-card overflow-hidden">
+        <div class="w-full aspect-square overflow-hidden rounded-lg mb-6 relative">
+          <img 
+            src="${post['圖片連結']}" 
+            alt="${post['圖片註解'] || ''}" 
+            class="absolute inset-0 w-full h-full object-cover bg-white shadow-md hover:shadow-lg transition duration-300"
+          >
+        </div>
+        <div class="post-content px-4">
           <span class="text-sm text-gray-500 mb-2 block">${post['日期'] || ''} · ${post['地區'] || ''}</span>
-          <h3 class="text-3xl font-semibold text-gray-900 mb-4">${title}</h3>
-          <p class="text-gray-700 leading-relaxed mb-4">${summary}</p>
-          <a href="${post['文章連結'] || '#'}" class="text-indigo-600 hover:text-indigo-800 font-bold transition duration-300" target="_blank">
+          <h3 class="text-3xl font-semibold text-gray-900 mb-4 break-words">${title}</h3>
+          <p class="text-gray-700 leading-relaxed mb-4 break-words">${summary}</p>
+          <a href="${post['文章連結'] || '#'}" 
+            class="text-indigo-600 hover:text-indigo-800 font-bold transition duration-300" 
+            target="_blank">
             ${(translations && translations[currentLanguage] && translations[currentLanguage]['read_more']) ? translations[currentLanguage]['read_more'] : '閱讀更多'} &rarr;
           </a>
           <div class="mt-4 flex flex-wrap gap-2">
-            ${(post['tag'] || '').split(',').map(function(tag){return `<span class="tag">${tag.trim()}</span>`;}).join('')}
+            ${(post['tag'] || '').split(',').map(tag => 
+              `<span class="tag break-words">${tag.trim()}</span>`).join('')}
           </div>
         </div>
       </article>

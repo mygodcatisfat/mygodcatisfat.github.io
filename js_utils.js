@@ -12,15 +12,16 @@ function getTranslatedBlogField(serial, field) {
 // 通用工具：文章渲染
 function renderPosts(posts, start, count, containerId = 'blog-posts-container') {
   if (!translations || !translations[currentLanguage]) return;
-  var container = document.getElementById(containerId);
-  var end = Math.min(start + count, posts.length);
-  for (var i = start; i < end; i++) {
-    var post = posts[i];
-    var serial = post['序號'];
-    var title = getTranslatedBlogField(serial, 'title') || post['文章標題'];
-    var summary = getTranslatedBlogField(serial, 'summary') || post['文章摘要'];
-    var html = `
-      <article class="post-card w-full max-w-screen-sm mx-auto p-4 box-border">
+  const container = document.getElementById(containerId);
+  const end = Math.min(start + count, posts.length);
+  
+  for (let i = start; i < end; i++) {
+    const post = posts[i];
+    const serial = post['序號'];
+    const title = getTranslatedBlogField(serial, 'title') || post['文章標題'];
+    const summary = getTranslatedBlogField(serial, 'summary') || post['文章摘要'];
+    const html = `
+      <article class="post-card w-full max-w-screen-sm mx-auto p-4 box-border overflow-hidden">
         <img 
           src="${post['圖片連結']}" 
           alt="${post['圖片註解'] || ''}" 
@@ -30,10 +31,10 @@ function renderPosts(posts, start, count, containerId = 'blog-posts-container') 
           <span class="text-sm text-gray-500 mb-2 block">
             ${post['日期'] || ''} · ${post['地區'] || ''}
           </span>
-          <h3 class="text-3xl font-semibold text-gray-900 mb-4 break-words">
+          <h3 class="text-2xl font-semibold text-gray-900 mb-4 break-words whitespace-normal">
             ${title}
           </h3>
-          <p class="text-gray-700 leading-relaxed mb-4 break-words">
+          <p class="text-gray-700 leading-relaxed mb-4 break-words whitespace-normal">
             ${summary}
           </p>
           <a href="${post['文章連結'] || '#'}" 

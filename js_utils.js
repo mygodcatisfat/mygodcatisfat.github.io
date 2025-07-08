@@ -21,7 +21,7 @@ function renderPosts(posts, start, count, containerId = 'blog-posts-container') 
     var summary = getTranslatedBlogField(serial, 'summary') || post['文章摘要'];
     var html = `
       <article class="post-card">
-        <img src="${post['圖片連結']}" alt="${post['圖片註解'] || ''}" class="w-full h-auto rounded-lg mb-6 shadow-md">
+        <img src="${post['圖片連結']}" alt="${post['圖片註解'] || ''}" class="w-full aspect-square rounded-lg mb-6 shadow-md bg-white hover:shadow-lg transition duration-300">
         <div class="post-content">
           <span class="text-sm text-gray-500 mb-2 block">${post['日期'] || ''} · ${post['地區'] || ''}</span>
           <h3 class="text-3xl font-semibold text-gray-900 mb-4">${title}</h3>

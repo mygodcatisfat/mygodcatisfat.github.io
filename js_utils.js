@@ -20,11 +20,12 @@ function renderPosts(posts, start, count, containerId = 'blog-posts-container') 
     const serial = post['序號'];
     const title = getTranslatedBlogField(serial, 'title') || post['文章標題'];
     const summary = getTranslatedBlogField(serial, 'summary') || post['文章摘要'];
+    const place = getTranslatedBlogField(serial, 'place') || post['地區'];
     const html = `
       <article class="post-card">
         <img src="${post['圖片連結']}" alt="${post['圖片註解'] || ''}" class="w-full aspect-square rounded-lg mb-6 shadow-md bg-white hover:shadow-lg transition duration-300">
         <div class="post-content">
-          <span class="text-sm text-gray-500 mb-2 block">${post['日期'] || ''} · ${post['地區'] || ''}</span>
+          <span class="text-sm text-gray-500 mb-2 block">${post['日期'] || ''} · ${place}</span>
           <h3 class="text-3xl font-semibold text-gray-900 mb-4">${title}</h3>
           <p class="text-gray-700 leading-relaxed mb-4">${summary}</p>
           <a href="${post['文章連結'] || '#'}" class="text-indigo-600 hover:text-indigo-800 font-bold transition duration-300" target="_blank">

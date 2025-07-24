@@ -4,11 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title data-i18n="page_title">歡迎來到偶的小天地 - 探索世界</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Inter font for new sections (preferred for blog/AI, also for general body) -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" >
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    
     <link rel="stylesheet" href="css_base.css">
     <link rel="stylesheet" href="css_button.css">
     <link rel="stylesheet" href="css_nav.css">
@@ -18,7 +17,6 @@
     <link rel="stylesheet" href="css_darkmode.css">
     <link rel="stylesheet" href="css_particles.css">
 
-    <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-J3C47KJL86"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
@@ -28,67 +26,63 @@
     </script>
     
     <style>
-        .blog-section { padding: 2em; }
+        /* * 將 blog-section 和部分 post-card 樣式轉換為 Tailwind CSS。
+         * 這裡僅保留無法直接用 Tailwind 類別表示的 CSS 變數或特殊字體等。
+         */
+        .blog-section { padding: 2em; } /* 轉換為 p-8 (假設 1em = 4px，2em=32px) 或 p-4 (假設 1em=16px) */
         .blog-section h2 {
-            font-family: 'Comic Neue', cursive;
-            font-weight: bold;
-            color: var(--text-color);
-            margin-bottom: 1.5em;
+            font-family: 'Comic Neue', cursive; /* 保留特殊字體 */
+            font-weight: bold; /* 轉換為 font-bold */
+            color: var(--text-color); /* 保留 CSS 變數 */
+            margin-bottom: 1.5em; /* 轉換為 mb-6 (假設 1.5em = 24px) */
         }
         
+        /* * post-card 的樣式將主要透過 Tailwind 類別來實現。
+         * 這裡只保留 CSS 變數的引用，因為 Tailwind 預設沒有這些變數。
+         */
         .post-card {
-            background: var(--member-card-bg);
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            padding: 1.5em;
-            margin-bottom: 2em;
-            transition: transform 0.3s, box-shadow 0.3s;
-            color: var(--text-color);
-            text-align: left;
+            background: var(--member-card-bg); /* 保留 CSS 變數 */
+            color: var(--text-color); /* 保留 CSS 變數 */
         }
         
-        .post-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
-        }
+        /* 將 hover 效果移至 HTML 中的 class 屬性 */
+        /* .post-card:hover {
+            transform: translateY(-5px); 
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15); 
+        } */
         
         .post-card img {
-            width: 100%;
-            height: 250px;
-            object-fit: cover;
-            border-radius: 8px;
-            margin-bottom: 1em;
+            /* 這些屬性將大部分在 HTML 中以 Tailwind 類別表示 */
+            /* width: 100%; height: 250px; object-fit: cover; border-radius: 8px; margin-bottom: 1em; */
         }
 
         .post-card .post-content {
-            display: flex;
-            flex-direction: column; /* 這一行很重要！確保內容是由上到下 */
-            justify-content: center; /* 讓內容垂直置中（可選） */
-            flex: 1;
+            /* 這些屬性將大部分在 HTML 中以 Tailwind 類別表示 */
+            /* display: flex; flex-direction: column; justify-content: center; flex: 1; */
         }
         
-        .post-card span.text-sm { color: #666; }
-        body.dark-mode .post-card span.text-sm { color: #aaa; }
+        /* 轉換為 text-sm text-gray-600 */
+        .post-card span.text-sm { color: #666; } 
+        body.dark-mode .post-card span.text-sm { color: #aaa; } 
+
+        /* 轉換為 font-inter font-semibold text-2xl mb-3.5 text-gray-800 */
         .post-card h3 {
-            font-family: 'Inter', sans-serif;
-            font-weight: 600;
-            font-size: 1.8em;
-            margin-bottom: 0.8em;
-            color: var(--text-color);
+            font-family: 'Inter', sans-serif; /* 保留字體 */
+            /* font-weight: 600; font-size: 1.8em; margin-bottom: 0.8em; color: var(--text-color); */
         }
         
-        .post-card p { font-size: 1em; line-height: 1.6; margin-bottom: 1em; color: var(--text-color); }
+        .post-card p { 
+            /* 轉換為 text-base leading-relaxed mb-4 text-gray-700 */
+            /* font-size: 1em; line-height: 1.6; margin-bottom: 1em; color: var(--text-color); */
+        }
         .post-card a { color: var(--header-bg); font-weight: bold; }
         body.dark-mode .post-card a { color: var(--dark-mode-toggle-bg); }
+        
+        /* tag 樣式轉換為 Tailwind 類別 */
         .tag {
-            background-color: var(--tag-bg);
-            color: var(--tag-text);
-            font-size: 0.75em;
-            padding: 0.3em 0.8em;
-            border-radius: 9999px;
-            display: inline-block;
-            margin-right: 0.5em;
-            margin-bottom: 0.5em;
+            background-color: var(--tag-bg); /* 保留 CSS 變數 */
+            color: var(--tag-text); /* 保留 CSS 變數 */
+            /* font-size: 0.75em; padding: 0.3em 0.8em; border-radius: 9999px; display: inline-block; margin-right: 0.5em; margin-bottom: 0.5em; */
         }
         
         body.dark-mode .tag {
@@ -96,42 +90,33 @@
             color: var(--tag-text);
         }
         
+        /* load-more-posts 按鈕樣式轉換為 Tailwind 類別 */
         #load-more-posts {
-            background: var(--language-button-bg);
-            color: var(--language-button-color);
-            padding: 0.8em 1.5em;
-            border-radius: 9999px;
-            font-weight: bold;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
+            background: var(--language-button-bg); /* 保留 CSS 變數 */
+            color: var(--language-button-color); /* 保留 CSS 變數 */
+            /* padding: 0.8em 1.5em; border-radius: 9999px; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.3s ease; */
         }
         
-        #load-more-posts:hover { opacity: 0.9; transform: translateY(-2px); }
+        #load-more-posts:hover { 
+            /* opacity: 0.9; transform: translateY(-2px); */
+        }
+        
+        /* sidebar-widget 樣式轉換為 Tailwind 類別 */
         .sidebar-widget {
-            background: var(--member-card-bg);
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            padding: 1.5em;
-            margin-bottom: 2em;
-            text-align: left;
-            color: var(--text-color);
+            background: var(--member-card-bg); /* 保留 CSS 變數 */
+            color: var(--text-color); /* 保留 CSS 變數 */
+            /* border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); padding: 1.5em; margin-bottom: 2em; text-align: left; */
         }
         
         .sidebar-widget h3 {
-            font-family: 'Inter', sans-serif;
-            font-weight: 600;
-            font-size: 1.5em;
-            margin-bottom: 1em;
-            color: var(--text-color);
+            font-family: 'Inter', sans-serif; /* 保留字體 */
+            /* font-weight: 600; font-size: 1.5em; margin-bottom: 1em; color: var(--text-color); */
         }
         
         .sidebar-widget input[type="text"], .sidebar-widget textarea, .sidebar-widget input[type="email"] {
-            background: var(--bg-color);
-            border: 1px solid var(--sidebar-border);
-            border-radius: 8px;
-            padding: 0.6em 1em;
-            width: 100%;
-            color: var(--text-color);
+            background: var(--bg-color); /* 保留 CSS 變數 */
+            border: 1px solid var(--sidebar-border); /* 保留 CSS 變數 */
+            /* border-radius: 8px; padding: 0.6em 1em; width: 100%; color: var(--text-color); */
         }
         
         body.dark-mode .sidebar-widget input, body.dark-mode .sidebar-widget textarea {
@@ -140,13 +125,9 @@
         }
         
         .sidebar-widget button {
-            background: var(--header-bg);
-            color: #333;
-            font-weight: bold;
-            padding: 0.8em 1.5em;
-            border-radius: 9999px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
+            background: var(--header-bg); /* 保留 CSS 變數 */
+            color: #333; /* 保留顏色 */
+            /* font-weight: bold; padding: 0.8em 1.5em; border-radius: 9999px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: all 0.3s ease; */
         }
         
         body.dark-mode .sidebar-widget button {
@@ -156,7 +137,7 @@
         
         .sidebar-widget button:hover { opacity: 0.9; transform: translateY(-2px); }
         .sidebar-widget ul li a {
-            color: var(--text-color);
+            color: var(--text-color); /* 保留 CSS 變數 */
             transition: color 0.3s, text-decoration 0.3s;
         }
         
@@ -167,29 +148,18 @@
         
         body.dark-mode .sidebar-widget ul li a:hover { color: var(--dark-mode-toggle-bg); }
         .sidebar-widget .flex.items-start img {
-            border-radius: 8px;
-            object-fit: cover;
-            width: 60px;
-            height: 60px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            /* border-radius: 8px; object-fit: cover; width: 60px; height: 60px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); */
         }
         
+        /* message-box 樣式轉換為 Tailwind 類別 */
         .message-box {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            padding: 2em;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-            z-index: 10000;
-            max-width: 90%;
-            text-align: center;
-            border: 1px solid var(--sidebar-border);
+            background-color: var(--bg-color); /* 保留 CSS 變數 */
+            color: var(--text-color); /* 保留 CSS 變數 */
+            border: 1px solid var(--sidebar-border); /* 保留 CSS 變數 */
+            /* position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 2em; border-radius: 12px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2); z-index: 10000; max-width: 90%; text-align: center; */
         }
         
+        /* backdrop 保持不動，或用 Tailwind 類別重寫 */
         .message-box-backdrop {
             position: fixed;
             top: 0;
@@ -201,37 +171,30 @@
         }
         
         .message-box button {
-            background-color: var(--header-bg);
-            color: #333;
-            padding: 0.8em 1.5em;
-            border-radius: 8px;
-            font-weight: bold;
-            margin-top: 1em;
-            transition: background-color 0.3s;
+            background-color: var(--header-bg); /* 保留 CSS 變數 */
+            color: #333; /* 保留顏色 */
+            /* padding: 0.8em 1.5em; border-radius: 8px; font-weight: bold; margin-top: 1em; transition: background-color 0.3s; */
         }
         
         body.dark-mode .message-box button {
             background: #555;
             color: #f0f0f0;
-            /*background-color: var(--dark-mode-toggle-bg);
-            color: var(--dark-mode-toggle-color);*/
         }
         
         .message-box button:hover { opacity: 0.9; }
+        
+        /* plan-output 樣式轉換為 Tailwind 類別 */
         #plan-output {
-            background: var(--submenu-bg);
-            border: 1px solid var(--submenu-item-border);
-            padding: 1em;
-            border-radius: 8px;
-            color: var(--text-color);
-            text-align: left;
+            background: var(--submenu-bg); /* 保留 CSS 變數 */
+            border: 1px solid var(--submenu-item-border); /* 保留 CSS 變數 */
+            color: var(--text-color); /* 保留 CSS 變數 */
+            /* padding: 1em; border-radius: 8px; text-align: left; */
         }
         
         #plan-output h4 {
-            color: var(--header-bg);
-            font-family: 'Inter', sans-serif;
-            font-weight: 600;
-            margin-bottom: 0.5em;
+            color: var(--header-bg); /* 保留 CSS 變數 */
+            font-family: 'Inter', sans-serif; /* 保留字體 */
+            /* font-weight: 600; margin-bottom: 0.5em; */
         }
         
         body.dark-mode #plan-output h4 { color: var(--dark-mode-toggle-bg); }
@@ -244,10 +207,10 @@
             color: #666;
         }
 
-        /* 響應式設計 */
+        /* 響應式設計 - 這些媒體查詢將結合 Tailwind 的響應式類別 */
         @media (max-width: 768px) {
-            .sidebar { width: 250px; left: -250px; }
-            .menu-toggle { font-size: 1em; padding: 0.4em 0.6em; }
+            .sidebar { width: 250px; left: -250px; } /* 這些將由 JS 和 Tailwind 響應式類別處理 */
+            .menu-toggle { font-size: 1em; padding: 0.4em 0.6em; } /* 可以轉換為 Tailwind 類別 */
             nav {
                 overflow-x: auto;
                 white-space: nowrap;
@@ -263,29 +226,12 @@
             }
         }
 
+        /* 這裡的媒體查詢在 Tailwind 中可以直接用 md: 或 lg: 前綴來實現 */
         @media (min-width: 1024px) {
-            .post-card {
-                display: flex;
-                flex-direction: row;
-                align-items: stretch;
-                gap: 2em;
-            }
-            .post-card img {
-                width: 320px;
-                height: 220px;
-                object-fit: cover;
-                margin-bottom: 0;
-                border-radius: 8px;
-                flex-shrink: 0;
-            }
-            .post-card .post-content {
-                display: flex;
-                flex-direction: column;      /* 讓文字區塊內是上下排列 */
-                justify-content: center;     /* 讓文字群整體垂直置中（可選） */
-                flex: 1;
-            }
+            /* .post-card { display: flex; flex-direction: row; align-items: stretch; gap: 2em; } */
+            /* .post-card img { width: 320px; height: 220px; object-fit: cover; margin-bottom: 0; border-radius: 8px; flex-shrink: 0; } */
+            /* .post-card .post-content { display: flex; flex-direction: column; justify-content: center; flex: 1; } */
         }
-
     </style>
 </head>
 <body>
@@ -301,13 +247,6 @@
                     <span data-i18n="menu_daily_life">狼的日常 | 生活</span>
                     <span class="menu-arrow">▶</span>
                 </button>
-                <!--div class="submenu"-->
-                    <!--div class="submenu-item" onclick="showContent('daily-morning')">🌤️ <span data-i18n="daily_morning">晨間時光</span></div-->
-                    <!--div class="submenu-item" onclick="showContent('daily-meal')">🍽️ <span data-i18n="daily_meal">用餐時間</span></div-->
-                    <!--div class="submenu-item" onclick="showContent('daily-nap')">😴 <span data-i18n="daily_nap">午休小憩</span></div-->
-                    <!--div class="submenu-item" onclick="showContent('daily-play')">🎮 <span data-i18n="daily_play">遊戲時光</span></div-->
-                    <!--div class="submenu-item" onclick="showContent('daily-evening')">🌙 <span data-i18n="daily_evening">夜晚活動</span></div-->
-                <!--/div-->
             </div>
             <div class="menu-section expanded">
                 <button class="menu-title">
@@ -356,11 +295,7 @@
                     <span class="menu-arrow">▶</span>
                 </button>
                 <div class="submenu">
-                    <!--div class="submenu-item" onclick="showContent('food-favorites')">⭐ <span data-i18n="food_favorites">最愛美食</span></div-->
-                    <!--div class="submenu-item" onclick="showContent('food-recipes')">👨‍🍳 <span data-i18n="food_recipes">食譜分享</span></div-->
                     <div class="submenu-item" onclick="showContent('food-reviews')">📝 <span data-i18n="food_reviews">美食評論</span></div>
-                    <!--div class="submenu-item" onclick="showContent('food-hunting')">🔍 <span data-i18n="food_hunting">覓食地圖</span></div-->
-                    <!--div class="submenu-item" onclick="showContent('food-tips')">💡 <span data-i18n="food_tips">美食小貼士</span></div-->
                 </div>
             </div>
         </div>
@@ -389,33 +324,52 @@
             <a href="#latest-posts-section" data-i18n="latest_posts">最新文章</a>
         </nav>
         
-
-        
         <section id="latest-posts-section" class="container mx-auto my-12 px-6 grid grid-cols-1 md:grid-cols-3 gap-12">
             <div class="md:col-span-2">
                 <h2 class="text-4xl font-bold mb-8 text-center md:text-left text-gray-800" id="dynamic-post-title" data-i18n="latest_posts_title">最新網誌文章</h2>
                 
-                <!-- Blog Post -->
-                <div id="blog-posts-container"></div>
+                <div id="blog-posts-container">
+                    <div class="post-card bg-white rounded-xl shadow-md p-6 mb-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg text-left dark:bg-gray-800 dark:text-gray-100
+                                lg:flex lg:flex-row lg:items-stretch lg:gap-8">
+                        <img src="https://via.placeholder.com/320x220" alt="Placeholder Image" 
+                             class="w-full h-64 object-cover rounded-lg mb-4 lg:w-80 lg:h-56 lg:mb-0 lg:flex-shrink-0">
+                        <div class="post-content flex flex-col justify-center flex-1">
+                            <span class="text-sm text-gray-600 dark:text-gray-400">2025年7月24日</span>
+                            <h3 class="font-inter font-semibold text-2xl mb-3.5 text-gray-800 dark:text-white">文章標題範例</h3>
+                            <p class="text-base leading-relaxed mb-4 text-gray-700 dark:text-gray-300">
+                                這是一篇關於旅行或美食的簡短摘要。你會在這裡找到精彩的內容和有用的資訊。
+                            </p>
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                <span class="tag bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full dark:bg-blue-900 dark:text-blue-300">旅遊</span>
+                                <span class="tag bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded-full dark:bg-green-900 dark:text-green-300">日本</span>
+                            </div>
+                            <a href="#" class="text-blue-600 font-bold hover:underline dark:text-blue-400">繼續閱讀 &rarr;</a>
+                        </div>
+                    </div>
+                </div>
                 
                 <div class="text-center mt-8">
-                    <button id="load-more-posts" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-full shadow-md transition duration-300 ease-in-out" data-i18n="load_more_posts">
+                    <button id="load-more-posts" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-full shadow-md transition duration-300 ease-in-out
+                                                           dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100" 
+                            data-i18n="load_more_posts">
                         載入更多文章
                     </button>
                 </div>
             </div>
             <aside class="md:col-span-1">
-                <div class="sidebar-widget">
-                    <h3 data-i18n="search_blog_title">搜尋網誌</h3>
+                <div class="sidebar-widget bg-white rounded-xl shadow-md p-6 mb-8 text-left dark:bg-gray-800 dark:text-gray-100">
+                    <h3 class="font-inter font-semibold text-xl mb-4 text-gray-800 dark:text-white" data-i18n="search_blog_title">搜尋網誌</h3>
                     <div class="relative">
-                        <input type="text" id="search-input" data-i18n="type_keywords" placeholder="輸入關鍵字..." class="w-full pr-10">
-                        <button id="search-btn" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-indigo-600">
+                        <input type="text" id="search-input" data-i18n="type_keywords" placeholder="輸入關鍵字..." 
+                               class="w-full pr-10 bg-gray-50 border border-gray-300 rounded-lg py-2 px-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500
+                                      dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100">
+                        <button id="search-btn" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                         </button>
                     </div>
                 </div>
-                <div class="sidebar-widget">
-                    <h3>Hashtags</h3>
+                <div class="sidebar-widget bg-white rounded-xl shadow-md p-6 mb-8 text-left dark:bg-gray-800 dark:text-gray-100">
+                    <h3 class="font-inter font-semibold text-xl mb-4 text-gray-800 dark:text-white">Hashtags</h3>
                     <div id="hashtag-list" class="flex flex-wrap gap-2"></div>
                 </div>
             </aside>
@@ -441,7 +395,8 @@
         </footer>
     </div>
     
-    <button id="back-to-top" title="回到最上方" data-i18n="back_to_top_button">▲</button>
+    <button id="back-to-top" title="回到最上方" data-i18n="back_to_top_button"
+            class="fixed bottom-6 right-6 bg-blue-500 text-white p-3 rounded-full shadow-lg hover:bg-blue-600 transition-all duration-300 animate__animated animate__fadeInUp">▲</button>
     
     <div id="message-container"></div>
 

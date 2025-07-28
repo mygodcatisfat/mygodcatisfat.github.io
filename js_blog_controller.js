@@ -141,55 +141,68 @@ function reloadAndRender({mode, keyword, tag, category}) {
 }
 
 // ====== 文章載入、搜尋、分頁、分類、hashtag整合 ======
+function waitForTranslations(callback) {
+  if (typeof translations === 'object' && typeof currentLanguage === 'string'
+      && translations[currentLanguage]) {
+    callback();
+  } else {
+    setTimeout(function() {
+      waitForTranslations(callback);
+    }, 50); // 每 50ms 檢查一次
+  }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-  // 載入全部文章
-  fetch('blog_posts.json')
-    .then(res => res.json())
-    .then(data => {
-      window.appState.allPosts = data;
+  waitForTranslations(function() {
+    // 載入全部文章
+    fetch('blog_posts.json')
+      .then(res => res.json())
+      .then(data => {
+        window.appState.allPosts = data;
+  
+        // 預設抓網址參數（分類），否則全顯示
+        var category = getCategoryFromURL();
+        if (category) {
+          reloadAndRender({mode: "category", category});
+        } else {
+          reloadAndRender({mode: "all"});
+        }
+  
+        // 初始化 Hashtag 側邊欄
+        loadAllTags(data);
+      });
 
-      // 預設抓網址參數（分類），否則全顯示
-      var category = getCategoryFromURL();
-      if (category) {
-        reloadAndRender({mode: "category", category});
-      } else {
-        reloadAndRender({mode: "all"});
+    // 註冊「載入更多」按鈕，只能一次
+    document.getElementById('load-more-posts').onclick = function() {
+      const state = window.appState;
+      renderPosts(state.filtered, state.currentIndex, state.pageSize);
+      state.currentIndex += state.pageSize;
+      updateLoadMoreButton(state.currentIndex, state.filtered.length);
+    };
+  
+    // 註冊搜尋功能
+    document.getElementById('search-btn').onclick = function() {
+      var keyword = document.getElementById('search-input').value;
+      reloadAndRender({mode: "search", keyword});
+    };
+    document.getElementById('search-input').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        reloadAndRender({mode: "search", keyword: this.value});
       }
-
-      // 初始化 Hashtag 側邊欄
-      loadAllTags(data);
     });
-
-  // 註冊「載入更多」按鈕，只能一次
-  document.getElementById('load-more-posts').onclick = function() {
-    const state = window.appState;
-    renderPosts(state.filtered, state.currentIndex, state.pageSize);
-    state.currentIndex += state.pageSize;
-    updateLoadMoreButton(state.currentIndex, state.filtered.length);
-  };
-
-  // 註冊搜尋功能
-  document.getElementById('search-btn').onclick = function() {
-    var keyword = document.getElementById('search-input').value;
-    reloadAndRender({mode: "search", keyword});
-  };
-  document.getElementById('search-input').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') {
-      reloadAndRender({mode: "search", keyword: this.value});
+  
+    // 語言切換自動重載
+    if (typeof window !== 'undefined') {
+      window.addEventListener('languageChanged', function() {
+        const state = window.appState;
+        document.getElementById('blog-posts-container').innerHTML = "";
+        state.currentIndex = 0;
+        renderPosts(state.filtered, 0, state.pageSize);
+        updateLoadMoreButton(state.pageSize, state.filtered.length);
+        state.currentIndex = state.pageSize;
+      });
     }
   });
-
-  // 語言切換自動重載
-  if (typeof window !== 'undefined') {
-    window.addEventListener('languageChanged', function() {
-      const state = window.appState;
-      document.getElementById('blog-posts-container').innerHTML = "";
-      state.currentIndex = 0;
-      renderPosts(state.filtered, 0, state.pageSize);
-      updateLoadMoreButton(state.pageSize, state.filtered.length);
-      state.currentIndex = state.pageSize;
-    });
-  }
 });
 
 // ====== Hashtag 側邊欄 ======

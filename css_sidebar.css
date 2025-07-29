@@ -4,22 +4,25 @@
 .menu-toggle（側邊欄開關按鈕）
 .toggle-button-sidebar
 */
+/* Sidebar */
 .sidebar {
   position: fixed;
-  left: -17.5rem;
   top: 0;
+  left: -17.5rem;
   width: 17.5rem;
   height: 100vh;
   background: var(--sidebar-bg);
   border-right: 2px solid var(--sidebar-border);
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
   z-index: 1001;
-  transition: left 0.3s;
-  overflow-y: auto;
-  box-shadow: 2px 0 10px rgba(0,0,0,0.1);
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+  transition: left 0.3s;
 }
 .sidebar.open { left: 0; }
+
+/* Sidebar Header */
 .sidebar-header {
   padding: 1.5rem;
   background: var(--header-bg);
@@ -31,82 +34,121 @@
   color: var(--text-color);
   font-family: inherit;
 }
-.sidebar-menu { padding: 1rem 0; flex-grow: 1; }
-.menu-section { margin-bottom: 0.5rem; }
+
+/* Sidebar Menu */
+.sidebar-menu {
+  padding: 1rem 0;
+  flex-grow: 1;
+}
+
+/* Menu Section */
+.menu-section {
+  margin-bottom: 0.5rem;
+}
+.menu-section.expanded .submenu {
+  max-height: 18.75rem;
+}
+.menu-section.expanded .menu-arrow {
+  transform: rotate(90deg);
+}
+
+/* Menu Title */
 .menu-title {
+  width: 100%;
   padding: 1rem 1.5rem;
   background: linear-gradient(135deg, var(--menu-title-bg-start), var(--menu-title-bg-end));
-  cursor: pointer;
-  font-weight: bold;
   font-size: 1.1rem;
+  font-weight: bold;
+  color: var(--text-color);
   border: none;
-  width: 100%;
   text-align: left;
-  transition: background 0.3s;
+  cursor: pointer;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: var(--text-color);
+  transition: background 0.3s;
 }
 .menu-title:hover {
   background: linear-gradient(135deg, var(--menu-title-hover-bg-start), var(--menu-title-hover-bg-end));
 }
+
+/* Menu Arrow */
 .menu-arrow {
-  transition: transform 0.3s;
   font-size: 0.8em;
+  transition: transform 0.3s;
 }
-.menu-section.expanded .menu-arrow { transform: rotate(90deg); }
+
+/* Submenu */
 .submenu {
   max-height: 0;
   overflow: hidden;
-  transition: max-height 0.3s;
   background: var(--submenu-bg);
+  transition: max-height 0.3s;
 }
-.menu-section.expanded .submenu { max-height: 18.75rem; }
 .submenu-item {
   padding: 0.8rem 2rem;
-  cursor: pointer;
-  transition: background 0.3s;
   border-bottom: 1px solid var(--submenu-item-border);
   color: var(--text-color);
+  cursor: pointer;
+  transition: background 0.3s;
 }
-.submenu-item:hover { background: var(--submenu-item-hover-bg); }
-.submenu-item:last-child { border-bottom: none; }
-/* Menu Toggle */
+.submenu-item:hover {
+  background: var(--submenu-item-hover-bg);
+}
+.submenu-item:last-child {
+  border-bottom: none;
+}
+
+/* Menu Toggle Button */
 .menu-toggle {
   position: fixed;
-  top: 1rem; left: 1rem;
+  top: 1rem;
+  left: 1rem;
+  padding: 0.5em 0.8em;
   background: #ffeb3b;
   color: #333;
+  font-size: 1.2em;
   border: none;
-  padding: 0.5em 0.8em;
   border-radius: 5px;
   cursor: pointer;
   z-index: 1002;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  font-size: 1.2em;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   transition: background 0.3s;
 }
-.menu-toggle:hover { background: #f2c94c; }
-/* Sidebar overlay */
+.menu-toggle:hover {
+  background: #f2c94c;
+}
+
+/* Sidebar Overlay */
 .sidebar-overlay {
   position: fixed;
-  top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0,0,0,0.5);
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
   z-index: 1000;
-  opacity: 0; visibility: hidden;
+  opacity: 0;
+  visibility: hidden;
   transition: opacity 0.3s, visibility 0.3s;
 }
-.sidebar-overlay.active { opacity: 1; visibility: visible; }
+.sidebar-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Toggle Button Inside Sidebar */
 .toggle-button-sidebar {
   width: calc(100% - 3em);
   margin: 0.75em 1.5em;
+  padding: 0.8em 1em;
   background: var(--dark-mode-toggle-bg);
   color: var(--dark-mode-toggle-color);
   border: none;
-  padding: 0.8em 1em;
   border-radius: 5px;
+  font-size: 1em;
   cursor: pointer;
   z-index: 1000;
-  font-size: 1em;
   transition: background 0.3s, color 0.3s;
+}
+

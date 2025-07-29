@@ -19,18 +19,14 @@ backToTopBtn.addEventListener('click', () => {
   function animate(currentTime) {
     const elapsed = currentTime - startTime;
     const progress = Math.min(elapsed / duration, 1);
-    const eased = easeOutQuad(progress);
 
     // 計算滾動位置
-    window.scrollTo(0, startY * (1 - eased));
+    window.scrollTo(0, startY * (1 - easeOutQuad(progress)));
 
     // 若未完成，持續下一幀
-    if (progress < 1) {
-      requestAnimationFrame(animate);
-    }
+    if (progress < 1) requestAnimationFrame(animate);
   }
 
   // 啟動動畫
   requestAnimationFrame(animate);
 });
-

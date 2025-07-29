@@ -67,6 +67,8 @@ function showContent(contentType) {
     closeSidebar();
     if (contentType.startsWith('travel-')) {
         window.location.href = `travel.html?category=${contentType}`;
+    } else if (contentType.startsWith('food-')) {
+        window.location.href = `travel.html?category=${contentType}`;
     } else {
         const contentMap = (typeof translations !== 'undefined' && translations[currentLanguage]) ? {
             'daily-morning': translations[currentLanguage]['daily_morning'],

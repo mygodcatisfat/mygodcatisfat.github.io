@@ -1,17 +1,36 @@
-// 控制「回到最上方」按鈕的動畫滾動效果
-document.getElementById('back-to-top').addEventListener('click', function() {
-    const startPosition = window.pageYOffset;
-    const distance = -startPosition;
-    const duration = 800;
-    let start = null;
-    function easeOutQuad(t) { return t * (2 - t); }
-    function scrollTopAnimation(currentTime) {
-        if (!start) start = currentTime;
-        const timeElapsed = currentTime - start;
-        const progress = Math.min(timeElapsed / duration, 1);
-        const easedProgress = easeOutQuad(progress);
-        window.scrollTo(0, startPosition + distance * easedProgress);
-        if (timeElapsed < duration) requestAnimationFrame(scrollTopAnimation);
+// backToTop.js
+// 優化「回到最上方」平滑滾動效果
+
+// 快取 DOM 元素
+const backToTopBtn = document.getElementById('back-to-top');
+
+// 設定動畫時長（毫秒）
+const duration = 800;
+
+// Easing 函式：easeOutQuad
+const easeOutQuad = t => t * (2 - t);
+
+// 點擊按鈕時觸發平滑滾動
+backToTopBtn.addEventListener('click', () => {
+  const startY = window.pageYOffset;
+  const startTime = performance.now();
+
+  // 動畫迴圈
+  function animate(currentTime) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = easeOutQuad(progress);
+
+    // 計算滾動位置
+    window.scrollTo(0, startY * (1 - eased));
+
+    // 若未完成，持續下一幀
+    if (progress < 1) {
+      requestAnimationFrame(animate);
     }
-    requestAnimationFrame(scrollTopAnimation);
+  }
+
+  // 啟動動畫
+  requestAnimationFrame(animate);
 });
+

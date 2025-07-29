@@ -1,28 +1,36 @@
 // 夜間模式切換與紀錄
-(function () {
-    const DARK_MODE_KEY = 'dark-mode';
+(() => {
+  const DARK_MODE_KEY = 'dark-mode';
+  const className = 'dark-mode';
+  const classList = document.documentElement.classList;
 
-    function setDarkMode(on) {
-        document.body.classList.toggle('dark-mode', on);
-        localStorage.setItem(DARK_MODE_KEY, on);
-    }
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
 
-    function getDarkModePreference() {
-        const stored = localStorage.getItem(DARK_MODE_KEY);
-        if (stored !== null) {
-            return stored === 'true';
-        }
-        // 若無記錄，依照系統偏好
-        return window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
+  const getUserPreference = () => {
+    const stored = localStorage.getItem(DARK_MODE_KEY);
+    return stored === null ? prefersDark.matches : stored === 'true';
+  };
 
-    window.toggleDarkMode = function () {
-        const enabled = !document.body.classList.contains('dark-mode');
-        setDarkMode(enabled);
-    };
+  const applyDarkMode = (enabled, persist = true) => {
+    classList.toggle(className, enabled);
+    if (persist) localStorage.setItem(DARK_MODE_KEY, enabled);
+  };
 
-    // 初始化
-    window.addEventListener('DOMContentLoaded', function () {
-        setDarkMode(getDarkModePreference());
+  // 公開的切換函式
+  window.toggleDarkMode = () => {
+    const enabled = !classList.contains(className);
+    applyDarkMode(enabled);
+  };
+
+  // 初始化
+  document.addEventListener('DOMContentLoaded', () => {
+    applyDarkMode(getUserPreference());
+  });
+
+  // 若使用者未手動設定偏好，則自動追蹤系統模式變化
+  if (localStorage.getItem(DARK_MODE_KEY) === null) {
+    prefersDark.addEventListener('change', (e) => {
+      applyDarkMode(e.matches, false); // 不覆寫 localStorage
     });
+  }
 })();

@@ -1,36 +1,28 @@
 // 夜間模式切換與紀錄
-(() => {
-  const DARK_MODE_KEY = 'dark-mode';
-  const className = 'dark-mode';
-  const classList = document.documentElement.classList;
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+(function () {
+    const DARK_MODE_KEY = 'dark-mode';
 
-  // ✅ 主體邏輯
-  function getUserPreference() {
-    const stored = localStorage.getItem(DARK_MODE_KEY);
-    return stored === null ? prefersDark.matches : stored === 'true';
-  }
+    function setDarkMode(on) {
+        document.body.classList.toggle('dark-mode', on);
+        localStorage.setItem(DARK_MODE_KEY, on);
+    }
 
-  function applyDarkMode(enabled, persist = true) {
-    classList.toggle(className, enabled);
-    if (persist) localStorage.setItem(DARK_MODE_KEY, enabled);
-  }
+    function getDarkModePreference() {
+        const stored = localStorage.getItem(DARK_MODE_KEY);
+        if (stored !== null) {
+            return stored === 'true';
+        }
+        // 若無記錄，依照系統偏好
+        return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
 
-  // ✅ 將函式掛到 window，讓 HTML 按鈕能呼叫它
-  window.toggleDarkMode = function () {
-    const enabled = !classList.contains(className);
-    applyDarkMode(enabled);
-  };
+    window.toggleDarkMode = function () {
+        const enabled = !document.body.classList.contains('dark-mode');
+        setDarkMode(enabled);
+    };
 
-  // ✅ 初始化主題
-  document.addEventListener('DOMContentLoaded', () => {
-    applyDarkMode(getUserPreference());
-  });
-
-  // ✅ 追蹤系統主題改變（除非使用者手動設定過）
-  if (localStorage.getItem(DARK_MODE_KEY) === null) {
-    prefersDark.addEventListener('change', (e) => {
-      applyDarkMode(e.matches, false); // 不覆蓋 localStorage
+    // 初始化
+    window.addEventListener('DOMContentLoaded', function () {
+        setDarkMode(getDarkModePreference());
     });
-  }
 })();

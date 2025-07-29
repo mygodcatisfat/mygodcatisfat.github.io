@@ -58,12 +58,12 @@
                     <span class="menu-arrow">▶</span>
                 </button>
                 <div class="submenu">
-                    <div class="submenu-item" onclick="showContent('travel-taiwan')"><span data-i18n="travel_taiwan">臺灣</span></div>
-                    <div class="submenu-item" onclick="showContent('travel-osaka')"><span data-i18n="travel_osaka">大阪</span></div>
-                    <div class="submenu-item" onclick="showContent('travel-tokyo')"><span data-i18n="travel_tokyo">東京</span></div>
-                    <div class="submenu-item" onclick="showContent('travel-germany')"><span data-i18n="travel_germany">德國</span></div>
-                    <div class="submenu-item" onclick="showContent('travel-austria')"><span data-i18n="travel_austria">奧地利</span></div>
-                    <div class="submenu-item" onclick="showContent('travel-czech')"><span data-i18n="travel_czech">捷克</span></div>
+                    <div class="submenu-item" onclick="reloadAndRender({mode: 'category', category: 'travel-taiwan'})"><span data-i18n="travel_taiwan">臺灣</span></div>
+                    <div class="submenu-item" onclick="reloadAndRender({mode: 'category', category: 'travel-osaka'})"><span data-i18n="travel_osaka">大阪</span></div>
+                    <div class="submenu-item" onclick="reloadAndRender({mode: 'category', category: 'travel-tokyo'})"><span data-i18n="travel_tokyo">東京</span></div>
+                    <div class="submenu-item" onclick="reloadAndRender({mode: 'category', category: 'travel-germany'})"><span data-i18n="travel_germany">德國</span></div>
+                    <div class="submenu-item" onclick="reloadAndRender({mode: 'category', category: 'travel-austria'})"><span data-i18n="travel_austria">奧地利</span></div>
+                    <div class="submenu-item" onclick="reloadAndRender({mode: 'category', category: 'travel-czech'})"><span data-i18n="travel_czech">捷克</span></div>
                 </div>
             </div>
             
@@ -75,7 +75,7 @@
                 <div class="submenu">
                     <!--div class="submenu-item" onclick="showContent('food-favorites')">⭐ <span data-i18n="food_favorites">最愛美食</span></div-->
                     <!--div class="submenu-item" onclick="showContent('food-recipes')">👨‍🍳 <span data-i18n="food_recipes">食譜分享</span></div-->
-                    <div class="submenu-item" onclick="showContent('food-reviews')">📝 <span data-i18n="food_reviews">食記</span></div>
+                    <div class="submenu-item" onclick="reloadAndRender({mode: 'category', category: 'food-reviews'})">📝 <span data-i18n="food_reviews">食記</span></div>
                     <!--div class="submenu-item" onclick="showContent('food-hunting')">🔍 <span data-i18n="food_hunting">覓食地圖</span></div-->
                     <!--div class="submenu-item" onclick="showContent('food-tips')">💡 <span data-i18n="food_tips">美食小貼士</span></div-->
                 </div>

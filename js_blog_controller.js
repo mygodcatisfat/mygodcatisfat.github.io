@@ -17,7 +17,8 @@ const categoryToKeyword = {
   "travel-osaka": "大阪",
   "travel-germany": "德國",
   "travel-austria": "奧地利",
-  "travel-czech": "捷克"
+  "travel-czech": "捷克",
+  "food-reviews": "食記"
 };
 
 // 工具：取得翻譯後欄位

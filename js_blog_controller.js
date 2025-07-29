@@ -90,15 +90,25 @@ function filterPosts(posts, options) {
 
 // 工具：更新標題
 function updateTitle(filteredLength, keyword, containerSelector) {
-  containerSelector = containerSelector || 'h2[data-i18n="latest_posts_title"]';
+  containerSelector = containerSelector || 'h2[data-i18n="search_result_title_without_keyword"], h2[data-i18n="search_result_title_with_keyword"]';
   var titleElement = document.querySelector(containerSelector);
-  if (titleElement) {
-    if (keyword) {
-      titleElement.textContent = '總共搜尋到' + filteredLength + '篇' + keyword + '相關熱門文章';
-    } else {
-      titleElement.textContent = '總共搜尋到' + filteredLength + '篇熱門文章';
-    }
-  }
+  if (!titleElement) return;
+
+  // 判斷用哪個 key
+  var i18nKey = keyword ? "search_result_title_with_keyword" : "search_result_title_without_keyword";
+
+  // 動態設置 data-i18n 屬性
+  titleElement.setAttribute("data-i18n", i18nKey);
+
+  // 從翻譯檔抓模板
+  var langData = translations[currentLanguage] || translations["zh-Hant"];
+  var template = langData[i18nKey] || "";
+
+  // 套入動態參數
+  var text = template.replace("{n}", filteredLength);
+  if (keyword) text = text.replace("{keyword}", keyword);
+
+  titleElement.textContent = text;
 }
 
 // 工具：控制「載入更多」按鈕

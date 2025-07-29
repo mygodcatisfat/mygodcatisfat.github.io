@@ -76,7 +76,6 @@ function showContent(contentType) {
             'daily-evening': translations[currentLanguage]['daily_evening'],
             'food-favorites': translations[currentLanguage]['food_favorites'],
             'food-recipes': translations[currentLanguage]['food_recipes'],
-            'food-reviews': translations[currentLanguage]['food_reviews'],
             'food-hunting': translations[currentLanguage]['food_hunting'],
             'food-tips': translations[currentLanguage]['food_tips']
         } : {};

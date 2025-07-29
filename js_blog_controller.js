@@ -124,8 +124,14 @@ function reloadAndRender({mode, keyword, tag, category}) {
   let filtered = state.allPosts;
 
   if (mode === 'category' && category) {
+    // 特殊處理「食記」分類，其餘分類正常用 region
     const regionKeyword = categoryToKeyword[category] || "";
-    filtered = regionKeyword ? filterPosts(state.allPosts, {region: regionKeyword}) : state.allPosts;
+    if (category === "food-reviews") {
+      // 用 keyword 直接搜尋「食記」文章
+      filtered = filterPosts(state.allPosts, {keyword: regionKeyword});
+    } else {
+      filtered = regionKeyword ? filterPosts(state.allPosts, {region: regionKeyword}) : state.allPosts;
+    }
   } else if (mode === 'search' && keyword) {
     filtered = filterPosts(state.allPosts, {keyword});
   } else if (mode === 'hashtag' && tag) {

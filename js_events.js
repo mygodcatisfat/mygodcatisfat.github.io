@@ -11,24 +11,16 @@ document.addEventListener('click', function(e) {
     const menuToggle = document.querySelector('.menu-toggle');
     const languageOptions = document.getElementById('languageOptions');
     const languageButton = document.getElementById('languageButton');
-    const target = e.target;
-    
     // 關閉側邊欄
-    if (sidebar && menuToggle && !sidebar.contains(target) && !menuToggle.contains(target)) {
-        sidebar.classList.remove('open'); // 不需先判斷是否 open
-        closeSidebar?.(); // 若函式不存在不報錯
+    if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
+        if (sidebar.classList.contains('open')) closeSidebar();
     }
-    
     // 關閉語言選單
-    if (
-        languageOptions &&
-        languageButton &&
-        !languageOptions.contains(target) &&
-        !languageButton.contains(target)
-    ) {
-        languageOptions.classList.remove('open');
-        const arrow = languageButton.querySelector('.menu-arrow');
-        if (arrow) arrow.style.transform = 'rotate(0deg)';
+    if (!languageOptions.contains(e.target) && !languageButton.contains(e.target) && !languageButton.contains(e.target.parentNode)) {
+        if (languageOptions.classList.contains('open')) {
+            languageOptions.classList.remove('open');
+            languageButton.querySelector('.menu-arrow').style.transform = 'rotate(0deg)';
+        }
     }
 });
 
@@ -36,45 +28,47 @@ document.addEventListener('click', function(e) {
 function toggleLanguageOptions() {
     const options = document.getElementById('languageOptions');
     const buttonArrow = document.getElementById('languageButton').querySelector('.menu-arrow');
-    if (!options || !button) return;
-
-    const arrow = button.querySelector('.menu-arrow');
-    const isOpen = options.classList.toggle('open');
-
-    if (arrow) arrow.style.transform = isOpen ? 'rotate(-90deg)' : 'rotate(0deg)';
-
-    document.querySelectorAll('.menu-section.expanded').forEach(section => {
-        section.classList.remove('expanded');
-    });
+    options.classList.toggle('open');
+    if (options.classList.contains('open')) {
+        buttonArrow.style.transform = 'rotate(-90deg)';
+    } else {
+        buttonArrow.style.transform = 'rotate(0deg)';
+    }
+    document.querySelectorAll('.menu-section.expanded').forEach(s => s.classList.remove('expanded'));
 }
 
 // 每次頁面載入時會自動播放動畫。
 // 每次使用者點擊 h1 也會播放動畫（即使動畫還沒播完也能重新觸發）。
 document.addEventListener("DOMContentLoaded", function() {
     const title = document.getElementById("animated-title");
-    if (!title) return;
-    
     const baseClass = "animate__animated";
     const animationClass = "animate__rubberBand";
+    if (title) {
 
-    function triggerAnimation(e) {
-        if (e?.type === "touchstart") e.preventDefault();
+        function triggerAnimation(e) {
+            console.log("click");
+            // 防止手機點兩下放大
+            // if (e) e.preventDefault();
+            if (e && e.type === "touchstart") e.preventDefault();
+            // 先移除動畫 class
+            title.classList.remove(baseClass, animationClass);
+            // 強制 reflow，確保動畫能重新觸發        
+            void title.offsetWidth;
+            // 再加回動畫 class
+            title.classList.add(baseClass, animationClass);
+        }
 
-        title.classList.remove(baseClass, animationClass);
-        void title.offsetWidth; // 強制重排 (reflow)
-        title.classList.add(baseClass, animationClass);
+        // 載入時播放動畫
+        triggerAnimation();
+    
+        // 桌面點擊
+        title.addEventListener("click", triggerAnimation(), false);
+        // 手機觸控
+        title.addEventListener("touchstart", triggerAnimation(), false);
+    
+        // 動畫結束後移除 class
+        title.addEventListener("animationend", function() {
+            title.classList.remove(baseClass, animationClass);
+        });
     }
-
-    // 載入時播放動畫
-    triggerAnimation();
-    
-    // 桌面點擊
-    title.addEventListener("click", triggerAnimation(), false);
-    // 手機觸控
-    title.addEventListener("touchstart", triggerAnimation(), false);
-    
-    // 動畫結束後移除 class
-    title.addEventListener("animationend", () => {
-        title.classList.remove(baseClass, animationClass);
-    });
 });

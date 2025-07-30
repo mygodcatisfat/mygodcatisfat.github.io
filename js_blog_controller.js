@@ -107,7 +107,9 @@ function filterPosts(posts, options) {
 
     function textContainsKeyword(text) {
       if (!text) return false;
-      return keywordList.some(k => (text.indexOf(k) !== -1));
+      // 不區分大小寫
+      const lowerText = text.toLowerCase();
+      return keywordList.some(k => lowerText.indexOf(k.toLowerCase()) !== -1);
     }
     
     if (keyword) {

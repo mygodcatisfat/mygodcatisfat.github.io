@@ -72,6 +72,26 @@ function renderPosts(posts, start, count, containerId = 'blog-posts-container') 
   }
 }
 
+function getAllLocalizedKeywords(keyword) {
+  let keywords = [keyword];
+  if (!translations || !translations["zh-Hant"] || !translations["en"]) return keywords;
+  let zhList = [], enList = [];
+  Object.keys(translations["zh-Hant"]).forEach(key => {
+    if (key.startsWith("travel_") || key.startsWith("food_")) zhList.push(translations["zh-Hant"][key]);
+  });
+  Object.keys(translations["en"]).forEach(key => {
+    if (key.startsWith("travel_") || key.startsWith("food_")) enList.push(translations["en"][key]);
+  });
+  let idxZh = zhList.indexOf(keyword);
+  if (idxZh !== -1) {
+    keywords.push(enList[idxZh]);
+  } else {
+    let idxEn = enList.indexOf(keyword);
+    if (idxEn !== -1) keywords.push(zhList[idxEn]);
+  }
+  return Array.from(new Set(keywords.filter(Boolean)));
+}
+
 // 工具：文章篩選
 function filterPosts(posts, options) {
   var keyword = options.keyword || '';

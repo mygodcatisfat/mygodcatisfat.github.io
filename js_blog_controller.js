@@ -77,15 +77,39 @@ function filterPosts(posts, options) {
   var keyword = options.keyword || '';
   var tag = options.tag || '';
   var region = options.region || '';
+
+  // 支援地區/分類多語搜尋（保留原本 getAllLocalizedKeywords 以支援 Tokyo/東京 類）
+  let keywordList = getAllLocalizedKeywords(keyword);
+  
   return posts.filter(function(post){
     var cond = true;
+    var serial = post['序號'];
+
+    function textContainsKeyword(text) {
+      if (!text) return false;
+      return keywordList.some(k => (text.indexOf(k) !== -1));
+    }
+    
     if (keyword) {
-      cond = cond && (
-        (post['地區'] || '').indexOf(keyword) !== -1 ||
-        (post['tag'] || '').indexOf(keyword) !== -1 ||
-        (post['文章摘要'] || '').indexOf(keyword) !== -1 ||
-        (post['文章標題'] || '').indexOf(keyword) !== -1
-      );
+      // 原始欄位
+      let foundInOriginal =
+        textContainsKeyword(post['地區']) ||
+        textContainsKeyword(post['tag']) ||
+        textContainsKeyword(post['文章標題']) ||
+        textContainsKeyword(post['文章摘要']);
+
+      // 翻譯欄位（只檢查英文和目前語言）
+      let foundInTranslation = false;
+      ["en", currentLanguage].forEach(lang => {
+        const translationsForLang = translations[lang];
+        if (translationsForLang) {
+          if (textContainsKeyword(translationsForLang[`blog_${serial}_title`])) foundInTranslation = true;
+          if (textContainsKeyword(translationsForLang[`blog_${serial}_summary`])) foundInTranslation = true;
+          if (textContainsKeyword(translationsForLang[`blog_${serial}_place`])) foundInTranslation = true;
+        }
+      });
+      
+      cond = cond && (foundInOriginal || foundInTranslation);
     }
     if (tag) {
       cond = cond && (post['tag'] || '').split(',').map(function(t){return t.trim().replace(/^#/, '');}).indexOf(tag) !== -1;

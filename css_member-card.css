@@ -15,6 +15,18 @@
   transform: scale(1.05);
   box-shadow: 0 6px 16px rgba(0,0,0,0.2);
 }
+.member-card h3 {
+    text-align: center;
+    margin: 0.5em 0;
+}
+.member-card p {
+    text-align: left;
+    margin: 0.2em 0;
+    display: none;
+}
+.member-card:hover p {
+    display: block;
+}
 .member-grid {
   display: flex;
   flex-wrap: wrap;

@@ -21,6 +21,15 @@ const categoryToKeyword = {
   "food-reviews": "食記"
 };
 
+// 新增：根據語言取得分類名稱
+function categoryToLocalizedKeyword(category) {
+  if (!category) return "";
+  // key: travel-tokyo -> travel_tokyo
+  let key = category.replace(/-/g, "_");
+  let langData = translations[currentLanguage] || translations["zh-Hant"];
+  return langData[key] || categoryToKeyword[category] || "";
+}
+
 // 工具：取得翻譯後欄位
 function getTranslatedBlogField(serial, field) {
   if (typeof translations === 'object' && translations[currentLanguage]) {
@@ -133,14 +142,17 @@ function reloadAndRender({mode, keyword, tag, category}) {
   state.category = category || "";
   let filtered = state.allPosts;
 
+  let displayKeyword = keyword || tag || "";
   if (mode === 'category' && category) {
     // 特殊處理「食記」分類，其餘分類正常用 region
     const regionKeyword = categoryToKeyword[category] || "";
     if (category === "food-reviews") {
       // 用 keyword 直接搜尋「食記」文章
       filtered = filterPosts(state.allPosts, {keyword: regionKeyword});
+      displayKeyword = categoryToLocalizedKeyword(category);
     } else {
       filtered = regionKeyword ? filterPosts(state.allPosts, {region: regionKeyword}) : state.allPosts;
+      displayKeyword = categoryToLocalizedKeyword(category);
     }
   } else if (mode === 'search' && keyword) {
     filtered = filterPosts(state.allPosts, {keyword});
@@ -152,7 +164,7 @@ function reloadAndRender({mode, keyword, tag, category}) {
   state.currentIndex = 0;
   document.getElementById('blog-posts-container').innerHTML = "";
   renderPosts(filtered, 0, state.pageSize);
-  updateTitle(filtered.length, keyword || tag || (categoryToKeyword[category] || ""));
+  updateTitle(filtered.length, displayKeyword);
   state.currentIndex = state.pageSize;
   updateLoadMoreButton(state.currentIndex, filtered.length);
 }
@@ -217,7 +229,12 @@ document.addEventListener('DOMContentLoaded', function() {
         renderPosts(state.filtered, 0, state.pageSize);
         updateLoadMoreButton(state.pageSize, state.filtered.length);
         state.currentIndex = state.pageSize;
-        updateTitle(state.filtered.length, state.keyword || state.tag || (categoryToKeyword[state.category] || ""));
+        // 修正: 標題重新帶入翻譯（這裡要根據分類自動翻譯）
+        let displayKeyword = state.keyword || state.tag || "";
+        if (state.mode === 'category' && state.category) {
+          displayKeyword = categoryToLocalizedKeyword(state.category);
+        }
+        updateTitle(state.filtered.length, displayKeyword);
       });
     }
   });

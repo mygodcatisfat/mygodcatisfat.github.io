@@ -217,6 +217,7 @@ document.addEventListener('DOMContentLoaded', function() {
         renderPosts(state.filtered, 0, state.pageSize);
         updateLoadMoreButton(state.pageSize, state.filtered.length);
         state.currentIndex = state.pageSize;
+        updateTitle(state.filtered.length, state.keyword || state.tag || (categoryToKeyword[state.category] || ""));
       });
     }
   });

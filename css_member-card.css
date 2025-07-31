@@ -89,10 +89,10 @@
 }
 #overlayText {
     font-family: monospace;
-    font-size: 1.2em;
+    font-size: 2.2em;
     color: #fff;
-    margin-left: 2em;
-    max-width: 400px;
+    margin-left: 4em;
+    max-width: 320px;
     white-space: pre-line;
 }
 #overlayText h2 {

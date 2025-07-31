@@ -72,3 +72,38 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     }
 });
+
+function typeWriter(text, el, speed=36) {
+    el.textContent = "";
+    let i = 0;
+    function type() {
+        if (i < text.length) {
+            el.textContent += text.charAt(i);
+            i++;
+            setTimeout(type, speed);
+        }
+    }
+    type();
+}
+
+document.querySelectorAll('.member-card').forEach(card => {
+    card.addEventListener('click', function(e) {
+        // 取得圖片、名字、介紹
+        const img = card.querySelector('img').src;
+        const name = card.querySelector('h3').textContent;
+        let desc = "";
+        card.querySelectorAll('p').forEach(p => desc += p.textContent + '\n');
+        // 顯示遮罩
+        const overlay = document.getElementById('memberOverlay');
+        document.getElementById('overlayImg').src = img;
+        const overlayText = document.getElementById('overlayText');
+        overlayText.innerHTML = `<h2>${name}</h2>`;
+        typeWriter(desc, overlayText, 36);
+        overlay.style.display = 'flex';
+    });
+});
+
+// 點擊遮罩關閉
+document.getElementById('memberOverlay').addEventListener('click', function(e) {
+    if (e.target === this) this.style.display = 'none';
+});

@@ -38,7 +38,7 @@ body {
   color: var(--text-color);
   margin: 0;
   padding: 0;
-  text-align: center;
+  text-align: left;/*center;*/
   transition: background 0.3s, color 0.3s;
   overflow-x: hidden;
   scroll-behavior: auto;

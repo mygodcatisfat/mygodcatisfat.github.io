@@ -15,7 +15,7 @@
   transform: scale(1.05);
   box-shadow: 0 6px 16px rgba(0,0,0,0.2);
 }
-.member-card h3 {
+/*.member-card h3 {
     text-align: center;
     margin: 0.5em 0;
 }
@@ -26,7 +26,7 @@
 }
 .member-card:hover p {
     display: block;
-}
+}*/
 .member-grid {
   display: flex;
   flex-wrap: wrap;
@@ -39,4 +39,81 @@
 .member-card:nth-child(4) { animation-delay: 0.8s; }
 @keyframes fadeSlideIn {
   to { opacity: 1; transform: translateY(0);}
+}
+
+/* 成員名字置中 */
+.member-card h3 {
+    text-align: center;
+    margin: 0.5em 0;
+}
+/* 細項介紹靠左 */
+.member-card p {
+    text-align: left;
+    margin: 0.2em 0;
+}
+
+/* 懸浮僅顯示圖片和名字，介紹隱藏 */
+.member-card p {
+    display: none;
+}
+.member-card:hover p {
+    display: block;
+}
+
+/* 遮罩 overlay 樣式 */
+#memberOverlay {
+    position: fixed;
+    left: 0; top: 0; width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.8);
+    z-index: 9999;
+    display: none;
+    justify-content: center;
+    align-items: center;
+}
+#overlayContent {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 80vw;
+    max-width: 900px;
+    height: 100vh;
+    margin: auto;
+}
+#overlayImg {
+    width: 320px;
+    height: auto;
+    border-radius: 20px;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.7);
+    transform: scale(1.2);
+    transition: transform 0.4s;
+}
+#overlayText {
+    font-family: monospace;
+    font-size: 1.2em;
+    color: #fff;
+    margin-left: 2em;
+    max-width: 400px;
+    white-space: pre-line;
+}
+#overlayText h2 {
+    font-size: 2em;
+    font-weight: bold;
+    margin: 0 0 1em 0;
+    text-align: left;
+}
+@media (max-width: 700px) {
+    #overlayContent {
+        flex-direction: column;
+        height: auto;
+        padding: 2em;
+    }
+    #overlayImg {
+        margin-bottom: 2em;
+        width: 80vw;
+        max-width: 340px;
+    }
+    #overlayText {
+        margin-left: 0;
+        max-width: 90vw;
+    }
 }

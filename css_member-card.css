@@ -1,4 +1,9 @@
 /* 成員卡片（.member-card, .member-card:hover, .member-grid, @keyframes fadeSlideIn） */
+#members {
+  min-height: 420px;      /* 固定或最小高度，依你的需求調整 */
+  overflow: hidden;       /* 防止內容溢出外擠 */
+  position: relative;
+}
 .member-card {
   max-width: 18rem; /* 12.5rem */
   background: var(--member-card-bg);

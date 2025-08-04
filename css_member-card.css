@@ -15,23 +15,16 @@
   transform: scale(1.05);
   box-shadow: 0 6px 16px rgba(0,0,0,0.2);
 }
-/*.member-card h3 {
-    text-align: center;
-    margin: 0.5em 0;
-}
-.member-card p {
-    text-align: left;
-    margin: 0.2em 0;
-    display: none;
-}
-.member-card:hover p {
-    display: block;
-}*/
 .member-grid {
+  height: 100%;           /* 讓格子填滿 section */
+  overflow: visible;      /* 或 auto，如果格子太多可以滾動 */
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 2rem;
+  align-items: flex-start; /* 防止垂直撐大 */
+  max-width: 980px; /* 依頁面寬度調整 */
+  margin: 0 auto;
 }
 .member-card:nth-child(1) { animation-delay: 0.2s; }
 .member-card:nth-child(2) { animation-delay: 0.4s; }

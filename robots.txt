@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://mygodcatisfat.github.io/sitemap.xml

@@ -84,8 +84,8 @@
 /* ============================== */
 /* 原本的 p 介紹隱藏 (如有)       */
 /* ============================== */
-.member-card p.special {
-  display: block !important;
+.member-card p {
+  display: none !important;
 }
 
 /* member-grid 彈性排列 */

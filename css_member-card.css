@@ -1,11 +1,17 @@
-/* 成員卡片（.member-card, .member-card:hover, .member-grid, @keyframes fadeSlideIn） */
+/* ============================ */
+/* 新版成員卡片區塊 (2025/8整合) */
+/* ============================ */
+
+/* 成員區塊本體 */
 #members {
   min-height: 420px;      /* 固定或最小高度，依你的需求調整 */
   overflow: hidden;       /* 防止內容溢出外擠 */
   position: relative;
 }
+
+/* 成員卡片主體 */
 .member-card {
-  max-width: 18rem; /* 12.5rem */
+  max-width: 18rem;
   background: var(--member-card-bg);
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
@@ -15,22 +21,15 @@
   transform: translateY(30px);
   animation: fadeSlideIn 1s forwards;
   color: var(--text-color);
+  position: relative; /* 為 tooltip 定位參考 */
+  overflow: visible;
 }
 .member-card:hover {
   transform: scale(1.05);
   box-shadow: 0 6px 16px rgba(0,0,0,0.2);
 }
-.member-grid {
-  /*height: 100%;   */        /* 讓格子填滿 section */
-  /*overflow: visible;   */   /* 或 auto，如果格子太多可以滾動 */
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 2rem;
-  align-items: flex-start; /* 防止垂直撐大 */
-  /*max-width: 980px; *//* 依頁面寬度調整 */
-  margin: 0 auto;
-}
+
+/* 動畫延遲 */
 .member-card:nth-child(1) { animation-delay: 0.2s; }
 .member-card:nth-child(2) { animation-delay: 0.4s; }
 .member-card:nth-child(3) { animation-delay: 0.6s; }
@@ -39,80 +38,123 @@
   to { opacity: 1; transform: translateY(0);}
 }
 
-/* 成員名字置中 */
+/* 成員卡片名稱/簡介 */
 .member-card h3 {
-    text-align: center;
-    margin: 0.5em 0;
-}
-/* 細項介紹靠左 */
-.member-card p {
-    text-align: left;
-    margin: 0.2em 0;
+  text-align: center;
+  margin: 0.5em 0;
 }
 
-/* 懸浮僅顯示圖片和名字，介紹隱藏 */
-.member-card p {
-    display: none;
+/* ============================== */
+/* 詳細資料 tooltip（新版重點）   */
+/* ============================== */
+.member-tooltip {
+  position: absolute;
+  left: 105%;
+  top: 0;
+  min-width: 220px;
+  max-width: 300px;
+  background: #fffbe6;
+  border: 1px solid #ffe082;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+  z-index: 20;
+  padding: 1.2em 1.5em;
+  font-size: 1em;
+  color: #333;
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  transition: opacity 0.18s, visibility 0.18s;
 }
-.member-card:hover p {
-    display: block;
+/* 滑鼠或鍵盤聚焦時顯示 tooltip */
+.member-card:hover .member-tooltip,
+.member-card:focus-within .member-tooltip {
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible;
+}
+/* 響應式調整，防止超出螢幕 */
+@media (max-width: 640px) {
+  .member-tooltip {
+    left: 0;
+    top: 110%;
+  }
 }
 
-/* 遮罩 overlay 樣式 */
+/* ============================== */
+/* 原本的 p 介紹隱藏 (如有)       */
+/* ============================== */
+.member-card p {
+  display: none !important;
+}
+
+/* member-grid 彈性排列 */
+.member-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2rem;
+  align-items: flex-start;
+  margin: 0 auto;
+}
+
+/* ============================== */
+/* 遮罩 overlay 樣式 (如有用到)   */
+/* ============================== */
 #memberOverlay {
-    position: fixed;
-    left: 0; top: 0; width: 100vw; height: 100vh;
-    background: rgba(0,0,0,0.8);
-    z-index: 9999;
-    display: none;
-    justify-content: center;
-    align-items: center;
+  position: fixed;
+  left: 0; top: 0; width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.8);
+  z-index: 9999;
+  display: none;
+  justify-content: center;
+  align-items: center;
 }
 #overlayContent {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 80vw;
-    max-width: 900px;
-    height: 100vh;
-    margin: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80vw;
+  max-width: 900px;
+  height: 100vh;
+  margin: auto;
 }
 #overlayImg {
-    width: 320px;
-    height: auto;
-    border-radius: 20px;
-    box-shadow: 0 6px 24px rgba(0,0,0,0.7);
-    transform: scale(1.2);
-    transition: transform 0.4s;
+  width: 320px;
+  height: auto;
+  border-radius: 20px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.7);
+  transform: scale(1.2);
+  transition: transform 0.4s;
 }
 #overlayText {
-    font-family: monospace;
-    font-size: 2.2em;
-    color: #fff;
-    margin-left: 4em;
-    max-width: 320px;
-    white-space: pre-line;
-    text-align: left;
+  font-family: monospace;
+  font-size: 2.2em;
+  color: #fff;
+  margin-left: 4em;
+  max-width: 320px;
+  white-space: pre-line;
+  text-align: left;
 }
 #overlayText h2 {
-    font-size: 2em;
-    font-weight: bold;
-    margin: 0 0 1em 0;
-    text-align: left;
+  font-size: 2em;
+  font-weight: bold;
+  margin: 0 0 1em 0;
+  text-align: left;
 }
 @media (max-width: 700px) {
-    #overlayContent {
-        flex-direction: column;
-        height: auto;
-        padding: 2em;
-    }
-    #overlayImg {
-        margin-bottom: 2em;
-        width: 80vw;
-        max-width: 340px;
-    }
-    #overlayText {
-        margin-left: 0;
-        max-width: 90vw;
-    }
+  #overlayContent {
+    flex-direction: column;
+    height: auto;
+    padding: 2em;
+  }
+  #overlayImg {
+    margin-bottom: 2em;
+    width: 80vw;
+    max-width: 340px;
+  }
+  #overlayText {
+    margin-left: 0;
+    max-width: 90vw;
+  }
 }

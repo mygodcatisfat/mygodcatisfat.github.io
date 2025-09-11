@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF 編輯工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            @apply bg-gray-100 text-gray-800;
+        }
+
+        .tab-button.active {
+            @apply border-b-2 border-blue-500 text-blue-500 font-semibold;
+        }
+
+        .thumb-container::-webkit-scrollbar {
+            height: 8px;
+        }
+        .thumb-container::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 4px;
+        }
+        .thumb-container::-webkit-scrollbar-track {
+            background-color: #e2e8f0;
+            border-radius: 4px;
+        }
+        
+        .cut-marker {
+            width: 1.5rem;
+            height: 1.5rem;
+            background-color: white;
+            border: 2px solid #60a5fa; /* Blue-400 */
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+            z-index: 20;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .cut-marker:hover {
+            transform: scale(1.1);
+        }
+        
+        .cut-marker.active {
+            background-color: #22c55e; /* Green-500 */
+            border-color: #22c55e;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .split-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+        }
+
+        .split-overlay-content {
+            position: relative;
+        }
+
+        .overlay-nav-button {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 1rem;
+            border-radius: 50%;
+            font-size: 2rem;
+            cursor: pointer;
+            z-index: 110;
+        }
+        .overlay-nav-button.left {
+            left: 20px;
+        }
+        .overlay-nav-button.right {
+            right: 20px;
+        }
+
+        .sortable-item {
+            cursor: grab;
+        }
+
+        .sortable-item:active {
+            cursor: grabbing;
+        }
+
+        .info-tooltip-container {
+            @apply relative ml-4;
+        }
+        .info-tooltip-icon {
+            @apply text-gray-500 cursor-pointer text-xl flex items-center justify-center border border-gray-500 rounded-full w-6 h-6;
+        }
+    </style>
+</head>
+<body class="p-8">
+
+    <div class="max-w-6xl mx-auto bg-white rounded-xl shadow-lg p-6 md:p-10">
+        <h1 class="text-3xl font-bold mb-6 text-center text-blue-600">PDF 編輯工具</h1>
+
+        <!-- 文件上傳區塊 -->
+        <div class="mb-8 p-6 border-2 border-dashed border-gray-300 rounded-lg text-center">
+            <label for="fileInput" class="cursor-pointer text-blue-500 hover:text-blue-700">
+                <p class="text-lg font-medium mb-2">點擊此處或拖曳檔案至此</p>
+                <p id="fileStatus" class="text-sm text-gray-500">支援 .pdf 格式</p>
+            </label>
+            <input type="file" id="fileInput" class="hidden" multiple accept=".pdf">
+        </div>
+
+        <!-- 頁籤導覽 -->
+        <div class="flex border-b border-gray-200 mb-6 space-x-4">
+            <button id="tabSplit" class="tab-button p-2 active">裁切</button>
+            <button id="tabMerge" class="tab-button p-2">合成</button>
+            <button id="tabPageNumber" class="tab-button p-2">編頁碼</button>
+        </div>
+
+        <!-- 裁切功能區塊 -->
+        <div id="sectionSplit" class="tool-section">
+            <div class="relative flex items-center mb-6">
+                <h2 class="text-xl font-semibold">裁切功能</h2>
+                <div class="info-tooltip-container">
+                    <span class="info-tooltip-icon" data-tooltip="split">💬</span>
+                </div>
+            </div>
+            
+            <div id="splitTextInput" class="mb-6 space-y-4">
+                <div class="flex items-center space-x-4">
+                    <label class="font-medium text-gray-700">從第</label>
+                    <input type="number" id="splitStartPage" placeholder="頁碼" class="w-24 p-2 border rounded-md focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition">
+                    <label class="font-medium text-gray-700">頁裁切到第</label>
+                    <input type="number" id="splitEndPage" placeholder="頁碼" class="w-24 p-2 border rounded-md focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition">
+                    <label class="font-medium text-gray-700">頁</label>
+                </div>
+            </div>
+
+            <div id="splitImageSelection" class="mb-6">
+                <div id="splitThumbnails" class="flex items-center overflow-x-auto thumb-container pb-4 px-4">
+                    <!-- PDF 縮圖會在此處動態生成 -->
+                </div>
+            </div>
+
+            <div id="splitAction" class="flex justify-end mt-8">
+                <button id="splitNext" class="bg-blue-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-blue-600 transition disabled:bg-blue-300 disabled:cursor-not-allowed" disabled>下一步</button>
+            </div>
+        </div>
+
+        <!-- 合成功能區塊 -->
+        <div id="sectionMerge" class="tool-section hidden">
+            <div class="relative flex items-center mb-6">
+                <h2 class="text-xl font-semibold">合成功能</h2>
+                <div class="info-tooltip-container">
+                    <span class="info-tooltip-icon" data-tooltip="merge">💬</span>
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <h3 class="text-xl font-semibold mb-4">檔案清單</h3>
+                <ul id="mergeFileList" class="bg-gray-50 p-4 rounded-lg border border-gray-200 min-h-[100px] space-y-2">
+                    <!-- 檔案清單會在此處動態生成 -->
+                    <li class="text-gray-400 text-center py-4">請匯入 PDF 檔案以進行合成</li>
+                </ul>
+            </div>
+            <div class="flex justify-end space-x-4 mt-6">
+                <button id="deleteFile" class="bg-red-500 text-white px-4 py-2 rounded-lg shadow-md hover:bg-red-600 transition disabled:bg-red-300 disabled:cursor-not-allowed" disabled>刪除</button>
+                <button id="mergeNext" class="bg-blue-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-blue-600 transition disabled:bg-blue-300 disabled:cursor-not-allowed" disabled>下一步</button>
+            </div>
+        </div>
+
+        <!-- 編頁碼功能區塊 -->
+        <div id="sectionPageNumber" class="tool-section hidden">
+            <div class="relative flex items-center mb-6">
+                <h2 class="text-xl font-semibold">編頁碼功能</h2>
+                <div class="info-tooltip-container">
+                    <span class="info-tooltip-icon" data-tooltip="pageNumber">💬</span>
+                </div>
+            </div>
+            <div id="pageNumberInput" class="mb-6 space-y-4">
+                <div class="flex items-center space-x-4">
+                    <label class="font-medium text-gray-700">起始數字：</label>
+                    <input type="number" id="pageNumberStart" placeholder="1" value="1" class="w-24 p-2 border rounded-md focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition">
+                </div>
+                <div class="flex items-center space-x-4">
+                    <label class="font-medium text-gray-700">從第幾頁開始編：</label>
+                    <input type="number" id="pageNumberFromPage" placeholder="頁碼" class="w-24 p-2 border rounded-md focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition">
+                </div>
+                <div class="flex items-center space-x-4">
+                    <label class="font-medium text-gray-700">起始頁碼位置：</label>
+                    <select id="pageNumberPosition" class="p-2 border rounded-md focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition">
+                        <option value="left">左</option>
+                        <option value="right">右</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex justify-end mt-8">
+                <button id="pageNumberNext" class="bg-blue-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-blue-600 transition disabled:bg-blue-300 disabled:cursor-not-allowed" disabled>下一步</button>
+            </div>
+        </div>
+
+        <!-- 彈出式訊息/提示框 (取代 alert()) -->
+        <div id="messageBox" class="fixed inset-0 flex items-center justify-center p-4 z-[200] hidden">
+            <div class="bg-white rounded-lg p-6 shadow-xl max-w-sm w-full text-center">
+                <p id="messageText" class="text-lg font-medium mb-4"></p>
+                <button id="messageOk" class="bg-blue-500 text-white px-6 py-2 rounded-lg">確定</button>
+            </div>
+        </div>
+
+        <!-- 裁切點選擇確認框 -->
+        <div id="splitSelectionBox" class="fixed inset-0 flex items-center justify-center p-4 z-[200] hidden">
+            <div class="bg-white rounded-lg p-6 shadow-xl w-full max-w-sm text-center">
+                <p class="text-lg font-medium mb-4">已選擇超過兩個裁切點，請選擇操作：</p>
+                <div class="flex flex-col space-y-2">
+                    <button id="selectFirst" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition">刪除前裁切點</button>
+                    <button id="selectLast" class="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition">刪除後裁切點</button>
+                    <button id="selectCancel" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition">取消</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 新增：全螢幕提示彈窗 -->
+        <div id="tooltipModal" class="fixed inset-0 flex items-center justify-center p-4 z-[200] hidden bg-gray-900 bg-opacity-70 backdrop-blur-sm">
+            <div class="bg-white rounded-lg p-6 shadow-xl max-w-lg w-full">
+                <h3 id="tooltipTitle" class="text-2xl font-bold text-blue-600 mb-4"></h3>
+                <div id="tooltipContentArea" class="prose max-w-none text-gray-800">
+                    <!-- Content will be injected here dynamically -->
+                </div>
+                <div class="mt-6 text-right">
+                    <button id="tooltipOk" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition">關閉</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 全螢幕預覽視窗 -->
+        <div id="fullScreenPreview" class="split-overlay hidden">
+            <div class="split-overlay-content relative">
+                <button id="previewPrev" class="overlay-nav-button left">❮</button>
+                <img id="previewImage" class="max-w-full max-h-[90vh] object-contain rounded-lg shadow-lg" src="" alt="PDF Preview">
+                <button id="previewNext" class="overlay-nav-button right">❯</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // 設定 PDF.js worker 的路徑
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+    // 取得 HTML 元素
+    const fileInput = document.getElementById('fileInput');
+    const tabs = document.querySelectorAll('.tab-button');
+    const sections = document.querySelectorAll('.tool-section');
+    const messageBox = document.getElementById('messageBox');
+    const messageText = document.getElementById('messageText');
+    const messageOk = document.getElementById('messageOk');
+    const fileStatus = document.getElementById('fileStatus');
+
+    const splitTextInput = document.getElementById('splitTextInput');
+    const splitImageSelection = document.getElementById('splitImageSelection');
+    const splitStartPage = document.getElementById('splitStartPage');
+    const splitEndPage = document.getElementById('splitEndPage');
+    const splitThumbnails = document.getElementById('splitThumbnails');
+    const splitNextBtn = document.getElementById('splitNext');
+    const splitSelectionBox = document.getElementById('splitSelectionBox');
+
+    const mergeFileList = document.getElementById('mergeFileList');
+    const deleteFileBtn = document.getElementById('deleteFile');
+    const mergeNextBtn = document.getElementById('mergeNext');
+    
+    const pageNumberStart = document.getElementById('pageNumberStart');
+    const pageNumberFromPage = document.getElementById('pageNumberFromPage');
+    const pageNumberPosition = document.getElementById('pageNumberPosition');
+    const pageNumberNextBtn = document.getElementById('pageNumberNext');
+
+    const tooltipModal = document.getElementById('tooltipModal');
+    const tooltipTitle = document.getElementById('tooltipTitle');
+    const tooltipContentArea = document.getElementById('tooltipContentArea');
+    const tooltipOk = document.getElementById('tooltipOk');
+
+    const fullScreenPreview = document.getElementById('fullScreenPreview');
+    const previewImage = document.getElementById('previewImage');
+    const previewPrevBtn = document.getElementById('previewPrev');
+    const previewNextBtn = document.getElementById('previewNext');
+
+    let currentMode = 'split';
+    let loadedPDF = null;
+    let splitPoints = [];
+    let filesForMerge = [];
+    let selectedFileIndex = -1;
+    let fullScreenPDF = null;
+    let fullScreenPage = 0;
+
+    // 提示內容資料
+    const tooltipData = {
+        split: {
+            title: '裁切功能說明',
+            content: `
+                <p>匯入 PDF 後，您可以透過<strong class="text-green-500">圖像介面</strong>或<strong class="text-green-500">輸入框</strong>選擇裁切範圍，兩者會自動同步。</p>
+                <p>點擊<strong class="text-green-500">綠色標記</strong>或在輸入框中輸入頁碼來選擇裁切點。</p>
+                <p>當您選擇超過兩個裁切點時，系統會提示您選擇保留<strong class="text-blue-500">最前</strong>或<strong class="text-red-500">最後</strong>的裁切點。</p>
+                <p><strong class="text-green-500">裁切點標記</strong>：</p>
+                <ul class="list-disc list-inside">
+                    <li>第一頁**前**的裁切點代表從第一頁開始。</li>
+                    <li>最後一頁**後**的裁切點代表裁切到最後一頁。</li>
+                </ul>
+            `
+        },
+        merge: {
+            title: '合成功能說明',
+            content: `
+                <p>您可以匯入<strong class="text-blue-500">多個</strong> PDF 檔案。</p>
+                <p>透過**點擊**或**拖曳**清單來調整檔案順序。</p>
+                <p>點擊清單中的檔案可展開<strong class="text-green-500">預覽</strong>。</p>
+                <p>預覽圖支援**橫向滾動**，點擊可開啟**全螢幕預覽**。</p>
+                <p>使用<strong class="text-green-500">鍵盤</strong>快捷鍵：</p>
+                <ul class="list-disc list-inside">
+                    <li>按 <strong class="text-red-500">Delete</strong> 鍵：刪除選取的檔案。</li>
+                    <li>按 <strong class="text-blue-500">上/下箭頭</strong> 鍵：移動選取檔案的順序。</li>
+                </ul>
+            `
+        },
+        pageNumber: {
+            title: '編頁碼功能說明',
+            content: `
+                <p>請匯入 PDF 檔案，然後設定編碼的**起始數字**、**起始頁碼**及**頁碼位置**。</p>
+                <p>頁碼將會從您指定的頁碼開始依序編寫，並在頁面左右<strong class="text-green-500">交替出現</strong>。</p>
+                <p>例如：若起始位置設定為「左」，則第一組頁碼會出現在左下角，第二組會出現在右下角，依此類推。</p>
+            `
+        }
+    };
+
+    // 顯示訊息框
+    function showMessage(text) {
+        messageText.textContent = text;
+        messageBox.classList.remove('hidden');
+    }
+
+    messageOk.addEventListener('click', () => {
+        messageBox.classList.add('hidden');
+    });
+
+    // 顯示提示彈窗
+    function showTooltip(mode) {
+        const data = tooltipData[mode];
+        if (data) {
+            tooltipTitle.textContent = data.title;
+            tooltipContentArea.innerHTML = data.content;
+            tooltipModal.classList.remove('hidden');
+        }
+    }
+
+    // 關閉提示彈窗
+    tooltipOk.addEventListener('click', () => {
+        tooltipModal.classList.add('hidden');
+    });
+
+    // 處理提示圖示點擊事件
+    document.querySelectorAll('.info-tooltip-icon').forEach(icon => {
+        icon.addEventListener('click', () => {
+            const mode = icon.dataset.tooltip;
+            showTooltip(mode);
+        });
+    });
+
+    // 切換頁籤
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            sections.forEach(s => s.classList.add('hidden'));
+            const sectionId = `section${tab.id.replace('tab', '')}`;
+            document.getElementById(sectionId).classList.remove('hidden');
+            currentMode = tab.id.replace('tab', '').toLowerCase();
+            fileStatus.textContent = '支援 .pdf 格式';
+            fileInput.value = '';
+            
+            if (currentMode === 'pagenumber') {
+                pageNumberNextBtn.disabled = loadedPDF === null;
+            } else if (currentMode === 'merge') {
+                mergeNextBtn.disabled = filesForMerge.length === 0;
+            } else if (currentMode === 'split') {
+                splitNextBtn.disabled = loadedPDF === null || splitPoints.length !== 2;
+            }
+        });
+    });
+
+    // 處理檔案匯入
+    fileInput.addEventListener('change', async (event) => {
+        const files = event.target.files;
+        if (!files.length) {
+            fileStatus.textContent = '支援 .pdf 格式';
+            return;
+        }
+        
+        if (currentMode === 'split' || currentMode === 'pagenumber') {
+            if (files.length > 1) {
+                showMessage('此功能一次只能處理一個PDF檔案。');
+                fileInput.value = '';
+                return;
+            }
+            loadedPDF = null;
+            const arrayBuffer = await files[0].arrayBuffer();
+            const pdfDoc = await pdfjsLib.getDocument(arrayBuffer).promise;
+            loadedPDF = pdfDoc;
+            fileStatus.textContent = `已載入檔案：${files[0].name}`;
+            
+            if (currentMode === 'split') {
+                splitPoints = [];
+                await renderSplitThumbnails(pdfDoc);
+                updateSplitUI();
+            } else if (currentMode === 'pagenumber') {
+                pageNumberNextBtn.disabled = false;
+                pageNumberFromPage.placeholder = `1 - ${loadedPDF.numPages}`;
+            }
+
+        } else if (currentMode === 'merge') {
+            await handleMergeFiles(files);
+            fileStatus.textContent = `已載入 ${files.length} 個檔案。`;
+        } else {
+            showMessage('請選擇頁籤來匯入檔案。');
+            fileInput.value = '';
+        }
+    });
+
+    // ==================== 裁切功能 ====================
+
+    // 渲染 PDF 縮圖
+    async function renderSplitThumbnails(pdfDoc) {
+        splitThumbnails.innerHTML = '';
+        const numPages = pdfDoc.numPages;
+
+        const cutMarkerStart = document.createElement('div');
+        cutMarkerStart.className = 'cut-marker mx-2 flex-shrink-0';
+        cutMarkerStart.dataset.page = 0;
+        cutMarkerStart.addEventListener('click', () => toggleSplitPoint(0));
+        splitThumbnails.appendChild(cutMarkerStart);
+
+        for (let i = 1; i <= numPages; i++) {
+            const page = await pdfDoc.getPage(i);
+            const viewport = page.getViewport({ scale: 0.3 });
+            const canvas = document.createElement('canvas');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            const context = canvas.getContext('2d');
+            const renderContext = { canvasContext: context, viewport: viewport };
+            await page.render(renderContext).promise;
+
+            const thumbWrapper = document.createElement('div');
+            thumbWrapper.className = 'relative flex-shrink-0 p-2 border border-gray-200 rounded-md';
+            const pageNum = document.createElement('div');
+            pageNum.textContent = i;
+            pageNum.className = 'text-center text-sm font-medium text-gray-600 mt-1';
+            
+            thumbWrapper.appendChild(canvas);
+            thumbWrapper.appendChild(pageNum);
+            splitThumbnails.appendChild(thumbWrapper);
+            
+            canvas.addEventListener('click', () => showFullScreenPreview(pdfDoc, i));
+
+            if (i < numPages) {
+                const cutMarker = document.createElement('div');
+                cutMarker.className = 'cut-marker mx-2 flex-shrink-0';
+                cutMarker.dataset.page = i;
+                cutMarker.addEventListener('click', () => toggleSplitPoint(parseInt(cutMarker.dataset.page)));
+                splitThumbnails.appendChild(cutMarker);
+            }
+        }
+
+        const cutMarkerEnd = document.createElement('div');
+        cutMarkerEnd.className = 'cut-marker mx-2 flex-shrink-0';
+        cutMarkerEnd.dataset.page = numPages;
+        cutMarkerEnd.addEventListener('click', () => toggleSplitPoint(numPages));
+        splitThumbnails.appendChild(cutMarkerEnd);
+    }
+
+    function toggleSplitPoint(page) {
+        const index = splitPoints.indexOf(page);
+        if (index > -1) {
+            splitPoints.splice(index, 1);
+        } else {
+            if (splitPoints.length >= 2) {
+                splitSelectionBox.classList.remove('hidden');
+                document.getElementById('selectFirst').onclick = () => {
+                    splitPoints.shift();
+                    splitPoints.push(page);
+                    splitPoints.sort((a, b) => a - b);
+                    updateSplitUI();
+                    splitSelectionBox.classList.add('hidden');
+                };
+                document.getElementById('selectLast').onclick = () => {
+                    splitPoints.pop();
+                    splitPoints.push(page);
+                    splitPoints.sort((a, b) => a - b);
+                    updateSplitUI();
+                    splitSelectionBox.classList.add('hidden');
+                };
+                document.getElementById('selectCancel').onclick = () => {
+                    splitSelectionBox.classList.add('hidden');
+                };
+                return;
+            }
+            splitPoints.push(page);
+            splitPoints.sort((a, b) => a - b);
+        }
+        updateSplitUI();
+    }
+
+    function updateSplitUI() {
+        const cutMarkers = document.querySelectorAll('.cut-marker');
+        cutMarkers.forEach(marker => {
+            const page = parseInt(marker.dataset.page);
+            if (splitPoints.includes(page)) {
+                marker.classList.add('active');
+            } else {
+                marker.classList.remove('active');
+            }
+        });
+
+        if (splitPoints.length === 2) {
+            splitStartPage.value = splitPoints[0] + 1;
+            splitEndPage.value = splitPoints[1];
+        } else {
+            splitStartPage.value = '';
+            splitEndPage.value = '';
+        }
+
+        splitNextBtn.disabled = splitPoints.length !== 2;
+    }
+    
+    splitStartPage.addEventListener('input', updateSplitPointsFromText);
+    splitEndPage.addEventListener('input', updateSplitPointsFromText);
+
+    function updateSplitPointsFromText() {
+        if (!loadedPDF) {
+            showMessage('請先匯入 PDF 檔案。');
+            splitStartPage.value = '';
+            splitEndPage.value = '';
+            splitNextBtn.disabled = true;
+            return;
+        }
+
+        const start = parseInt(splitStartPage.value);
+        const end = parseInt(splitEndPage.value);
+        const numPages = loadedPDF.numPages;
+
+        splitPoints = [];
+
+        if (isNaN(start) || start < 1 || start > numPages) {
+            splitNextBtn.disabled = true;
+            return;
+        }
+        
+        if (isNaN(end) || end < 1 || end > numPages) {
+            splitNextBtn.disabled = true;
+            return;
+        }
+
+        if (start > end) {
+            showMessage('結束頁碼不能小於起始頁碼。');
+            splitNextBtn.disabled = true;
+            return;
+        }
+
+        splitPoints.push(start - 1);
+        splitPoints.push(end);
+        updateSplitUI();
+    }
+
+    // 下一步 - 裁切
+    splitNextBtn.addEventListener('click', async () => {
+        const file = fileInput.files[0];
+        if (!file || splitPoints.length !== 2) {
+            showMessage('請匯入PDF檔案並選擇2個裁切點。');
+            return;
+        }
+
+        const startPage = splitPoints[0] + 1;
+        const endPage = splitPoints[1];
+
+        if (startPage > endPage) {
+            showMessage('起始頁碼不能大於結束頁碼。');
+            return;
+        }
+
+        const actionArea = document.getElementById('splitAction');
+        actionArea.innerHTML = `
+            <div class="flex flex-col items-end space-y-4 w-full md:w-auto">
+                <div class="flex items-center space-x-2">
+                    <label class="font-medium text-gray-700">檔案名稱:</label>
+                    <input type="text" id="splitFilename" class="p-2 border rounded-md focus:ring-2 focus:ring-blue-400 focus:border-blue-400" value="分割-${formatDate(new Date())}">
+                </div>
+                <button id="exportSplit" class="bg-green-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-green-600 transition w-full md:w-auto">匯出檔案</button>
+            </div>
+        `;
+
+        document.getElementById('exportSplit').addEventListener('click', async () => {
+            try {
+                const pdfBytes = await file.arrayBuffer();
+                const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+                const newPdfDoc = await PDFLib.PDFDocument.create();
+
+                const pagesToKeep = Array.from({ length: endPage - startPage + 1 }, (_, i) => i + startPage - 1);
+                const pages = await newPdfDoc.copyPages(pdfDoc, pagesToKeep);
+                pages.forEach(page => newPdfDoc.addPage(page));
+
+                const newPdfBytes = await newPdfDoc.save();
+                const filename = document.getElementById('splitFilename').value;
+                downloadPDF(newPdfBytes, filename);
+                
+                showMessage('PDF 裁切並匯出成功！');
+
+            } catch (error) {
+                console.error('Error splitting PDF:', error);
+                showMessage('PDF 裁切時發生錯誤。');
+            }
+        });
+    });
+
+    // ==================== 合成功能 ====================
+
+    // 處理合成檔案匯入
+    async function handleMergeFiles(files) {
+        for (const file of files) {
+            filesForMerge.push(file);
+        }
+        renderMergeFileList();
+        mergeNextBtn.disabled = filesForMerge.length === 0;
+    }
+
+    // 渲染合成檔案清單
+    function renderMergeFileList() {
+        mergeFileList.innerHTML = '';
+        if (filesForMerge.length === 0) {
+            mergeFileList.innerHTML = '<li class="text-gray-400 text-center py-4">請匯入 PDF 檔案以進行合成</li>';
+            deleteFileBtn.disabled = true;
+            mergeNextBtn.disabled = true;
+            return;
+        }
+
+        filesForMerge.forEach((file, index) => {
+            const li = document.createElement('li');
+            li.className = 'sortable-item p-3 border rounded-md bg-white hover:bg-gray-50 flex flex-col transition';
+            li.draggable = true;
+            li.dataset.index = index;
+
+            // 檔案資訊
+            const fileHeader = document.createElement('div');
+            fileHeader.className = 'flex items-center justify-between mb-2';
+
+            const fileInfo = document.createElement('div');
+            fileInfo.className = 'flex items-center';
+            const orderNumber = document.createElement('div');
+            orderNumber.className = 'bg-blue-500 text-white w-8 h-8 flex items-center justify-center rounded-full font-bold text-lg mr-4 flex-shrink-0';
+            orderNumber.textContent = index + 1;
+            const fileNameSpan = document.createElement('span');
+            fileNameSpan.textContent = file.name;
+            fileInfo.appendChild(orderNumber);
+            fileInfo.appendChild(fileNameSpan);
+
+            fileHeader.appendChild(fileInfo);
+            li.appendChild(fileHeader);
+            
+            // 預覽區塊
+            const previewContainer = document.createElement('div');
+            previewContainer.className = 'thumb-container overflow-x-auto flex flex-nowrap space-x-2 hidden';
+            li.appendChild(previewContainer);
+
+            li.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', index);
+            });
+            li.addEventListener('dragover', (e) => e.preventDefault());
+            li.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const fromIndex = e.dataTransfer.getData('text/plain');
+                const toIndex = index;
+                const fileToMove = filesForMerge.splice(fromIndex, 1)[0];
+                filesForMerge.splice(toIndex, 0, fileToMove);
+                renderMergeFileList();
+            });
+
+            li.addEventListener('click', async (event) => {
+                event.stopPropagation();
+                const isSelected = li.classList.contains('ring-2');
+
+                document.querySelectorAll('.sortable-item').forEach(item => {
+                    item.classList.remove('ring-2', 'ring-blue-500');
+                    const container = item.querySelector('.thumb-container');
+                    if (container) {
+                        container.classList.add('hidden');
+                    }
+                });
+                
+                if (!isSelected) {
+                    li.classList.add('ring-2', 'ring-blue-500');
+                    selectedFileIndex = index;
+                    deleteFileBtn.disabled = false;
+                    await renderPreviewThumbnails(file, previewContainer);
+                    previewContainer.classList.remove('hidden');
+                } else {
+                    selectedFileIndex = -1;
+                    deleteFileBtn.disabled = true;
+                }
+            });
+
+            mergeFileList.appendChild(li);
+        });
+        
+        if (selectedFileIndex !== -1 && filesForMerge.length > 0) {
+             document.querySelectorAll('.sortable-item')[selectedFileIndex].classList.add('ring-2', 'ring-blue-500');
+        } else {
+             selectedFileIndex = -1;
+             deleteFileBtn.disabled = true;
+        }
+    }
+
+    async function renderPreviewThumbnails(file, container) {
+        container.innerHTML = '';
+        try {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdfDoc = await pdfjsLib.getDocument(arrayBuffer).promise;
+            
+            const numPagesToPreview = pdfDoc.numPages;
+            for (let i = 1; i <= numPagesToPreview; i++) {
+                const page = await pdfDoc.getPage(i);
+                const viewport = page.getViewport({ scale: 0.2 });
+                const canvas = document.createElement('canvas');
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+                const context = canvas.getContext('2d');
+                const renderContext = { canvasContext: context, viewport: viewport };
+                await page.render(renderContext).promise;
+
+                const thumbWrapper = document.createElement('div');
+                thumbWrapper.className = 'flex-shrink-0 p-2 border rounded-md cursor-pointer hover:bg-gray-100 transition';
+                const pageNum = document.createElement('div');
+                pageNum.textContent = `頁碼 ${i}`;
+                pageNum.className = 'text-center text-sm font-medium text-gray-600 mt-1';
+                thumbWrapper.appendChild(canvas);
+                thumbWrapper.appendChild(pageNum);
+                container.appendChild(thumbWrapper);
+                
+                thumbWrapper.addEventListener('click', () => showFullScreenPreview(pdfDoc, i));
+            }
+        } catch (error) {
+            console.error('Error loading PDF for preview:', error);
+            showMessage('預覽檔案時發生錯誤。');
+        }
+    }
+
+    // 刪除檔案
+    deleteFileBtn.addEventListener('click', () => {
+        if (selectedFileIndex !== -1) {
+            filesForMerge.splice(selectedFileIndex, 1);
+            selectedFileIndex = -1;
+            renderMergeFileList();
+        }
+    });
+
+    // 下一步 - 合成
+    mergeNextBtn.addEventListener('click', async () => {
+        if (filesForMerge.length === 0) {
+            showMessage('請匯入至少一個檔案進行合成。');
+            return;
+        }
+
+        const actionArea = document.getElementById('mergeNext').parentNode;
+        actionArea.innerHTML = `
+            <div class="flex flex-col items-end space-y-4 w-full md:w-auto">
+                <div class="flex items-center space-x-2">
+                    <label class="font-medium text-gray-700">檔案名稱:</label>
+                    <input type="text" id="mergeFilename" class="p-2 border rounded-md focus:ring-2 focus:ring-blue-400 focus:border-blue-400" value="合成-${formatDate(new Date())}">
+                </div>
+                <button id="exportMerge" class="bg-green-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-green-600 transition w-full md:w-auto">匯出檔案</button>
+            </div>
+        `;
+
+        document.getElementById('exportMerge').addEventListener('click', async () => {
+            try {
+                const mergedPdf = await PDFLib.PDFDocument.create();
+                for (const file of filesForMerge) {
+                    const pdfBytes = await file.arrayBuffer();
+                    const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+                    const copiedPages = await mergedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices());
+                    copiedPages.forEach(page => mergedPdf.addPage(page));
+                }
+
+                const mergedPdfBytes = await mergedPdf.save();
+                const filename = document.getElementById('mergeFilename').value;
+                downloadPDF(mergedPdfBytes, filename);
+                
+                showMessage('PDF 合成並匯出成功！');
+
+            } catch (error) {
+                console.error('Error merging PDFs:', error);
+                showMessage('PDF 合成時發生錯誤。');
+            }
+        });
+    });
+    
+    // ==================== 編頁碼功能 ====================
+    pageNumberFromPage.addEventListener('input', () => {
+        const fromPage = parseInt(pageNumberFromPage.value);
+        if (loadedPDF && fromPage >= 1 && fromPage <= loadedPDF.numPages) {
+            pageNumberNextBtn.disabled = false;
+        } else {
+            pageNumberNextBtn.disabled = true;
+        }
+    });
+
+    pageNumberNextBtn.addEventListener('click', () => {
+        const actionArea = document.getElementById('pageNumberNext').parentNode;
+        actionArea.innerHTML = `
+            <div class="flex flex-col items-end space-y-4 w-full md:w-auto">
+                <div class="flex items-center space-x-2">
+                    <label class="font-medium text-gray-700">檔案名稱:</label>
+                    <input type="text" id="pageNumberFilename" class="p-2 border rounded-md focus:ring-2 focus:ring-blue-400 focus:border-blue-400" value="頁碼-${formatDate(new Date())}">
+                </div>
+                <button id="exportPageNumber" class="bg-green-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-green-600 transition w-full md:w-auto">匯出檔案</button>
+            </div>
+        `;
+        document.getElementById('exportPageNumber').addEventListener('click', handlePageNumberExport);
+    });
+
+    async function handlePageNumberExport() {
+        if (!loadedPDF) {
+            showMessage('請先匯入PDF檔案。');
+            return;
+        }
+
+        const startNumber = parseInt(pageNumberStart.value) || 1;
+        const fromPage = parseInt(pageNumberFromPage.value);
+        const position = pageNumberPosition.value;
+        const filename = document.getElementById('pageNumberFilename').value;
+
+        if (isNaN(fromPage) || fromPage < 1 || fromPage > loadedPDF.numPages) {
+            showMessage('請輸入有效的起始頁碼。');
+            return;
+        }
+
+        try {
+            const pdfDoc = await PDFLib.PDFDocument.load(await fileInput.files[0].arrayBuffer());
+            const pages = pdfDoc.getPages();
+            const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+            
+            const startPageIndex = fromPage - 1;
+
+            for (let i = startPageIndex; i < pages.length; i++) {
+                const page = pages[i];
+                const { width, height } = page.getSize();
+                const pageNum = startNumber + (i - startPageIndex);
+                const text = pageNum.toString();
+                const textSize = 18;
+                const textWidth = font.widthOfTextAtSize(text, textSize);
+                const margin = 30;
+
+                let xPosition;
+                if (position === 'left') {
+                    // Start on left, then alternate
+                    xPosition = (pageNum % 2 !== 0) ? margin : width - textWidth - margin;
+                } else {
+                    // Start on right, then alternate
+                    xPosition = (pageNum % 2 !== 0) ? width - textWidth - margin : margin;
+                }
+
+                page.drawText(text, {
+                    x: xPosition,
+                    y: margin,
+                    size: textSize,
+                    font: font,
+                    color: PDFLib.rgb(0, 0, 0)
+                });
+            }
+
+            const newPdfBytes = await pdfDoc.save();
+            downloadPDF(newPdfBytes, filename);
+            showMessage('頁碼編寫並匯出成功！');
+
+        } catch (error) {
+            console.error('Error adding page numbers:', error);
+            showMessage('頁碼編寫時發生錯誤。');
+        }
+    }
+
+
+    // 處理鍵盤事件 (用於合成功能)
+    document.addEventListener('keydown', (event) => {
+        if (currentMode === 'merge') {
+            if (event.key === 'Delete' && selectedFileIndex !== -1) {
+                deleteFileBtn.click();
+            } else if (event.key === 'ArrowUp' && selectedFileIndex > 0) {
+                const fileToMove = filesForMerge.splice(selectedFileIndex, 1)[0];
+                filesForMerge.splice(selectedFileIndex - 1, 0, fileToMove);
+                selectedFileIndex--;
+                renderMergeFileList();
+                const newSelection = document.querySelectorAll('.sortable-item')[selectedFileIndex];
+                newSelection.classList.add('ring-2', 'ring-blue-500');
+            } else if (event.key === 'ArrowDown' && selectedFileIndex < filesForMerge.length - 1 && selectedFileIndex !== -1) {
+                const fileToMove = filesForMerge.splice(selectedFileIndex, 1)[0];
+                filesForMerge.splice(selectedFileIndex + 1, 0, fileToMove);
+                selectedFileIndex++;
+                renderMergeFileList();
+                const newSelection = document.querySelectorAll('.sortable-item')[selectedFileIndex];
+                newSelection.classList.add('ring-2', 'ring-blue-500');
+            }
+        }
+    });
+
+    // 全螢幕預覽功能
+    async function showFullScreenPreview(pdfDoc, pageNum) {
+        fullScreenPDF = pdfDoc;
+        fullScreenPage = pageNum;
+        await renderFullScreenPage();
+        fullScreenPreview.classList.remove('hidden');
+
+        // 綁定鍵盤事件
+        document.addEventListener('keydown', handleFullScreenKeys);
+    }
+    
+    async function renderFullScreenPage() {
+        if (!fullScreenPDF) return;
+
+        const page = await fullScreenPDF.getPage(fullScreenPage);
+        const viewport = page.getViewport({ scale: 2 });
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const context = canvas.getContext('2d');
+        await page.render({ canvasContext: context, viewport: viewport }).promise;
+        previewImage.src = canvas.toDataURL();
+    }
+
+    function closeFullScreenPreview() {
+        fullScreenPreview.classList.add('hidden');
+        fullScreenPDF = null;
+        fullScreenPage = 0;
+        document.removeEventListener('keydown', handleFullScreenKeys);
+    }
+
+    function handleFullScreenKeys(e) {
+        if (e.key === 'Escape') {
+            closeFullScreenPreview();
+        } else if (e.key === 'ArrowLeft') {
+            navigatePreview(-1);
+        } else if (e.key === 'ArrowRight') {
+            navigatePreview(1);
+        }
+    }
+
+    function navigatePreview(direction) {
+        const newPage = fullScreenPage + direction;
+        if (newPage >= 1 && newPage <= fullScreenPDF.numPages) {
+            fullScreenPage = newPage;
+            renderFullScreenPage();
+        }
+    }
+
+    previewPrevBtn.addEventListener('click', () => navigatePreview(-1));
+    previewNextBtn.addEventListener('click', () => navigatePreview(1));
+
+    fullScreenPreview.addEventListener('click', (e) => {
+        if (e.target === fullScreenPreview) {
+            closeFullScreenPreview();
+        }
+    });
+
+
+    // 通用函數
+    function downloadPDF(pdfBytes, filename) {
+        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `${filename}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function formatDate(date) {
+        const yyyy = date.getFullYear().toString();
+        const mm = (date.getMonth() + 1).toString().padStart(2, '0');
+        const dd = date.getDate().toString().padStart(2, '0');
+        const hh = date.getHours().toString().padStart(2, '0');
+        const min = date.getMinutes().toString().padStart(2, '0');
+        const ss = date.getSeconds().toString().padStart(2, '0');
+        return `${yyyy}${mm}${dd}${hh}${min}${ss}`;
+    }
+</script>
+
+</body>
+</html>

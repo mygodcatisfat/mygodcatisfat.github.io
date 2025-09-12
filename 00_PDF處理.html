@@ -107,31 +107,8 @@
             @apply text-gray-500 cursor-pointer text-xl flex items-center justify-center border border-gray-500 rounded-full w-6 h-6;
         }
 
-        /* 新增：回到首頁按鈕固定於右下角 */
-        .back-home-btn {
-            position: fixed;
-            right: 2rem;
-            bottom: 2rem;
-            z-index: 300;
-            background: #2563eb;
-            color: #fff;
-            padding: 0.75rem 1.5rem;
-            border-radius: 9999px;
-            box-shadow: 0 4px 14px rgba(37,99,235,0.18);
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
-            border: none;
-            outline: none;
-            display: flex;
-            align-items: center;
-            gap: 0.5em;
-        }
-        .back-home-btn:hover {
-            background: #1d4ed8;
-            transform: translateY(-2px) scale(1.04);
-            box-shadow: 0 6px 18px rgba(37,99,235,0.28);
+        .selected-thumbnail {
+            @apply ring-2 ring-blue-500;
         }
     </style>
 </head>
@@ -154,6 +131,7 @@
             <button id="tabSplit" class="tab-button p-2 active">裁切</button>
             <button id="tabMerge" class="tab-button p-2">合成</button>
             <button id="tabPageNumber" class="tab-button p-2">編頁碼</button>
+            <button id="tabRotate" class="tab-button p-2">旋轉</button>
         </div>
 
         <!-- 裁切功能區塊 -->
@@ -238,6 +216,27 @@
             </div>
         </div>
 
+        <!-- 旋轉功能區塊 -->
+        <div id="sectionRotate" class="tool-section hidden">
+            <div class="relative flex items-center mb-6">
+                <h2 class="text-xl font-semibold">旋轉功能</h2>
+                <div class="info-tooltip-container">
+                    <span class="info-tooltip-icon" data-tooltip="rotate">💬</span>
+                </div>
+            </div>
+
+            <div id="rotateImageSelection" class="mb-6">
+                <div id="rotateThumbnails" class="flex items-center overflow-x-auto thumb-container pb-4 px-4">
+                    <!-- PDF 縮圖會在此處動態生成 -->
+                </div>
+            </div>
+
+            <div id="rotateAction" class="flex justify-end space-x-4 mt-8">
+                <button id="rotatePageBtn" class="bg-yellow-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-yellow-600 transition disabled:bg-yellow-300 disabled:cursor-not-allowed" disabled>旋轉</button>
+                <button id="rotateNext" class="bg-blue-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-blue-600 transition disabled:bg-blue-300 disabled:cursor-not-allowed" disabled>下一步</button>
+            </div>
+        </div>
+
         <!-- 彈出式訊息/提示框 (取代 alert()) -->
         <div id="messageBox" class="fixed inset-0 flex items-center justify-center p-4 z-[200] hidden">
             <div class="bg-white rounded-lg p-6 shadow-xl max-w-sm w-full text-center">
@@ -281,14 +280,6 @@
         </div>
     </div>
 
-    <!-- 回到首頁按鈕 -->
-    <a href="https://mygodcatisfat.github.io" class="back-home-btn" title="回到首頁">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l9-9 9 9M4 10v10a1 1 0 001 1h3m10-11v11a1 1 0 01-1 1h-3m-4 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1" />
-        </svg>
-        回到首頁
-    </a>
-
 <script>
     // 設定 PDF.js worker 的路徑
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
@@ -319,6 +310,10 @@
     const pageNumberPosition = document.getElementById('pageNumberPosition');
     const pageNumberNextBtn = document.getElementById('pageNumberNext');
 
+    const rotateThumbnails = document.getElementById('rotateThumbnails');
+    const rotatePageBtn = document.getElementById('rotatePageBtn');
+    const rotateNextBtn = document.getElementById('rotateNext');
+
     const tooltipModal = document.getElementById('tooltipModal');
     const tooltipTitle = document.getElementById('tooltipTitle');
     const tooltipContentArea = document.getElementById('tooltipContentArea');
@@ -336,6 +331,8 @@
     let selectedFileIndex = -1;
     let fullScreenPDF = null;
     let fullScreenPage = 0;
+    let rotateRotations = [];
+    let selectedRotatePage = -1;
 
     // 提示內容資料
     const tooltipData = {
@@ -372,6 +369,14 @@
                 <p>請匯入 PDF 檔案，然後設定編碼的**起始數字**、**起始頁碼**及**頁碼位置**。</p>
                 <p>頁碼將會從您指定的頁碼開始依序編寫，並在頁面左右<strong class="text-green-500">交替出現</strong>。</p>
                 <p>例如：若起始位置設定為「左」，則第一組頁碼會出現在左下角，第二組會出現在右下角，依此類推。</p>
+            `
+        },
+        rotate: {
+            title: '旋轉功能說明',
+            content: `
+                <p>請匯入 PDF 檔案，然後點擊頁面縮圖來選取。</p>
+                <p>點擊<strong class="text-green-500">「旋轉」</strong>按鈕或按下鍵盤 **<strong class="text-red-500">R</strong>** 鍵**，即可將選取的頁面順時針旋轉 90 度。</p>
+                <p>您可以重複操作來達到所需的旋轉角度。</p>
             `
         }
     };
@@ -422,11 +427,14 @@
             fileInput.value = '';
             
             if (currentMode === 'pagenumber') {
+                // 修正：當切換到此頁籤時，根據 loadedPDF 的狀態來禁用或啟用按鈕
                 pageNumberNextBtn.disabled = loadedPDF === null;
             } else if (currentMode === 'merge') {
                 mergeNextBtn.disabled = filesForMerge.length === 0;
             } else if (currentMode === 'split') {
                 splitNextBtn.disabled = loadedPDF === null || splitPoints.length !== 2;
+            } else if (currentMode === 'rotate') {
+                rotateNextBtn.disabled = loadedPDF === null;
             }
         });
     });
@@ -439,7 +447,7 @@
             return;
         }
         
-        if (currentMode === 'split' || currentMode === 'pagenumber') {
+        if (currentMode === 'split' || currentMode === 'pagenumber' || currentMode === 'rotate') {
             if (files.length > 1) {
                 showMessage('此功能一次只能處理一個PDF檔案。');
                 fileInput.value = '';
@@ -456,8 +464,14 @@
                 await renderSplitThumbnails(pdfDoc);
                 updateSplitUI();
             } else if (currentMode === 'pagenumber') {
+                // 修正：載入檔案後啟用編頁碼的「下一步」按鈕
                 pageNumberNextBtn.disabled = false;
                 pageNumberFromPage.placeholder = `1 - ${loadedPDF.numPages}`;
+            } else if (currentMode === 'rotate') {
+                rotateRotations = Array(loadedPDF.numPages).fill(0);
+                await renderRotateThumbnails(pdfDoc);
+                rotateNextBtn.disabled = false;
+                rotatePageBtn.disabled = true; // Initially disabled until a page is selected
             }
 
         } else if (currentMode === 'merge') {
@@ -845,16 +859,22 @@
     });
     
     // ==================== 編頁碼功能 ====================
-    pageNumberFromPage.addEventListener('input', () => {
-        const fromPage = parseInt(pageNumberFromPage.value);
-        if (loadedPDF && fromPage >= 1 && fromPage <= loadedPDF.numPages) {
+    // 修正：當檔案載入後，才啟用「下一步」按鈕
+    fileInput.addEventListener('change', () => {
+        if (currentMode === 'pagenumber' && fileInput.files.length > 0) {
             pageNumberNextBtn.disabled = false;
-        } else {
+        } else if (currentMode === 'pagenumber') {
             pageNumberNextBtn.disabled = true;
         }
     });
 
+    // 修正：移除多餘的事件監聽器，避免衝突
     pageNumberNextBtn.addEventListener('click', () => {
+        if (!loadedPDF) {
+            showMessage('請先匯入PDF檔案。');
+            return;
+        }
+        
         const actionArea = document.getElementById('pageNumberNext').parentNode;
         actionArea.innerHTML = `
             <div class="flex flex-col items-end space-y-4 w-full md:w-auto">
@@ -927,9 +947,105 @@
             showMessage('頁碼編寫時發生錯誤。');
         }
     }
+    
+    // ==================== 旋轉功能 ====================
+    async function renderRotateThumbnails(pdfDoc) {
+        rotateThumbnails.innerHTML = '';
+        const numPages = pdfDoc.numPages;
+        
+        for (let i = 1; i <= numPages; i++) {
+            const page = await pdfDoc.getPage(i);
+            const viewport = page.getViewport({ scale: 0.3, rotation: rotateRotations[i - 1] });
+            const canvas = document.createElement('canvas');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            const context = canvas.getContext('2d');
+            const renderContext = { canvasContext: context, viewport: viewport };
+            await page.render(renderContext).promise;
 
+            const thumbWrapper = document.createElement('div');
+            thumbWrapper.className = `relative flex-shrink-0 p-2 border border-gray-200 rounded-md cursor-pointer hover:bg-gray-100 transition`;
+            thumbWrapper.dataset.page = i - 1;
 
-    // 處理鍵盤事件 (用於合成功能)
+            const pageNum = document.createElement('div');
+            pageNum.textContent = i;
+            pageNum.className = 'text-center text-sm font-medium text-gray-600 mt-1';
+            
+            thumbWrapper.appendChild(canvas);
+            thumbWrapper.appendChild(pageNum);
+            rotateThumbnails.appendChild(thumbWrapper);
+
+            thumbWrapper.addEventListener('click', () => {
+                document.querySelectorAll('#rotateThumbnails .selected-thumbnail').forEach(t => t.classList.remove('selected-thumbnail'));
+                thumbWrapper.classList.add('selected-thumbnail');
+                selectedRotatePage = i - 1;
+                rotatePageBtn.disabled = false;
+            });
+        }
+        
+        // 修正：在重新渲染後，保留選取狀態
+        if (selectedRotatePage !== -1) {
+            const currentSelectedThumb = document.querySelector(`[data-page="${selectedRotatePage}"]`);
+            if (currentSelectedThumb) {
+                currentSelectedThumb.classList.add('selected-thumbnail');
+            }
+        }
+    }
+
+    rotatePageBtn.addEventListener('click', async () => {
+        if (selectedRotatePage === -1) {
+            showMessage('請先選擇要旋轉的頁面。');
+            return;
+        }
+        rotateRotations[selectedRotatePage] = (rotateRotations[selectedRotatePage] + 90) % 360;
+        await renderRotateThumbnails(loadedPDF);
+    });
+
+    rotateNextBtn.addEventListener('click', () => {
+        const actionArea = document.getElementById('rotateNext').parentNode;
+        actionArea.innerHTML = `
+            <div class="flex flex-col items-end space-y-4 w-full md:w-auto">
+                <div class="flex items-center space-x-2">
+                    <label class="font-medium text-gray-700">檔案名稱:</label>
+                    <input type="text" id="rotateFilename" class="p-2 border rounded-md focus:ring-2 focus:ring-blue-400 focus:border-blue-400" value="旋轉-${formatDate(new Date())}">
+                </div>
+                <button id="exportRotate" class="bg-green-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-green-600 transition w-full md:w-auto">匯出檔案</button>
+            </div>
+        `;
+        document.getElementById('exportRotate').addEventListener('click', handleRotateExport);
+    });
+
+    async function handleRotateExport() {
+        if (!loadedPDF) {
+            showMessage('請先匯入PDF檔案。');
+            return;
+        }
+
+        const filename = document.getElementById('rotateFilename').value;
+        try {
+            const pdfDoc = await PDFLib.PDFDocument.load(await fileInput.files[0].arrayBuffer());
+            const pages = pdfDoc.getPages();
+
+            for (let i = 0; i < pages.length; i++) {
+                const page = pages[i];
+                if (rotateRotations[i] !== 0) {
+                    const existingRotation = page.getRotation();
+                    const newRotation = (existingRotation.angle + rotateRotations[i]) % 360;
+                    page.setRotation(PDFLib.degrees(newRotation));
+                }
+            }
+
+            const newPdfBytes = await pdfDoc.save();
+            downloadPDF(newPdfBytes, filename);
+            showMessage('PDF 旋轉並匯出成功！');
+
+        } catch (error) {
+            console.error('Error rotating PDF:', error);
+            showMessage('PDF 旋轉時發生錯誤。');
+        }
+    }
+
+    // 處理鍵盤事件 (用於合成功能和旋轉功能)
     document.addEventListener('keydown', (event) => {
         if (currentMode === 'merge') {
             if (event.key === 'Delete' && selectedFileIndex !== -1) {
@@ -949,6 +1065,8 @@
                 const newSelection = document.querySelectorAll('.sortable-item')[selectedFileIndex];
                 newSelection.classList.add('ring-2', 'ring-blue-500');
             }
+        } else if (currentMode === 'rotate' && (event.key === 'r' || event.key === 'R') && selectedRotatePage !== -1) {
+            rotatePageBtn.click();
         }
     });
 
@@ -1035,5 +1153,3 @@
 
 </body>
 </html>
-
-

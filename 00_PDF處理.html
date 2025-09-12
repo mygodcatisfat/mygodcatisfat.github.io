@@ -106,6 +106,33 @@
         .info-tooltip-icon {
             @apply text-gray-500 cursor-pointer text-xl flex items-center justify-center border border-gray-500 rounded-full w-6 h-6;
         }
+
+        /* 新增：回到首頁按鈕固定於右下角 */
+        .back-home-btn {
+            position: fixed;
+            right: 2rem;
+            bottom: 2rem;
+            z-index: 300;
+            background: #2563eb;
+            color: #fff;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            box-shadow: 0 4px 14px rgba(37,99,235,0.18);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+            border: none;
+            outline: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5em;
+        }
+        .back-home-btn:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px) scale(1.04);
+            box-shadow: 0 6px 18px rgba(37,99,235,0.28);
+        }
     </style>
 </head>
 <body class="p-8">
@@ -253,6 +280,14 @@
             </div>
         </div>
     </div>
+
+    <!-- 回到首頁按鈕 -->
+    <a href="https://mygodcatisfat.github.io" class="back-home-btn" title="回到首頁">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l9-9 9 9M4 10v10a1 1 0 001 1h3m10-11v11a1 1 0 01-1 1h-3m-4 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1" />
+        </svg>
+        回到首頁
+    </a>
 
 <script>
     // 設定 PDF.js worker 的路徑
@@ -1000,4 +1035,5 @@
 
 </body>
 </html>
+
 

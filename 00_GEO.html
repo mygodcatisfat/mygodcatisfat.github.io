@@ -168,46 +168,53 @@
         }
 
         async function convertCoordinates() {
-            const lat = parseFloat(latitudeInput.value);
-            const lng = parseFloat(longitudeInput.value);
-
-            if (isNaN(lat) || isNaN(lng)) {
-                addressOutput.textContent = '請輸入有效的經緯度。';
-                copyBtn.style.display = 'none';
-                return;
-            }
-
-            convertBtn.disabled = true;
-            convertBtn.textContent = '轉換中...';
-            addressOutput.textContent = '正在查詢地址...';
-            copyBtn.style.display = 'none';
-
-            try {
-                // 使用 Google Maps Geocoding API
-                const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${API_KEY}&language=zh-TW`);
-                const data = await response.json();
-
-                if (data.status === 'OK' && data.results.length > 0) {
-                    const fullAddress = data.results[0].formatted_address;
-                    addressOutput.textContent = fullAddress;
-                    copyBtn.style.display = 'inline-block';
-
-                    // 更新地圖標記和中心點
-                    const newPosition = new google.maps.LatLng(lat, lng);
-                    marker.position = newPosition; // 更新標記位置
-                    map.setCenter(newPosition);
-                    map.setZoom(16); // 放大以顯示更詳細的地址
-                } else {
-                    addressOutput.textContent = '找不到對應的地址。';
-                }
-            } catch (error) {
-                addressOutput.textContent = '發生錯誤，請稍後再試。';
-                console.error('Error:', error);
-            } finally {
-                convertBtn.disabled = false;
-                convertBtn.textContent = '轉換地址';
-            }
-        }
+		    const lat = parseFloat(latitudeInput.value);
+		    const lng = parseFloat(longitudeInput.value);
+		
+		    if (isNaN(lat) || isNaN(lng)) {
+		        addressOutput.textContent = '請輸入有效的經緯度。';
+		        copyBtn.style.display = 'none';
+		        return;
+		    }
+		
+		    convertBtn.disabled = true;
+		    convertBtn.textContent = '轉換中...';
+		    addressOutput.textContent = '正在查詢地址...';
+		    copyBtn.style.display = 'none';
+		
+		    try {
+		        const response = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${API_KEY}&language=zh-TW`);
+		        const data = await response.json();
+		
+		        if (data.status === 'OK' && data.results.length > 0) {
+		            const fullAddress = data.results[0].formatted_address;
+		            addressOutput.textContent = fullAddress;
+		            copyBtn.style.display = 'inline-block';
+		
+		            // 更新地圖標記和中心點
+		            const newPosition = new google.maps.LatLng(lat, lng);
+		
+		            // 重新建立標記
+		            if (marker) marker.map = null;
+		            marker = new google.maps.marker.AdvancedMarkerElement({
+		                position: newPosition,
+		                map: map,
+		                title: '你選的位置'
+		            });
+		            map.setCenter(newPosition);
+		            map.setZoom(16);
+		
+		        } else {
+		            addressOutput.textContent = '找不到對應的地址。';
+		        }
+		    } catch (error) {
+		        addressOutput.textContent = '發生錯誤，請稍後再試。';
+		        console.error('Error:', error);
+		    } finally {
+		        convertBtn.disabled = false;
+		        convertBtn.textContent = '轉換地址';
+		    }
+		}
 
         function copyAddress() {
             const textToCopy = addressOutput.textContent;
@@ -225,5 +232,6 @@
     </script>
 </body>
 </html>
+
 
 

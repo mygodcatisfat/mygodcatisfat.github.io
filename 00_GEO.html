@@ -13,7 +13,6 @@
             padding: 20px;
             background-color: #f4f7f9;
         }
-
         .container {
             width: 100%;
             max-width: 600px;
@@ -22,24 +21,20 @@
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
-
         h1 {
             color: #333;
             text-align: center;
             margin-bottom: 20px;
         }
-
         .input-group {
             margin-bottom: 20px;
         }
-
         .input-group label {
             display: block;
             margin-bottom: 8px;
             font-weight: bold;
             color: #555;
         }
-
         .input-group input {
             width: 100%;
             padding: 12px;
@@ -48,7 +43,6 @@
             box-sizing: border-box;
             font-size: 16px;
         }
-
         #convert-btn {
             width: 100%;
             padding: 12px;
@@ -61,20 +55,16 @@
             font-weight: bold;
             transition: background-color 0.3s;
         }
-
         #convert-btn:hover {
             background-color: #0056b3;
         }
-
         #convert-btn:disabled {
             background-color: #a0a0a0;
             cursor: not-allowed;
         }
-
         #result-section {
             margin-top: 30px;
         }
-
         #address-output {
             padding: 15px;
             background-color: #e9ecef;
@@ -84,7 +74,6 @@
             word-wrap: break-word;
             color: #333;
         }
-
         #copy-btn {
             margin-top: 10px;
             padding: 8px 12px;
@@ -95,11 +84,9 @@
             cursor: pointer;
             display: none;
         }
-
         #copy-btn:hover {
             background-color: #218838;
         }
-
         #map {
             width: 100%;
             height: 400px;
@@ -113,26 +100,21 @@
 
     <div class="container">
         <h1>經緯度轉地址工具</h1>
-        
         <div class="input-group">
             <label for="latitude">緯度 (Latitude)</label>
             <input type="text" id="latitude" placeholder="範例：25.0330" pattern="^-?\d+(\.\d+)?$">
         </div>
-        
         <div class="input-group">
             <label for="longitude">經度 (Longitude)</label>
             <input type="text" id="longitude" placeholder="範例：121.5654" pattern="^-?\d+(\.\d+)?$">
         </div>
-        
         <button id="convert-btn">轉換地址</button>
-
         <div id="result-section">
             <h3>地址結果</h3>
             <div id="address-output">等待您的輸入...</div>
             <button id="copy-btn">複製地址</button>
         </div>
     </div>
-    
     <div id="map"></div>
 
     <script
@@ -188,22 +170,28 @@
                     addressOutput.textContent = fullAddress;
                     copyBtn.style.display = 'inline-block';
 
-                    // 更新地圖標記和中心點
+                    // 1. 強制 map 視角移動到新位置
                     const newPosition = { lat: lat, lng: lng };
-
-                    // 嘗試直接移動標記（AdvancedMarkerElement 沒有 setPosition 方法，只能重建）
+                    // 2. 若 AdvancedMarkerElement 不支援 setPosition，則移除重建
                     if (marker) marker.map = null;
                     marker = new google.maps.marker.AdvancedMarkerElement({
                         position: newPosition,
                         map: map,
                         title: '你選的位置'
                     });
-                    if (map.panTo) {
-                        map.panTo(newPosition);
-                    } else {
-                        map.setCenter(newPosition);
-                    }
+                    // 3. 同時用 setCenter 和 panTo，確保地圖一定移動
+                    if (typeof map.panTo === 'function') map.panTo(newPosition);
+                    if (typeof map.setCenter === 'function') map.setCenter(newPosition);
+                    // 4. 強制縮放(每次都設，避免有時不刷新)
                     map.setZoom(16);
+
+                    // 5. 強制觸發 resize（有時地圖容器視窗大小變化時需刷新）
+                    setTimeout(() => {
+                        google.maps.event.trigger(map, "resize");
+                        // 再次確保中心
+                        map.setCenter(newPosition);
+                    }, 500);
+
                 } else {
                     addressOutput.textContent = '找不到對應的地址。';
                 }
@@ -224,7 +212,7 @@
                 console.error('複製失敗: ', err);
             });
         }
-        
+
         convertBtn.addEventListener('click', convertCoordinates);
         copyBtn.addEventListener('click', copyAddress);
     </script>

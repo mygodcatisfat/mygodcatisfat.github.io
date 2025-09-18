@@ -118,7 +118,7 @@
     <div id="map"></div>
 
     <script
-        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAg9-Ns7EHT5atcG5UWsS1xbMExnXUm3AQ&callback=initMap&libraries=maps,marker"
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAg9-Ns7EHT5atcG5UWsS1xbMExnXUm3AQ&callback=initMap"
         async
     ></script>
     <script>
@@ -136,10 +136,9 @@
             const taipei = { lat: 25.0330, lng: 121.5654 };
             map = new google.maps.Map(document.getElementById('map'), {
                 zoom: 12,
-                center: taipei,
-                mapId: 'e1a2e327e250f02c52685583',
+                center: taipei
             });
-            marker = new google.maps.marker.AdvancedMarkerElement({
+            marker = new google.maps.Marker({
                 position: taipei,
                 map: map,
                 title: '預設位置'
@@ -170,28 +169,20 @@
                     addressOutput.textContent = fullAddress;
                     copyBtn.style.display = 'inline-block';
 
-                    // 1. 強制 map 視角移動到新位置
+                    // 更新地圖標記和中心點
                     const newPosition = { lat: lat, lng: lng };
-                    // 2. 若 AdvancedMarkerElement 不支援 setPosition，則移除重建
-                    if (marker) marker.map = null;
-                    marker = new google.maps.marker.AdvancedMarkerElement({
-                        position: newPosition,
-                        map: map,
-                        title: '你選的位置'
-                    });
-                    // 3. 同時用 setCenter 和 panTo，確保地圖一定移動
-                    if (typeof map.panTo === 'function') map.panTo(newPosition);
-                    if (typeof map.setCenter === 'function') map.setCenter(newPosition);
-                    // 4. 強制縮放(每次都設，避免有時不刷新)
+                    map.setCenter(newPosition);
                     map.setZoom(16);
 
-                    // 5. 強制觸發 resize（有時地圖容器視窗大小變化時需刷新）
-                    setTimeout(() => {
-                        google.maps.event.trigger(map, "resize");
-                        // 再次確保中心
-                        map.setCenter(newPosition);
-                    }, 500);
-
+                    if (marker) {
+                        marker.setPosition(newPosition);
+                    } else {
+                        marker = new google.maps.Marker({
+                            position: newPosition,
+                            map: map,
+                            title: '你選的位置'
+                        });
+                    }
                 } else {
                     addressOutput.textContent = '找不到對應的地址。';
                 }

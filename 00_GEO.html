@@ -138,7 +138,7 @@
     <div id="map"></div>
 
 	
-	<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAg9-Ns7EHT5atcG5UWsS1xbMExnXUm3AQ&callback=initMap&libraries=maps,marker&v=beta"></script>
+	<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAg9-Ns7EHT5atcG5UWsS1xbMExnXUm3AQ&callback=initMap&libraries=maps,marker"></script>
     <script>
         const latitudeInput = document.getElementById('latitude');
         const longitudeInput = document.getElementById('longitude');
@@ -157,6 +157,8 @@
             map = new google.maps.Map(document.getElementById('map'), {
                 zoom: 12,
                 center: taipei,
+                // 新增這行，並將 YOUR_MAP_ID 替換成您的地圖 ID
+                mapId: 'YOUR_MAP_ID',
             });
             // 預設標記
             marker = new google.maps.marker.AdvancedMarkerElement({
@@ -193,7 +195,7 @@
 
                     // 更新地圖標記和中心點
                     const newPosition = new google.maps.LatLng(lat, lng);
-                    marker.setPosition(newPosition);
+                    marker.position = newPosition; // 更新標記位置
                     map.setCenter(newPosition);
                     map.setZoom(16); // 放大以顯示更詳細的地址
                 } else {
@@ -219,6 +221,8 @@
         
         convertBtn.addEventListener('click', convertCoordinates);
         copyBtn.addEventListener('click', copyAddress);
+        // 如果您的程式碼有其他呼叫 initMap 的地方，請移除。
+        // API 的 callback=initMap 參數會自動呼叫。
     </script>
 </body>
 </html>

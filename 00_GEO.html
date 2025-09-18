@@ -146,8 +146,8 @@
         }
 
         async function convertCoordinates() {
-            const lat = parseFloat(latitudeInput.value);
-            const lng = parseFloat(longitudeInput.value);
+            const lat = Number(latitudeInput.value.trim());
+            const lng = Number(longitudeInput.value.trim());
 
             if (isNaN(lat) || isNaN(lng)) {
                 addressOutput.textContent = '請輸入有效的經緯度。';
@@ -183,6 +183,12 @@
                             title: '你選的位置'
                         });
                     }
+
+                    // 強制刷新地圖
+                    google.maps.event.trigger(map, 'resize');
+                    map.setCenter(newPosition);
+                    console.log('地圖已移動到', newPosition);
+
                 } else {
                     addressOutput.textContent = '找不到對應的地址。';
                 }

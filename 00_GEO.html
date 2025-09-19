@@ -94,6 +94,19 @@
       cursor: ew-resize;
       z-index: 10;
     }
+    /* 新增：清單禁用與扁按鈕 */
+    .disabled { pointer-events: none; opacity: 0.5; }
+    .list-toggle-btn {
+      display: block;
+      width: 100%;
+      padding: 6px 8px;
+      background: #f2f2f2;
+      color: #333;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 6px;
+    }
   </style>
 </head>
 <body>
@@ -123,6 +136,8 @@
           <progress class="progressBar hidden" value="0" max="100"></progress>
           <div class="batchStatus muted hidden"></div>
           <div class="batch-list hidden"></div>
+          <!-- 新增：清單收合/展開扁按鈕（位於清單下方） -->
+          <button class="list-toggle-btn hidden" type="button">收合清單</button>
         </div>
       </fieldset>
 
@@ -200,6 +215,12 @@
       return !(isNaN(lat) || isNaN(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180);
     }
 
+    // 新增：Email 格式檢核
+    function isValidEmail(email) {
+      // 寬鬆但標準的 email regex
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
     function buildExportLine(r){
       const idxStr = String(r.idx).padStart(3,'0');
       let hn = r.house_number || '';
@@ -216,7 +237,19 @@
       return buildExportLine(r).split('\t')[2] || '';
     }
 
+    // 新增：反向地理快取，避免重複查詢
+    const reverseCache = new Map(); // key: "lat,lon" (6位小數), value: data
+    function cacheKey(lat, lon) {
+      // 正規化到 6 位小數，降低重複機率
+      const la = Number(lat).toFixed(6);
+      const lo = Number(lon).toFixed(6);
+      return `${la},${lo}`;
+    }
+
     async function fetchAddress(lat, lon, email) {
+      const key = cacheKey(lat, lon);
+      if (reverseCache.has(key)) return reverseCache.get(key);
+
       const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`;
       const resp = await fetch(url, {
         headers: {
@@ -224,7 +257,9 @@
           'User-Agent': `${navigator.userAgent} (${email})`
         }
       });
-      return resp.json();
+      const data = await resp.json();
+      reverseCache.set(key, data);
+      return data;
     }
 
     // 單筆查詢
@@ -250,6 +285,7 @@
       const email = document.getElementById('email').value.trim();
       if (!isValidCoord(lat, lon)) { errorDiv.textContent = '經緯度錯誤'; niceAddrDiv.textContent=''; return; }
       if (!email) { errorDiv.textContent = '請輸入 Email'; niceAddrDiv.textContent=''; return; }
+      if (!isValidEmail(email)) { errorDiv.textContent = 'Email 格式不正確'; niceAddrDiv.textContent=''; return; }
       localStorage.setItem('geoEmail', email);
 
       try {
@@ -289,6 +325,7 @@
       const progressBar = container.querySelector('.progressBar');
       const status = container.querySelector('.batchStatus');
       const listDiv = container.querySelector('.batch-list');
+      const toggleListBtn = container.querySelector('.list-toggle-btn'); // 新增：清單收合/展開按鈕
       const batchTitleInput = container.querySelector('.batch-title');
       const deleteBtn = container.querySelector('.delete-batch-btn');
       const colorMini = container.querySelector('.color-mini');
@@ -334,9 +371,13 @@
         if (visibleCheckbox.checked) {
           map.addLayer(markersCluster);
           if (polyline) map.addLayer(polyline);
+          // 新增：恢復清單可點擊
+          listDiv.classList.remove('disabled');
         } else {
           map.removeLayer(markersCluster);
           if (polyline) map.removeLayer(polyline);
+          // 新增：清單不可點擊
+          listDiv.classList.add('disabled');
         }
       });
 
@@ -387,6 +428,9 @@
       listDiv.classList.add('hidden');
       fileInput.classList.remove('hidden');
       importLabel.classList.remove('hidden');
+      // 新增：初始化清單按鈕狀態
+      toggleListBtn.classList.add('hidden');
+      listDiv.classList.remove('disabled');
 
       function bindFileInput(fileInput) {
         fileInput.addEventListener('click', function() {
@@ -403,12 +447,14 @@
           progressBar.classList.remove('hidden');
           status.classList.remove('hidden');
           listDiv.classList.remove('hidden');
+          toggleListBtn.classList.remove('hidden'); // 新增：顯示清單收合按鈕
 
           // step2: parse file and run query
           const file = ev.target.files[0];
           if (!file) return;
           const email = document.getElementById('email').value.trim();
           if (!email) { alert('請先輸入 Email'); fileInput.value = ''; return; }
+          if (!isValidEmail(email)) { alert('Email 格式不正確'); fileInput.value = ''; return; }
           localStorage.setItem('geoEmail', email);
 
           const text = await file.text();
@@ -463,7 +509,7 @@
           const start = Date.now();
           try {
             if (stopFlag || stopped) break;
-            const data = await fetchAddress(lat, lon, email);
+            const data = await fetchAddress(lat, lon, email); // 使用快取的 fetchAddress
             if (stopFlag || stopped) break;
             const addr = data.address || {};
             const r = {
@@ -505,6 +551,8 @@
             const item = document.createElement('div');
             item.textContent = `${i+1}. ${niceAddressFromR(r)}`;
             item.addEventListener('click', () => {
+              // 新增：未勾選可見時，清單項不可點
+              if (!visibleCheckbox.checked) return;
               highlightIndex(i);
               map.setView([lat, lon], Math.max(14, map.getZoom()));
             });
@@ -557,7 +605,21 @@
         progressBar.classList.add('hidden');
         status.classList.add('hidden');
         if (deleteBtn) deleteBtn.classList.remove('hidden');
+        // 完成後保留清單與收合鍵
+        toggleListBtn.classList.remove('hidden');
       }
+
+      // 新增：清單收合/展開
+      toggleListBtn.addEventListener('click', () => {
+        const collapsed = !listDiv.classList.contains('hidden') && listDiv.offsetParent !== null;
+        if (collapsed) {
+          listDiv.classList.add('hidden');
+          toggleListBtn.textContent = '展開清單';
+        } else {
+          listDiv.classList.remove('hidden');
+          toggleListBtn.textContent = '收合清單';
+        }
+      });
     }
 
     function addNewBatchArea() {
@@ -579,6 +641,12 @@
       clone.querySelector('.row.batch-controls').classList.add('hidden');
       clone.querySelector('.progressBar').classList.add('hidden');
       clone.querySelector('.batchStatus').classList.add('hidden');
+      // 新增：重置清單收合按鈕
+      const listToggle = clone.querySelector('.list-toggle-btn');
+      if (listToggle) {
+        listToggle.classList.add('hidden');
+        listToggle.textContent = '收合清單';
+      }
       let nextColor = '#'+Math.floor(Math.random()*16777215).toString(16).padStart(6,'0');
       let attempts = 0;
       while (usedColors.includes(nextColor) && attempts < 20) {

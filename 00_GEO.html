@@ -57,7 +57,18 @@
       margin-right: 4px;
       vertical-align:middle;
     }
-    .batch-title { font-weight:bold; font-size:15px; width:100%; padding:6px; border-radius:6px; border:1px solid #ddd; box-sizing:border-box; margin-top:0; }
+    .batch-title {
+      font-weight:bold;
+      font-size:15px;
+      width:100%;
+      padding:6px;
+      border-radius:6px;
+      border:1px solid #ddd;
+      box-sizing:border-box;
+      margin-top:0;
+      /* 功能4：避免被右上角 delete 按鈕覆蓋 */
+      padding-right: 72px;
+    }
     .delete-batch-btn {
       width: 32px;
       height: 32px;
@@ -84,6 +95,63 @@
     .delete-batch-btn.hidden { display: none !important; }
     .delete-batch-btn:hover { background:#900; }
     .hidden { display:none !important; }
+
+    /* 標題列與功能說明按鈕 */
+    .title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .help-btn {
+      margin-top: 0;
+      background: #444;
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+
+    /* 功能說明遮罩 */
+    .overlay-mask {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .overlay-content {
+      background: #fff;
+      color: #111;
+      width: min(760px, 92vw);
+      max-height: 80vh;
+      overflow: auto;
+      border-radius: 12px;
+      padding: 20px 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+    .overlay-content h2 {
+      margin: 0 0 8px 0;
+      font-size: 18px;
+      color: #111;
+    }
+    .overlay-content p { margin: 6px 0; line-height: 1.6; }
+    .overlay-content b { font-weight: 700; }
+    .overlay-content .emph { color: #2b7cff; font-weight: 700; }
+    .overlay-actions {
+      display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px;
+    }
+    .overlay-close {
+      background: #2b7cff;
+      padding: 8px 12px;
+      border-radius: 6px;
+      color: #fff;
+      cursor: pointer;
+      border: none;
+    }
+
     /* Resize handle */
     .resize-handle {
       position: absolute;
@@ -91,21 +159,61 @@
       top: 0;
       width: 8px;
       height: 100%;
-      cursor: ew-resize;
+      cursor: ew-resize; /* 功能1：右邊界顯示雙向箭頭 */
       z-index: 10;
     }
-    /* 新增：清單禁用與扁按鈕 */
-    .disabled { pointer-events: none; opacity: 0.5; }
+
+    /* 功能2：Email 格式錯誤視覺 */
+    .input-invalid {
+      background: #ffecec;
+      border-color: #c00 !important;
+    }
+    .field-error {
+      color: #c00;
+      font-size: 12px;
+      margin-top: 4px;
+      min-height: 16px;
+      line-height: 16px;
+    }
+
+    /* 功能3：清單收合/展開扁按鈕（位於清單最下方） */
     .list-toggle-btn {
-      display: block;
-      width: 100%;
-      padding: 6px 8px;
+      display: inline-block;
       background: #f2f2f2;
       color: #333;
       border: 1px solid #ddd;
       border-radius: 6px;
       cursor: pointer;
-      margin-top: 6px;
+      margin: 0px 173px;   /* 調整為 0px 173px */
+      padding: 0px 4px;    /* 依需求 */
+      user-select: none;
+    }
+
+    /* 功能5：拖曳排序手把（六個灰點 2x3） */
+    .drag-handle {
+      width: 22px;
+      height: 18px;
+      background-image:
+        radial-gradient(#bbb 2px, transparent 3px),
+        radial-gradient(#bbb 2px, transparent 3px),
+        radial-gradient(#bbb 2px, transparent 3px),
+        radial-gradient(#bbb 2px, transparent 3px),
+        radial-gradient(#bbb 2px, transparent 3px),
+        radial-gradient(#bbb 2px, transparent 3px);
+      background-size: 8px 8px;
+      background-position:
+        0 0, 8px 0, 16px 0,
+        0 8px, 8px 8px, 16px 8px;
+      background-repeat: no-repeat;
+      cursor: move; /* 顯示四向箭頭 */
+      margin-right: 4px;
+      align-self: flex-start; /* 置於標題輸入框上方 */
+      margin-top: 8px; /* 加入 margin-top: 8px */
+    }
+    .drag-placeholder {
+      border: 2px dashed #bbb;
+      min-height: 40px;
+      margin: 8px 0;
     }
   </style>
 </head>
@@ -113,9 +221,15 @@
   <div class="container">
     <div class="card" id="consolePanel">
       <div class="resize-handle" id="resizeHandle"></div>
-      <h1>經緯度轉地址工具</h1>
+
+      <div class="title-row">
+        <h1>經緯度轉地址工具</h1>
+        <button class="help-btn" id="helpBtn" type="button">功能說明</button>
+      </div>
+
       <label for="email" style="margin-bottom:0;margin-top:0;">聯絡 Email (必填以符合政策)</label>
-      <input id="email" type="email" placeholder="輸入你的 email" required style="margin-bottom:12px;" />
+      <input id="email" type="email" placeholder="輸入你的 email" required style="margin-bottom:4px;" />
+      <div id="emailError" class="field-error"></div>
 
       <!-- 批次(可複製多組) -->
       <fieldset id="batchArea">
@@ -124,6 +238,7 @@
           <div class="batch-title-row">
             <input type="checkbox" class="batch-visible-checkbox" checked title="顯示本批次點位於地圖" />
             <div class="color-mini" style="background:#0000ff;" title="點擊可選擇顏色"></div>
+            <!-- 功能5：第一個子區塊不顯示拖曳手把，之後動態加入 -->
             <input type="text" class="batch-title" placeholder="批次標題（可留空）" />
             <button class="delete-batch-btn hidden" tabindex="-1" aria-label="刪除本批次">X</button>
           </div>
@@ -136,8 +251,8 @@
           <progress class="progressBar hidden" value="0" max="100"></progress>
           <div class="batchStatus muted hidden"></div>
           <div class="batch-list hidden"></div>
-          <!-- 新增：清單收合/展開扁按鈕（位於清單下方） -->
-          <button class="list-toggle-btn hidden" type="button">收合清單</button>
+          <!-- 功能3：清單最下方扁按鈕（初始隱藏，載入清單後顯示） -->
+          <button class="list-toggle-btn hidden" type="button">▲</button>
         </div>
       </fieldset>
 
@@ -166,6 +281,24 @@
     <div id="map"></div>
   </div>
 
+  <!-- 功能說明遮罩 -->
+  <div id="helpOverlay" class="overlay-mask" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="overlay-content">
+      <h2 id="helpTitle">功能說明</h2>
+      <p><b>經緯度轉地址工具：</b>輸入緯度與經度，呼叫反向地理編碼服務，取得對應的地址資訊，並於地圖上以標記呈現。</p>
+      <p><b class="emph">聯絡 Email：</b>用於服務識別與政策需求。格式需正確，否則無法進行查詢。</p>
+      <p><b class="emph">左側控制台寬度調整：</b>將滑鼠移至左側控制台右緣，游標變成左右雙箭頭，即可拖曳調整寬度。</p>
+      <p><b>批次匯入查詢：</b>可載入 .txt（每行「lat,lon」）或 .csv（第9欄經度、第10欄緯度）進行多筆轉換，並自動下載結果。</p>
+      <p><b>顏色選擇：</b>點擊色塊變更本批次的標記與路徑顏色。</p>
+      <p><b>顯示切換：</b>勾選可在地圖顯示/隱藏本批次的標記與路徑。</p>
+      <p><b>清單收合鍵：</b>點擊清單底部的「▲/▼」可收合或展開清單。</p>
+      <p><b>拖曳排序：</b>在批次標題列的灰點手把可拖曳調整各批次區塊的順序。</p>
+      <div class="overlay-actions">
+        <button class="overlay-close" id="helpCloseBtn" type="button">關閉</button>
+      </div>
+    </div>
+  </div>
+
   <div id="userAgent" style="display:none;"></div>
 
   <!-- Leaflet + MarkerCluster -->
@@ -173,9 +306,9 @@
   <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
 
   <script>
-    // Resize handle for the console panel
+	
+    // Resize handle for the console panel (功能1)
     (function(){
-      const consolePanel = document.getElementById('consolePanel');
       const resizeHandle = document.getElementById('resizeHandle');
       const container = document.querySelector('.container');
       let dragging = false;
@@ -193,12 +326,25 @@
         if (x > max) x = max;
         container.style.gridTemplateColumns = `${x}px 1fr`;
       });
-      document.addEventListener('mouseup', function(e){
+      document.addEventListener('mouseup', function(){
         if (dragging) {
           dragging = false;
           document.body.style.cursor = '';
         }
       });
+    })();
+
+    // 功能說明遮罩開關
+    (function(){
+      const helpBtn = document.getElementById('helpBtn');
+      const overlay = document.getElementById('helpOverlay');
+      const closeBtn = document.getElementById('helpCloseBtn');
+      function openOverlay(){ overlay.style.display = 'flex'; }
+      function closeOverlay(){ overlay.style.display = 'none'; }
+      helpBtn.addEventListener('click', openOverlay);
+      closeBtn.addEventListener('click', closeOverlay);
+      overlay.addEventListener('click', (e)=>{ if(e.target === overlay) closeOverlay(); });
+      document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeOverlay(); });
     })();
 
     // 基本地圖與全域變數
@@ -215,11 +361,27 @@
       return !(isNaN(lat) || isNaN(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180);
     }
 
-    // 新增：Email 格式檢核
+    // Email 檢核（功能2）
     function isValidEmail(email) {
-      // 寬鬆但標準的 email regex
       return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     }
+    const emailInput = document.getElementById('email');
+    const emailError = document.getElementById('emailError');
+
+    function showEmailError() {
+      const val = emailInput.value.trim();
+      if (val !== '' && !isValidEmail(val)) {
+        emailInput.classList.add('input-invalid');
+        emailError.textContent = '格式錯誤';
+        return true;
+      } else {
+        emailInput.classList.remove('input-invalid');
+        emailError.textContent = '';
+        return false;
+      }
+    }
+    emailInput.addEventListener('blur', showEmailError);
+    emailInput.addEventListener('input', showEmailError);
 
     function buildExportLine(r){
       const idxStr = String(r.idx).padStart(3,'0');
@@ -237,19 +399,25 @@
       return buildExportLine(r).split('\t')[2] || '';
     }
 
-    // 新增：反向地理快取，避免重複查詢
-    const reverseCache = new Map(); // key: "lat,lon" (6位小數), value: data
-    function cacheKey(lat, lon) {
-      // 正規化到 6 位小數，降低重複機率
-      const la = Number(lat).toFixed(6);
-      const lo = Number(lon).toFixed(6);
-      return `${la},${lo}`;
+    async function fetchAddress(lat, lon, email) {
+      const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`;
+      const resp = await fetch(url, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': `${navigator.userAgent} (${email})`
+        }
+      });
+      return resp.json();
     }
 
-    async function fetchAddress(lat, lon, email) {
-      const key = cacheKey(lat, lon);
-      if (reverseCache.has(key)) return reverseCache.get(key);
+    // ===== 新增 API 查詢快取 =====
+    const addressCache = {};
 
+    async function fetchAddress(lat, lon, email) {
+      const key = `${lat},${lon}`;
+      if (addressCache[key]) {
+        return addressCache[key];
+      }
       const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`;
       const resp = await fetch(url, {
         headers: {
@@ -258,10 +426,10 @@
         }
       });
       const data = await resp.json();
-      reverseCache.set(key, data);
+      addressCache[key] = data;
       return data;
     }
-
+	
     // 單筆查詢
     const geoForm = document.getElementById('geoForm');
     const niceAddrDiv = document.getElementById('niceAddr');
@@ -282,10 +450,10 @@
 
       const lat = parseFloat(document.getElementById('lat').value.trim());
       const lon = parseFloat(document.getElementById('lon').value.trim());
-      const email = document.getElementById('email').value.trim();
+      const email = emailInput.value.trim();
       if (!isValidCoord(lat, lon)) { errorDiv.textContent = '經緯度錯誤'; niceAddrDiv.textContent=''; return; }
       if (!email) { errorDiv.textContent = '請輸入 Email'; niceAddrDiv.textContent=''; return; }
-      if (!isValidEmail(email)) { errorDiv.textContent = 'Email 格式不正確'; niceAddrDiv.textContent=''; return; }
+      if (showEmailError()) { errorDiv.textContent = 'Email 格式不正確'; niceAddrDiv.textContent=''; return; }
       localStorage.setItem('geoEmail', email);
 
       try {
@@ -311,7 +479,7 @@
       }
     });
 
-    if (localStorage.getItem('geoEmail')) document.getElementById('email').value = localStorage.getItem('geoEmail');
+    if (localStorage.getItem('geoEmail')) emailInput.value = localStorage.getItem('geoEmail');
 
     // ========= 批次處理系統 =========
 
@@ -319,13 +487,103 @@
     let templateDiv = batchArea.querySelector('.batch-container');
     let batchUID = 0;
 
+    // 功能4：跨子區塊僅允許一個選項變色
+    function clearAllActives() {
+      document.querySelectorAll('.batch-list .active').forEach(el => el.classList.remove('active'));
+    }
+
+    // 功能5：拖曳排序
+    let draggingInfo = null;
+    function enableDrag(container) {
+      let handle = container.querySelector('.drag-handle');
+      if (!handle) {
+        // 插入在標題輸入框上方（同一列中，置於 batch-title 前）
+        const row = container.querySelector('.batch-title-row');
+        const titleInput = row.querySelector('.batch-title');
+        const h = document.createElement('div');
+        h.className = 'drag-handle';
+        row.insertBefore(h, titleInput);
+        handle = h;
+      }
+      handle.onmousedown = function(e) {
+        e.preventDefault();
+        const rect = container.getBoundingClientRect();
+        const placeholder = document.createElement('div');
+        placeholder.className = 'drag-placeholder';
+        placeholder.style.height = rect.height + 'px';
+        draggingInfo = {
+          container,
+          placeholder,
+          startY: e.clientY,
+          offsetY: e.clientY - rect.top
+        };
+        container.parentNode.insertBefore(placeholder, container.nextSibling);
+        container.style.width = rect.width + 'px';
+        container.style.position = 'absolute';
+        container.style.left = rect.left + 'px';
+        container.style.top = rect.top + 'px';
+        container.style.zIndex = 1000;
+        container.style.pointerEvents = 'none';
+        document.addEventListener('mousemove', onDragMove);
+        document.addEventListener('mouseup', onDragEnd);
+      };
+    }
+    function onDragMove(e) {
+      if (!draggingInfo) return;
+      const { container } = draggingInfo;
+      container.style.top = (e.clientY - draggingInfo.offsetY) + 'px';
+
+      // 找到目前滑過的 batch-container，決定插入位置
+      const siblings = Array.from(batchArea.querySelectorAll('.batch-container')).filter(c => c !== container);
+      let target = null;
+      for (const sib of siblings) {
+        const r = sib.getBoundingClientRect();
+        const mid = r.top + r.height / 2;
+        if (e.clientY < mid) { target = sib; break; }
+      }
+      if (target) {
+        batchArea.insertBefore(draggingInfo.placeholder, target);
+      } else {
+        batchArea.appendChild(draggingInfo.placeholder);
+      }
+    }
+    function onDragEnd() {
+      if (!draggingInfo) return;
+      const { container, placeholder } = draggingInfo;
+      container.style.position = '';
+      container.style.left = '';
+      container.style.top = '';
+      container.style.width = '';
+      container.style.zIndex = '';
+      container.style.pointerEvents = '';
+      batchArea.insertBefore(container, placeholder);
+      placeholder.remove();
+      draggingInfo = null;
+      document.removeEventListener('mousemove', onDragMove);
+      document.removeEventListener('mouseup', onDragEnd);
+      refreshDragHandles();
+    }
+    function refreshDragHandles() {
+      const containers = Array.from(batchArea.querySelectorAll('.batch-container'));
+      containers.forEach((c, idx) => {
+        let handle = c.querySelector('.drag-handle');
+        if (idx === 0) {
+          if (handle) handle.classList.add('hidden');
+        } else {
+          if (!handle) enableDrag(c);
+          handle = c.querySelector('.drag-handle');
+          if (handle) handle.classList.remove('hidden');
+        }
+      });
+    }
+
     function bindBatch(container) {
       let fileInput = container.querySelector('.fileInput');
       const stopBtn = container.querySelector('.stopBtn');
       const progressBar = container.querySelector('.progressBar');
       const status = container.querySelector('.batchStatus');
       const listDiv = container.querySelector('.batch-list');
-      const toggleListBtn = container.querySelector('.list-toggle-btn'); // 新增：清單收合/展開按鈕
+      const listToggleBtn = container.querySelector('.list-toggle-btn'); // 功能3
       const batchTitleInput = container.querySelector('.batch-title');
       const deleteBtn = container.querySelector('.delete-batch-btn');
       const colorMini = container.querySelector('.color-mini');
@@ -361,6 +619,7 @@
         });
       });
       function rgbToHex(rgb) {
+        if (!rgb) return '#0000ff';
         if (rgb[0]==='#') return rgb;
         const m = rgb.match(/^rgb\((\d+), ?(\d+), ?(\d+)\)$/);
         if (!m) return '#0000ff';
@@ -371,13 +630,9 @@
         if (visibleCheckbox.checked) {
           map.addLayer(markersCluster);
           if (polyline) map.addLayer(polyline);
-          // 新增：恢復清單可點擊
-          listDiv.classList.remove('disabled');
         } else {
           map.removeLayer(markersCluster);
           if (polyline) map.removeLayer(polyline);
-          // 新增：清單不可點擊
-          listDiv.classList.add('disabled');
         }
       });
 
@@ -386,6 +641,7 @@
           try { markersCluster.clearLayers(); } catch(e){}
           try { if (polyline && map.hasLayer(polyline)) map.removeLayer(polyline); } catch(e){}
           container.parentNode.removeChild(container);
+          refreshDragHandles();
         };
       }
 
@@ -412,7 +668,6 @@
 
       // 讓同名檔案可正常觸發change
       function resetFileInput(oldInput) {
-        // 1. clone，2. bind，3. replace
         const newInput = oldInput.cloneNode();
         newInput.value = "";
         oldInput.parentNode.replaceChild(newInput, oldInput);
@@ -421,25 +676,24 @@
         return newInput;
       }
 
-      // -- 匯入前隱藏控制列/狀態/列表
+      // 匯入前隱藏控制列/狀態/列表/扁鈕
       batchControls.classList.add('hidden');
       progressBar.classList.add('hidden');
       status.classList.add('hidden');
       listDiv.classList.add('hidden');
       fileInput.classList.remove('hidden');
       importLabel.classList.remove('hidden');
-      // 新增：初始化清單按鈕狀態
-      toggleListBtn.classList.add('hidden');
-      listDiv.classList.remove('disabled');
+      if (listToggleBtn) {
+        listToggleBtn.classList.add('hidden');
+        listToggleBtn.textContent = '▲';
+      }
 
       function bindFileInput(fileInput) {
         fileInput.addEventListener('click', function() {
-          // reset file input value on click, always allow change
           this.value = "";
         });
 
         fileInput.addEventListener('change', async (ev) => {
-          // step1: always clean up on change, even for same filename
           stopFlag = false;
           stopped = false;
           clearBatchContent();
@@ -447,12 +701,11 @@
           progressBar.classList.remove('hidden');
           status.classList.remove('hidden');
           listDiv.classList.remove('hidden');
-          toggleListBtn.classList.remove('hidden'); // 新增：顯示清單收合按鈕
+          if (listToggleBtn) listToggleBtn.classList.remove('hidden');
 
-          // step2: parse file and run query
           const file = ev.target.files[0];
           if (!file) return;
-          const email = document.getElementById('email').value.trim();
+          const email = emailInput.value.trim();
           if (!email) { alert('請先輸入 Email'); fileInput.value = ''; return; }
           if (!isValidEmail(email)) { alert('Email 格式不正確'); fileInput.value = ''; return; }
           localStorage.setItem('geoEmail', email);
@@ -482,99 +735,131 @@
           } else {
             alert('不支援的檔案格式');
             fileInput.value = '';
-            // always allow next change for same filename
             resetFileInput(fileInput);
             return;
           }
           if (!hadError && coords.length) {
             await doBatchQuery(coords, email);
           }
-          // step3: always allow next change for same filename
           resetFileInput(fileInput);
         });
       }
       bindFileInput(fileInput);
 
-      async function doBatchQuery(coords, email) {
-        progressBar.classList.remove('hidden');
-        status.classList.remove('hidden');
-        listDiv.classList.remove('hidden');
-        const results = [];
-        if (visibleCheckbox.checked) {
-          map.addLayer(markersCluster);
-        }
-        for (let i = 0; i < coords.length; i++) {
-          if (stopFlag) { status.textContent = '已終止'; processing = false; stopped = true; break; }
-          const [lat, lon] = coords[i];
-          const start = Date.now();
-          try {
-            if (stopFlag || stopped) break;
-            const data = await fetchAddress(lat, lon, email); // 使用快取的 fetchAddress
-            if (stopFlag || stopped) break;
-            const addr = data.address || {};
-            const r = {
-              idx: i + 1,
-              lat: lat,
-              lon: lon,
-              postcode: addr.postcode || '',
-              country: addr.country || '',
-              city: addr.city || addr.town || addr.village || '',
-              suburb: addr.suburb || '',
-              neighbourhood: addr.neighbourhood || '',
-              road: addr.road || '',
-              house_number: addr.house_number || '',
-              village: addr.village || '',
-              office: addr.office || ''
-            };
-            results.push(r);
-
-            // marker
-            const html = `<div class="marker-label" style="background:${colorValue}; width:32px; height:32px;">${i+1}</div>`;
-            const m = L.marker([lat, lon], { icon: L.divIcon({ className:'', html: html, iconSize:[32,32], iconAnchor:[16,16] }) })
-                      .bindPopup(niceAddressFromR(r));
-            m.on('click', () => {
-              highlightIndex(i);
-              map.setView([lat, lon], Math.max(14, map.getZoom()));
-            });
-            markersCluster.addLayer(m);
-            markersList.push(m);
-
-            // polyline
-            path.push([lat, lon]);
-            if (polyline && map.hasLayer(polyline)) map.removeLayer(polyline);
-            polyline = L.polyline(path, { color: colorValue });
-            if (visibleCheckbox.checked) map.addLayer(polyline);
-            if (path.length === 1) map.setView([lat, lon], 14);
-            else map.fitBounds(polyline.getBounds());
-
-            // list
-            const item = document.createElement('div');
-            item.textContent = `${i+1}. ${niceAddressFromR(r)}`;
-            item.addEventListener('click', () => {
-              // 新增：未勾選可見時，清單項不可點
-              if (!visibleCheckbox.checked) return;
-              highlightIndex(i);
-              map.setView([lat, lon], Math.max(14, map.getZoom()));
-            });
-            listDiv.appendChild(item);
-          } catch (err) {
-            console.error(err);
+      // 功能3：清單收合/展開按鈕
+      if (listToggleBtn) {
+        listToggleBtn.addEventListener('click', () => {
+          const collapsed = !listDiv.classList.contains('hidden') && listDiv.offsetParent !== null;
+          if (collapsed) {
+            listDiv.classList.add('hidden');
+            listToggleBtn.textContent = '▼';
+          } else {
+            listDiv.classList.remove('hidden');
+            listToggleBtn.textContent = '▲';
           }
-          progressBar.value = ((i + 1) / coords.length) * 100;
-          status.textContent = `進度 ${i+1}/${coords.length}`;
-          const elapsed = Date.now() - start;
-          if (elapsed < 1000) await new Promise(r => setTimeout(r, 1000 - elapsed));
-        }
-        if (!stopFlag && !stopped) {
-          status.textContent = `批次完成，共 ${results.length} 筆`;
-          downloadResults(results);
-          if (colorValue && /^#[0-9A-Fa-f]{6}$/.test(colorValue)) usedColors.push(colorValue);
-          finishBatch();
-          addNewBatchArea();
-        } else {
-          status.textContent = '批次被使用者中止';
-        }
+        });
       }
+
+      async function doBatchQuery(coords, email) {
+		progressBar.classList.remove('hidden');
+		status.classList.remove('hidden');
+		listDiv.classList.remove('hidden');
+		if (listToggleBtn) listToggleBtn.classList.remove('hidden');
+
+		const results = [];
+		if (visibleCheckbox.checked) {
+		  map.addLayer(markersCluster);
+		}
+
+		let totalTime = 0; // 累計耗時
+		let countDone = 0;
+
+		for (let i = 0; i < coords.length; i++) {
+		  if (stopFlag) { status.textContent = '已終止'; processing = false; stopped = true; break; }
+		  const [lat, lon] = coords[i];
+		  const start = Date.now();
+		  try {
+		    if (stopFlag || stopped) break;
+		    const data = await fetchAddress(lat, lon, email);
+		    if (stopFlag || stopped) break;
+		    const addr = data.address || {};
+		    const r = {
+			  idx: i + 1,
+			  lat: lat,
+			  lon: lon,
+			  postcode: addr.postcode || '',
+			  country: addr.country || '',
+			  city: addr.city || addr.town || addr.village || '',
+			  suburb: addr.suburb || '',
+			  neighbourhood: addr.neighbourhood || '',
+			  road: addr.road || '',
+			  house_number: addr.house_number || '',
+			  village: addr.village || '',
+			  office: addr.office || ''
+		    };
+		    results.push(r);
+
+			// marker
+			const html = `<div class="marker-label" style="background:${colorValue}; width:32px; height:32px;">${i+1}</div>`;
+			const m = L.marker([lat, lon], { icon: L.divIcon({ className:'', html: html, iconSize:[32,32], iconAnchor:[16,16] }) })
+					  .bindPopup(niceAddressFromR(r));
+			m.on('click', () => {
+			  clearAllActives();     // 功能4：先清除其他子區塊選中
+			  highlightIndex(i);
+			  map.setView([lat, lon], Math.max(14, map.getZoom()));
+			});
+			markersCluster.addLayer(m);
+			markersList.push(m);
+
+			// polyline
+			path.push([lat, lon]);
+			if (polyline && map.hasLayer(polyline)) map.removeLayer(polyline);
+			polyline = L.polyline(path, { color: colorValue });
+			if (visibleCheckbox.checked) map.addLayer(polyline);
+			if (path.length === 1) map.setView([lat, lon], 14);
+			else map.fitBounds(polyline.getBounds());
+
+			// list
+			const item = document.createElement('div');
+			item.textContent = `${i+1}. ${niceAddressFromR(r)}`;
+			item.addEventListener('click', () => {
+			  clearAllActives();     // 功能4：先清除其他子區塊選中
+			  highlightIndex(i);
+			  map.setView([lat, lon], Math.max(14, map.getZoom()));
+			});
+			listDiv.appendChild(item);
+		  } catch (err) {
+			console.error(err);
+		  }
+		  const elapsed = Date.now() - start;
+		  totalTime += elapsed;
+		  countDone++;
+
+		  // 計算剩餘時間
+		  const avgTime = totalTime / countDone;
+		  const remaining = coords.length - countDone;
+		  const remainingMs = avgTime * remaining;
+		  let remainingText = '';
+		  if (remainingMs >= 60000) {
+		    remainingText = `預估剩餘時間：約 ${(remainingMs / 60000).toFixed(1)} 分鐘`;
+		  } else {
+		    remainingText = `預估剩餘時間：約 ${(remainingMs / 1000).toFixed(1)} 秒`;
+		  }
+		  progressBar.value = ((i + 1) / coords.length) * 100;
+		  status.textContent = `進度 ${i+1}/${coords.length}`;
+			
+		  if (elapsed < 1000) await new Promise(r => setTimeout(r, 1000 - elapsed));
+		}
+		if (!stopFlag && !stopped) {
+		  status.textContent = `批次完成，共 ${results.length} 筆`;
+		  downloadResults(results);
+		  if (colorValue && /^#[0-9A-Fa-f]{6}$/.test(colorValue)) usedColors.push(colorValue);
+		  finishBatch();
+		  addNewBatchArea();
+		} else {
+		  status.textContent = '批次被使用者中止';
+		}
+ 	  }
 
       function highlightIndex(idx) {
         Array.from(listDiv.children).forEach((el,i)=>el.classList.toggle('active', i === idx));
@@ -605,21 +890,7 @@
         progressBar.classList.add('hidden');
         status.classList.add('hidden');
         if (deleteBtn) deleteBtn.classList.remove('hidden');
-        // 完成後保留清單與收合鍵
-        toggleListBtn.classList.remove('hidden');
       }
-
-      // 新增：清單收合/展開
-      toggleListBtn.addEventListener('click', () => {
-        const collapsed = !listDiv.classList.contains('hidden') && listDiv.offsetParent !== null;
-        if (collapsed) {
-          listDiv.classList.add('hidden');
-          toggleListBtn.textContent = '展開清單';
-        } else {
-          listDiv.classList.remove('hidden');
-          toggleListBtn.textContent = '收合清單';
-        }
-      });
     }
 
     function addNewBatchArea() {
@@ -634,19 +905,21 @@
       if (clone.querySelector('.delete-batch-btn')) {
         clone.querySelector('.delete-batch-btn').classList.add('hidden');
       }
-      // 匯入檔案區預設顯示（重要修正！）
+      // 匯入檔案區預設顯示
       clone.querySelector('.fileInput').classList.remove('hidden');
       clone.querySelector('.import-label').classList.remove('hidden');
       // 隱藏控制列/狀態/列表
       clone.querySelector('.row.batch-controls').classList.add('hidden');
       clone.querySelector('.progressBar').classList.add('hidden');
       clone.querySelector('.batchStatus').classList.add('hidden');
-      // 新增：重置清單收合按鈕
+      // 清單扁鈕重置
       const listToggle = clone.querySelector('.list-toggle-btn');
       if (listToggle) {
         listToggle.classList.add('hidden');
-        listToggle.textContent = '收合清單';
+        listToggle.textContent = '▲';
       }
+
+      // 顏色避免重複
       let nextColor = '#'+Math.floor(Math.random()*16777215).toString(16).padStart(6,'0');
       let attempts = 0;
       while (usedColors.includes(nextColor) && attempts < 20) {
@@ -659,11 +932,15 @@
       const fileInput = clone.querySelector('.fileInput');
       fileInput.value = '';
       fileInput.setAttribute('data-batch-uid', batchUID);
-      bindBatch(clone);
+
       batchArea.appendChild(clone);
+      bindBatch(clone);
+      refreshDragHandles(); // 第二個開始顯示拖曳手把
     }
 
     bindBatch(templateDiv);
+    // 初始：第一個不顯示拖曳手把
+    refreshDragHandles();
   </script>
 </body>
 </html>

@@ -858,83 +858,154 @@
         listToggleBtn.textContent = '▲';
       }
 
-      function bindFileInput(fileInput) {
-        fileInput.addEventListener('click', function() {
-          this.value = "";
-        });
+      
+const batchErrorDiv = container.querySelector('.batchError');
+function showBatchError(msg) {
+  if (batchErrorDiv) {
+    batchErrorDiv.textContent = msg;
+    batchErrorDiv.classList.remove('hidden');
+  } else {
+    // fallback
+    alert(msg);
+  }
+}
+function clearBatchError() {
+  if (batchErrorDiv) {
+    batchErrorDiv.classList.add('hidden');
+    batchErrorDiv.textContent = '';
+  }
+}
 
-        fileInput.addEventListener('change', async (ev) => {
-          stopFlag = false;
-          stopped = false;
-          clearBatchContent();
-          batchControls.classList.remove('hidden');
-          progressBar.classList.remove('hidden');
-          status.classList.remove('hidden');
-          listDiv.classList.remove('hidden');
-          if (listToggleBtn) listToggleBtn.classList.remove('hidden');
-		  if (formatHint) formatHint.classList.add('hidden'); 
 
-          const file = ev.target.files[0];
-          if (!file) return;
-		  
-		  // === 新增功能：自動填入檔名到批次標題 ===
-		  if (batchTitleInput.value.trim() === '') {
-			  batchTitleInput.value = file.name.replace(/\.[^/.]+$/, '');
-		  }
-          
-		  const email = emailInput.value.trim();
-          if (!email) { alert('請先輸入 Email'); fileInput.value = ''; return; }
-          if (!isValidEmail(email)) { alert('Email 格式不正確'); fileInput.value = ''; return; }
-          localStorage.setItem('geoEmail', email);
+function showBatchErrors(errors) {
+  if (!errors.length) return;
+  const batchErrorDiv = container.querySelector('.batchError');
+  const html = `
+    <ul class="list-disc pl-5">
+      ${errors.slice(0, 10).map(e => `<li>${e}</li>`).join('')}
+    </ul>
+    ${errors.length > 10 ? `<div>...還有 ${errors.length - 10} 筆</div>` : ''}
+  `;
+  if (batchErrorDiv) {
+    batchErrorDiv.innerHTML = html;
+    batchErrorDiv.classList.remove('hidden');
+  } else {
+    alert(errors.join("\\n"));
+  }
+}
 
-          let coords = [];
-		  let hadError = false;
+function clearBatchError() {
+  const batchErrorDiv = container.querySelector('.batchError');
+  if (batchErrorDiv) {
+    batchErrorDiv.classList.add('hidden');
+    batchErrorDiv.innerHTML = '';
+  }
+}
 
-		  await new Promise((resolve) => {
-			Papa.parse(file, {
-			  complete: function(results) {
-				if (file.name.toLowerCase().endsWith('.txt')) {
-				  results.data.forEach((row, idx) => {
-					if (!row || row.length < 2) return;
-					const lat = parseFloat(row[0]);
-					const lon = parseFloat(row[1]);
-					if (!isValidCoord(lat, lon)) {
-					  alert('經緯度無效：' + row.join(','));
-					  hadError = true;
-					  return;
-					}
-					coords.push([lat, lon]);
-				  });
-				} else if (file.name.toLowerCase().endsWith('.csv')) {
-				  results.data.forEach((row, idx) => {
-					if (idx === 0 || !row || row.length < 10) return; // 跳過標題列
-					const lon = parseFloat(row[8]);
-					const lat = parseFloat(row[9]);
-					if (!isValidCoord(lat, lon)) {
-					  alert('經緯度無效：' + row.join(','));
-					  hadError = true;
-					  return;
-					}
-					coords.push([lat, lon]);
-				  });
-				} else {
-				  alert('不支援的檔案格式');
-				  hadError = true;
-				}
-				resolve();
-			  }
-			});
-		  });
-          if (!hadError && coords.length) {
-            await doBatchQuery(coords, email);
+function bindFileInput(fileInput) {
+  fileInput.addEventListener('click', function() {
+    this.value = "";
+  });
+
+  fileInput.addEventListener('change', async (ev) => {
+    stopFlag = false;
+    stopped = false;
+    clearBatchContent();
+    batchControls.classList.remove('hidden');
+    progressBar.classList.remove('hidden');
+    status.classList.remove('hidden');
+    listDiv.classList.remove('hidden');
+    if (listToggleBtn) listToggleBtn.classList.remove('hidden');
+    if (formatHint) formatHint.classList.add('hidden');
+    clearBatchError();
+
+    const file = ev.target.files[0];
+    if (!file) return;
+
+    // 自動填入檔名到批次標題（若為空）
+    if (batchTitleInput.value.trim() === '') {
+      batchTitleInput.value = file.name.replace(/\.[^/.]+$/, '');
+    }
+
+    const email = emailInput.value.trim();
+    const errors = [];
+    if (!email) errors.push('請先輸入 Email');
+    else if (!isValidEmail(email)) errors.push('Email 格式不正確');
+    if (errors.length) {
+      showBatchErrors(errors);
+      fileInput.value = '';
+      return;
+    }
+    localStorage.setItem('geoEmail', email);
+
+    let coords = [];
+    let hadError = false;
+    const invalidLines = [];
+
+    await new Promise((resolve) => {
+      Papa.parse(file, {
+        complete: function(results) {
+          const lower = file.name.toLowerCase();
+          if (lower.endsWith('.txt')) {
+            results.data.forEach((row) => {
+              if (!row || row.length < 2) return;
+              const lat = parseFloat(row[0]);
+              const lon = parseFloat(row[1]);
+              if (!isValidCoord(lat, lon)) {
+                invalidLines.push(row.join(','));
+                hadError = true;
+              } else {
+                coords.push([lat, lon]);
+              }
+            });
+          } else if (lower.endsWith('.csv')) {
+            results.data.forEach((row, idx) => {
+              if (idx === 0 || !row || row.length < 10) return; // 跳過標題列
+              const lon = parseFloat(row[8]);
+              const lat = parseFloat(row[9]);
+              if (!isValidCoord(lat, lon)) {
+                invalidLines.push('第' + (idx+1) + '列：' + row.join(','));
+                hadError = true;
+              } else {
+                coords.push([lat, lon]);
+              }
+            });
+          } else {
+            hadError = true;
+            errors.push('不支援的檔案格式，請上傳 .txt 或 .csv');
           }
-          resetFileInput(fileInput);
-		  
-		  if (hadError || !coords.length) {
-		    if (formatHint) formatHint.classList.remove('hidden'); 
-		  }
-        });
-      }
+
+          if (results.errors && results.errors.length) {
+            results.errors.forEach(e => errors.push('解析錯誤：' + e.message));
+            hadError = true;
+          }
+          resolve();
+        },
+        error: function(err) {
+          hadError = true;
+          errors.push('解析檔案時發生錯誤：' + (err && err.message ? err.message : err));
+          resolve();
+        }
+      });
+    });
+
+    if (invalidLines.length) {
+      const preview = invalidLines.slice(0, 10).join('\\n');
+      const more = invalidLines.length > 10 ? ('\\n...還有 ' + (invalidLines.length - 10) + ' 筆') : '';
+      errors.push('下列經緯度格式錯誤（僅列出前 10 筆）：\\n' + preview + more);
+    }
+
+    if (errors.length) {
+      showBatchErrors(errors);
+      resetFileInput(fileInput);
+      if (formatHint) formatHint.classList.remove('hidden');
+    } else if (coords.length) {
+      await doBatchQuery(coords, email);
+    }
+  });
+}
+
+
       bindFileInput(fileInput);
 
       // 功能3：清單收合/展開按鈕

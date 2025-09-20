@@ -12,8 +12,35 @@
 
   <style>
     body { font-family: system-ui, "Helvetica Neue", Arial; margin: 0; }
-    .container { display: grid; grid-template-columns: 420px 1fr; height: 100vh; }
+    .container {
+	  display: grid;
+	  grid-template-columns: 420px 1fr;
+	  height: 100vh;
+	  position: relative;
+	}
+
+	.resize-handle {
+	  position: absolute;
+	  right: calc(var(--scrollbar-width, 0px) * -1);
+	  top: 0;
+	  width: 16px;
+	  height: 100%;
+	  cursor: ew-resize;
+	  z-index: 9999;
+	  background: transparent;
+	}
+
     .card { background: #fff; border-right:1px solid #ddd; padding:12px; overflow-y:auto; position: relative; }
+	.card::-webkit-scrollbar {
+	  width: 8px;
+	}
+	.card::-webkit-scrollbar-thumb {
+	  background-color: rgba(0,0,0,0.3);
+	  border-radius: 4px;
+	}
+	.card::-webkit-scrollbar-track {
+	  background: transparent;
+	}
     h1 { font-size:20px; font-weight:bold; margin-bottom:12px; white-space:nowrap; }
     fieldset { border:1px solid #ccc; margin-bottom:12px; padding:10px; border-radius:8px; }
     legend { font-weight:bold; }
@@ -39,7 +66,7 @@
       align-items: center;
       margin-bottom: 6px;
       position:relative;
-      gap: 8px;
+      gap: 5px;
     }
     .batch-visible-checkbox {
       width: 20px;
@@ -85,7 +112,7 @@
       cursor: pointer;
       z-index: 5;
       transition: background 0.2s;
-      position: absolute;
+      /*position: absolute;*/
       right: 0;
       top: 0;
       margin-top: 0;
@@ -173,15 +200,15 @@
     }
 
     /* Resize handle */
-    .resize-handle {
+    /*.resize-handle {
       position: absolute;
       right: -4px;
       top: 0;
       width: 8px;
       height: 100%;
-      cursor: ew-resize; /* 右邊界顯示雙向箭頭 */
+      cursor: ew-resize; 
       z-index: 10;
-    }
+    }*/
 
     /* Email 格式錯誤視覺 */
     .input-invalid {
@@ -204,9 +231,15 @@
       border: 1px solid #ddd;
       border-radius: 6px;
       cursor: pointer;
-      margin: 0px 173px;
+      /*margin: 0px 173px;*/
       padding: 0px 4px;
       user-select: none;
+	  
+	  position: absolute;
+	  left: 50%;
+	  transform: translateX(-50%);
+
+	  margin-top: -8px;
     }
 
     /* 拖曳排序手把（4個灰點）*/
@@ -240,16 +273,19 @@
 <body>
   <div class="container">
     <div class="card" id="consolePanel">
-      <div class="resize-handle" id="resizeHandle"></div>
+    <div class="resize-handle" id="resizeHandle"></div>
 
-      <div class="title-row">
+      <header class="title-row">
         <h1>經緯度轉地址工具</h1>
-        <button class="title-row-top-btn-common help-btn" id="helpBtn" type="button">功能說明</button>
+        <button class="title-row-top-btn-common help-btn" id="helpBtn" type="button" aria-label="開啟功能說明">功能說明</button>
 		<button onclick="location.href='https://mygodcatisfat.github.io'" class="title-row-top-btn-common" id="homeBtn" type="button" title="回到首頁">回到首頁</button>
-      </div>
+      </header>
 
       <label for="email" style="margin-bottom:0;margin-top:0;">聯絡 Email (必填以符合政策)</label>
-      <input id="email" type="email" placeholder="輸入你的 email" required style="margin-bottom:4px;" />
+      <input id="email" type="email" placeholder="輸入你的 email" 
+        required style="margin-bottom:4px;" 
+        aria-label="聯絡 Email" 
+        autocomplete="email" />
       <div id="emailError" class="field-error"></div>
 
       <!-- 批次(可複製多組) -->
@@ -257,14 +293,22 @@
         <legend>批次匯入查詢（可重複新增）</legend>
         <div class="batch-container">
           <div class="batch-title-row">
-            <input type="checkbox" class="batch-visible-checkbox" checked title="顯示本批次點位於地圖" />
+            <input type="checkbox" class="batch-visible-checkbox" id="batchVisible_0" name="batchVisible_0" checked title="顯示本批次點位於地圖" />
             <div class="color-mini" style="background:#0000ff;" title="點擊可選擇顏色"></div>
-            <!-- 功能5：第一個子區塊不顯示拖曳手把，之後動態加入 -->
-            <input type="text" class="batch-title" placeholder="批次標題（可留空）" />
+            <!-- 第一個子區塊不顯示拖曳手把，之後動態加入 -->
+            <input type="text" class="batch-title" id="batchTitle_0" name="batchTitle_0" placeholder="批次標題（可留空）" />
             <button class="delete-batch-btn hidden" tabindex="-1" aria-label="刪除本批次">X</button>
           </div>
-          <label class="import-label">匯入檔案 (.txt 或 .csv)</label>
-          <input type="file" class="fileInput" accept=".txt,.csv" />
+          <label class="import-label" for="batchFile">匯入檔案 (.txt 或 .csv)</label>
+          <input id="batchFile" type="file" class="fileInput" accept=".txt,.csv" />
+		  <!-- 批次錯誤訊息：預設隱藏，出錯時以紅字顯示 -->
+		  <div class="batchError error hidden"></div>
+		  <!-- 檔案格式範例說明 -->
+		  <div class="batchFormatHint muted">
+			範例：<br>
+			TXT：每行 <code>緯度,經度</code>（例如：<code>25.0330,121.5654</code>）<br>
+			CSV：第9欄經度、第10欄緯度
+		  </div>
           <div class="row batch-controls hidden" style="margin-top:6px;">
             <button class="stopBtn" style="background:#c00;">終止查詢</button>
             <div style="flex:1"></div>
@@ -272,7 +316,7 @@
           <progress class="progressBar hidden" value="0" max="100"></progress>
           <div class="batchStatus muted hidden"></div>
           <div class="batch-list hidden"></div>
-          <!-- 功能3：清單最下方扁按鈕（初始隱藏，載入清單後顯示） -->
+          <!-- 清單最下方扁按鈕（初始隱藏，載入清單後顯示） -->
           <button class="list-toggle-btn hidden" type="button">▲</button>
         </div>
       </fieldset>
@@ -280,14 +324,17 @@
       <!-- 單點查詢 -->
       <fieldset>
         <legend>單點地址查詢</legend>
-        <form id="geoForm">
-          <label>緯度 (Latitude)</label>
-          <input id="lat" name="lat" type="text" value="25.0330" />
-          <label>經度 (Longitude)</label>
-          <input id="lon" name="lon" type="text" value="121.5654" />
-          <div class="muted">提示：緯度 -90~90，經度 -180~180。</div>
-          <button type="submit">轉換地址</button>
-        </form>
+        <form id="geoForm" novalidate aria-label="單點地址查詢表單">
+		  <label for="lat">緯度 (Latitude)</label>
+		  <input id="lat" name="lat" type="text" value="25.0330" aria-describedby="latHint" />
+
+		  <label for="lon">經度 (Longitude)</label>
+		  <input id="lon" name="lon" type="text" value="121.5654" aria-describedby="latHint" />
+
+		  <div id="latHint" class="muted">提示：緯度 -90~90，經度 -180~180。</div>
+
+		  <button type="submit" aria-label="執行經緯度轉換">轉換地址</button>
+		</form>
         <div id="address" class="hidden">
           <div class="title">好看地址</div>
           <div id="niceAddr"></div>
@@ -322,13 +369,35 @@
 
   <div id="userAgent" style="display:none;"></div>
 
-  <!-- Leaflet + MarkerCluster -->
+  <!-- Leaflet + MarkerCluster + PapaParse -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
   <script>
-	
-    // Resize handle for the console panel (功能1)
+    
+	function updateScrollbarWidth() {
+	  const scrollDiv = document.createElement('div');
+	  scrollDiv.style.width = '100px';
+	  scrollDiv.style.height = '100px';
+	  scrollDiv.style.overflowY = 'scroll';
+	  scrollDiv.style.position = 'absolute';
+	  scrollDiv.style.top = '-9999px';
+	  document.body.appendChild(scrollDiv);
+
+	  const scrollbarWidth = scrollDiv.offsetWidth - scrollDiv.clientWidth;
+	  document.body.removeChild(scrollDiv);
+
+	  // 設定到 CSS 變數
+	  document.documentElement.style.setProperty('--scrollbar-width', `${scrollbarWidth}px`);
+	}
+
+	// 頁面載入時執行一次
+	updateScrollbarWidth();
+
+	// 如果視窗大小改變（可能影響滾輪寬度），重新計算
+	window.addEventListener('resize', updateScrollbarWidth);
+
     (function(){
       const resizeHandle = document.getElementById('resizeHandle');
       const container = document.querySelector('.container');
@@ -346,6 +415,7 @@
         if (x < min) x = min;
         if (x > max) x = max;
         container.style.gridTemplateColumns = `${x}px 1fr`;
+		//resizeHandle.style.left = `${x}px`;
       });
       document.addEventListener('mouseup', function(){
         if (dragging) {
@@ -375,17 +445,26 @@
     document.getElementById('userAgent').textContent = navigator.userAgent;
 
     // 已被用過的顏色（避免重複）
-    let usedColors = ['#0000ff','#ff0000','#00aa00'];
+    let usedColors = new Set(['#0000ff','#ff0000','#00aa00']);
 
     // 檢查經緯度
-    function isValidCoord(lat, lon){
-      return !(isNaN(lat) || isNaN(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180);
-    }
+    // 修改：加入型別檢查與更嚴謹正則
+	function isValidCoord(lat, lon){
+	  if (typeof lat !== 'number' || typeof lon !== 'number') return false;
+	  if (!isFinite(lat) || !isFinite(lon)) return false;
+	  return /^-?\d+(\.\d+)?$/.test(String(lat)) &&
+			 /^-?\d+(\.\d+)?$/.test(String(lon)) &&
+			 lat >= -90 && lat <= 90 &&
+			 lon >= -180 && lon <= 180;
+	}
 
-    // Email 檢核（功能2）
-    function isValidEmail(email) {
-      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    }
+	function isValidEmail(email) {
+	  if (typeof email !== 'string') return false;
+	  // RFC 5322 簡化版
+	  const re = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z]{2,})+$/;
+	  return re.test(email.trim());
+	}
+
     const emailInput = document.getElementById('email');
     const emailError = document.getElementById('emailError');
 
@@ -431,8 +510,17 @@
       return resp.json();
     }
 
-    // ===== 新增 API 查詢快取 =====
-    const addressCache = {};
+    // API 查詢快取
+    let addressCache = {};
+	try {
+	  const savedCache = localStorage.getItem('addressCache');
+	  if (savedCache) {
+		addressCache = JSON.parse(savedCache);
+	  }
+	} catch (e) {
+	  console.warn('讀取快取失敗', e);
+	  addressCache = {};
+	}
 
     async function fetchAddress(lat, lon, email) {
       const key = `${lat},${lon}`;
@@ -448,7 +536,12 @@
       });
       const data = await resp.json();
       addressCache[key] = data;
-      return data;
+	  try {
+  	    localStorage.setItem('addressCache', JSON.stringify(addressCache));
+	  } catch (e) {
+		console.warn('儲存快取失敗', e);
+	  }
+	  return data;
     }
 	
     // 單筆查詢
@@ -460,6 +553,48 @@
     const addressBlock = document.getElementById('address');
     let singleMarker = null;
     addressBlock.classList.add('hidden');
+	
+	['lat', 'lon'].forEach(id => {
+	  const input = document.getElementById(id);
+	  let isComposing = false; // 是否正在組字
+	  let lastValid = input.value;
+
+	  input.addEventListener('compositionstart', () => {
+		isComposing = true;
+	  });
+
+	  input.addEventListener('compositionend', () => {
+		isComposing = false;
+		filterAndClamp(); // 組字結束後再做過濾與範圍檢查
+	  });
+
+	  input.addEventListener('input', () => {
+		if (isComposing) return; // 組字中不處理
+		filterAndClamp();
+	  });
+
+	  function filterAndClamp() {
+		let val = input.value;
+		val = val.replace(/[^0-9.\-]/g, '');
+		const parts = val.split('.');
+		if (parts.length > 2) {
+		  val = parts[0] + '.' + parts.slice(1).join('');
+		}
+		val = val.replace(/(?!^)-/g, '');
+
+		if (val !== '' && !isNaN(val)) {
+		  const num = parseFloat(val);
+		  if (id === 'lat' && (num < -90 || num > 90)) {
+			val = Math.max(-90, Math.min(90, num)).toString();
+		  }
+		  if (id === 'lon' && (num < -180 || num > 180)) {
+			val = Math.max(-180, Math.min(180, num)).toString();
+		  }
+		  lastValid = val;
+		}
+		input.value = val;
+	  }
+	});
 
     geoForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -508,12 +643,12 @@
     let templateDiv = batchArea.querySelector('.batch-container');
     let batchUID = 0;
 
-    // 功能4：跨子區塊僅允許一個選項變色
+    // 跨子區塊僅允許一個選項變色
     function clearAllActives() {
       document.querySelectorAll('.batch-list .active').forEach(el => el.classList.remove('active'));
     }
 
-    // 功能5：拖曳排序
+    // 拖曳排序
     let draggingInfo = null;
     function enableDrag(container) {
       let handle = container.querySelector('.drag-handle');
@@ -661,6 +796,11 @@
         deleteBtn.onclick = function(){
           try { markersCluster.clearLayers(); } catch(e){}
           try { if (polyline && map.hasLayer(polyline)) map.removeLayer(polyline); } catch(e){}
+          // 修改：釋放顏色
+          if (colorValue && usedColors.has(colorValue)) {
+              usedColors.delete(colorValue);
+          }
+
           container.parentNode.removeChild(container);
           refreshDragHandles();
         };
@@ -726,39 +866,55 @@
 
           const file = ev.target.files[0];
           if (!file) return;
-          const email = emailInput.value.trim();
+		  
+		  // === 新增功能：自動填入檔名到批次標題 ===
+		  if (batchTitleInput.value.trim() === '') {
+			  batchTitleInput.value = file.name.replace(/\.[^/.]+$/, '');
+		  }
+          
+		  const email = emailInput.value.trim();
           if (!email) { alert('請先輸入 Email'); fileInput.value = ''; return; }
           if (!isValidEmail(email)) { alert('Email 格式不正確'); fileInput.value = ''; return; }
           localStorage.setItem('geoEmail', email);
 
-          const text = await file.text();
-          const coords = [];
-          let hadError = false;
-          if (file.name.toLowerCase().endsWith('.txt')) {
-            const lines = text.split(/\r?\n/).filter(l => l.trim() !== '');
-            for (let line of lines) {
-              const parts = line.split(',');
-              if (parts.length !== 2) { alert('格式錯誤：' + line); hadError = true; break; }
-              const lat = parseFloat(parts[0].trim()), lon = parseFloat(parts[1].trim());
-              if (!isValidCoord(lat, lon)) { alert('經緯度無效：' + line); hadError = true; break; }
-              coords.push([lat, lon]);
-            }
-          } else if (file.name.toLowerCase().endsWith('.csv')) {
-            const lines = text.split(/\r?\n/);
-            for (let i = 1; i < lines.length; i++) {
-              if (!lines[i] || lines[i].trim() === '') continue;
-              const parts = lines[i].split(',');
-              if (parts.length < 11) { alert('CSV 欄位錯誤：' + lines[i]); hadError = true; break; }
-              const lon = parseFloat(parts[8].trim()), lat = parseFloat(parts[9].trim());
-              if (!isValidCoord(lat, lon)) { alert('經緯度無效：' + lines[i]); hadError = true; break; }
-              coords.push([lat, lon]);
-            }
-          } else {
-            alert('不支援的檔案格式');
-            fileInput.value = '';
-            resetFileInput(fileInput);
-            return;
-          }
+          let coords = [];
+		  let hadError = false;
+
+		  await new Promise((resolve) => {
+			Papa.parse(file, {
+			  complete: function(results) {
+				if (file.name.toLowerCase().endsWith('.txt')) {
+				  results.data.forEach((row, idx) => {
+					if (!row || row.length < 2) return;
+					const lat = parseFloat(row[0]);
+					const lon = parseFloat(row[1]);
+					if (!isValidCoord(lat, lon)) {
+					  alert('經緯度無效：' + row.join(','));
+					  hadError = true;
+					  return;
+					}
+					coords.push([lat, lon]);
+				  });
+				} else if (file.name.toLowerCase().endsWith('.csv')) {
+				  results.data.forEach((row, idx) => {
+					if (idx === 0 || !row || row.length < 10) return; // 跳過標題列
+					const lon = parseFloat(row[8]);
+					const lat = parseFloat(row[9]);
+					if (!isValidCoord(lat, lon)) {
+					  alert('經緯度無效：' + row.join(','));
+					  hadError = true;
+					  return;
+					}
+					coords.push([lat, lon]);
+				  });
+				} else {
+				  alert('不支援的檔案格式');
+				  hadError = true;
+				}
+				resolve();
+			  }
+			});
+		  });
           if (!hadError && coords.length) {
             await doBatchQuery(coords, email);
           }
@@ -834,11 +990,16 @@
 
 			// polyline
 			path.push([lat, lon]);
-			if (polyline && map.hasLayer(polyline)) map.removeLayer(polyline);
-			polyline = L.polyline(path, { color: colorValue });
-			if (visibleCheckbox.checked) map.addLayer(polyline);
+			if (!polyline) {
+			  polyline = L.polyline(path, { color: colorValue });
+			  if (visibleCheckbox.checked) map.addLayer(polyline);
+			} else {
+			  polyline.setLatLngs(path); // 更新路徑
+			  polyline.setStyle({ color: colorValue }); // 確保顏色同步
+			}
 			if (path.length === 1) map.setView([lat, lon], 14);
 			else map.fitBounds(polyline.getBounds());
+
 
 			// list
 			const item = document.createElement('div');
@@ -857,24 +1018,32 @@
 		  countDone++;
 
 		  // 計算剩餘時間
-		  const avgTime = totalTime / countDone;
+		  const safeCount = countDone > 0 ? countDone : 1;
+		  let avgTime = totalTime / safeCount;
+		  if (avgTime < 50) { // 小於 50ms 視為快取命中，給一個基準值
+		    avgTime = 50; // 50ms 當作單筆查詢時間
+		  }
 		  const remaining = coords.length - countDone;
 		  const remainingMs = avgTime * remaining;
 		  let remainingText = '';
+		  // 修改後
 		  if (remainingMs >= 60000) {
-		    remainingText = `預估剩餘時間：約 ${(remainingMs / 60000).toFixed(1)} 分鐘`;
+			const mins = Math.floor(remainingMs / 60000);
+			const secs = Math.round((remainingMs % 60000) / 1000);
+			remainingText = `預估剩餘時間：約 ${mins} 分 ${secs} 秒`;
 		  } else {
-		    remainingText = `預估剩餘時間：約 ${(remainingMs / 1000).toFixed(1)} 秒`;
-		  }
+			remainingText = `預估剩餘時間：約 ${Math.round(remainingMs / 1000)} 秒`;
+		}
+
 		  progressBar.value = ((i + 1) / coords.length) * 100;
-		  status.textContent = `進度 ${i+1}/${coords.length}`;
+		  status.textContent = `進度 ${i+1}/${coords.length}　${remainingText}`;
 			
 		  if (elapsed < 1000) await new Promise(r => setTimeout(r, 1000 - elapsed));
 		}
 		if (!stopFlag && !stopped) {
 		  status.textContent = `批次完成，共 ${results.length} 筆`;
 		  downloadResults(results);
-		  if (colorValue && /^#[0-9A-Fa-f]{6}$/.test(colorValue)) usedColors.push(colorValue);
+		  if (colorValue && /^#[0-9A-Fa-f]{6}$/.test(colorValue)) usedColors.add(colorValue);
 		  finishBatch();
 		  addNewBatchArea();
 		} else {
@@ -943,13 +1112,21 @@
       // 顏色避免重複
       let nextColor = '#'+Math.floor(Math.random()*16777215).toString(16).padStart(6,'0');
       let attempts = 0;
-      while (usedColors.includes(nextColor) && attempts < 20) {
+      while (usedColors.has(nextColor) && attempts < 20) {
         nextColor = '#'+Math.floor(Math.random()*16777215).toString(16).padStart(6,'0');
         attempts++;
       }
       const colorMini = clone.querySelector('.color-mini');
       colorMini.style.background = nextColor;
       ++batchUID;
+	  const visibleCheckbox = clone.querySelector('.batch-visible-checkbox');
+	  visibleCheckbox.id = `batchVisible_${batchUID}`;
+	  visibleCheckbox.name = `batchVisible_${batchUID}`;
+
+	  const batchTitle = clone.querySelector('.batch-title');
+	  batchTitle.id = `batchTitle_${batchUID}`;
+	  batchTitle.name = `batchTitle_${batchUID}`;
+
       const fileInput = clone.querySelector('.fileInput');
       fileInput.value = '';
       fileInput.setAttribute('data-batch-uid', batchUID);

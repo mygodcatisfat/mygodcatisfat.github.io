@@ -66,7 +66,6 @@
       border:1px solid #ddd;
       box-sizing:border-box;
       margin-top:0;
-      /* 功能4：避免被右上角 delete 按鈕覆蓋 */
       padding-right: 72px;
     }
     .delete-batch-btn {
@@ -100,16 +99,37 @@
     .title-row {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-start;
       gap: 8px;
     }
-    .help-btn {
-      margin-top: 0;
-      background: #444;
-      font-size: 12px;
-      padding: 6px 10px;
-      border-radius: 6px;
-      white-space: nowrap;
+
+	/* 共用按鈕樣式 */
+	.title-row-top-btn-common {
+	  margin-top: 0;
+	  background: linear-gradient(to bottom, #555, #333); /* 漸變背景 */
+	  color: #fff;
+	  font-size: 12px;
+	  padding: 6px 10px;
+	  border-radius: 6px;
+	  white-space: nowrap;
+	  text-decoration: none;
+	  display: inline-block;
+	  cursor: pointer;
+	  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+	  transition: background 0.2s, transform 0.1s, box-shadow 0.1s;
+	}
+
+	.title-row-top-btn-common:hover {
+	  background: linear-gradient(to bottom, #666, #444);
+	}
+
+	.title-row-top-btn-common:active {
+	  transform: translateY(1px); /* 按下去的位移感 */
+	  box-shadow: 0 1px 2px rgba(0,0,0,0.2); /* 陰影變小 */
+	}
+	
+	.help-btn {
+	  margin-left: auto;
     }
 
     /* 功能說明遮罩 */
@@ -159,11 +179,11 @@
       top: 0;
       width: 8px;
       height: 100%;
-      cursor: ew-resize; /* 功能1：右邊界顯示雙向箭頭 */
+      cursor: ew-resize; /* 右邊界顯示雙向箭頭 */
       z-index: 10;
     }
 
-    /* 功能2：Email 格式錯誤視覺 */
+    /* Email 格式錯誤視覺 */
     .input-invalid {
       background: #ffecec;
       border-color: #c00 !important;
@@ -176,7 +196,7 @@
       line-height: 16px;
     }
 
-    /* 功能3：清單收合/展開扁按鈕（位於清單最下方） */
+    /* 清單收合/展開按鈕（位於清單最下方） */
     .list-toggle-btn {
       display: inline-block;
       background: #f2f2f2;
@@ -184,12 +204,12 @@
       border: 1px solid #ddd;
       border-radius: 6px;
       cursor: pointer;
-      margin: 0px 173px;   /* 調整為 0px 173px */
-      padding: 0px 4px;    /* 依需求 */
+      margin: 0px 173px;
+      padding: 0px 4px;
       user-select: none;
     }
 
-    /* 功能5：拖曳排序手把（六個灰點 2x3） */
+    /* 拖曳排序手把（4個灰點）*/
     .drag-handle {
       width: 22px;
       height: 18px;
@@ -224,7 +244,8 @@
 
       <div class="title-row">
         <h1>經緯度轉地址工具</h1>
-        <button class="help-btn" id="helpBtn" type="button">功能說明</button>
+        <button class="title-row-top-btn-common help-btn" id="helpBtn" type="button">功能說明</button>
+		<button onclick="location.href='https://mygodcatisfat.github.io'" class="title-row-top-btn-common" id="homeBtn" type="button" title="回到首頁">回到首頁</button>
       </div>
 
       <label for="email" style="margin-bottom:0;margin-top:0;">聯絡 Email (必填以符合政策)</label>
@@ -288,11 +309,11 @@
       <p><b>經緯度轉地址工具：</b>輸入緯度與經度，呼叫反向地理編碼服務，取得對應的地址資訊，並於地圖上以標記呈現。</p>
       <p><b class="emph">聯絡 Email：</b>用於服務識別與政策需求。格式需正確，否則無法進行查詢。</p>
       <p><b class="emph">左側控制台寬度調整：</b>將滑鼠移至左側控制台右緣，游標變成左右雙箭頭，即可拖曳調整寬度。</p>
-      <p><b>批次匯入查詢：</b>可載入 .txt（每行「lat,lon」）或 .csv（第9欄經度、第10欄緯度）進行多筆轉換，並自動下載結果。</p>
-      <p><b>顏色選擇：</b>點擊色塊變更本批次的標記與路徑顏色。</p>
-      <p><b>顯示切換：</b>勾選可在地圖顯示/隱藏本批次的標記與路徑。</p>
-      <p><b>清單收合鍵：</b>點擊清單底部的「▲/▼」可收合或展開清單。</p>
-      <p><b>拖曳排序：</b>在批次標題列的灰點手把可拖曳調整各批次區塊的順序。</p>
+      <p><b class="emph">批次匯入查詢：</b>可載入 .txt（每行「lat, lon」）或 .csv（第9欄經度、第10欄緯度）進行多筆轉換，並自動下載結果。</p>
+      <p><b class="emph">顏色選擇：</b>點擊色塊變更本批次的標記與路徑顏色。</p>
+      <p><b class="emph">顯示切換：</b>勾選可在地圖顯示/隱藏本批次的標記與路徑。</p>
+      <p><b class="emph">清單收合鍵：</b>點擊清單底部的「▲/▼」可收合或展開清單。</p>
+      <p><b class="emph">拖曳排序：</b>在批次標題列的灰點手把可拖曳調整各批次區塊的順序。</p>
       <div class="overlay-actions">
         <button class="overlay-close" id="helpCloseBtn" type="button">關閉</button>
       </div>

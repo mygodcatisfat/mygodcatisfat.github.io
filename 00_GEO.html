@@ -739,13 +739,15 @@
       const progressBar = container.querySelector('.progressBar');
       const status = container.querySelector('.batchStatus');
       const listDiv = container.querySelector('.batch-list');
-      const listToggleBtn = container.querySelector('.list-toggle-btn'); // 功能3
+      const listToggleBtn = container.querySelector('.list-toggle-btn'); 
       const batchTitleInput = container.querySelector('.batch-title');
       const deleteBtn = container.querySelector('.delete-batch-btn');
       const colorMini = container.querySelector('.color-mini');
       const visibleCheckbox = container.querySelector('.batch-visible-checkbox');
       const batchControls = container.querySelector('.batch-controls');
       const importLabel = container.querySelector('.import-label');
+	  const formatHint = container.querySelector('.batchFormatHint'); 
+
       let colorValue = colorMini.style.background || '#0000ff';
       let stopFlag = false, processing = false, stopped = false;
       let markersCluster = L.markerClusterGroup();
@@ -811,6 +813,13 @@
         stopped = true;
         status.textContent = '使用者已終止該批次';
         processing = false;
+		
+		// 顯示範例字樣（與匯入檔案顯示時機一致）
+		if (formatHint) formatHint.classList.remove('hidden');
+
+		// 如果要同時讓匯入檔案按鈕回來，也可以加上：
+		fileInput.classList.remove('hidden');
+		importLabel.classList.remove('hidden');
       };
 
       function clearBatchContent() {
@@ -863,6 +872,7 @@
           status.classList.remove('hidden');
           listDiv.classList.remove('hidden');
           if (listToggleBtn) listToggleBtn.classList.remove('hidden');
+		  if (formatHint) formatHint.classList.add('hidden'); 
 
           const file = ev.target.files[0];
           if (!file) return;
@@ -919,6 +929,10 @@
             await doBatchQuery(coords, email);
           }
           resetFileInput(fileInput);
+		  
+		  if (hadError || !coords.length) {
+		    if (formatHint) formatHint.classList.remove('hidden'); 
+		  }
         });
       }
       bindFileInput(fileInput);
@@ -1079,7 +1093,8 @@
         batchControls.classList.add('hidden');
         progressBar.classList.add('hidden');
         status.classList.add('hidden');
-        if (deleteBtn) deleteBtn.classList.remove('hidden');
+        if (formatHint) formatHint.classList.add('hidden');
+		if (deleteBtn) deleteBtn.classList.remove('hidden');
       }
     }
 
@@ -1108,6 +1123,10 @@
         listToggle.classList.add('hidden');
         listToggle.textContent = '▲';
       }
+	  // 匯入前顯示範例字樣
+	  const cloneFormatHint = clone.querySelector('.batchFormatHint');
+	  if (cloneFormatHint) cloneFormatHint.classList.remove('hidden');
+
 
       // 顏色避免重複
       let nextColor = '#'+Math.floor(Math.random()*16777215).toString(16).padStart(6,'0');

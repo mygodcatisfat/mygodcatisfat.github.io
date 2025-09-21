@@ -84,7 +84,7 @@ async function loadStations(radiusKm = 0.5) {
 if (navigator.geolocation) {
   navigator.geolocation.getCurrentPosition(pos => {
     userPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-    L.marker([userPos.lat, userPos.lng]).addTo(map).bindPopup("你的位置").openPopup();
+    //L.marker([userPos.lat, userPos.lng]).addTo(map).bindPopup("你的位置").openPopup();
     map.setView([userPos.lat, userPos.lng], 15);
     const radiusKm = parseFloat(document.getElementById("radius").value) || 0.5;
     loadStations(radiusKm);
@@ -156,10 +156,11 @@ legend.onAdd = function () {
   div.style.boxShadow = "0 0 5px rgba(0,0,0,0.3)";
   div.innerHTML = `
     <h4 style="margin:2px 0;font-size:14px;">站點狀態</h4>
-    <div><span style="display:inline-block;width:12px;height:12px;background:green;margin-right:4px;"></span> 正常</div>
-    <div><span style="display:inline-block;width:12px;height:12px;background:yellow;margin-right:4px;"></span> 車或位不足 (<=3)</div>
-    <div><span style="display:inline-block;width:12px;height:12px;background:red;margin-right:4px;"></span> 沒車/沒位</div>
+    <div><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:green;margin-right:4px;"></span> 正常</div>
+    <div><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:yellow;margin-right:4px;"></span> 車或位不足 (<=3)</div>
+    <div><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:red;margin-right:4px;"></span> 沒車/沒位</div>
   `;
   return div;
 };
+
 legend.addTo(map);

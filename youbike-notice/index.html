@@ -52,5 +52,24 @@
         .catch(err => console.log("Service Worker 註冊失敗", err));
     }
   </script>
+  
+  <div id="overlay" style="
+    display:none;
+    position:fixed;
+    top:0;left:0;width:100%;height:100%;
+    background: rgba(0,0,0,0.5);
+    justify-content:center;
+    align-items:center;
+    z-index:1000;
+  ">
+    <div style="
+      background:white;
+      padding:20px 30px;
+      border-radius:10px;
+      font-size:18px;
+      box-shadow:0 2px 10px rgba(0,0,0,0.3);
+    ">提醒已成功設定！</div>
+</div>
+
 </body>
 </html>

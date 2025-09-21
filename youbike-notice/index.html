@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>YouBike PWA Prototype</title>
+  <link rel="manifest" href="manifest.json" />
+</head>
+<body>
+  <h1>YouBike 提醒系統 (Prototype)</h1>
+
+  <label>站點 ID: <input id="stationId" type="text" value="0001"></label><br>
+  <label>開始時間: <input id="startTime" type="time" value="07:00"></label><br>
+  <label>結束時間: <input id="endTime" type="time" value="08:00"></label><br>
+  <button id="startBtn">開始提醒</button>
+
+  <div id="status"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

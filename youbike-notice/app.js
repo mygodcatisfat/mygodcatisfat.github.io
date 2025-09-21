@@ -102,13 +102,29 @@ document.getElementById("radius").addEventListener("change", () => {
 // 提醒功能（通知 + 語音）
 document.getElementById("startBtn").addEventListener("click", () => {
   const stationId = document.getElementById("stationId").value;
-  const startTime = document.getElementById("startTime").value; // HH:MM
-  const endTime = document.getElementById("endTime").value;     // HH:MM
-  const intervalMin = parseInt(document.getElementById("interval").value, 10) || 5;
-
   if (!stationId) {
     alert("請先點擊地圖選擇站點！");
     return;
+  }
+  const startTime = document.getElementById("startTime").value; // HH:MM
+  const endTime = document.getElementById("endTime").value;     // HH:MM
+  const intervalMin = parseInt(document.getElementById("interval").value, 10) || 5;
+  
+  // 顯示遮罩
+  const overlay = document.getElementById("overlay");
+  overlay.style.display = "flex";
+  setTimeout(() => { overlay.style.display = "none"; }, 2000); // 2秒自動消失
+  
+  if (!stationId) {
+    alert("請先點擊地圖選擇站點！");
+    return;
+  }
+  
+  // 嘗試立即播一次語音，確保授權
+  if (window.speechSynthesis) {
+    const utterance = new SpeechSynthesisUtterance("提醒功能已啟動");
+    utterance.lang = "zh-TW";
+    window.speechSynthesis.speak(utterance);
   }
 
   setInterval(async () => {

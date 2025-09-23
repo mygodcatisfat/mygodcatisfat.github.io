@@ -689,9 +689,34 @@
             </div>
         `;
 
-        document.getElementById('exportSplit').addEventListener('click', async () => {
+        document.getElementById('exportSplit').onclick = async () => {
             try {
-                const pdfBytes = await file.arrayBuffer();
+                const fileToUse = fileInput.files[0];
+				if (!fileToUse) {
+					showMessage('找不到已載入的檔案，請重新匯入 PDF。');
+					return;
+				}
+
+				// 優先使用目前的 splitPoints（當使用者透過縮圖點選），若沒有再 fallback 到輸入欄位
+				let startPage, endPage;
+				if (Array.isArray(splitPoints) && splitPoints.length === 2) {
+					startPage = splitPoints[0] + 1;
+					endPage = splitPoints[1];
+				} else {
+					startPage = parseInt(splitStartPage.value, 10);
+					endPage = parseInt(splitEndPage.value, 10);
+				}
+
+				if (isNaN(startPage) || isNaN(endPage)) {
+					showMessage('請選擇或輸入有效的起始與結束頁碼。');
+					return;
+				}
+				if (startPage > endPage) {
+					showMessage('起始頁碼不能大於結束頁碼。');
+					return;
+				}
+			
+				const pdfBytes = await file.arrayBuffer();
                 const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
                 const newPdfDoc = await PDFLib.PDFDocument.create();
 
@@ -709,7 +734,7 @@
                 console.error('Error splitting PDF:', error);
                 showMessage('PDF 裁切時發生錯誤。');
             }
-        });
+        };
     });
 
     // ==================== 合成功能 ====================

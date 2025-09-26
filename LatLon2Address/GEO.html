@@ -46,7 +46,7 @@
     legend { font-weight:bold; }
     label { display:block; font-size:14px; margin-top:8px; color:#333; }
     input[type="text"], input[type="email"], input[type="file"], input[type="number"], input[type="color"] { width:100%; padding:6px; border-radius:6px; border:1px solid #ddd; box-sizing:border-box; }
-    button { margin-top:8px; padding:8px 10px; border-radius:6px; border:0; background:#2b7cff; color:#fff; cursor:pointer; }
+    button { /*margin-top:8px;*/ padding:8px 10px; border-radius:6px; border:0; background:#2b7cff; color:#fff; cursor:pointer; }
     #map { height: 100%; width: 100%; }
     #address { margin-top:10px; font-size:15px; color:#111; word-break:break-word; white-space:pre-line; }
     #address .title { font-size:20px; font-weight:bold; color:darkred; margin-top:6px; }
@@ -129,6 +129,27 @@
       justify-content: flex-start;
       gap: 8px;
     }
+
+	.play-batch-btn {
+	  width: 32px;
+	  height: 32px;
+	  min-width: 32px;
+	  min-height: 32px;
+	  border-radius: 50%;
+	  background: #0a0; /* 綠底 */
+	  color: #fff;
+	  font-size: 18px;
+	  font-weight: bold;
+	  border: none;
+	  display: flex;
+	  align-items: center;
+	  justify-content: center;
+	  cursor: pointer;
+	  transition: background 0.2s;
+	}
+	.play-batch-btn.active {
+	  background: #d4a017; /* 深黃色 */
+	}
 
 	/* 共用按鈕樣式 */
 	.title-row-top-btn-common {
@@ -242,7 +263,7 @@
 	  margin-top: -8px;
     }
 
-    /* 拖曳排序手把（4個灰點）*/
+    /* 拖曳排序手把*/
     .drag-handle {
       width: 22px;
       height: 18px;
@@ -268,6 +289,34 @@
       min-height: 40px;
       margin: 8px 0;
     }
+	
+    /* 地圖截圖相關樣式 */
+    .leaflet-container.crosshair-cursor {
+      cursor: crosshair !important;
+    }
+    .selection-box {
+      position: absolute;
+      background-color: rgba(100, 100, 100, 0.7); /* 70% 透明灰色 */
+      border: 1px dashed #fff;
+      pointer-events: none; /* 不影響地圖操作 */
+      z-index: 999;
+    }
+    .screenshot-controls {
+      position: absolute;
+      bottom: -35px; /* 在選取框外右下角 */
+      right: -10px;
+      display: flex;
+      gap: 6px;
+      z-index: 1000;
+      pointer-events: all; /* 讓按鈕可點擊 */
+    }
+    .screenshot-controls button {
+      margin-top: 0;
+      padding: 5px 8px;
+      font-size: 13px;
+    }
+    .screenshot-save { background: #0a0; }
+    .screenshot-cancel { background: #c00; }
   </style>
 </head>
 <body>
@@ -288,6 +337,24 @@
         autocomplete="email" />
       <div id="emailError" class="field-error"></div>
 
+	  <!-- 地圖截圖 -->
+      <fieldset id="screenshotArea">
+        <legend>地圖截圖</legend>
+        <div class="row" style="align-items: center; margin-bottom: 8px;">
+          <label style="margin-top:0; margin-right: 12px; font-weight: bold;">檔案類型：</label>
+          <label style="display:inline-flex; align-items:center; margin-top:0; margin-right: 8px; cursor: pointer;">
+            <input type="radio" name="screenshotType" value="png" checked style="width:auto; margin-right: 4px;"/> .png
+          </label>
+          <label style="display:inline-flex; align-items:center; margin-top:0; margin-right: 8px; cursor: pointer;">
+            <input type="radio" name="screenshotType" value="jpg" style="width:auto; margin-right: 4px;"/> .jpg
+          </label>
+          <label style="display:inline-flex; align-items:center; margin-top:0; cursor: pointer;">
+            <input type="radio" name="screenshotType" value="gif" style="width:auto; margin-right: 4px;"/> .gif
+          </label>
+          <button id="screenshotBtn" type="button" style="margin-left:auto; margin-top:0; background:#007bff;">開始截圖</button>
+        </div>
+      </fieldset>
+	  
       <!-- 批次(可複製多組) -->
       <fieldset id="batchArea">
         <legend>批次匯入查詢（可重複新增）</legend>
@@ -297,8 +364,9 @@
             <div class="color-mini" style="background:#0000ff;" title="點擊可選擇顏色"></div>
             <!-- 第一個子區塊不顯示拖曳手把，之後動態加入 -->
             <input type="text" class="batch-title" id="batchTitle_0" name="batchTitle_0" placeholder="批次標題（可留空）" />
-            <button class="delete-batch-btn hidden" tabindex="-1" aria-label="刪除本批次">X</button>
-          </div>
+            <button class="play-batch-btn hidden" tabindex="-1" aria-label="播放路徑">▸</button>
+			<button class="delete-batch-btn hidden" tabindex="-1" aria-label="刪除本批次">X</button>
+		  </div>
           <label class="import-label" for="batchFile">匯入檔案 (.txt 或 .csv)</label>
           <input id="batchFile" type="file" class="fileInput" accept=".txt,.csv" />
 		  <!-- 批次錯誤訊息：預設隱藏，出錯時以紅字顯示 -->
@@ -373,7 +441,7 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
   <script>
     
 	function updateScrollbarWidth() {
@@ -747,11 +815,94 @@
       const batchControls = container.querySelector('.batch-controls');
       const importLabel = container.querySelector('.import-label');
 	  const formatHint = container.querySelector('.batchFormatHint'); 
+	  const playBtn = container.querySelector('.play-batch-btn');
+	  
+	  let animMarker = null;
+	  let animating = false;
+	  let animTimer = null;
+	  let stepIndex = 0, progress = 0;
 
       let colorValue = colorMini.style.background || '#0000ff';
       let stopFlag = false, processing = false, stopped = false;
       let markersCluster = L.markerClusterGroup();
       let markersList = [], polyline = null, path = [];
+	  
+	  function getContrastColor(hex) {
+	    if (!hex || hex[0] !== '#') return '#000';
+	    const r = parseInt(hex.substr(1,2),16);
+	    const g = parseInt(hex.substr(3,2),16);
+	    const b = parseInt(hex.substr(5,2),16);
+	    const yiq = (r*299 + g*587 + b*114) / 1000;
+	    return yiq >= 128 ? '#000' : '#fff';
+	  }
+	  
+	  function createAnimMarker(latlng, text, color) {
+	    return L.marker(latlng, {
+		  icon: L.divIcon({
+		    className: '',
+		    html: `<div class="marker-label" style="background:${color}; width:28px; height:28px; font-size:12px;">${text}</div>`,
+		    iconSize: [28,28],
+		    iconAnchor: [14,14]
+		  })
+	    }).addTo(map);
+	  }
+
+	  function startAnimation() {
+	    if (!path || path.length < 2) return;
+	    if (animMarker) { map.removeLayer(animMarker); animMarker = null; }
+	    const contrast = getContrastColor(colorValue);
+	    animMarker = createAnimMarker(path[0], '', contrast);
+
+	    animating = true;
+	    stepIndex = 0;
+	    progress = 0;
+	    playBtn.textContent = '▪';
+	    playBtn.classList.add('active');
+
+	    animTimer = setInterval(() => {
+		  if (!animating) return;
+		  const p1 = path[stepIndex];
+		  const p2 = path[stepIndex+1];
+		  if (!p1 || !p2) { stopAnimation(); return; }
+		  progress += 0.08; // 調整速度
+		  if (progress >= 1) {
+		    stepIndex++;
+		    progress = 0;
+		    if (stepIndex >= path.length-1) {
+			  stopAnimation();
+			  return;
+		    }
+			
+			// 抵達點位 → 顯示序號
+		    const lat = p2[0], lon = p2[1];
+		    map.removeLayer(animMarker);
+		    animMarker = createAnimMarker([lat, lon], stepIndex+1, contrast);
+		    return;
+		  }
+		  const lat = p1[0] + (p2[0]-p1[0])*progress;
+		  const lon = p1[1] + (p2[1]-p1[1])*progress;
+		  animMarker.setLatLng([lat,lon]);
+		  if (animMarker._icon) {
+		    animMarker._icon.style.zIndex = 1000; // 強制在最上層
+		  }
+	    }, 30);
+	  }
+
+	  function stopAnimation() {
+	    animating = false;
+	    if (animTimer) clearInterval(animTimer);
+	    animTimer = null;
+	    if (animMarker) { map.removeLayer(animMarker); animMarker = null; }
+	    playBtn.textContent = '▸';
+	    playBtn.classList.remove('active');
+	  }
+
+	  if (playBtn) {
+		playBtn.addEventListener('click', () => {
+	  	  if (animating) stopAnimation();
+		  else startAnimation();
+		});
+	  }
 
       function updateMarkersPolylineColor(){
         markersList.forEach((m,i)=>{
@@ -1166,6 +1317,7 @@ function bindFileInput(fileInput) {
         status.classList.add('hidden');
         if (formatHint) formatHint.classList.add('hidden');
 		if (deleteBtn) deleteBtn.classList.remove('hidden');
+		if (playBtn) playBtn.classList.remove('hidden');
       }
     }
 
@@ -1180,6 +1332,10 @@ function bindFileInput(fileInput) {
       // 隱藏刪除鈕
       if (clone.querySelector('.delete-batch-btn')) {
         clone.querySelector('.delete-batch-btn').classList.add('hidden');
+      }
+	  // 隱藏執行跑路徑鈕
+      if (clone.querySelector('.play-batch-btn')) {
+        clone.querySelector('.play-batch-btn').classList.add('hidden');
       }
       // 匯入檔案區預設顯示
       clone.querySelector('.fileInput').classList.remove('hidden');
@@ -1229,6 +1385,209 @@ function bindFileInput(fileInput) {
     bindBatch(templateDiv);
     // 初始：第一個不顯示拖曳手把
     refreshDragHandles();
+	
+	// ========= 地圖截圖系統 =========
+    const screenshotBtn = document.getElementById('screenshotBtn');
+    const mapDiv = document.getElementById('map');
+    let isCapturing = false;
+    let startPoint = null;
+    let selectionBox = null;
+
+    // 負責切換「開始截圖」/「取消截圖」按鈕狀態
+    function toggleCaptureMode(active) {
+      isCapturing = active;
+      if (active) {
+        screenshotBtn.textContent = '取消截圖';
+        screenshotBtn.style.background = '#d4a017'; // 黃色
+        mapDiv.classList.add('crosshair-cursor');
+        L.DomUtil.disableTextSelection(); // 禁用文字選取
+        
+        // 【新增】禁用地圖拖曳
+        if (map) map.dragging.disable(); 
+
+      } else {
+        screenshotBtn.textContent = '開始截圖';
+        screenshotBtn.style.background = '#007bff'; // 藍色
+        mapDiv.classList.remove('crosshair-cursor');
+        L.DomUtil.enableTextSelection(); // 啟用文字選取
+        removeSelectionBox();
+        
+        // 【新增】啟用地圖拖曳
+        if (map) map.dragging.enable();
+      }
+    }
+
+    // 移除選取框與控制按鈕
+    function removeSelectionBox() {
+      if (selectionBox) {
+        selectionBox.remove();
+        selectionBox = null;
+        startPoint = null; // 重置起點
+      }
+    }
+
+    // 點擊「開始截圖」/「取消截圖」
+    screenshotBtn.addEventListener('click', () => {
+      if (isCapturing) {
+        toggleCaptureMode(false); // 取消截圖
+      } else {
+        toggleCaptureMode(true); // 開始截圖
+      }
+    });
+
+    // 處理滑鼠按下事件 (在地圖上開始框選)
+    mapDiv.addEventListener('mousedown', (e) => {
+      if (!isCapturing || selectionBox) return; // 截圖模式下且無選取框才動作
+      
+      startPoint = { x: e.clientX, y: e.clientY };
+
+      selectionBox = document.createElement('div');
+      selectionBox.className = 'selection-box';
+      mapDiv.appendChild(selectionBox);
+
+      // 開始監聽移動和鬆開
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+    });
+
+    // 處理滑鼠移動事件 (繪製選取框)
+    function onMouseMove(e) {
+      if (!selectionBox || !startPoint) return;
+
+      const currentX = e.clientX;
+      const currentY = e.clientY;
+      const mapRect = mapDiv.getBoundingClientRect();
+
+      // 限制在地圖範圍內
+      const x1 = Math.min(Math.max(startPoint.x, mapRect.left), mapRect.right);
+      const y1 = Math.min(Math.max(startPoint.y, mapRect.top), mapRect.bottom);
+      const x2 = Math.min(Math.max(currentX, mapRect.left), mapRect.right);
+      const y2 = Math.min(Math.max(currentY, mapRect.top), mapRect.bottom);
+
+      const left = Math.min(x1, x2);
+      const top = Math.min(y1, y2);
+      const width = Math.abs(x1 - x2);
+      const height = Math.abs(y1 - y2);
+
+      // 修正座標為相對於地圖容器 (mapDiv)
+      selectionBox.style.left = (left - mapRect.left) + 'px';
+      selectionBox.style.top = (top - mapRect.top) + 'px';
+      selectionBox.style.width = width + 'px';
+      selectionBox.style.height = height + 'px';
+    }
+
+    // 處理滑鼠鬆開事件 (完成框選並顯示控制按鈕)
+    function onMouseUp(e) {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+
+      if (!selectionBox || !startPoint) {
+        removeSelectionBox();
+        return;
+      }
+      
+      // 確保選取框有最小尺寸，避免誤觸
+      if (parseInt(selectionBox.style.width) < 10 || parseInt(selectionBox.style.height) < 10) {
+        removeSelectionBox();
+        return;
+      }
+      
+      // 加入控制按鈕
+      const controls = document.createElement('div');
+      controls.className = 'screenshot-controls';
+      controls.innerHTML = `
+        <button class="screenshot-save" type="button">儲存</button>
+        <button class="screenshot-cancel" type="button">取消</button>
+      `;
+      selectionBox.appendChild(controls);
+
+      // 游標恢復箭頭 (因為已完成框選，避免再次框選)
+      mapDiv.classList.remove('crosshair-cursor'); 
+      // isCapturing 保持 true，直到儲存/取消截圖/取消框選
+
+      // 儲存按鈕事件
+      controls.querySelector('.screenshot-save').addEventListener('click', () => {
+        const type = document.querySelector('input[name="screenshotType"]:checked').value;
+        captureAndDownload(selectionBox, type);
+        removeSelectionBox();
+        mapDiv.classList.add('crosshair-cursor'); // 恢復十字游標，可重新框選
+        // 【確認】此時 map.dragging 仍為 disable 狀態，符合要求。
+      });
+
+      // 取消按鈕事件
+      controls.querySelector('.screenshot-cancel').addEventListener('click', () => {
+        removeSelectionBox();
+        mapDiv.classList.add('crosshair-cursor'); // 恢復十字游標，可重新框選
+        // 【確認】此時 map.dragging 仍為 disable 狀態，符合要求。
+      });
+    }
+	
+    // 執行截圖並下載
+    async function captureAndDownload(selectionBox, type) {
+        const mapRect = mapDiv.getBoundingClientRect();
+        const boxRect = selectionBox.getBoundingClientRect();
+
+        // 計算截圖範圍相對地圖的座標和尺寸
+        const x = boxRect.left - mapRect.left;
+        const y = boxRect.top - mapRect.top;
+        const width = boxRect.width;
+        const height = boxRect.height;
+        
+		// 【新增】在截圖前暫時隱藏選取框，確保截圖內容沒有灰色圖層及虛線邊線
+        selectionBox.style.display = 'none'; 
+		
+        try {
+            // 使用 html2canvas 截圖
+            const canvas = await html2canvas(mapDiv, {
+                allowTaint: true,
+                useCORS: true,
+                x: x,
+                y: y,
+                width: width,
+                height: height,
+                scale: 2 // 提高解析度
+            });
+			
+			// 【新增】截圖完成後恢復選取框顯示 (雖然接下來就會被 removeSelectionBox 移除)
+            selectionBox.style.display = ''; 
+
+            const now = new Date();
+            const dateStr = [
+                now.getFullYear(),
+                String(now.getMonth() + 1).padStart(2, '0'),
+                String(now.getDate()).padStart(2, '0'),
+                String(now.getHours()).padStart(2, '0'),
+                String(now.getMinutes()).padStart(2, '0'),
+                String(now.getSeconds()).padStart(2, '0')
+            ].join('');
+            const filename = `GEO-${dateStr}.${type}`;
+            
+            // 處理下載
+            let mimeType = `image/${type === 'jpg' ? 'jpeg' : type}`;
+            if (type === 'gif') {
+                alert('GIF 格式需要更複雜的處理，目前將下載為 PNG。');
+                mimeType = 'image/png';
+            }
+            const dataURL = canvas.toDataURL(mimeType, 1.0); // 1.0 品質
+
+            const a = document.createElement('a');
+            a.href = dataURL;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+        } catch (error) {
+            console.error('截圖失敗:', error);
+            alert('截圖失敗，請檢查瀏覽器設定或網路連線。');
+        } finally {
+            // 確保無論成功或失敗，選取框都要在 finally 中恢復
+            selectionBox.style.display = ''; 
+		}
+    }
+    	
+	
+	
   </script>
 </body>
 </html>

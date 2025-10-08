@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PDF 編輯工具</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!--script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.4.296/pdf.min.js"></script-->
-	<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.296/build/pdf.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
     <style>
         body {
@@ -318,10 +317,7 @@
 
 <script>
     // 設定 PDF.js worker 的路徑
-	//const pdfjsLib = window["pdfjs-dist/build/pdf"];
-	window.pdfjsLib = window.pdfjsLib || window['pdfjs-dist/build/pdf'];
-	pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.296/build/pdf.worker.min.js";
-    //pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.4.296/pdf.worker.min.js'; //2.16.105
+	pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
 
     // 取得 HTML 元素
     const fileInput = document.getElementById('fileInput');

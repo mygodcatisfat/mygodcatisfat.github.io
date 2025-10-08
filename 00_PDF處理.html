@@ -319,6 +319,7 @@
 <script>
     // 設定 PDF.js worker 的路徑
 	//const pdfjsLib = window["pdfjs-dist/build/pdf"];
+	window.pdfjsLib = window.pdfjsLib || window['pdfjs-dist/build/pdf'];
 	pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.296/build/pdf.worker.min.js";
     //pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.4.296/pdf.worker.min.js'; //2.16.105
 
@@ -1216,6 +1217,7 @@
 
 </body>
 </html>
+
 
 
 

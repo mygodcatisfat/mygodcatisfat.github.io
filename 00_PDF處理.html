@@ -237,6 +237,13 @@
                         <option value="right">右</option>
                     </select>
                 </div>
+				<div class="flex items-center space-x-4">
+					<label class="font-medium text-gray-700">頁碼呈現類型：</label>
+					<select id="pageNumberType" class="p-2 border rounded-md focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition">
+						<option value="same">同側</option>
+						<option value="alternate">交叉</option>
+					</select>
+				</div>
             </div>
             <div class="flex justify-end mt-8">
                 <button id="pageNumberNext" class="bg-blue-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-blue-600 transition disabled:bg-blue-300 disabled:cursor-not-allowed" disabled>下一步</button>
@@ -343,6 +350,7 @@
     const pageNumberStart = document.getElementById('pageNumberStart');
     const pageNumberFromPage = document.getElementById('pageNumberFromPage');
     const pageNumberPosition = document.getElementById('pageNumberPosition');
+	const pageNumberType = document.getElementById('pageNumberType'); 
     const pageNumberNextBtn = document.getElementById('pageNumberNext');
 
     const rotateThumbnails = document.getElementById('rotateThumbnails');
@@ -401,9 +409,10 @@
         pageNumber: {
             title: '編頁碼功能說明',
             content: `
-                <p>請匯入 PDF 檔案，然後設定編碼的**起始數字**、**起始頁碼**及**頁碼位置**。</p>
-                <p>頁碼將會從您指定的頁碼開始依序編寫，並在頁面左右<strong class="text-green-500">交替出現</strong>。</p>
-                <p>例如：若起始位置設定為「左」，則第一組頁碼會出現在左下角，第二組會出現在右下角，依此類推。</p>
+                <p>請匯入 PDF 檔案，然後設定編碼的**起始數字**、**起始頁碼**、**頁碼位置**及**頁碼呈現類型**。</p>
+                <p>頁碼位置預設為<strong class="text-green-500">「同側」</strong>：不論頁碼編到哪一頁，都會固定在您選擇的起始位置。</p>
+                <p>若選擇<strong class="text-blue-500">「交叉」</strong>：頁碼會從您指定的頁碼開始依序編寫，並在頁面左右<strong class="text-red-500">交替出現</strong>。</p>
+                <p>例如：若起始位置設定為「左」，呈現類型為「交叉」，則第一組頁碼會出現在左下角，第二組會出現在右下角，依此類推。</p>
             `
         },
         rotate: {
@@ -957,6 +966,7 @@
         const startNumber = parseInt(pageNumberStart.value) || 1;
         const fromPage = parseInt(pageNumberFromPage.value);
         const position = pageNumberPosition.value;
+		const type = pageNumberType.value; 
         const filename = document.getElementById('pageNumberFilename').value;
 
         if (isNaN(fromPage) || fromPage < 1 || fromPage > loadedPDF.numPages) {
@@ -981,13 +991,22 @@
                 const margin = 30;
 
                 let xPosition;
-                if (position === 'left') {
-                    // Start on left, then alternate
-                    xPosition = (pageNum % 2 !== 0) ? margin : width - textWidth - margin;
-                } else {
-                    // Start on right, then alternate
-                    xPosition = (pageNum % 2 !== 0) ? width - textWidth - margin : margin;
-                }
+				
+				if (type === 'same') {
+					// 「同側」：固定在起始位置
+					xPosition = (position === 'left') ? margin : width - textWidth - margin;
+				} else {
+					// 「交叉」：交替出現 (奇數頁/偶數頁決定)
+					const isOddPage = (pageNum % 2 !== 0);
+					
+					if (position === 'left') {
+						// Start on left, then alternate (Odd=Left, Even=Right)
+						xPosition = isOddPage ? margin : width - textWidth - margin;
+					} else {
+						// Start on right, then alternate (Odd=Right, Even=Left)
+						xPosition = isOddPage ? width - textWidth - margin : margin;
+					}
+				}
 
                 page.drawText(text, {
                     x: xPosition,
@@ -1210,14 +1229,5 @@
         return `${yyyy}${mm}${dd}${hh}${min}${ss}`;
     }
 </script>
-
 </body>
 </html>
-
-
-
-
-
-
-
-

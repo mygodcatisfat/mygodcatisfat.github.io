@@ -6,7 +6,7 @@
     default-src 'self';
     script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://html2canvas.hertzen.com;
     style-src 'self' 'unsafe-inline' https://unpkg.com;
-    img-src 'self' data: https://*.tile.openstreetmap.org;
+    img-src 'self' data: https://*.tile.openstreetmap.org https://unpkg.com;
     connect-src 'self' https://nominatim.openstreetmap.org https://unpkg.com https://cdnjs.cloudflare.com https://html2canvas.hertzen.com;
     object-src 'none';
     base-uri 'self';
@@ -59,10 +59,11 @@
 	}
     h1 { font-size:20px; font-weight:bold; margin-bottom:12px; white-space:nowrap; }
     fieldset { border:1px solid #ccc; margin-bottom:12px; padding:10px; border-radius:8px; }
+	#batchArea { position: relative; }
     legend { font-weight:bold; }
-    label { display:block; font-size:14px; margin-top:8px; color:#333; }
+    label { display:block; font-size:14px; color:#333; }
     input[type="text"], input[type="email"], input[type="file"], input[type="number"], input[type="color"] { width:100%; padding:6px; border-radius:6px; border:1px solid #ddd; box-sizing:border-box; }
-    button { /*margin-top:8px;*/ padding:8px 10px; border-radius:6px; border:0; background:#2b7cff; color:#fff; cursor:pointer; }
+    button { margin-top:4px; padding:8px 10px; border-radius:6px; border:0; background:#2b7cff; color:#fff; cursor:pointer; }
     #map { height: 100%; width: 100%; }
     #address { margin-top:10px; font-size:15px; color:#111; word-break:break-word; white-space:pre-line; }
     #address .title { font-size:20px; font-weight:bold; color:darkred; margin-top:6px; }
@@ -499,10 +500,17 @@
 	  </div>
       <div id="emailError" class="field-error"></div>
 
+	  <!-- 匯入JSON -->
+	  <fieldset id="importJsonArea">
+	    <legend>匯入JSON</legend>
+	    <label for="importJsonFile">匯入設定檔 (.json)</label>
+	    <input id="importJsonFile" type="file" accept=".json" />
+	  </fieldset>
+
 	  <!-- 地圖截圖 -->
       <fieldset id="screenshotArea">
         <legend>地圖截圖</legend>
-        <div class="row" style="align-items: center; margin-bottom: 8px;">
+        <div class="row" style="align-items: center;">
           <label style="margin-top:0; margin-right: 12px; font-weight: bold;">檔案類型：</label>
           <label style="display:inline-flex; align-items:center; margin-top:0; margin-right: 8px; cursor: pointer;">
             <input type="radio" name="screenshotType" value="png" checked style="width:auto; margin-right: 4px;"/> .png
@@ -543,10 +551,11 @@
           <!-- 清單最下方扁按鈕（初始隱藏，載入清單後顯示） -->
           <button class="list-toggle-btn hidden" type="button">▲</button>
         </div>
+		<button id="exportJsonBtn" type="button" class="hidden" style="position: absolute; bottom: 12px; right: 12px; background: #007bff; z-index: 10;">點位資料匯出JSON</button>
       </fieldset>
 
       <!-- 單點查詢 -->
-      <fieldset>
+      <fieldset style="height: 175px;">
         <legend>單點地址查詢</legend>
         <form id="geoForm" novalidate aria-label="單點地址查詢表單">
 		  <label for="lat">緯度 (Latitude)</label>
@@ -657,8 +666,7 @@
 	  </div>
 	</div>  
 
-  <!-- Leaflet + MarkerCluster + PapaParse -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
 		integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
         crossorigin=""></script>
   <script src="https://unpkg.com/leaflet.markercluster/dist/leaflet.markercluster.js"
@@ -676,1571 +684,1780 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
 		integrity="sha256-mMzxeqEMILsTAXYmGPzJtqs6Tn8mtgcdZNC0EVTfOHU=" 
 		crossorigin=""></script>
+
   <script>
-	function updateScrollbarWidth() {
-	  const scrollDiv = document.createElement('div');
-	  scrollDiv.style.width = '100px';
-	  scrollDiv.style.height = '100px';
-	  scrollDiv.style.overflowY = 'scroll';
-	  scrollDiv.style.position = 'absolute';
-	  scrollDiv.style.top = '-9999px';
-	  document.body.appendChild(scrollDiv);
+	(function() {
+	  function updateScrollbarWidth() {
+		const scrollDiv = document.createElement('div');
+		scrollDiv.style.width = '100px';
+		scrollDiv.style.height = '100px';
+		scrollDiv.style.overflowY = 'scroll';
+		scrollDiv.style.position = 'absolute';
+		scrollDiv.style.top = '-9999px';
+		document.body.appendChild(scrollDiv);
 
-	  const scrollbarWidth = scrollDiv.offsetWidth - scrollDiv.clientWidth;
-	  document.body.removeChild(scrollDiv);
-	  document.documentElement.style.setProperty('--scrollbar-width', `${scrollbarWidth}px`);
-	}
-
-	// 頁面載入時執行一次
-	updateScrollbarWidth();
-
-	// 如果視窗大小改變（可能影響滾輪寬度），重新計算
-	window.addEventListener('resize', updateScrollbarWidth);
-
-    (function(){
-      const resizeHandle = document.getElementById('resizeHandle');
-      const container = document.querySelector('.container');
-      let dragging = false;
-      resizeHandle.addEventListener('mousedown', function(e){
-        dragging = true;
-        document.body.style.cursor = 'ew-resize';
-        e.preventDefault();
-      });
-      document.addEventListener('mousemove', function(e){
-        if (!dragging) return;
-        let min = 320;
-        let max = Math.max(window.innerWidth * 0.8, 600);
-        let x = e.clientX;
-        if (x < min) x = min;
-        if (x > max) x = max;
-        container.style.gridTemplateColumns = `${x}px 1fr`;
-      });
-      document.addEventListener('mouseup', function(){
-        if (dragging) {
-          dragging = false;
-          document.body.style.cursor = '';
-        }
-      });
-    })();
-
-    // 功能說明遮罩開關
-    (function(){
-      const helpBtn = document.getElementById('helpBtn');
-      const overlay = document.getElementById('helpOverlay');
-      const closeBtn = document.getElementById('helpCloseBtn');
-      function openOverlay(){ overlay.style.display = 'flex'; }
-      function closeOverlay(){ overlay.style.display = 'none'; }
-      helpBtn.addEventListener('click', openOverlay);
-      closeBtn.addEventListener('click', closeOverlay);
-      overlay.addEventListener('click', (e)=>{ if(e.target === overlay) closeOverlay(); });
-      document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeOverlay(); });
-    })();
-
-    // 基本地圖與全域變數
-    const map = L.map('map', { preferCanvas: true }).setView([23.5, 121], 7);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19, attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
-
-    // 已被用過的顏色（避免重複）
-    let usedColors = new Set(['#0000ff','#ff0000','#00aa00']);
-
-    // 檢查經緯度
-	function isValidCoord(lat, lon){
-	  if (typeof lat !== 'number' || typeof lon !== 'number') return false;
-	  if (!isFinite(lat) || !isFinite(lon)) return false;
-	  return /^-?\d+(\.\d+)?$/.test(String(lat)) &&
-			 /^-?\d+(\.\d+)?$/.test(String(lon)) &&
-			 lat >= -90 && lat <= 90 &&
-			 lon >= -180 && lon <= 180;
-	}
-
-	function isValidEmail(email) {
-	  if (typeof email !== 'string') return false;
-	  // RFC 5322 簡化版
-	  const re = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z]{2,})+$/;
-	  return re.test(email.trim());
-	}
-
-    const emailInput = document.getElementById('email');
-    const emailError = document.getElementById('emailError');
-
-    function showEmailError() {
-      const val = emailInput.value.trim();
-      if (val !== '' && !isValidEmail(val)) {
-        emailInput.classList.add('input-invalid');
-        emailError.textContent = '格式錯誤';
-        return true;
-      } else {
-        emailInput.classList.remove('input-invalid');
-        emailError.textContent = '';
-        return false;
-      }
-    }
-    emailInput.addEventListener('blur', showEmailError);
-    emailInput.addEventListener('input', showEmailError);
-
-    function buildExportLine(r){
-      const idxStr = String(r.idx).padStart(3,'0');
-      let hn = r.house_number || '';
-      if (hn && !hn.includes('號')) hn = hn + '號';
-      let tail = '';
-      if ((r.village && r.village.trim()!=='') || (r.office && r.office.trim()!=='')) {
-        tail = '-' + (r.village || '') + (r.office || '');
-      }
-      const addrPart = (r.postcode||'') + (r.country||'') + (r.city||'') + (r.suburb||'') + (r.neighbourhood||'') + (r.road||'') + (hn||'') + tail;
-      return `${idxStr}\t${r.lat}, ${r.lon}\t${addrPart}`;
-    }
-
-    function niceAddressFromR(r){
-      return buildExportLine(r).split('\t')[2] || '';
-    }
-
-    // API 查詢快取
-    let addressCache = {};
-	try {
-	  const savedCache = localStorage.getItem('addressCache');
-	  if (savedCache) {
-		addressCache = JSON.parse(savedCache);
+		const scrollbarWidth = scrollDiv.offsetWidth - scrollDiv.clientWidth;
+		document.body.removeChild(scrollDiv);
+		document.documentElement.style.setProperty('--scrollbar-width', `${scrollbarWidth}px`);
 	  }
-	} catch (e) {
-	  console.warn('讀取快取失敗', e);
-	  addressCache = {};
-	}
 
-    async function fetchAddress(lat, lon, email) {
-      const key = `${lat},${lon}`;
-      if (addressCache[key]) {
-        return addressCache[key];
-      }
-      const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`;
-      const resp = await fetch(url, {
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': `${navigator.userAgent} (${email})`
-        }
-      });
-      const data = await resp.json();
-      addressCache[key] = data;
-	  try {
-  	    localStorage.setItem('addressCache', JSON.stringify(addressCache));
-	  } catch (e) {
-		console.warn('儲存快取失敗', e);
-	  }
-	  return data;
-    }
-	
-    // 單筆查詢
-    const geoForm = document.getElementById('geoForm');
-    const niceAddrDiv = document.getElementById('niceAddr');
-    const rawAddrDiv = document.getElementById('rawAddr');
-    const rawPre = document.getElementById('raw');
-    const errorDiv = document.getElementById('error');
-    const addressBlock = document.getElementById('address');
-    let singleMarker = null;
-    addressBlock.classList.add('hidden');
-	
-	['lat', 'lon'].forEach(id => {
-	  const input = document.getElementById(id);
-	  let isComposing = false; // 是否正在組字
-	  let lastValid = input.value;
+	  window.addEventListener('load', updateScrollbarWidth);
+	  window.addEventListener('resize', updateScrollbarWidth);
 
-	  input.addEventListener('compositionstart', () => {
-		isComposing = true;
-	  });
-
-	  input.addEventListener('compositionend', () => {
-		isComposing = false;
-		filterAndClamp(); // 組字結束後再做過濾與範圍檢查
-	  });
-
-	  input.addEventListener('input', () => {
-		if (isComposing) return; // 組字中不處理
-		filterAndClamp();
-	  });
-
-	  function filterAndClamp() {
-		let val = input.value;
-		val = val.replace(/[^0-9.\-]/g, '');
-		const parts = val.split('.');
-		if (parts.length > 2) {
-		  val = parts[0] + '.' + parts.slice(1).join('');
-		}
-		val = val.replace(/(?!^)-/g, '');
-
-		if (val !== '' && !isNaN(val)) {
-		  const num = parseFloat(val);
-		  if (id === 'lat' && (num < -90 || num > 90)) {
-			val = Math.max(-90, Math.min(90, num)).toString();
+	  (function(){
+		const resizeHandle = document.getElementById('resizeHandle');
+		const container = document.querySelector('.container');
+		let dragging = false;
+		resizeHandle.addEventListener('mousedown', function(e){
+		  dragging = true;
+		  document.body.style.cursor = 'ew-resize';
+		  e.preventDefault();
+		});
+		document.addEventListener('mousemove', function(e){
+		  if (!dragging) return;
+		  let min = 320;
+		  let max = Math.max(window.innerWidth * 0.8, 600);
+		  let x = e.clientX;
+		  if (x < min) x = min;
+		  if (x > max) x = max;
+		  container.style.gridTemplateColumns = `${x}px 1fr`;
+		});
+		document.addEventListener('mouseup', function(){
+		  if (dragging) {
+			dragging = false;
+			document.body.style.cursor = '';
 		  }
-		  if (id === 'lon' && (num < -180 || num > 180)) {
-			val = Math.max(-180, Math.min(180, num)).toString();
-		  }
-		  lastValid = val;
+		});
+	  })();
+
+	  (function(){
+		const helpBtn = document.getElementById('helpBtn');
+		const overlay = document.getElementById('helpOverlay');
+		const closeBtn = document.getElementById('helpCloseBtn');
+		function openOverlay(){ overlay.style.display = 'flex'; }
+		function closeOverlay(){ overlay.style.display = 'none'; }
+		helpBtn.addEventListener('click', openOverlay);
+		closeBtn.addEventListener('click', closeOverlay);
+		overlay.addEventListener('click', (e)=>{ if(e.target === overlay) closeOverlay(); });
+		document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeOverlay(); });
+	  })();
+
+	  const map = L.map('map', { preferCanvas: true }).setView([23.5, 121], 7);
+	  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19, attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
+
+	  async function flashMarker(markerIndex, markersList, colorValue) {
+		const marker = markersList[markerIndex];
+		if (!marker) return;
+		
+		if (marker.bringToFront) {
+			marker.bringToFront();
 		}
-		input.value = val;
+		
+		if (!marker._icon) return;
+
+		const label = marker._icon.querySelector('.marker-label');
+		if (!label) return;
+
+		const originalColor = colorValue || '#0000ff';
+		const originalColorHex = rgbToHex(originalColor);
+		const flashColor = getContrastColor(originalColorHex);
+		const duration = 150;
+
+		const sleep = ms => new Promise(res => setTimeout(res, ms));
+
+		for (let i = 0; i < 3; i++) {
+			label.style.background = flashColor;
+			await sleep(duration);
+			label.style.background = originalColor;
+			await sleep(duration);
+		}
 	  }
-	});
-
-    geoForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      errorDiv.textContent = '';
-      niceAddrDiv.textContent = '查詢中…';
-      rawAddrDiv.textContent = '';
-      rawPre.textContent = '';
-      addressBlock.classList.add('hidden');
-
-      const lat = parseFloat(document.getElementById('lat').value.trim());
-      const lon = parseFloat(document.getElementById('lon').value.trim());
-      const email = emailInput.value.trim();
-      if (!isValidCoord(lat, lon)) { errorDiv.textContent = '經緯度錯誤'; niceAddrDiv.textContent=''; return; }
-      if (!email) { errorDiv.textContent = '請輸入 Email'; niceAddrDiv.textContent=''; return; }
-      if (showEmailError()) { errorDiv.textContent = 'Email 格式不正確'; niceAddrDiv.textContent=''; return; }
-      localStorage.setItem('geoEmail', email);
-
-      try {
-        const data = await fetchAddress(lat, lon, email);
-        if (!data || !data.display_name) throw '無結果';
-        const addr = data.address || {};
-        const r = { idx: 1, lat: lat, lon: lon, ...addr };
-        niceAddrDiv.textContent = niceAddressFromR(r);
-        rawAddrDiv.textContent = data.display_name;
-        rawPre.textContent = JSON.stringify(data, null, 2);
-
-        addressBlock.classList.remove('hidden');
-
-        const ll = [parseFloat(data.lat), parseFloat(data.lon)];
-        map.setView(ll, 14);
-        if (singleMarker) {
-          singleMarker.setLatLng(ll).setPopupContent(niceAddressFromR(r));
-        }
-        else singleMarker = L.marker(ll).addTo(map).bindPopup(createSafePopupContent(niceAddressFromR(r)));
-        singleMarker.openPopup();
-      } catch (err) {
-        errorDiv.textContent = '錯誤：' + (err.message || err);
-      }
-    });
-
-    if (localStorage.getItem('geoEmail')) emailInput.value = localStorage.getItem('geoEmail');
-
-    let batchArea = document.getElementById('batchArea');
-    let templateDiv = batchArea.querySelector('.batch-container');
-    let batchUID = 0;
-
-    // 跨子區塊僅允許一個選項變色
-    function clearAllActives() {
-      document.querySelectorAll('.batch-list .active').forEach(el => el.classList.remove('active'));
-    }
-
-    // 拖曳排序
-    let draggingInfo = null;
-    function enableDrag(container) {
-      let handle = container.querySelector('.drag-handle');
-      if (!handle) {
-        const row = container.querySelector('.batch-title-row');
-        const titleInput = row.querySelector('.batch-title');
-        const h = document.createElement('div');
-        h.className = 'drag-handle';
-        row.insertBefore(h, titleInput);
-        handle = h;
-      }
-      handle.onmousedown = function(e) {
-        e.preventDefault();
-        const rect = container.getBoundingClientRect();
-        const placeholder = document.createElement('div');
-        placeholder.className = 'drag-placeholder';
-        placeholder.style.height = rect.height + 'px';
-        draggingInfo = {
-          container,
-          placeholder,
-          startY: e.clientY,
-          offsetY: e.clientY - rect.top
-        };
-        container.parentNode.insertBefore(placeholder, container.nextSibling);
-        container.style.width = rect.width + 'px';
-        container.style.position = 'absolute';
-        container.style.left = rect.left + 'px';
-        container.style.top = rect.top + 'px';
-        container.style.zIndex = 1000;
-        container.style.pointerEvents = 'none';
-        document.addEventListener('mousemove', onDragMove);
-        document.addEventListener('mouseup', onDragEnd);
-      };
-    }
-    function onDragMove(e) {
-      if (!draggingInfo) return;
-      const { container } = draggingInfo;
-      container.style.top = (e.clientY - draggingInfo.offsetY) + 'px';
-
-      // 找到目前滑過的 batch-container，決定插入位置
-      const siblings = Array.from(batchArea.querySelectorAll('.batch-container')).filter(c => c !== container);
-      let target = null;
-      for (const sib of siblings) {
-        const r = sib.getBoundingClientRect();
-        const mid = r.top + r.height / 2;
-        if (e.clientY < mid) { target = sib; break; }
-      }
-      if (target) {
-        batchArea.insertBefore(draggingInfo.placeholder, target);
-      } else {
-        batchArea.appendChild(draggingInfo.placeholder);
-      }
-    }
-    function onDragEnd() {
-      if (!draggingInfo) return;
-      const { container, placeholder } = draggingInfo;
-      container.style.position = '';
-      container.style.left = '';
-      container.style.top = '';
-      container.style.width = '';
-      container.style.zIndex = '';
-      container.style.pointerEvents = '';
-      batchArea.insertBefore(container, placeholder);
-      placeholder.remove();
-      draggingInfo = null;
-      document.removeEventListener('mousemove', onDragMove);
-      document.removeEventListener('mouseup', onDragEnd);
-      refreshDragHandles();
-    }
-    function refreshDragHandles() {
-      const containers = Array.from(batchArea.querySelectorAll('.batch-container'));
-      containers.forEach((c, idx) => {
-        let handle = c.querySelector('.drag-handle');
-        if (idx === 0) {
-          if (handle) handle.classList.add('hidden');
-        } else {
-          if (!handle) enableDrag(c);
-          handle = c.querySelector('.drag-handle');
-          if (handle) handle.classList.remove('hidden');
-        }
-      });
-    }
-
-    /**
-     * 通用的檔案解析函式，可自動判斷 Excel 或 CSV/TXT
-     * @param {File} file - 使用者選擇的檔案
-     * @param {string} encoding - 對於 CSV/TXT 的文字編碼
-     * @param {boolean} isPreview - 是否為預覽模式 (只讀取前 15 筆)
-     * @param {function} onComplete - 成功時的回呼函式
-     * @param {function} onError - 失敗時的回呼函式
-     */
-    function parseDataFromFile(file, encoding, isPreview, onComplete, onError) {
-        const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
-
-        if (isExcel) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false, dateNF: 'yyyy-mm-dd' });
-                    const finalData = isPreview ? jsonData.slice(0, 15) : jsonData;
-                    onComplete({ data: finalData });
-                } catch (err) {
-                    onError(err);
-                }
-            };
-            reader.onerror = function(err) {
-                onError(err);
-            };
-            reader.readAsArrayBuffer(file);
-        } else {
-            Papa.parse(file, {
-                preview: isPreview ? 15 : 0, // 0 表示解析整個檔案
-                skipEmptyLines: true,
-                encoding: encoding,
-                complete: onComplete,
-                error: onError
-            });
-        }
-    }
-
-    // 說明：將錯誤處理函式移到全域，並接收 container 作為參數
-    // 這樣可以確保函式操作的對象永遠是正確的子區塊
-    function showBatchError(container, msg) {
-        const batchErrorDiv = container.querySelector('.batchError');
-        if (batchErrorDiv) {
-            batchErrorDiv.textContent = msg;
-            batchErrorDiv.classList.remove('hidden');
-        } else {
-            alert(msg);
-        }
-    }
-
-    function clearBatchError(container) {
-        const batchErrorDiv = container.querySelector('.batchError');
-        if (batchErrorDiv) {
-            batchErrorDiv.classList.add('hidden');
-            batchErrorDiv.innerHTML = '';
-        }
-    }
-    
-    function appendBatchError(container, msg) {
-        const batchErrorDiv = container.querySelector('.batchError');
-		if (batchErrorDiv) {
-			const errorLine = document.createElement('div');
-			errorLine.textContent = msg;
-			batchErrorDiv.appendChild(errorLine);
-			batchErrorDiv.classList.remove('hidden');
-		}
-	}
-
-    function bindBatch(container) {
-      let columnMapping = {}; 
-	  let fileInput = container.querySelector('.fileInput');
-      const stopBtn = container.querySelector('.stopBtn');
-      const progressBar = container.querySelector('.progressBar');
-      const status = container.querySelector('.batchStatus');
-      const listDiv = container.querySelector('.batch-list');
-      const listToggleBtn = container.querySelector('.list-toggle-btn'); 
-      const batchTitleInput = container.querySelector('.batch-title');
-      const deleteBtn = container.querySelector('.delete-batch-btn');
-      const colorMini = container.querySelector('.color-mini');
-      const visibleCheckbox = container.querySelector('.batch-visible-checkbox');
-      const batchControls = container.querySelector('.batch-controls');
-      const importLabel = container.querySelector('.import-label');
-	  const formatHint = container.querySelector('.batchFormatHint'); 
-	  const playBtn = container.querySelector('.play-batch-btn');
 	  
-	  let animMarker = null;
-	  let animating = false;
-	  let animTimer = null;
-	  let stepIndex = 0, progress = 0;
-	  
-      let isPaused = false;
-      let currentIndex = 0;
-      let currentCoords = [];
-      let currentEmail = '';
-      let batchResults = [];
-	  let validCoordsCount = 0;
-
-      let colorValue = colorMini.style.background || '#0000ff';
-      let stopFlag = false;
-      let markersCluster = L.markerClusterGroup({ maxClusterRadius: 5 });
-      let markersList = [], polyline = null, path = [];
-
-      // --- 新增 Marker 閃爍函式 ---
-      async function flashMarker(markerIndex) {
-        const marker = markersList[markerIndex];
-        // 確保 marker 和它的圖示已存在於地圖上
-        if (!marker || !marker._icon) return;
-
-        const label = marker._icon.querySelector('.marker-label');
-        if (!label) return;
-        
-        const originalColor = colorValue; // 從外部作用域取得原始顏色
-        const flashColor = '#ff0000';   // 紅色
-        const duration = 150;           // 每次閃爍的間隔 (毫秒)
-
-        // 建立一個延遲函式
-        const sleep = ms => new Promise(res => setTimeout(res, ms));
-
-        // 迴圈執行3次閃爍
-        for (let i = 0; i < 3; i++) {
-            label.style.background = flashColor;
-            await sleep(duration);
-            label.style.background = originalColor;
-            await sleep(duration);
-        }
-      }
+	  function rgbToHex(rgb) {
+		if (!rgb) return '#0000ff';
+		if (rgb[0]==='#') return rgb;
+		const m = rgb.match(/^rgb\((\d+), ?(\d+), ?(\d+)\)$/);
+		if (!m) return '#0000ff';
+		return '#' + [1,2,3].map(i=>parseInt(m[i]).toString(16).padStart(2,'0')).join('');
+	  }
 	  
 	  function getContrastColor(hex) {
-	    if (!hex || hex[0] !== '#') return '#000';
-	    const r = parseInt(hex.substr(1,2),16);
-	    const g = parseInt(hex.substr(3,2),16);
-	    const b = parseInt(hex.substr(5,2),16);
-	    const yiq = (r*299 + g*587 + b*114) / 1000;
-	    return yiq >= 128 ? '#000' : '#fff';
+		if (!hex || hex[0] !== '#') {
+		return '#FF0000'; 
+		}
+		
+		try {
+		  const r = parseInt(hex.substr(1,2),16);
+		  const g = parseInt(hex.substr(3,2),16);
+		  const b = parseInt(hex.substr(5,2),16);
+		  
+		  const r_comp = 255 - r;
+		  const g_comp = 255 - g;
+		  const b_comp = 255 - b;
+		  
+		  const toHex = (c) => c.toString(16).padStart(2, '0');
+		  return `#${toHex(r_comp)}${toHex(g_comp)}${toHex(b_comp)}`;
+		} catch (e) {
+		  console.error("計算互補色失敗:", e);
+		  return '#FF0000';
+		}
 	  }
-	  
-	  function createAnimMarker(latlng, text, color) {
-	    return L.marker(latlng, {
-		  icon: L.divIcon({
-		    className: '',
-		    html: `<div class="marker-label" style="background:${color}; width:28px; height:28px; font-size:12px;">${text}</div>`,
-		    iconSize: [28,28],
-		    iconAnchor: [14,14]
-		  })
-	    }).addTo(map);
+
+	  let usedColors = new Set(['#0000ff','#ff0000','#00aa00']);
+
+	  function isValidCoord(lat, lon){
+		if (typeof lat !== 'number' || typeof lon !== 'number') return false;
+		if (!isFinite(lat) || !isFinite(lon)) return false;
+		return /^-?\d+(\.\d+)?$/.test(String(lat)) &&
+			   /^-?\d+(\.\d+)?$/.test(String(lon)) &&
+			   lat >= -90 && lat <= 90 &&
+			   lon >= -180 && lon <= 180;
 	  }
 
-	  function startAnimation() {
-	    if (!path || path.length < 2) return;
-	    if (animMarker) { map.removeLayer(animMarker); animMarker = null; }
-	    const contrast = getContrastColor(colorValue);
-	    animMarker = createAnimMarker(path[0], '', contrast);
+	  function isValidEmail(email) {
+		if (typeof email !== 'string') return false;
+		const re = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z]{2,})+$/;
+		return re.test(email.trim());
+	  }
 
-	    animating = true;
-	    stepIndex = 0;
-	    progress = 0;
-	    playBtn.textContent = '▪';
-	    playBtn.classList.add('active');
+	  const emailInput = document.getElementById('email');
+	  const emailError = document.getElementById('emailError');
 
-	    animTimer = setInterval(() => {
-		  if (!animating) return;
-		  const p1 = path[stepIndex];
-		  const p2 = path[stepIndex+1];
-		  if (!p1 || !p2) { stopAnimation(); return; }
-		  progress += 0.08; // 調整速度
-		  if (progress >= 1) {
-		    stepIndex++;
-		    progress = 0;
-		    if (stepIndex >= path.length-1) {
-			  stopAnimation();
-			  return;
-		    }
-			
-			// 抵達點位 → 顯示序號
-		    const lat = p2[0], lon = p2[1];
-		    map.removeLayer(animMarker);
-		    animMarker = createAnimMarker([lat, lon], stepIndex+1, contrast);
-		    return;
+	  function showEmailError() {
+		const val = emailInput.value.trim();
+		if (val !== '' && !isValidEmail(val)) {
+		  emailInput.classList.add('input-invalid');
+		  emailError.textContent = '格式錯誤';
+		  return true;
+		} else {
+		  emailInput.classList.remove('input-invalid');
+		  emailError.textContent = '';
+		  return false;
+		}
+	  }
+	  emailInput.addEventListener('blur', showEmailError);
+	  emailInput.addEventListener('input', showEmailError);
+
+	  function buildExportLine(r){
+		const idxStr = String(r.idx).padStart(3,'0');
+		let hn = r.house_number || '';
+		if (hn && !hn.includes('號')) hn = hn + '號';
+		let tail = '';
+		if ((r.village && r.village.trim()!=='') || (r.office && r.office.trim()!=='')) {
+		  tail = '-' + (r.village || '') + (r.office || '');
+		}
+		const addrPart = (r.postcode||'') + (r.country||'') + (r.city||'') + (r.suburb||'') + (r.neighbourhood||'') + (r.road||'') + (hn||'') + tail;
+		return `${idxStr}\t${r.lat}, ${r.lon}\t${addrPart}`;
+	  }
+
+	  function niceAddressFromR(r){
+		return buildExportLine(r).split('\t')[2] || '';
+	  }
+
+	  let addressCache = {};
+	  try {
+		const savedCache = localStorage.getItem('addressCache');
+		if (savedCache) {
+		  addressCache = JSON.parse(savedCache);
+		}
+	  } catch (e) {
+		console.warn('讀取快取失敗', e);
+		addressCache = {};
+	  }
+
+	  async function fetchAddress(lat, lon, email) {
+		const key = `${lat},${lon}`;
+		if (addressCache[key]) {
+		  return { data: addressCache[key], wasCached: true };
+		}
+		const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`;
+		const resp = await fetch(url, {
+		  headers: {
+			'Accept': 'application/json',
+			'User-Agent': `${navigator.userAgent} (${email})`
 		  }
-		  const lat = p1[0] + (p2[0]-p1[0])*progress;
-		  const lon = p1[1] + (p2[1]-p1[1])*progress;
-		  animMarker.setLatLng([lat,lon]);
-		  if (animMarker._icon) {
-		    animMarker._icon.style.zIndex = 1000; // 強制在最上層
-		  }
-	    }, 30);
-	  }
-
-	  function stopAnimation() {
-	    animating = false;
-	    if (animTimer) clearInterval(animTimer);
-	    animTimer = null;
-	    if (animMarker) { map.removeLayer(animMarker); animMarker = null; }
-	    playBtn.textContent = '▸';
-	    playBtn.classList.remove('active');
-	  }
-
-	  if (playBtn) {
-		playBtn.addEventListener('click', () => {
-	  	  if (animating) stopAnimation();
-		  else startAnimation();
 		});
+		const data = await resp.json();
+		addressCache[key] = data;
+		try {
+		  localStorage.setItem('addressCache', JSON.stringify(addressCache));
+		} catch (e) {
+		  console.warn('儲存快取失敗', e);
+		}
+		return { data: data, wasCached: false };
 	  }
+	  
+	  const geoForm = document.getElementById('geoForm');
+	  const niceAddrDiv = document.getElementById('niceAddr');
+	  const rawAddrDiv = document.getElementById('rawAddr');
+	  const rawPre = document.getElementById('raw');
+	  const errorDiv = document.getElementById('error');
+	  const addressBlock = document.getElementById('address');
+	  let singleMarker = null;
+	  addressBlock.classList.add('hidden');
+	  
+	  ['lat', 'lon'].forEach(id => {
+		const input = document.getElementById(id);
+		let isComposing = false; 
+		let lastValid = input.value;
 
-      function updateMarkersPolylineColor(){
-        markersList.forEach((m,i)=>{
-          if (!m) return;
-          const html = `<div class="marker-label" style="background:${colorValue}; width:32px; height:32px;">${i+1}</div>`;
-          m.setIcon(L.divIcon({className:'', html:html, iconSize:[32,32], iconAnchor:[16,16]}));
-        });
-        if (polyline) polyline.setStyle({color: colorValue});
-      }
+		input.addEventListener('compositionstart', () => {
+		  isComposing = true;
+		});
 
-      colorMini.addEventListener('click', ()=>{
-        const picker = document.createElement('input');
-        picker.type = 'color';
-        picker.value = rgbToHex(colorMini.style.background);
-        picker.style.display = 'none';
-        document.body.appendChild(picker);
-        picker.click();
-        picker.addEventListener('input', ()=>{
-          colorValue = picker.value;
-          colorMini.style.background = colorValue;
-          updateMarkersPolylineColor();
-          document.body.removeChild(picker);
-        });
-      });
-      function rgbToHex(rgb) {
-        if (!rgb) return '#0000ff';
-        if (rgb[0]==='#') return rgb;
-        const m = rgb.match(/^rgb\((\d+), ?(\d+), ?(\d+)\)$/);
-        if (!m) return '#0000ff';
-        return '#' + [1,2,3].map(i=>parseInt(m[i]).toString(16).padStart(2,'0')).join('');
-      }
+		input.addEventListener('compositionend', () => {
+		  isComposing = false;
+		  filterAndClamp(); 
+		});
 
-      visibleCheckbox.addEventListener('change', ()=>{
-        if (visibleCheckbox.checked) {
-          map.addLayer(markersCluster);
-          if (polyline) map.addLayer(polyline);
-        } else {
-          map.removeLayer(markersCluster);
-          if (polyline) map.removeLayer(polyline);
-        }
-      });
+		input.addEventListener('input', () => {
+		  if (isComposing) return; 
+		  filterAndClamp();
+		});
 
-      if (deleteBtn) {
-        deleteBtn.onclick = function(){
-          try { markersCluster.clearLayers(); } catch(e){}
-          try { if (polyline && map.hasLayer(polyline)) map.removeLayer(polyline); } catch(e){}
-          // 修改：釋放顏色
-          if (colorValue && usedColors.has(colorValue)) {
-              usedColors.delete(colorValue);
-          }
-
-          container.parentNode.removeChild(container);
-          refreshDragHandles();
-        };
-      }
-
-      stopBtn.onclick = function(){
-        if (!isPaused) { // 正在執行中 -> 點擊以暫停
-            stopFlag = true; // 通知迴圈停止
-            isPaused = true;
-            stopBtn.textContent = '接續查詢';
-            stopBtn.style.background = '#d4a017'; // 黃色
-            status.textContent = '查詢已暫停...';
-        } else { // 已暫停 -> 點擊以接續
-            isPaused = false;
-            stopFlag = false; // 允許迴圈繼續
-            stopBtn.textContent = '終止查詢';
-            stopBtn.style.background = '#c00'; // 紅色
-            // 從上次中斷的索引處，使用已保存的資料繼續查詢
-            doBatchQuery(currentCoords, currentEmail, currentIndex);
-        }
-      };
-
-      function clearBatchContent() {
-        listDiv.innerHTML = '';
-        markersCluster.clearLayers();
-        markersList = [];
-        path = [];
-        if (polyline && map.hasLayer(polyline)) { map.removeLayer(polyline); polyline = null; }
-        progressBar.value = 0;
-        status.textContent = '';
-        if (visibleCheckbox.checked) {
-          map.removeLayer(markersCluster);
-          if (polyline) map.removeLayer(polyline);
-        }
-      }
-
-      // 匯入前隱藏控制列/狀態/列表/扁鈕
-      batchControls.classList.add('hidden');
-      progressBar.classList.add('hidden');
-      status.classList.add('hidden');
-      listDiv.classList.add('hidden');
-      fileInput.classList.remove('hidden');
-      importLabel.classList.remove('hidden');
-      if (listToggleBtn) {
-        listToggleBtn.classList.add('hidden');
-        listToggleBtn.textContent = '▲';
-      }
-
-      function bindFileInput(fileInput) {
-        fileInput.addEventListener('click', function() {
-          this.value = "";
-        });
-
-        fileInput.addEventListener('change', async (ev) => {
-          // 修正：直接從 event target 找到 container，確保作用域正確
-          const container = ev.target.closest('.batch-container');
-          const batchTitleInput = container.querySelector('.batch-title');
-          const stopBtn = container.querySelector('.stopBtn');
-          const progressBar = container.querySelector('.progressBar');
-          const status = container.querySelector('.batchStatus');
-          const listDiv = container.querySelector('.batch-list');
-          const listToggleBtn = container.querySelector('.list-toggle-btn');
-          const batchControls = container.querySelector('.batch-controls');
-
-          const file = ev.target.files[0];
-          if (!file) return;
-		  
-		  // --- 新增檔案大小檢查 ---
-		  const MAX_FILE_SIZE_MB = 50; // 設定最大檔案大小為 50 MB
-		  if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
-			showBatchError(container, `檔案大小超過 ${MAX_FILE_SIZE_MB} MB 的限制。`);
-			fileInput.value = ''; // 清空選擇
-			return;
+		function filterAndClamp() {
+		  let val = input.value;
+		  val = val.replace(/[^0-9.\-]/g, '');
+		  const parts = val.split('.');
+		  if (parts.length > 2) {
+			val = parts[0] + '.' + parts.slice(1).join('');
 		  }
+		  val = val.replace(/(?!^)-/g, '');
 
-          // 修正：使用新的全域函式，並傳入 container
-          clearBatchError(container);
-
-          const email = emailInput.value.trim();
-          if (!email || !isValidEmail(email)) {
-            // 修正：使用新的全域函式，並傳入 container
-            showBatchError(container, email ? 'Email 格式不正確' : '請先輸入 Email');
-            fileInput.value = '';
-            return;
-          }
-          localStorage.setItem('geoEmail', email);
-
-          const onConfirm = async (mapping) => {
-            stopFlag = false;
-            stopped = false;
-            clearBatchContent();
-            batchControls.classList.remove('hidden');
-            progressBar.classList.remove('hidden');
-            status.classList.remove('hidden');
-            listDiv.classList.remove('hidden');
-            if (listToggleBtn) listToggleBtn.classList.remove('hidden');
-
-            if (batchTitleInput.value.trim() === '') {
-              batchTitleInput.value = file.name.replace(/\.[^/.]+$/, '');
-            }
-			
-			columnMapping = mapping; 
-
-            parseDataFromFile(file, mapping.encoding, false, 
-              async function(results) { // onComplete
-                  const allData = mapping.hasHeader ? results.data.slice(1) : results.data;
-                  
-                  if (allData.length > 0) {
-                      currentCoords = allData;
-                      currentEmail = email;
-                      currentIndex = 0;
-                      batchResults = [];
-					  validCoordsCount = 0;
-                      isPaused = false;
-                      stopBtn.textContent = '終止查詢';
-                      stopBtn.style.background = '#c00';
-                      
-                      // 修正：將 container 傳遞給 doBatchQuery
-                      await doBatchQuery(allData, email, 0, container);
-                  } else {
-                      // 修正：使用新的全域函式，並傳入 container
-                      showBatchError(container, '在檔案中找不到任何資料。');
-                  }
-              },
-              function(err) { // onError
-                  // 修正：使用新的全域函式，並傳入 container
-                  showBatchError(container, '解析檔案時發生錯誤：' + (err && err.message ? err.message : err));
-              }
-            );
-          };
-		  
-		  const onCancel = () => {
-            if (fileInput) fileInput.value = '';
-          };
-          
-          // 修正：將 container 傳遞給 showImportPreview
-          showImportPreview(file, container, onConfirm, onCancel);
-        });
-      }
-
-
-      bindFileInput(fileInput);
-
-      // 清單收合/展開按鈕
-      if (listToggleBtn) {
-	    listToggleBtn.title = "收合清單";
-        listToggleBtn.addEventListener('click', () => {
-          const collapsed = !listDiv.classList.contains('hidden') && listDiv.offsetParent !== null;
-          if (collapsed) {
-            listDiv.classList.add('hidden');
-            listToggleBtn.textContent = '▼';
-			listToggleBtn.title = "展開清單";
-          } else {
-            listDiv.classList.remove('hidden');
-            listToggleBtn.textContent = '▲';
-			listToggleBtn.title = "收合清單";
-          }
-        });
-      }
-
-	  // 修正：doBatchQuery 接收 container 參數
-	  async function doBatchQuery(allData, email, startIndex = 0, container) {
-		progressBar.classList.remove('hidden');
-		status.classList.remove('hidden');
-		listDiv.classList.remove('hidden');
-		if (listToggleBtn) listToggleBtn.classList.remove('hidden');
-
-		if (startIndex === 0) {
-            // 修正：使用新的全域函式，並傳入 container
-		    clearBatchError(container);
-		}
-
-		if (visibleCheckbox.checked) {
-		  map.addLayer(markersCluster);
-		}
-
-		let totalTime = 0; // 累計耗時
-		let countDone = 0;
-        // let validCoordsCount = 0;
-
-        const validDataIndices = [];
-        allData.forEach((row, i) => {
-            const lat = parseFloat(row[columnMapping.lat]);
-            const lon = parseFloat(row[columnMapping.lon]);
-            if (isValidCoord(lat, lon)) {
-                validDataIndices.push(i);
-            }
-        });
-        const totalValid = validDataIndices.length;
-
-
-		for (let i = startIndex; i < allData.length; i++) {
-		  currentIndex = i; 
-		  
-		  if (stopFlag) { 
-            break; 
-          }
-		  
-          const rowData = allData[i];
-          const baseIndex = columnMapping.hasHeader ? 2 : 1;
-          const currentLine = i + baseIndex;
-
-          const latVal = rowData[columnMapping.lat] ? String(rowData[columnMapping.lat]).trim() : '';
-          const lonVal = rowData[columnMapping.lon] ? String(rowData[columnMapping.lon]).trim() : '';
-          const rowErrors = [];
-
-          if (latVal === '') {
-              rowErrors.push('緯度為空值');
-          } else if (isNaN(latVal) || !/^-?\d+(\.\d+)?$/.test(latVal)) {
-              rowErrors.push('緯度非數值');
-          } else if (parseFloat(latVal) < -90 || parseFloat(latVal) > 90) {
-              rowErrors.push('緯度超出 -90~90 範圍');
-          }
-          
-          if (lonVal === '') {
-              rowErrors.push('經度為空值');
-          } else if (isNaN(lonVal) || !/^-?\d+(\.\d+)?$/.test(lonVal)) {
-              rowErrors.push('經度非數值');
-          } else if (parseFloat(lonVal) < -180 || parseFloat(lonVal) > 180) {
-              rowErrors.push('經度超出 -180~180 範圍');
-          }
-          
-          if (rowErrors.length > 0) {
-              const combinedErrorMsg = `第 ${currentLine} 列：` + rowErrors.join('、');
-              // 修正：使用新的全域函式，並傳入 container
-              appendBatchError(container, combinedErrorMsg);
-              continue; 
-          }
-
-		  const lat = parseFloat(latVal);
-		  const lon = parseFloat(lonVal);
-		  const start = Date.now();
-		  try {
-		    if (stopFlag) break;
-		    const data = await fetchAddress(lat, lon, email);
-		    if (stopFlag) break;
-		    const addr = data.address || {};
-		    const r = {
-			  idx: validCoordsCount + 1,
-			  lat: lat,
-			  lon: lon,
-			  postcode: addr.postcode || '',
-			  country: addr.country || '',
-			  city: addr.city || addr.town || addr.village || '',
-			  suburb: addr.suburb || '',
-			  neighbourhood: addr.neighbourhood || '',
-			  road: addr.road || '',
-			  house_number: addr.house_number || '',
-			  village: addr.village || '',
-			  office: addr.office || ''
-		    };
-			batchResults.push(r);
-
-			const currentValidIndex = validCoordsCount;
-			const markerLabelIndex = currentValidIndex + 1;
-			
-			const html = `<div class="marker-label" style="background:${colorValue}; width:32px; height:32px;">${markerLabelIndex}</div>`;
-			const m = L.marker([lat, lon], { icon: L.divIcon({ className:'', html: html, iconSize:[32,32], iconAnchor:[16,16] }) })
-					  .bindPopup(createSafePopupContent(niceAddressFromR(r)));
-			m.on('click', () => {
-			  clearAllActives();
-			  highlightIndex(currentValidIndex);
-			  map.setView([lat, lon], Math.max(14, map.getZoom()));
-			});
-			markersCluster.addLayer(m);
-			markersList.push(m);
-
-			path.push([lat, lon]);
-			if (!polyline) {
-			  polyline = L.polyline(path, { color: colorValue });
-			  if (visibleCheckbox.checked) map.addLayer(polyline);
-			} else {
-			  polyline.setLatLngs(path);
-			  polyline.setStyle({ color: colorValue });
+		  if (val !== '' && !isNaN(val)) {
+			const num = parseFloat(val);
+			if (id === 'lat' && (num < -90 || num > 90)) {
+			  val = Math.max(-90, Math.min(90, num)).toString();
 			}
-			if (path.length === 1) map.setView([lat, lon], 14);
-			else map.fitBounds(polyline.getBounds());
-
-			const item = document.createElement('div');
-			item.textContent = `${markerLabelIndex}. ${niceAddressFromR(r)}`;
-			item.addEventListener('click', () => {
-			  clearAllActives();
-			  highlightIndex(currentValidIndex);
-			  map.setView([lat, lon], Math.max(14, map.getZoom()));
-			  flashMarker(currentValidIndex);
-			});
-			listDiv.appendChild(item);
-		  } catch (err) {
-			console.error(err);
-		  }
-		  const elapsed = Date.now() - start;
-		  totalTime += elapsed;
-		  countDone++;
-          validCoordsCount++;
-
-		  const safeCount = countDone > 0 ? countDone : 1;
-		  let avgTime = totalTime / safeCount;
-		  if (avgTime < 50) { 
-		    avgTime = 50; 
-		  }
-		  const remaining = totalValid - validCoordsCount;
-		  const remainingMs = avgTime * remaining;
-		  let remainingText = '';
-		  if (remainingMs >= 60000) {
-			const mins = Math.floor(remainingMs / 60000);
-			const secs = Math.round((remainingMs % 60000) / 1000);
-			remainingText = `預估剩餘時間：約 ${mins} 分 ${secs} 秒`;
-		  } else {
-			remainingText = `預估剩餘時間：約 ${Math.round(remainingMs / 1000)} 秒`;
-		}
-
-		  progressBar.value = (validCoordsCount / totalValid) * 100;
-		  status.textContent = `進度 ${validCoordsCount}/${totalValid}　${remainingText}`;
-			
-		  if (elapsed < 1000) await new Promise(r => setTimeout(r, 1000 - elapsed));
-		}
-		if (!stopFlag) { 
-		  status.textContent = `批次完成，共 ${batchResults.length} 筆`;
-		  downloadResults(batchResults);
-		  if (colorValue && /^#[0-9A-Fa-f]{6}$/.test(colorValue)) usedColors.add(colorValue);
-		  finishBatch();
-		  addNewBatchArea();
-		}
- 	  }
-
-      function highlightIndex(idx) {
-        Array.from(listDiv.children).forEach((el,i)=>el.classList.toggle('active', i === idx));
-        markersList.forEach((m,i)=>{
-          if (!m) return;
-          const html = `<div class="marker-label" style="background:${colorValue}; width:32px;height:32px; font-size:13px;">${i+1}</div>`;
-          m.setIcon(L.divIcon({className:'', html:html, iconSize:[32,32], iconAnchor:[16,16]}));
-        });
-      }
-
-      function downloadResults(results) {
-        if (!results || results.length === 0) return;
-        let filename = 'batch_results.txt';
-        const title = batchTitleInput.value.trim();
-        if (title) filename = title + '.txt';
-        const txt = results.map(buildExportLine).join('\n');
-        const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = filename; a.click();
-        URL.revokeObjectURL(url);
-      }
-
-      function finishBatch() {
-        fileInput.classList.add('hidden');
-        importLabel.classList.add('hidden');
-        batchControls.classList.add('hidden');
-        progressBar.classList.add('hidden');
-        status.classList.add('hidden');
-		if (deleteBtn) deleteBtn.classList.remove('hidden');
-		if (playBtn) playBtn.classList.remove('hidden');
-      }
-    }
-
-    function addNewBatchArea() {
-      const clone = templateDiv.cloneNode(true);
-      clone.querySelector('.progressBar').value = 0;
-      clone.querySelector('.batchStatus').textContent = '';
-      clone.querySelector('.batch-list').innerHTML = '';
-      clone.querySelector('.batch-list').classList.add('hidden');
-      clone.querySelector('.batch-title').value = '';
-      clone.querySelector('.batch-visible-checkbox').checked = true;
-      
-      // 清空可能殘留的錯誤訊息
-      const errorDiv = clone.querySelector('.batchError');
-      if(errorDiv) {
-          errorDiv.innerHTML = '';
-          errorDiv.classList.add('hidden');
-      }
-
-      if (clone.querySelector('.delete-batch-btn')) {
-        clone.querySelector('.delete-batch-btn').classList.add('hidden');
-      }
-	  if (clone.querySelector('.play-batch-btn')) {
-        clone.querySelector('.play-batch-btn').classList.add('hidden');
-      }
-      clone.querySelector('.fileInput').classList.remove('hidden');
-      clone.querySelector('.import-label').classList.remove('hidden');
-      clone.querySelector('.row.batch-controls').classList.add('hidden');
-      clone.querySelector('.progressBar').classList.add('hidden');
-      clone.querySelector('.batchStatus').classList.add('hidden');
-      const listToggle = clone.querySelector('.list-toggle-btn');
-      if (listToggle) {
-        listToggle.classList.add('hidden');
-        listToggle.textContent = '▲';
-      }
-
-      let nextColor = '#'+Math.floor(Math.random()*16777215).toString(16).padStart(6,'0');
-      let attempts = 0;
-      while (usedColors.has(nextColor) && attempts < 20) {
-        nextColor = '#'+Math.floor(Math.random()*16777215).toString(16).padStart(6,'0');
-        attempts++;
-      }
-      const colorMini = clone.querySelector('.color-mini');
-      colorMini.style.background = nextColor;
-      ++batchUID;
-	  const visibleCheckbox = clone.querySelector('.batch-visible-checkbox');
-	  visibleCheckbox.id = `batchVisible_${batchUID}`;
-	  visibleCheckbox.name = `batchVisible_${batchUID}`;
-
-	  const batchTitle = clone.querySelector('.batch-title');
-	  batchTitle.id = `batchTitle_${batchUID}`;
-	  batchTitle.name = `batchTitle_${batchUID}`;
-
-      const fileInput = clone.querySelector('.fileInput');
-      fileInput.value = '';
-      fileInput.setAttribute('data-batch-uid', batchUID);
-
-      batchArea.appendChild(clone);
-      bindBatch(clone);
-      refreshDragHandles();
-    }
-
-    bindBatch(templateDiv);
-    refreshDragHandles();
-	
-	// ========= 地圖截圖系統 =========
-    const screenshotBtn = document.getElementById('screenshotBtn');
-    const mapDiv = document.getElementById('map');
-    let isCapturing = false;
-    let startPoint = null;
-    let selectionBox = null;
-
-    function toggleCaptureMode(active) {
-      isCapturing = active;
-      if (active) {
-        screenshotBtn.textContent = '取消截圖';
-        screenshotBtn.style.background = '#d4a017';
-        mapDiv.classList.add('crosshair-cursor');
-        L.DomUtil.disableTextSelection();
-        if (map) {
-            map.dragging.disable();
-            // 禁用所有縮放功能
-            map.touchZoom.disable();
-            map.doubleClickZoom.disable();
-            map.scrollWheelZoom.disable();
-            map.boxZoom.disable();
-            map.keyboard.disable();
-            if (map.zoomControl) {
-                map.zoomControl.remove();
-            }
-        }
-      } else {
-        screenshotBtn.textContent = '開始截圖';
-        screenshotBtn.style.background = '#007bff';
-        mapDiv.classList.remove('crosshair-cursor');
-        L.DomUtil.enableTextSelection();
-        removeSelectionBox();
-        if (map) {
-            map.dragging.enable();
-            // 恢復所有縮放功能
-            map.touchZoom.enable();
-            map.doubleClickZoom.enable();
-            map.scrollWheelZoom.enable();
-            map.boxZoom.enable();
-            map.keyboard.enable();
-            if (map.zoomControl) {
-                map.zoomControl.addTo(map);
-            }
-        }
-      }
-    }
-
-    function removeSelectionBox() {
-      if (selectionBox) {
-        selectionBox.remove();
-        selectionBox = null;
-        startPoint = null;
-      }
-    }
-
-    screenshotBtn.addEventListener('click', () => {
-      if (isCapturing) {
-        toggleCaptureMode(false);
-      } else {
-        toggleCaptureMode(true);
-      }
-    });
-
-    mapDiv.addEventListener('mousedown', (e) => {
-      if (!isCapturing || selectionBox) return;
-      
-      startPoint = { x: e.clientX, y: e.clientY };
-
-      selectionBox = document.createElement('div');
-      selectionBox.className = 'selection-box';
-      mapDiv.appendChild(selectionBox);
-
-      document.addEventListener('mousemove', onMouseMove);
-      document.addEventListener('mouseup', onMouseUp);
-    });
-
-    function onMouseMove(e) {
-      if (!selectionBox || !startPoint) return;
-
-      const currentX = e.clientX;
-      const currentY = e.clientY;
-      const mapRect = mapDiv.getBoundingClientRect();
-
-      const x1 = Math.min(Math.max(startPoint.x, mapRect.left), mapRect.right);
-      const y1 = Math.min(Math.max(startPoint.y, mapRect.top), mapRect.bottom);
-      const x2 = Math.min(Math.max(currentX, mapRect.left), mapRect.right);
-      const y2 = Math.min(Math.max(currentY, mapRect.top), mapRect.bottom);
-
-      const left = Math.min(x1, x2);
-      const top = Math.min(y1, y2);
-      const width = Math.abs(x1 - x2);
-      const height = Math.abs(y1 - y2);
-
-      selectionBox.style.left = (left - mapRect.left) + 'px';
-      selectionBox.style.top = (top - mapRect.top) + 'px';
-      selectionBox.style.width = width + 'px';
-      selectionBox.style.height = height + 'px';
-    }
-
-    function onMouseUp(e) {
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
-
-      if (!selectionBox || !startPoint) {
-        removeSelectionBox();
-        return;
-      }
-      
-      if (parseInt(selectionBox.style.width) < 10 || parseInt(selectionBox.style.height) < 10) {
-        removeSelectionBox();
-        return;
-      }
-      
-      const controls = document.createElement('div');
-      controls.className = 'screenshot-controls';
-      controls.innerHTML = `
-        <button class="screenshot-save" type="button">儲存</button>
-        <button class="screenshot-cancel" type="button">取消</button>
-      `;
-      // 檢查選取框底部是否太靠近視窗底部
-      const boxRect = selectionBox.getBoundingClientRect();
-      const threshold = 50; // 邊界距離閾值 (50px)
-      if (boxRect.bottom > window.innerHeight - threshold) {
-        controls.classList.add('top-right');
-      }
-	  
-      selectionBox.appendChild(controls);
-
-      mapDiv.classList.remove('crosshair-cursor'); 
-
-      controls.querySelector('.screenshot-save').addEventListener('click', () => {
-        const type = document.querySelector('input[name="screenshotType"]:checked').value;
-        captureAndDownload(selectionBox, type);
-        removeSelectionBox();
-        mapDiv.classList.add('crosshair-cursor');
-      });
-
-      controls.querySelector('.screenshot-cancel').addEventListener('click', () => {
-        removeSelectionBox();
-        mapDiv.classList.add('crosshair-cursor');
-      });
-    }
-	
-    async function captureAndDownload(selectionBox, type) {
-        const mapRect = mapDiv.getBoundingClientRect();
-        const boxRect = selectionBox.getBoundingClientRect();
-
-        const x = boxRect.left - mapRect.left;
-        const y = boxRect.top - mapRect.top;
-        const width = boxRect.width;
-        const height = boxRect.height;
-        
-        selectionBox.style.display = 'none'; 
-		
-        try {
-            const canvas = await html2canvas(mapDiv, {
-                allowTaint: true,
-                useCORS: true,
-                x: x,
-                y: y,
-                width: width,
-                height: height,
-                scale: 2
-            });
-			
-            selectionBox.style.display = ''; 
-
-            const now = new Date();
-            const dateStr = [
-                now.getFullYear(),
-                String(now.getMonth() + 1).padStart(2, '0'),
-                String(now.getDate()).padStart(2, '0'),
-                String(now.getHours()).padStart(2, '0'),
-                String(now.getMinutes()).padStart(2, '0'),
-                String(now.getSeconds()).padStart(2, '0')
-            ].join('');
-            const filename = `GEO-${dateStr}.${type}`;
-            
-            if (type === 'pdf') {
-				// --- PDF 匯出邏輯修改 ---
-				const { jsPDF } = window.jspdf;
-                const imgData = canvas.toDataURL('image/png', 1.0);
-
-                // 建立直式A4 PDF
-                const pdf = new jsPDF({
-                    orientation: 'portrait',
-                    unit: 'mm',
-                    format: 'a4'
-                });
-				
-				// 設定邊界與計算可列印區域
-                const margin = 20; // 2公分 = 20mm
-                const pagePrintableWidth = pdf.internal.pageSize.getWidth() - margin * 2; // A4寬 - 左右邊界
-                const pagePrintableHeight = pdf.internal.pageSize.getHeight() - margin * 2; // A4高 - 上下邊界
-
-                // 取得 canvas (圖片) 的原始 pixel 尺寸
-                const canvasWidth = canvas.width;
-                const canvasHeight = canvas.height;
-				
-                // 計算能讓圖片完整放入可列印區域的最佳縮放比例
-                const widthRatio = pagePrintableWidth / canvasWidth;
-                const heightRatio = pagePrintableHeight / canvasHeight;
-                // 取寬、高縮放比中較小的那一個，確保圖片能完全容納，不會超出邊界
-                const bestFitRatio = Math.min(widthRatio, heightRatio);
-
-                // 根據最佳比例計算圖片在PDF中的最終尺寸
-                const finalImageWidth = canvasWidth * bestFitRatio;
-                const finalImageHeight = canvasHeight * bestFitRatio;
-
-                // 將圖片依計算好的尺寸加入PDF，並放置在邊界起始位置 (20, 20)
-                pdf.addImage(imgData, 'PNG', margin, margin, finalImageWidth, finalImageHeight);
-                pdf.save(filename);
-            } else {
-                // 維持原有的圖片匯出邏輯
-                let mimeType = `image/${type === 'jpg' ? 'jpeg' : type}`;
-                const dataURL = canvas.toDataURL(mimeType, 1.0);
-
-                const a = document.createElement('a');
-                a.href = dataURL;
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-            }
-        } catch (error) {
-            console.error('截圖失敗:', error);
-            alert('截圖失敗，請檢查瀏覽器設定或網路連線。');
-        } finally {
-            selectionBox.style.display = ''; 
-		}
-    }
-
-	const importPreviewOverlay = document.getElementById('importPreviewOverlay');
-	const previewTableContainer = document.getElementById('previewTableContainer');
-	const headerCheckbox = document.getElementById('headerCheckbox');
-	const availableFields = document.getElementById('availableFields');
-	const latDropTarget = document.getElementById('latDropTarget');
-	const lonDropTarget = document.getElementById('lonDropTarget');
-	const importConfirmBtn = document.getElementById('importConfirmBtn');
-	const importCancelBtn = document.getElementById('importCancelBtn');
-	const importPreviewError = document.getElementById('importPreviewError');
-
-	let currentBatchContainer = null;
-    let currentImportFile = null; // 新增：保存當前處理的檔案
-	let previewData = null;
-	let importConfirmCallback = null;
-    let importCancelCallback = null; // 新增：保存取消時的回呼
-	const encodingSelect = document.getElementById('encodingSelect'); 
-    let columnMapping = { lat: null, lon: null, hasHeader: false };
-
-    // 修正：showImportPreview 接收 container 和 onCancelCallback
-	function showImportPreview(file, container, onConfirm, onCancel) {
-	  currentBatchContainer = container;
-	  importConfirmCallback = onConfirm;
-      importCancelCallback = onCancel; // 保存取消回呼
-	  currentImportFile = file;
-	  importPreviewError.textContent = '';
-	  columnMapping = { lat: null, lon: null, hasHeader: false };
-
-	  encodingSelect.value = 'UTF-8';
-	  headerCheckbox.checked = false; 
-
-	  parseAndDisplayPreview();
-	  importPreviewOverlay.style.display = 'flex';
-	}
-
-	function parseAndDisplayPreview() {
-	  const selectedEncoding = encodingSelect.value;
-      // 修正：解析預覽時，使用保存的 currentImportFile
-	  parseDataFromFile(currentImportFile, selectedEncoding, true, // isPreview: true 
-		function(results) { // onComplete
-		  previewData = results.data;
-		  if (previewData.length === 0 && currentImportFile) {
-            showBatchError(currentBatchContainer, '檔案是空的或格式無法解析。請嘗試切換檔案編碼。');
-		  }
-		  updatePreviewUI();
-		}, 
-		function(err) { // onError
-            showBatchError(currentBatchContainer, '解析檔案預覽時發生錯誤: ' + err.message);
-		}
-	  );
-	}
-
-	encodingSelect.addEventListener('change', parseAndDisplayPreview);
-
-	function updatePreviewUI() {
-	  columnMapping.hasHeader = headerCheckbox.checked;
-      const headerRow = columnMapping.hasHeader ? previewData[0] : null;
-      const dataRows = columnMapping.hasHeader ? previewData.slice(1) : previewData;
-	
-	  previewTableContainer.innerHTML = '';
-	  
-	  if (dataRows.length === 0) {
-		previewTableContainer.innerHTML = '<p style="padding: 10px; color: #555;">沒有可預覽的資料。</p>';
-		availableFields.innerHTML = '';
-        renderValidationWarnings({ lat: {}, lon: {} });
-		return;
-	  }
-	  
-      const table = document.createElement('table');
-      const thead = document.createElement('thead');
-      const tbody = document.createElement('tbody');
-      const headerTr = document.createElement('tr');
-
-	  const thEmpty = document.createElement('th');
-      headerTr.appendChild(thEmpty);	  
-	  const numCols = dataRows[0].length;
-	  for (let i = 0; i < numCols; i++) {
-		const th = document.createElement('th');
-		th.textContent = headerRow ? (headerRow[i] || `第 ${i + 1} 欄`) : `第 ${i + 1} 欄`;
-		headerTr.appendChild(th);
-	  }
-	  thead.appendChild(headerTr);
-
-		const displayRows = Math.min(dataRows.length, 10);
-			for (let i = 0; i < displayRows; i++) {
-				const tr = document.createElement('tr');
-				const tdLine = document.createElement('td');
-				tdLine.textContent = i + (columnMapping.hasHeader ? 2 : 1);
-				tr.appendChild(tdLine);
-
-				for (let j = 0; j < numCols; j++) {
-					const td = document.createElement('td');
-					const cellData = dataRows[i][j] || '';
-					td.textContent = cellData;
-					td.title = cellData;
-					tr.appendChild(td);
-				}
-				tbody.appendChild(tr);
+			if (id === 'lon' && (num < -180 || num > 180)) {
+			  val = Math.max(-180, Math.min(180, num)).toString();
 			}
-	  
-	  table.appendChild(thead);
-      table.appendChild(tbody);
-      previewTableContainer.appendChild(table);
-
-	  availableFields.innerHTML = '';
-	  for (let i = 0; i < numCols; i++) {
-		const fieldName = headerRow ? (headerRow[i] || `第 ${i + 1} 欄`) : `第 ${i + 1} 欄`;
-		const fieldDiv = document.createElement('div');
-		fieldDiv.className = 'field-item';
-		fieldDiv.textContent = fieldName;
-		fieldDiv.draggable = true;
-		fieldDiv.dataset.columnIndex = i;
-		availableFields.appendChild(fieldDiv);
-	  }
-
-      [latDropTarget, lonDropTarget].forEach(target => {
-          const targetType = target.dataset.target; // 'lat' or 'lon'
-          const mappedIndex = columnMapping[targetType];
-          
-          if (mappedIndex !== null && mappedIndex < numCols) {
-              const fieldName = headerRow ? (headerRow[mappedIndex] || `第 ${mappedIndex + 1} 欄`) : `第 ${mappedIndex + 1} 欄`;
-              target.innerHTML = `<div class="field-item" draggable="true">${fieldName}</div>`;
-              target.classList.add('has-item');
-          } else {
-			  // 如果之前有對應但現在索引無效了，則重設
-			  if (mappedIndex !== null) {
-				columnMapping[targetType] = null;
-				target.dataset.mappedColumnIndex = '';
-			  }
-              target.innerHTML = `將${targetType === 'lat' ? '緯度' : '經度'}欄位拖曳至此`;
-              target.classList.remove('has-item');
-          }
-      });
-	  
-      validateAllData();
-	}
-
-	function closeImportPreview() {
-	  importPreviewOverlay.style.display = 'none';
-      if (importCancelCallback) {
-          importCancelCallback(); // 呼叫取消回呼
-      }
-	}
-
-	const dropTargetsContainer = document.querySelector('.drop-targets');
-    
-    // 監聽拖曳開始事件，以識別來源是目標欄位
-    dropTargetsContainer.addEventListener('dragstart', e => {
-      if (e.target.classList.contains('field-item')) {
-        const parentDropZone = e.target.closest('.drop-zone');
-        if (parentDropZone) {
-          e.dataTransfer.setData('text/plain', parentDropZone.dataset.mappedColumnIndex);
-          e.dataTransfer.setData('text/html', e.target.textContent);
-          e.dataTransfer.setData('text/source-id', parentDropZone.id); // 標記來源ID
-        }
-      }
-    });
-	
-	headerCheckbox.addEventListener('change', updatePreviewUI);
-	availableFields.addEventListener('dragstart', e => {
-	  if (e.target.classList.contains('field-item')) {
-		e.dataTransfer.setData('text/plain', e.target.dataset.columnIndex);
-		e.dataTransfer.setData('text/html', e.target.textContent);
-	  }
-	});
-	[latDropTarget, lonDropTarget].forEach(target => {
-	  target.addEventListener('dragover', e => { e.preventDefault(); target.classList.add('drag-over'); });
-	  target.addEventListener('dragleave', () => target.classList.remove('drag-over'));
-	  target.addEventListener('drop', e => {
-		e.preventDefault();
-		target.classList.remove('drag-over');
-		
-		const droppedColIndex = e.dataTransfer.getData('text/plain');
-		const droppedColName = e.dataTransfer.getData('text/html');
-		const sourceId = e.dataTransfer.getData('text/source-id');
-
-        if (sourceId) { // 情況A: 來源是另一個目標欄位 (執行交換)
-            const sourceTarget = document.getElementById(sourceId);
-            if (sourceTarget === target) return; // 拖曳到自己身上，不處理
-
-            const targetOriginalContent = target.innerHTML;
-            const targetOriginalIndex = target.dataset.mappedColumnIndex;
-            const targetWasEmpty = !target.classList.contains('has-item');
-            
-            // 1. 將拖曳的項目放到目標區
-            target.innerHTML = `<div class="field-item" draggable="true">${droppedColName}</div>`;
-            target.classList.add('has-item');
-            target.dataset.mappedColumnIndex = droppedColIndex;
-            columnMapping[target.dataset.target] = parseInt(droppedColIndex, 10);
-
-            // 2. 將目標區原本的項目放回來源區
-            if (targetWasEmpty) {
-                sourceTarget.innerHTML = `將${sourceTarget.dataset.target === 'lat' ? '緯度' : '經度'}欄位拖曳至此`;
-                sourceTarget.classList.remove('has-item');
-                sourceTarget.dataset.mappedColumnIndex = '';
-                columnMapping[sourceTarget.dataset.target] = null;
-            } else {
-                sourceTarget.innerHTML = targetOriginalContent;
-                sourceTarget.querySelector('.field-item').draggable = true;
-                sourceTarget.classList.add('has-item');
-                sourceTarget.dataset.mappedColumnIndex = targetOriginalIndex;
-                columnMapping[sourceTarget.dataset.target] = parseInt(targetOriginalIndex, 10);
-            }
-        
-        } else { // 情況B: 來源是可用欄位列表 (執行覆蓋)
-            const otherTarget = target === latDropTarget ? lonDropTarget : latDropTarget;
-            if (otherTarget.dataset.mappedColumnIndex === droppedColIndex) {
-                otherTarget.innerHTML = `將${otherTarget.dataset.target === 'lat' ? '緯度' : '經度'}欄位拖曳至此`;
-                otherTarget.classList.remove('has-item');
-                otherTarget.dataset.mappedColumnIndex = '';
-                columnMapping[otherTarget.dataset.target] = null;
-            }
-
-            target.innerHTML = `<div class="field-item" draggable="true">${droppedColName}</div>`;
-            target.classList.add('has-item');
-            target.dataset.mappedColumnIndex = droppedColIndex;
-            columnMapping[target.dataset.target] = parseInt(droppedColIndex, 10);
-        }
-		validateAllData();
+			lastValid = val;
+		  }
+		  input.value = val;
+		}
 	  });
-	});
-	
-	importCancelBtn.addEventListener('click', closeImportPreview);
-	importConfirmBtn.addEventListener('click', () => {
-	  if (columnMapping.lat === null || columnMapping.lon === null) {
-		importPreviewError.textContent = '錯誤：請同時指定經度與緯度欄位。';
-		return;
-	  }
-	  importPreviewOverlay.style.display = 'none';
-	  if (importConfirmCallback) {
-	    columnMapping.encoding = encodingSelect.value; 
-		importConfirmCallback(columnMapping);
-	  }
-	});
 
-	function validateAllData() {
-	  const latIndex = columnMapping.lat;
-	  const lonIndex = columnMapping.lon;
+	  geoForm.addEventListener('submit', async (e) => {
+		e.preventDefault();
+		errorDiv.textContent = '';
+		niceAddrDiv.textContent = '查詢中…';
+		rawAddrDiv.textContent = '';
+		rawPre.textContent = '';
+		addressBlock.classList.add('hidden');
 
-	  const validationResults = {
-		lat: { empty: [], range: [], nonNumeric: [] },
-		lon: { empty: [], range: [], nonNumeric: [] }
-	  };
+		const lat = parseFloat(document.getElementById('lat').value.trim());
+		const lon = parseFloat(document.getElementById('lon').value.trim());
+		const email = emailInput.value.trim();
+		if (!isValidCoord(lat, lon)) { errorDiv.textContent = '經緯度錯誤'; niceAddrDiv.textContent=''; return; }
+		if (!email) { errorDiv.textContent = '請輸入 Email'; niceAddrDiv.textContent=''; return; }
+		if (showEmailError()) { errorDiv.textContent = 'Email 格式不正確'; niceAddrDiv.textContent=''; return; }
+		localStorage.setItem('geoEmail', email);
 
-	  if (previewData && (latIndex !== null || lonIndex !== null)) {
-		const dataToValidate = columnMapping.hasHeader ? previewData.slice(1) : previewData;
-		dataToValidate.forEach((row, index) => {
-		  const lineNumber = index + (columnMapping.hasHeader ? 2 : 1);
+		try {
+		  const result = await fetchAddress(lat, lon, email); // 修正：接收 result 物件
+		  const data = result.data; // 修正：從 result 取出 data
+		  if (!data || !data.display_name) throw '無結果';
+		  const addr = data.address || {};
+		  const r = { idx: 1, lat: lat, lon: lon, ...addr };
+		  niceAddrDiv.textContent = niceAddressFromR(r);
+		  rawAddrDiv.textContent = data.display_name;
+		  rawPre.textContent = JSON.stringify(data, null, 2);
 
-		  if (latIndex !== null) {
-			const latVal = row[latIndex] ? String(row[latIndex]).trim() : '';
-			if (latVal === '') {
-			  validationResults.lat.empty.push(lineNumber);
-			} else if (isNaN(latVal) || !/^-?\d+(\.\d+)?$/.test(latVal)) {
-			  validationResults.lat.nonNumeric.push(lineNumber);
-			} else {
-			  const latNum = parseFloat(latVal);
-			  if (latNum < -90 || latNum > 90) {
-				validationResults.lat.range.push(lineNumber);
-			  }
-			}
+		  addressBlock.classList.remove('hidden');
+
+		  const ll = [parseFloat(data.lat), parseFloat(data.lon)];
+		  map.setView(ll, 14);
+		  if (singleMarker) {
+			singleMarker.setLatLng(ll).setPopupContent(niceAddressFromR(r));
 		  }
+		  else singleMarker = L.marker(ll).addTo(map).bindPopup(createSafePopupContent(niceAddressFromR(r)));
+		  singleMarker.openPopup();
+		} catch (err) {
+		  errorDiv.textContent = '錯誤：' + (err.message || err);
+		}
+	  });
 
-		  if (lonIndex !== null) {
-			const lonVal = row[lonIndex] ? String(row[lonIndex]).trim() : '';
-			if (lonVal === '') {
-			  validationResults.lon.empty.push(lineNumber);
-			} else if (isNaN(lonVal) || !/^-?\d+(\.\d+)?$/.test(lonVal)) {
-			  validationResults.lon.nonNumeric.push(lineNumber);
-			} else {
-			  const lonNum = parseFloat(lonVal);
-			  if (lonNum < -180 || lonNum > 180) {
-				validationResults.lon.range.push(lineNumber);
-			  }
-			}
+	  if (localStorage.getItem('geoEmail')) emailInput.value = localStorage.getItem('geoEmail');
+
+	  let batchArea = document.getElementById('batchArea');
+	  let templateDiv = batchArea.querySelector('.batch-container');
+	  let batchUID = 0;
+
+	  function clearAllActives() {
+		document.querySelectorAll('.batch-list .active').forEach(el => el.classList.remove('active'));
+	  }
+
+	  let draggingInfo = null;
+	  function enableDrag(container) {
+		let handle = container.querySelector('.drag-handle');
+		if (!handle) {
+		  const row = container.querySelector('.batch-title-row');
+		  const titleInput = row.querySelector('.batch-title');
+		  const h = document.createElement('div');
+		  h.className = 'drag-handle';
+		  row.insertBefore(h, titleInput);
+		  handle = h;
+		}
+		handle.onmousedown = function(e) {
+		  e.preventDefault();
+		  const rect = container.getBoundingClientRect();
+		  const placeholder = document.createElement('div');
+		  placeholder.className = 'drag-placeholder';
+		  placeholder.style.height = rect.height + 'px';
+		  draggingInfo = {
+			container,
+			placeholder,
+			startY: e.clientY,
+			offsetY: e.clientY - rect.top
+		  };
+		  container.parentNode.insertBefore(placeholder, container.nextSibling);
+		  container.style.width = rect.width + 'px';
+		  container.style.position = 'absolute';
+		  container.style.left = rect.left + 'px';
+		  container.style.top = rect.top + 'px';
+		  container.style.zIndex = 1000;
+		  container.style.pointerEvents = 'none';
+		  document.addEventListener('mousemove', onDragMove);
+		  document.addEventListener('mouseup', onDragEnd);
+		};
+	  }
+	  function onDragMove(e) {
+		if (!draggingInfo) return;
+		const { container } = draggingInfo;
+		container.style.top = (e.clientY - draggingInfo.offsetY) + 'px';
+
+		const siblings = Array.from(batchArea.querySelectorAll('.batch-container')).filter(c => c !== container);
+		let target = null;
+		for (const sib of siblings) {
+		  const r = sib.getBoundingClientRect();
+		  const mid = r.top + r.height / 2;
+		  if (e.clientY < mid) { target = sib; break; }
+		}
+		if (target) {
+		  batchArea.insertBefore(draggingInfo.placeholder, target);
+		} else {
+		  batchArea.appendChild(draggingInfo.placeholder);
+		}
+	  }
+	  function onDragEnd() {
+		if (!draggingInfo) return;
+		const { container, placeholder } = draggingInfo;
+		container.style.position = '';
+		container.style.left = '';
+		container.style.top = '';
+		container.style.width = '';
+		container.style.zIndex = '';
+		container.style.pointerEvents = '';
+		batchArea.insertBefore(container, placeholder);
+		placeholder.remove();
+		draggingInfo = null;
+		document.removeEventListener('mousemove', onDragMove);
+		document.removeEventListener('mouseup', onDragEnd);
+		refreshDragHandles();
+	  }
+	  function refreshDragHandles() {
+		const containers = Array.from(batchArea.querySelectorAll('.batch-container'));
+		containers.forEach((c, idx) => {
+		  let handle = c.querySelector('.drag-handle');
+		  if (idx === 0) {
+			if (handle) handle.classList.add('hidden');
+		  } else {
+			if (!handle) enableDrag(c);
+			handle = c.querySelector('.drag-handle');
+			if (handle) handle.classList.remove('hidden');
 		  }
 		});
 	  }
-	  renderValidationWarnings(validationResults);
-	}
 
-	function renderValidationWarnings(results) {
-	  const container = document.getElementById('validationResultsContainer');
-	  if (!container) return;
-	  
-	  const hasLatWarning = results.lat.empty.length > 0 || results.lat.range.length > 0 || results.lat.nonNumeric.length > 0;
-	  const hasLonWarning = results.lon.empty.length > 0 || results.lon.range.length > 0 || results.lon.nonNumeric.length > 0;
+	  function parseDataFromFile(file, encoding, isPreview, onComplete, onError) {
+		  const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
 
-	  if (!hasLatWarning && !hasLonWarning) {
-		container.innerHTML = '';
-		return;
+		  if (isExcel) {
+			  const reader = new FileReader();
+			  reader.onload = function(e) {
+				  try {
+					  const data = new Uint8Array(e.target.result);
+					  const workbook = XLSX.read(data, { type: 'array' });
+					  const firstSheetName = workbook.SheetNames[0];
+					  const worksheet = workbook.Sheets[firstSheetName];
+					  const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false, dateNF: 'yyyy-mm-dd' });
+					  const finalData = isPreview ? jsonData.slice(0, 15) : jsonData;
+					  onComplete({ data: finalData });
+				  } catch (err) {
+					  onError(err);
+				  }
+			  };
+			  reader.onerror = function(err) {
+				  onError(err);
+			  };
+			  reader.readAsArrayBuffer(file);
+		  } else {
+			  Papa.parse(file, {
+				  preview: isPreview ? 15 : 0,
+				  skipEmptyLines: true,
+				  encoding: encoding,
+				  complete: onComplete,
+				  error: onError
+			  });
+		  }
 	  }
 
-	  let html = '';
-	  
-	  if (hasLatWarning) {
-		html += `<div class="validation-section"><h3>緯度</h3>`;
-		if(results.lat.empty.length) html += `<div class="validation-row"><div class="validation-label">空值</div><div class="line-number-list">${results.lat.empty.slice(0,10).map(n => `<div class="line-number-pill">${n}</div>`).join('')}</div></div>`;
-		if(results.lat.range.length) html += `<div class="validation-row"><div class="validation-label">不在 -90~90 間</div><div class="line-number-list">${results.lat.range.slice(0,10).map(n => `<div class="line-number-pill">${n}</div>`).join('')}</div></div>`;
-		if(results.lat.nonNumeric.length) html += `<div class="validation-row"><div class="validation-label">非數值</div><div class="line-number-list">${results.lat.nonNumeric.slice(0,10).map(n => `<div class="line-number-pill">${n}</div>`).join('')}</div></div>`;
-		html += '</div>';
+	  function showBatchError(container, msg) {
+		  const batchErrorDiv = container.querySelector('.batchError');
+		  if (batchErrorDiv) {
+			  batchErrorDiv.textContent = msg;
+			  batchErrorDiv.classList.remove('hidden');
+		  } else {
+			  alert(msg);
+		  }
+	  }
+
+	  function clearBatchError(container) {
+		  const batchErrorDiv = container.querySelector('.batchError');
+		  if (batchErrorDiv) {
+			  batchErrorDiv.classList.add('hidden');
+			  batchErrorDiv.innerHTML = '';
+		  }
 	  }
 	  
-	  if (hasLonWarning) {
-		html += `<div class="validation-section"><h3>經度</h3>`;
-		if(results.lon.empty.length) html += `<div class="validation-row"><div class="validation-label">空值</div><div class="line-number-list">${results.lon.empty.slice(0,10).map(n => `<div class="line-number-pill">${n}</div>`).join('')}</div></div>`;
-		if(results.lon.range.length) html += `<div class="validation-row"><div class="validation-label">不在 -180~180 間</div><div class="line-number-list">${results.lon.range.slice(0,10).map(n => `<div class="line-number-pill">${n}</div>`).join('')}</div></div>`;
-		if(results.lon.nonNumeric.length) html += `<div class="validation-row"><div class="validation-label">非數值</div><div class="line-number-list">${results.lon.nonNumeric.slice(0,10).map(n => `<div class="line-number-pill">${n}</div>`).join('')}</div></div>`;
-		html += '</div>';
+	  function appendBatchError(container, msg) {
+		  const batchErrorDiv = container.querySelector('.batchError');
+		  if (batchErrorDiv) {
+			  const errorLine = document.createElement('div');
+			  errorLine.textContent = msg;
+			  batchErrorDiv.appendChild(errorLine);
+			  batchErrorDiv.classList.remove('hidden');
+		  }
+	  }
+
+	  function bindBatch(container) {
+		let mapLayers = { markersCluster: L.markerClusterGroup({ maxClusterRadius: 5 }), polyline: null };
+		container.mapLayers = mapLayers;
+		let fileInput = container.querySelector('.fileInput');
+		const stopBtn = container.querySelector('.stopBtn');
+		const progressBar = container.querySelector('.progressBar');
+		const status = container.querySelector('.batchStatus');
+		const listDiv = container.querySelector('.batch-list');
+		const listToggleBtn = container.querySelector('.list-toggle-btn'); 
+		const batchTitleInput = container.querySelector('.batch-title');
+		const deleteBtn = container.querySelector('.delete-batch-btn');
+		const colorMini = container.querySelector('.color-mini');
+		const visibleCheckbox = container.querySelector('.batch-visible-checkbox');
+		const batchControls = container.querySelector('.batch-controls');
+		const importLabel = container.querySelector('.import-label');
+		const playBtn = container.querySelector('.play-batch-btn');
+		
+		let animMarker = null;
+		let animating = false;
+		let animTimer = null;
+		let stepIndex = 0, progress = 0;
+		
+		let isPaused = false;
+		let currentIndex = 0;
+		let currentCoords = [];
+		let currentEmail = '';
+		let batchResults = [];
+		let validCoordsCount = 0;
+
+		let colorValue = colorMini.style.background || '#0000ff';
+		let stopFlag = false;
+		let markersList = [];
+		container.markersList = markersList;
+		let path = [];
+		
+		function createAnimMarker(latlng, text, color) {
+		  return L.marker(latlng, {
+			icon: L.divIcon({
+			  className: '',
+			  html: `<div class="marker-label" style="background:${color}; width:28px; height:28px; font-size:12px;">${text}</div>`,
+			  iconSize: [28,28],
+			  iconAnchor: [14,14]
+			})
+		  }).addTo(map);
+		}
+
+		function startAnimation() {
+		  const currentPath = container.geoPath;
+		  if (!currentPath || currentPath.length < 2) return;
+		  if (animMarker) { map.removeLayer(animMarker); animMarker = null; }
+		  const currentHex = rgbToHex(colorMini.style.background);
+		  const contrast = getContrastColor(currentHex);
+		  animMarker = createAnimMarker(currentPath[0], '', contrast);
+
+		  animating = true;
+		  stepIndex = 0;
+		  progress = 0;
+		  playBtn.textContent = '▪';
+		  playBtn.classList.add('active');
+
+		  animTimer = setInterval(() => {
+			if (!animating) return;
+			const p1 = currentPath[stepIndex];
+			const p2 = currentPath[stepIndex+1];
+			if (!p1 || !p2) { stopAnimation(); return; }
+			progress += 0.08; 
+			if (progress >= 1) {
+			  stepIndex++;
+			  progress = 0;
+			  if (stepIndex >= currentPath.length-1) {
+				stopAnimation();
+				return;
+			  }
+			  
+			  const lat = p2[0], lon = p2[1];
+			  map.removeLayer(animMarker);
+			  animMarker = createAnimMarker([lat, lon], stepIndex+1, contrast);
+			  return;
+			}
+			const lat = p1[0] + (p2[0]-p1[0])*progress;
+			const lon = p1[1] + (p2[1]-p1[1])*progress;
+			animMarker.setLatLng([lat,lon]);
+			if (animMarker._icon) {
+			  animMarker._icon.style.zIndex = 1000;
+			}
+		  }, 30);
+		}
+
+		function stopAnimation() {
+		  animating = false;
+		  if (animTimer) clearInterval(animTimer);
+		  animTimer = null;
+		  if (animMarker) { map.removeLayer(animMarker); animMarker = null; }
+		  playBtn.textContent = '▸';
+		  playBtn.classList.remove('active');
+		}
+
+		if (playBtn) {
+		  playBtn.addEventListener('click', () => {
+			if (animating) stopAnimation();
+			else startAnimation();
+		  });
+		}
+
+		function updateMarkersPolylineColor(){
+		  const currentColor = colorMini.style.background;
+		  
+		  if (container.markersList) {
+			container.markersList.forEach((m,i)=>{
+			  if (!m) return;
+			  const html = `<div class="marker-label" style="background:${currentColor}; width:32px; height:32px;">${i+1}</div>`;
+			  m.setIcon(L.divIcon({className:'', html:html, iconSize:[32,32], iconAnchor:[16,16]}));
+			});
+		  }
+		  if (mapLayers.polyline) mapLayers.polyline.setStyle({color: currentColor});
+		}
+
+		colorMini.addEventListener('click', ()=>{
+		  const picker = document.createElement('input');
+		  picker.type = 'color';
+		  const oldHex = rgbToHex(colorMini.style.background);
+		  picker.value = oldHex;
+		  picker.style.display = 'none';
+		  document.body.appendChild(picker);
+		  picker.click();
+		  picker.addEventListener('input', ()=>{
+			const newHex = picker.value;
+			
+			if (oldHex && usedColors.has(oldHex)) {
+				usedColors.delete(oldHex);
+			}
+			if (newHex && !usedColors.has(newHex)) {
+				usedColors.add(newHex);
+			}
+			
+			colorValue = newHex;
+			colorMini.style.background = colorValue;
+			updateMarkersPolylineColor();
+			document.body.removeChild(picker);
+		  });
+		});
+
+		visibleCheckbox.addEventListener('change', ()=>{
+		  if (visibleCheckbox.checked) {
+			map.addLayer(mapLayers.markersCluster);
+			if (mapLayers.polyline) map.addLayer(mapLayers.polyline);
+		  } else {
+			map.removeLayer(mapLayers.markersCluster);
+			if (mapLayers.polyline) map.removeLayer(mapLayers.polyline);
+		  }
+		});
+
+		if (deleteBtn) {
+		  deleteBtn.onclick = function(){
+			try { mapLayers.markersCluster.clearLayers(); } catch(e){}
+			try { if (mapLayers.polyline && map.hasLayer(mapLayers.polyline)) map.removeLayer(mapLayers.polyline); } catch(e){}
+			const currentHex = rgbToHex(colorMini.style.background);
+			if (currentHex && usedColors.has(currentHex)) {
+				usedColors.delete(currentHex);
+			}
+
+			container.parentNode.removeChild(container);
+			refreshDragHandles();
+			updateExportButtonVisibility();
+		  };
+		}
+
+		stopBtn.onclick = function(){
+		  if (!isPaused) { 
+			  stopFlag = true; 
+			  isPaused = true;
+			  stopBtn.textContent = '接續查詢';
+			  stopBtn.style.background = '#d4a017'; 
+			  status.textContent = '查詢已暫停...';
+		  } else { 
+			  isPaused = false;
+			  stopFlag = false; 
+			  stopBtn.textContent = '終止查詢';
+			  stopBtn.style.background = '#c00'; 
+			  doBatchQuery(currentCoords, currentEmail, currentIndex, container); // 修正：傳入 container
+		  }
+		};
+
+		function clearBatchContent() {
+		  listDiv.innerHTML = '';
+		  mapLayers.markersCluster.clearLayers();
+		  markersList = [];
+		  container.markersList = markersList;
+		  path = [];
+		  if (mapLayers.polyline && map.hasLayer(mapLayers.polyline)) { map.removeLayer(mapLayers.polyline); mapLayers.polyline = null; }
+		  progressBar.value = 0;
+		  status.textContent = '';
+		  if (visibleCheckbox.checked) {
+			map.removeLayer(mapLayers.markersCluster);
+			if (mapLayers.polyline) map.removeLayer(mapLayers.polyline);
+		  }
+		}
+
+		batchControls.classList.add('hidden');
+		progressBar.classList.add('hidden');
+		status.classList.add('hidden');
+		listDiv.classList.add('hidden');
+		fileInput.classList.remove('hidden');
+		importLabel.classList.remove('hidden');
+		if (listToggleBtn) {
+		  listToggleBtn.classList.add('hidden');
+		  listToggleBtn.textContent = '▲';
+		}
+
+		function bindFileInput(fileInput) {
+		  fileInput.addEventListener('click', function() {
+			this.value = "";
+		  });
+
+		  fileInput.addEventListener('change', async (ev) => {
+			const container = ev.target.closest('.batch-container');
+			const batchTitleInput = container.querySelector('.batch-title');
+			const stopBtn = container.querySelector('.stopBtn');
+			const progressBar = container.querySelector('.progressBar');
+			const status = container.querySelector('.batchStatus');
+			const listDiv = container.querySelector('.batch-list');
+			const listToggleBtn = container.querySelector('.list-toggle-btn');
+			const batchControls = container.querySelector('.batch-controls');
+
+			const file = ev.target.files[0];
+			if (!file) return;
+			
+			const MAX_FILE_SIZE_MB = 50;
+			if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+			  showBatchError(container, `檔案大小超過 ${MAX_FILE_SIZE_MB} MB 的限制。`);
+			  fileInput.value = ''; 
+			  return;
+			}
+
+			clearBatchError(container);
+
+			const email = emailInput.value.trim();
+			if (!email || !isValidEmail(email)) {
+			  showBatchError(container, email ? 'Email 格式不正確' : '請先輸入 Email');
+			  fileInput.value = '';
+			  return;
+			}
+			localStorage.setItem('geoEmail', email);
+
+			const onConfirm = async (mapping) => {
+			  stopFlag = false;
+			  // *** 3. 刪除冗餘：移除了未使用的 stopped ***
+			  clearBatchContent();
+			  batchControls.classList.remove('hidden');
+			  progressBar.classList.remove('hidden');
+			  status.classList.remove('hidden');
+			  listDiv.classList.remove('hidden');
+			  if (listToggleBtn) listToggleBtn.classList.remove('hidden');
+
+			  if (batchTitleInput.value.trim() === '') {
+				batchTitleInput.value = file.name.replace(/\.[^/.]+$/, '');
+			  }
+			  
+			  columnMapping = mapping; 
+
+			  parseDataFromFile(file, mapping.encoding, false, 
+				async function(results) { 
+					const allData = mapping.hasHeader ? results.data.slice(1) : results.data;
+					
+					if (allData.length > 0) {
+						currentCoords = allData;
+						currentEmail = email;
+						currentIndex = 0;
+						batchResults = [];
+						validCoordsCount = 0;
+						isPaused = false;
+						stopBtn.textContent = '終止查詢';
+						stopBtn.style.background = '#c00';
+						
+						await doBatchQuery(allData, email, 0, container);
+					} else {
+						showBatchError(container, '在檔案中找不到任何資料。');
+					}
+				},
+				function(err) { 
+					showBatchError(container, '解析檔案時發生錯誤：' + (err && err.message ? err.message : err));
+				}
+			  );
+			};
+			
+			const onCancel = () => {
+			  if (fileInput) fileInput.value = '';
+			};
+			
+			showImportPreview(file, container, onConfirm, onCancel);
+		  });
+		}
+
+
+		bindFileInput(fileInput);
+
+		if (listToggleBtn) {
+		  listToggleBtn.title = "收合清單";
+		  listToggleBtn.addEventListener('click', () => {
+			const collapsed = !listDiv.classList.contains('hidden') && listDiv.offsetParent !== null;
+			if (collapsed) {
+			  listDiv.classList.add('hidden');
+			  listToggleBtn.textContent = '▼';
+			  listToggleBtn.title = "展開清單";
+			} else {
+			  listDiv.classList.remove('hidden');
+			  listToggleBtn.textContent = '▲';
+			  listToggleBtn.title = "收合清單";
+			}
+		  });
+		}
+
+		// *** 2. 效能：新增事件委派 ***
+		listDiv.addEventListener('click', (e) => {
+		  // 找出被點擊的子項目 (必須是 div，且在 .batch-list 底下)
+		  const clickedItem = e.target.closest('.batch-list div');
+		  if (!clickedItem || !listDiv.contains(clickedItem)) return;
+
+		  // 從 data-index 屬性取得索引
+		  const idx = parseInt(clickedItem.dataset.index, 10);
+		  if (isNaN(idx) || !markersList[idx]) return;
+
+		  const latlng = markersList[idx].getLatLng();
+
+		  clearAllActives(); // 清除所有批次的
+		  highlightIndex(idx); // 反白當前點
+		  map.setView([latlng.lat, latlng.lng], Math.max(14, map.getZoom()));
+		  flashMarker(idx, markersList, colorValue);
+		});
+
+		async function doBatchQuery(allData, email, startIndex = 0, container) {
+		  progressBar.classList.remove('hidden');
+		  status.classList.remove('hidden');
+		  listDiv.classList.remove('hidden');
+		  if (listToggleBtn) listToggleBtn.classList.remove('hidden');
+
+		  if (startIndex === 0) {
+			  clearBatchError(container);
+		  }
+
+		  if (visibleCheckbox.checked) {
+			map.addLayer(mapLayers.markersCluster);
+		  }
+
+		  let totalTime = 0; 
+		  let countDone = 0;
+
+		  const validDataIndices = [];
+		  allData.forEach((row, i) => {
+			  // 修正：確保 columnMapping.lat/lon 不是 null
+			  if (columnMapping.lat === null || columnMapping.lon === null) return;
+			  const lat = parseFloat(row[columnMapping.lat]);
+			  const lon = parseFloat(row[columnMapping.lon]);
+			  if (isValidCoord(lat, lon)) {
+				  validDataIndices.push(i);
+			  }
+		  });
+		  const totalValid = validDataIndices.length;
+
+		  // 修正：確保 columnMapping.lat/lon 不是 null
+		  if (columnMapping.lat === null || columnMapping.lon === null) {
+			  showBatchError(container, "錯誤：未設定經緯度欄位對應。");
+			  return;
+		  }
+
+		  for (let i = startIndex; i < allData.length; i++) {
+			currentIndex = i; 
+			
+			if (stopFlag) { 
+			  break; 
+			}
+			
+			const rowData = allData[i];
+			const baseIndex = columnMapping.hasHeader ? 2 : 1;
+			const currentLine = i + baseIndex;
+
+			const latVal = rowData[columnMapping.lat] ? String(rowData[columnMapping.lat]).trim() : '';
+			const lonVal = rowData[columnMapping.lon] ? String(rowData[columnMapping.lon]).trim() : '';
+			const rowErrors = [];
+
+			if (latVal === '') {
+				rowErrors.push('緯度為空值');
+			} else if (isNaN(latVal) || !/^-?\d+(\.\d+)?$/.test(latVal)) {
+				rowErrors.push('緯度非數值');
+			} else if (parseFloat(latVal) < -90 || parseFloat(latVal) > 90) {
+				rowErrors.push('緯度超出 -90~90 範圍');
+			}
+			
+			if (lonVal === '') {
+				rowErrors.push('經度為空值');
+			} else if (isNaN(lonVal) || !/^-?\d+(\.\d+)?$/.test(lonVal)) {
+				rowErrors.push('經度非數值');
+			} else if (parseFloat(lonVal) < -180 || parseFloat(lonVal) > 180) {
+				rowErrors.push('經度超出 -180~180 範圍');
+			}
+			
+			if (rowErrors.length > 0) {
+				const combinedErrorMsg = `第 ${currentLine} 列：` + rowErrors.join('、');
+				appendBatchError(container, combinedErrorMsg);
+				continue; 
+			}
+
+			const lat = parseFloat(latVal);
+			const lon = parseFloat(lonVal);
+			const start = Date.now();
+			let wasCached = false;
+			try {
+			  if (stopFlag) break;
+			  const result = await fetchAddress(lat, lon, email);
+			  if (stopFlag) break;
+			  const data = result.data; 
+			  wasCached = result.wasCached;
+			  
+			  const addr = data.address || {};
+			  const r = {
+				idx: validCoordsCount + 1,
+				lat: lat,
+				lon: lon,
+				postcode: addr.postcode || '',
+				country: addr.country || '',
+				city: addr.city || addr.town || addr.village || '',
+				suburb: addr.suburb || '',
+				neighbourhood: addr.neighbourhood || '',
+				road: addr.road || '',
+				house_number: addr.house_number || '',
+				village: addr.village || '',
+				office: addr.office || ''
+			  };
+			  batchResults.push(r);
+
+			  const currentValidIndex = validCoordsCount;
+			  const markerLabelIndex = currentValidIndex + 1;
+			  
+			  const html = `<div class="marker-label" style="background:${colorValue}; width:32px; height:32px;">${markerLabelIndex}</div>`;
+			  const m = L.marker([lat, lon], { icon: L.divIcon({ className:'', html: html, iconSize:[32,32], iconAnchor:[16,16] }) })
+						.bindPopup(createSafePopupContent(niceAddressFromR(r)));
+			  m.on('click', () => {
+				clearAllActives();
+				highlightIndex(currentValidIndex);
+				map.setView([lat, lon], Math.max(14, map.getZoom()));
+			  });
+			  mapLayers.markersCluster.addLayer(m);
+			  markersList.push(m);
+
+			  path.push([lat, lon]);
+			  if (!mapLayers.polyline) {
+				mapLayers.polyline = L.polyline(path, { color: colorValue });
+				if (visibleCheckbox.checked) map.addLayer(mapLayers.polyline);
+			  } else {
+				mapLayers.polyline.setLatLngs(path);
+				mapLayers.polyline.setStyle({ color: colorValue });
+			  }
+			  if (path.length === 1) map.setView([lat, lon], 14);
+			  else map.fitBounds(mapLayers.polyline.getBounds());
+
+			  const item = document.createElement('div');
+			  item.textContent = `${markerLabelIndex}. ${niceAddressFromR(r)}`;
+			  
+			  // *** 2. 效能：儲存索引並移除獨立監聽器 ***
+			  item.dataset.index = currentValidIndex;
+			  listDiv.appendChild(item);
+			  
+			} catch (err) {
+			  console.error(err);
+			}
+			const elapsed = Date.now() - start;
+			if (!wasCached && elapsed < 1000) {
+			  await new Promise(r => setTimeout(r, 1000 - elapsed));
+			}
+			
+			const finalElapsedForIteration = Date.now() - start;
+			totalTime += finalElapsedForIteration;
+			countDone++;
+			validCoordsCount++;
+
+			const safeCount = countDone > 0 ? countDone : 1;
+			let avgTime = totalTime / safeCount;
+			
+			// 修正：避免 totalValid 為 0 時除以 0
+			const remaining = totalValid - validCoordsCount;
+			const remainingMs = avgTime * remaining;
+			let remainingText = '';
+			if (remainingMs >= 60000) {
+			  const mins = Math.floor(remainingMs / 60000);
+			  const secs = Math.round((remainingMs % 60000) / 1000);
+			  remainingText = `預估剩餘時間：約 ${mins} 分 ${secs} 秒`;
+			} else {
+			  remainingText = `預估剩餘時間：約 ${Math.round(remainingMs / 1000)} 秒`;
+			}
+
+			// 修正：避免 totalValid 為 0 時除以 0
+			progressBar.value = (totalValid > 0) ? (validCoordsCount / totalValid) * 100 : 0;
+			status.textContent = `進度 ${validCoordsCount}/${totalValid}　${remainingText}`;
+		  }
+		  if (!stopFlag) { 
+			container.geoPath = path;
+			status.textContent = `批次完成，共 ${batchResults.length} 筆`;
+			downloadResults(batchResults);
+			if (colorValue && /^#[0-9A-Fa-f]{6}$/.test(colorValue)) usedColors.add(colorValue);
+			finishBatch();
+			addNewBatchArea();
+		  }
+		}
+
+		function highlightIndex(idx) {
+		  Array.from(listDiv.children).forEach((el,i)=>el.classList.toggle('active', i === idx));
+		  const currentColor = colorMini.style.background;
+		  markersList.forEach((m,i)=>{
+			if (!m) return;
+			const html = `<div class="marker-label" style="background:${colorValue}; width:32px;height:32px; font-size:13px;">${i+1}</div>`;
+			m.setIcon(L.divIcon({className:'', html:html, iconSize:[32,32], iconAnchor:[16,16]}));
+		  });
+		}
+
+		function downloadResults(results) {
+		  if (!results || results.length === 0) return;
+		  let filename = 'batch_results.txt';
+		  const title = batchTitleInput.value.trim();
+		  if (title) filename = title + '.txt';
+		  const txt = results.map(buildExportLine).join('\n');
+		  const blob = new Blob([txt], { type: 'text/plain;charset=utf-8' });
+		  const url = URL.createObjectURL(blob);
+		  const a = document.createElement('a');
+		  a.href = url; a.download = filename; a.click();
+		  URL.revokeObjectURL(url);
+		}
+
+		function finishBatch() {
+		  fileInput.classList.add('hidden');
+		  importLabel.classList.add('hidden');
+		  batchControls.classList.add('hidden');
+		  progressBar.classList.add('hidden');
+		  status.classList.add('hidden');
+		  if (deleteBtn) deleteBtn.classList.remove('hidden');
+		  if (playBtn) playBtn.classList.remove('hidden');
+		  updateExportButtonVisibility();
+		}
+	  }
+
+	  function addNewBatchArea() {
+		const clone = templateDiv.cloneNode(true);
+		clone.querySelector('.progressBar').value = 0;
+		clone.querySelector('.batchStatus').textContent = '';
+		clone.querySelector('.batch-list').innerHTML = '';
+		clone.querySelector('.batch-list').classList.add('hidden');
+		clone.querySelector('.batch-title').value = '';
+		clone.querySelector('.batch-visible-checkbox').checked = true;
+		
+		const errorDiv = clone.querySelector('.batchError');
+		if(errorDiv) {
+			errorDiv.innerHTML = '';
+			errorDiv.classList.add('hidden');
+		}
+
+		if (clone.querySelector('.delete-batch-btn')) {
+		  clone.querySelector('.delete-batch-btn').classList.add('hidden');
+		}
+		if (clone.querySelector('.play-batch-btn')) {
+		  clone.querySelector('.play-batch-btn').classList.add('hidden');
+		}
+		clone.querySelector('.fileInput').classList.remove('hidden');
+		clone.querySelector('.import-label').classList.remove('hidden');
+		clone.querySelector('.row.batch-controls').classList.add('hidden');
+		clone.querySelector('.progressBar').classList.add('hidden');
+		clone.querySelector('.batchStatus').classList.add('hidden');
+		const listToggle = clone.querySelector('.list-toggle-btn');
+		if (listToggle) {
+		  listToggle.classList.add('hidden');
+		  listToggle.textContent = '▲';
+		}
+
+		let nextColor = '#'+Math.floor(Math.random()*16777215).toString(16).padStart(6,'0');
+		let attempts = 0;
+		while (usedColors.has(nextColor) && attempts < 20) {
+		  nextColor = '#'+Math.floor(Math.random()*16777215).toString(16).padStart(6,'0');
+		  attempts++;
+		}
+		const colorMini = clone.querySelector('.color-mini');
+		colorMini.style.background = nextColor;
+		++batchUID;
+		const visibleCheckbox = clone.querySelector('.batch-visible-checkbox');
+		visibleCheckbox.id = `batchVisible_${batchUID}`;
+		visibleCheckbox.name = `batchVisible_${batchUID}`;
+
+		const batchTitle = clone.querySelector('.batch-title');
+		batchTitle.id = `batchTitle_${batchUID}`;
+		batchTitle.name = `batchTitle_${batchUID}`;
+
+		const fileInput = clone.querySelector('.fileInput');
+		fileInput.value = '';
+		fileInput.setAttribute('data-batch-uid', batchUID);
+
+		batchArea.appendChild(clone);
+		bindBatch(clone);
+		refreshDragHandles();
+		return clone;
+	  }
+
+	  bindBatch(templateDiv);
+	  refreshDragHandles();
+	  
+	  const screenshotBtn = document.getElementById('screenshotBtn');
+	  const mapDiv = document.getElementById('map');
+	  let isCapturing = false;
+	  let startPoint = null;
+	  let selectionBox = null;
+
+	  function toggleCaptureMode(active) {
+		isCapturing = active;
+		if (active) {
+		  screenshotBtn.textContent = '取消截圖';
+		  screenshotBtn.style.background = '#d4a017';
+		  mapDiv.classList.add('crosshair-cursor');
+		  L.DomUtil.disableTextSelection();
+		  if (map) {
+			  map.dragging.disable();
+			  map.touchZoom.disable();
+			  map.doubleClickZoom.disable();
+			  map.scrollWheelZoom.disable();
+			  map.boxZoom.disable();
+			  map.keyboard.disable();
+			  if (map.zoomControl) {
+				  map.zoomControl.remove();
+			  }
+		  }
+		} else {
+		  screenshotBtn.textContent = '開始截圖';
+		  screenshotBtn.style.background = '#007bff';
+		  mapDiv.classList.remove('crosshair-cursor');
+		  L.DomUtil.enableTextSelection();
+		  removeSelectionBox();
+		  if (map) {
+			  map.dragging.enable();
+			  map.touchZoom.enable();
+			  map.doubleClickZoom.enable();
+			  map.scrollWheelZoom.enable();
+			  map.boxZoom.enable();
+			  map.keyboard.enable();
+			  if (map.zoomControl) {
+				  map.zoomControl.addTo(map);
+			  }
+		  }
+		}
+	  }
+
+	  function removeSelectionBox() {
+		if (selectionBox) {
+		  selectionBox.remove();
+		  selectionBox = null;
+		  startPoint = null;
+		}
+	  }
+
+	  screenshotBtn.addEventListener('click', () => {
+		if (isCapturing) {
+		  toggleCaptureMode(false);
+		} else {
+		  toggleCaptureMode(true);
+		}
+	  });
+
+	  mapDiv.addEventListener('mousedown', (e) => {
+		if (!isCapturing || selectionBox) return;
+		
+		startPoint = { x: e.clientX, y: e.clientY };
+
+		selectionBox = document.createElement('div');
+		selectionBox.className = 'selection-box';
+		mapDiv.appendChild(selectionBox);
+
+		document.addEventListener('mousemove', onMouseMove);
+		document.addEventListener('mouseup', onMouseUp);
+	  });
+
+	  function onMouseMove(e) {
+		if (!selectionBox || !startPoint) return;
+
+		const currentX = e.clientX;
+		const currentY = e.clientY;
+		const mapRect = mapDiv.getBoundingClientRect();
+
+		const x1 = Math.min(Math.max(startPoint.x, mapRect.left), mapRect.right);
+		const y1 = Math.min(Math.max(startPoint.y, mapRect.top), mapRect.bottom);
+		const x2 = Math.min(Math.max(currentX, mapRect.left), mapRect.right);
+		const y2 = Math.min(Math.max(currentY, mapRect.top), mapRect.bottom);
+
+		const left = Math.min(x1, x2);
+		const top = Math.min(y1, y2);
+		const width = Math.abs(x1 - x2);
+		const height = Math.abs(y1 - y2);
+
+		selectionBox.style.left = (left - mapRect.left) + 'px';
+		selectionBox.style.top = (top - mapRect.top) + 'px';
+		selectionBox.style.width = width + 'px';
+		selectionBox.style.height = height + 'px';
+	  }
+
+	  function onMouseUp(e) {
+		document.removeEventListener('mousemove', onMouseMove);
+		document.removeEventListener('mouseup', onMouseUp);
+
+		if (!selectionBox || !startPoint) {
+		  removeSelectionBox();
+		  return;
+		}
+		
+		if (parseInt(selectionBox.style.width) < 10 || parseInt(selectionBox.style.height) < 10) {
+		  removeSelectionBox();
+		  return;
+		}
+		
+		const controls = document.createElement('div');
+		controls.className = 'screenshot-controls';
+		controls.innerHTML = `
+		  <button class="screenshot-save" type="button">儲存</button>
+		  <button class="screenshot-cancel" type="button">取消</button>
+		`;
+		const boxRect = selectionBox.getBoundingClientRect();
+		const threshold = 50; 
+		if (boxRect.bottom > window.innerHeight - threshold) {
+		  controls.classList.add('top-right');
+		}
+		
+		selectionBox.appendChild(controls);
+
+		mapDiv.classList.remove('crosshair-cursor'); 
+
+		controls.querySelector('.screenshot-save').addEventListener('click', () => {
+		  const type = document.querySelector('input[name="screenshotType"]:checked').value;
+		  captureAndDownload(selectionBox, type);
+		  removeSelectionBox();
+		  mapDiv.classList.add('crosshair-cursor');
+		});
+
+		controls.querySelector('.screenshot-cancel').addEventListener('click', () => {
+		  removeSelectionBox();
+		  mapDiv.classList.add('crosshair-cursor');
+		});
 	  }
 	  
-	  container.innerHTML = html;
-	}
-	
-	function createSafePopupContent(text) {
-	  const div = document.createElement('div');
-	  div.textContent = text; // 使用 .textContent 來避免 HTML 解析
-	  return div;
-	}
+	  async function captureAndDownload(selectionBox, type) {
+		  const mapRect = mapDiv.getBoundingClientRect();
+		  const boxRect = selectionBox.getBoundingClientRect();
+
+		  const x = boxRect.left - mapRect.left;
+		  const y = boxRect.top - mapRect.top;
+		  const width = boxRect.width;
+		  const height = boxRect.height;
+		  
+		  selectionBox.style.display = 'none'; 
+		  
+		  try {
+			  const canvas = await html2canvas(mapDiv, {
+				  allowTaint: true,
+				  useCORS: true,
+				  x: x,
+				  y: y,
+				  width: width,
+				  height: height,
+				  scale: 2
+			  });
+			  
+			  selectionBox.style.display = ''; 
+
+			  const now = new Date();
+			  const dateStr = [
+				  now.getFullYear(),
+				  String(now.getMonth() + 1).padStart(2, '0'),
+				  String(now.getDate()).padStart(2, '0'),
+				  String(now.getHours()).padStart(2, '0'),
+				  String(now.getMinutes()).padStart(2, '0'),
+				  String(now.getSeconds()).padStart(2, '0')
+			  ].join('');
+			  const filename = `GEO-${dateStr}.${type}`;
+			  
+			  if (type === 'pdf') {
+				  const { jsPDF } = window.jspdf;
+				  const imgData = canvas.toDataURL('image/png', 1.0);
+
+				  const pdf = new jsPDF({
+					  orientation: 'portrait',
+					  unit: 'mm',
+					  format: 'a4'
+				  });
+				  
+				  const margin = 20; 
+				  const pagePrintableWidth = pdf.internal.pageSize.getWidth() - margin * 2; 
+				  const pagePrintableHeight = pdf.internal.pageSize.getHeight() - margin * 2; 
+
+				  const canvasWidth = canvas.width;
+				  const canvasHeight = canvas.height;
+				  
+				  const widthRatio = pagePrintableWidth / canvasWidth;
+				  const heightRatio = pagePrintableHeight / canvasHeight;
+				  const bestFitRatio = Math.min(widthRatio, heightRatio);
+
+				  const finalImageWidth = canvasWidth * bestFitRatio;
+				  const finalImageHeight = canvasHeight * bestFitRatio;
+
+				  pdf.addImage(imgData, 'PNG', margin, margin, finalImageWidth, finalImageHeight);
+				  pdf.save(filename);
+			  } else {
+				  let mimeType = `image/${type === 'jpg' ? 'jpeg' : type}`;
+				  const dataURL = canvas.toDataURL(mimeType, 1.0);
+
+				  const a = document.createElement('a');
+				  a.href = dataURL;
+				  a.download = filename;
+				  document.body.appendChild(a);
+				  a.click();
+				  document.body.removeChild(a);
+			  }
+		  } catch (error) {
+			  console.error('截圖失敗:', error);
+			  alert('截圖失敗，請檢查瀏覽器設定或網路連線。');
+		  } finally {
+			  selectionBox.style.display = ''; 
+		  }
+	  }
+
+	  const importPreviewOverlay = document.getElementById('importPreviewOverlay');
+	  const previewTableContainer = document.getElementById('previewTableContainer');
+	  const headerCheckbox = document.getElementById('headerCheckbox');
+	  const availableFields = document.getElementById('availableFields');
+	  const latDropTarget = document.getElementById('latDropTarget');
+	  const lonDropTarget = document.getElementById('lonDropTarget');
+	  const importConfirmBtn = document.getElementById('importConfirmBtn');
+	  const importCancelBtn = document.getElementById('importCancelBtn');
+	  const importPreviewError = document.getElementById('importPreviewError');
+
+	  let currentBatchContainer = null;
+	  let currentImportFile = null; 
+	  let previewData = null;
+	  let importConfirmCallback = null;
+	  let importCancelCallback = null; 
+	  const encodingSelect = document.getElementById('encodingSelect'); 
+	  let columnMapping = { lat: null, lon: null, hasHeader: false };
+
+	  function showImportPreview(file, container, onConfirm, onCancel) {
+		currentBatchContainer = container;
+		importConfirmCallback = onConfirm;
+		importCancelCallback = onCancel; 
+		currentImportFile = file;
+		importPreviewError.textContent = '';
+		columnMapping = { lat: null, lon: null, hasHeader: false };
+
+		encodingSelect.value = 'UTF-8';
+		headerCheckbox.checked = false; 
+
+		parseAndDisplayPreview();
+		importPreviewOverlay.style.display = 'flex';
+	  }
+
+	  function parseAndDisplayPreview() {
+		const selectedEncoding = encodingSelect.value;
+		parseDataFromFile(currentImportFile, selectedEncoding, true, 
+		  function(results) { 
+			previewData = results.data;
+			if (previewData.length === 0 && currentImportFile) {
+			  showBatchError(currentBatchContainer, '檔案是空的或格式無法解析。請嘗試切換檔案編碼。');
+			}
+			updatePreviewUI();
+		  }, 
+		  function(err) { 
+			  showBatchError(currentBatchContainer, '解析檔案預覽時發生錯誤: ' + err.message);
+		  }
+		);
+	  }
+
+	  encodingSelect.addEventListener('change', parseAndDisplayPreview);
+
+	  function updatePreviewUI() {
+		columnMapping.hasHeader = headerCheckbox.checked;
+		const headerRow = columnMapping.hasHeader ? previewData[0] : null;
+		const dataRows = columnMapping.hasHeader ? previewData.slice(1) : previewData;
+	  
+		previewTableContainer.innerHTML = '';
+		
+		if (dataRows.length === 0) {
+		  previewTableContainer.innerHTML = '<p style="padding: 10px; color: #555;">沒有可預覽的資料。</p>';
+		  availableFields.innerHTML = '';
+		  renderValidationWarnings({ lat: {}, lon: {} });
+		  return;
+		}
+		
+		const table = document.createElement('table');
+		const thead = document.createElement('thead');
+		const tbody = document.createElement('tbody');
+		const headerTr = document.createElement('tr');
+
+		const thEmpty = document.createElement('th');
+		headerTr.appendChild(thEmpty);	  
+		const numCols = dataRows[0].length;
+		for (let i = 0; i < numCols; i++) {
+		  const th = document.createElement('th');
+		  th.textContent = headerRow ? (headerRow[i] || `第 ${i + 1} 欄`) : `第 ${i + 1} 欄`;
+		  headerTr.appendChild(th);
+		}
+		thead.appendChild(headerTr);
+
+		  const displayRows = Math.min(dataRows.length, 10);
+			  for (let i = 0; i < displayRows; i++) {
+				  const tr = document.createElement('tr');
+				  const tdLine = document.createElement('td');
+				  tdLine.textContent = i + (columnMapping.hasHeader ? 2 : 1);
+				  tr.appendChild(tdLine);
+
+				  for (let j = 0; j < numCols; j++) {
+					  const td = document.createElement('td');
+					  const cellData = dataRows[i][j] || '';
+					  td.textContent = cellData;
+					  td.title = cellData;
+					  tr.appendChild(td);
+				  }
+				  tbody.appendChild(tr);
+			  }
+		
+		table.appendChild(thead);
+		table.appendChild(tbody);
+		previewTableContainer.appendChild(table);
+
+		availableFields.innerHTML = '';
+		for (let i = 0; i < numCols; i++) {
+		  const fieldName = headerRow ? (headerRow[i] || `第 ${i + 1} 欄`) : `第 ${i + 1} 欄`;
+		  const fieldDiv = document.createElement('div');
+		  fieldDiv.className = 'field-item';
+		  fieldDiv.textContent = fieldName;
+		  fieldDiv.draggable = true;
+		  fieldDiv.dataset.columnIndex = i;
+		  availableFields.appendChild(fieldDiv);
+		}
+
+		[latDropTarget, lonDropTarget].forEach(target => {
+			const targetType = target.dataset.target; 
+			const mappedIndex = columnMapping[targetType];
+			
+			if (mappedIndex !== null && mappedIndex < numCols) {
+				const fieldName = headerRow ? (headerRow[mappedIndex] || `第 ${mappedIndex + 1} 欄`) : `第 ${mappedIndex + 1} 欄`;
+				target.innerHTML = `<div class="field-item" draggable="true">${fieldName}</div>`;
+				target.classList.add('has-item');
+			} else {
+				if (mappedIndex !== null) {
+				  columnMapping[targetType] = null;
+				  target.dataset.mappedColumnIndex = '';
+				}
+				target.innerHTML = `將${targetType === 'lat' ? '緯度' : '經度'}欄位拖曳至此`;
+				target.classList.remove('has-item');
+			}
+		});
+		
+		validateAllData();
+	  }
+
+	  function closeImportPreview() {
+		importPreviewOverlay.style.display = 'none';
+		if (importCancelCallback) {
+			importCancelCallback(); 
+		}
+	  }
+
+	  const dropTargetsContainer = document.querySelector('.drop-targets');
+		
+	  dropTargetsContainer.addEventListener('dragstart', e => {
+		if (e.target.classList.contains('field-item')) {
+		  const parentDropZone = e.target.closest('.drop-zone');
+		  if (parentDropZone) {
+			e.dataTransfer.setData('text/plain', parentDropZone.dataset.mappedColumnIndex);
+			e.dataTransfer.setData('text/html', e.target.textContent);
+			e.dataTransfer.setData('text/source-id', parentDropZone.id); 
+		  }
+		}
+	  });
+	  
+	  headerCheckbox.addEventListener('change', updatePreviewUI);
+	  availableFields.addEventListener('dragstart', e => {
+		if (e.target.classList.contains('field-item')) {
+		  e.dataTransfer.setData('text/plain', e.target.dataset.columnIndex);
+		  e.dataTransfer.setData('text/html', e.target.textContent);
+		}
+	  });
+	  [latDropTarget, lonDropTarget].forEach(target => {
+		target.addEventListener('dragover', e => { e.preventDefault(); target.classList.add('drag-over'); });
+		target.addEventListener('dragleave', () => target.classList.remove('drag-over'));
+		target.addEventListener('drop', e => {
+		  e.preventDefault();
+		  target.classList.remove('drag-over');
+		  
+		  const droppedColIndex = e.dataTransfer.getData('text/plain');
+		  const droppedColName = e.dataTransfer.getData('text/html');
+		  const sourceId = e.dataTransfer.getData('text/source-id');
+
+		  if (sourceId) { 
+			  const sourceTarget = document.getElementById(sourceId);
+			  if (sourceTarget === target) return; 
+
+			  const targetOriginalContent = target.innerHTML;
+			  const targetOriginalIndex = target.dataset.mappedColumnIndex;
+			  const targetWasEmpty = !target.classList.contains('has-item');
+			  
+			  target.innerHTML = `<div class="field-item" draggable="true">${droppedColName}</div>`;
+			  target.classList.add('has-item');
+			  target.dataset.mappedColumnIndex = droppedColIndex;
+			  columnMapping[target.dataset.target] = parseInt(droppedColIndex, 10);
+
+			  if (targetWasEmpty) {
+				  sourceTarget.innerHTML = `將${sourceTarget.dataset.target === 'lat' ? '緯度' : '經度'}欄位拖曳至此`;
+				  sourceTarget.classList.remove('has-item');
+				  sourceTarget.dataset.mappedColumnIndex = '';
+				  columnMapping[sourceTarget.dataset.target] = null;
+			  } else {
+				  sourceTarget.innerHTML = targetOriginalContent;
+				  sourceTarget.querySelector('.field-item').draggable = true;
+				  sourceTarget.classList.add('has-item');
+				  sourceTarget.dataset.mappedColumnIndex = targetOriginalIndex;
+				  columnMapping[sourceTarget.dataset.target] = parseInt(targetOriginalIndex, 10);
+			  }
+		  
+		  } else { 
+			  const otherTarget = target === latDropTarget ? lonDropTarget : latDropTarget;
+			  if (otherTarget.dataset.mappedColumnIndex === droppedColIndex) {
+				  otherTarget.innerHTML = `將${otherTarget.dataset.target === 'lat' ? '緯度' : '經度'}欄位拖曳至此`;
+				  otherTarget.classList.remove('has-item');
+				  otherTarget.dataset.mappedColumnIndex = '';
+				  columnMapping[otherTarget.dataset.target] = null;
+			  }
+
+			  target.innerHTML = `<div class="field-item" draggable="true">${droppedColName}</div>`;
+			  target.classList.add('has-item');
+			  target.dataset.mappedColumnIndex = droppedColIndex;
+			  columnMapping[target.dataset.target] = parseInt(droppedColIndex, 10);
+		  }
+		  validateAllData();
+		});
+	  });
+	  
+	  importCancelBtn.addEventListener('click', closeImportPreview);
+	  importConfirmBtn.addEventListener('click', () => {
+		if (columnMapping.lat === null || columnMapping.lon === null) {
+		  importPreviewError.textContent = '錯誤：請同時指定經度與緯度欄位。';
+		  return;
+		}
+		importPreviewOverlay.style.display = 'none';
+		if (importConfirmCallback) {
+		  columnMapping.encoding = encodingSelect.value; 
+		  importConfirmCallback(columnMapping);
+		}
+	  });
+
+	  function validateAllData() {
+		const latIndex = columnMapping.lat;
+		const lonIndex = columnMapping.lon;
+
+		const validationResults = {
+		  lat: { empty: [], range: [], nonNumeric: [] },
+		  lon: { empty: [], range: [], nonNumeric: [] }
+		};
+
+		if (previewData && (latIndex !== null || lonIndex !== null)) {
+		  const dataToValidate = columnMapping.hasHeader ? previewData.slice(1) : previewData;
+		  dataToValidate.forEach((row, index) => {
+			const lineNumber = index + (columnMapping.hasHeader ? 2 : 1);
+
+			if (latIndex !== null) {
+			  const latVal = row[latIndex] ? String(row[latIndex]).trim() : '';
+			  if (latVal === '') {
+				validationResults.lat.empty.push(lineNumber);
+			  } else if (isNaN(latVal) || !/^-?\d+(\.\d+)?$/.test(latVal)) {
+				validationResults.lat.nonNumeric.push(lineNumber);
+			  } else {
+				const latNum = parseFloat(latVal);
+				if (latNum < -90 || latNum > 90) {
+				  validationResults.lat.range.push(lineNumber);
+				}
+			  }
+			}
+
+			if (lonIndex !== null) {
+			  const lonVal = row[lonIndex] ? String(row[lonIndex]).trim() : '';
+			  if (lonVal === '') {
+				validationResults.lon.empty.push(lineNumber);
+			  } else if (isNaN(lonVal) || !/^-?\d+(\.\d+)?$/.test(lonVal)) {
+				validationResults.lon.nonNumeric.push(lineNumber);
+			  } else {
+				const lonNum = parseFloat(lonVal);
+				if (lonNum < -180 || lonNum > 180) {
+				  validationResults.lon.range.push(lineNumber);
+				}
+			  }
+			}
+		  });
+		}
+		renderValidationWarnings(validationResults);
+	  }
+
+	  function renderValidationWarnings(results) {
+		const container = document.getElementById('validationResultsContainer');
+		if (!container) return;
+		
+		const hasLatWarning = results.lat.empty.length > 0 || results.lat.range.length > 0 || results.lat.nonNumeric.length > 0;
+		const hasLonWarning = results.lon.empty.length > 0 || results.lon.range.length > 0 || results.lon.nonNumeric.length > 0;
+
+		if (!hasLatWarning && !hasLonWarning) {
+		  container.innerHTML = '';
+		  return;
+		}
+
+		let html = []; // *** 使用陣列 ***
+		
+		if (hasLatWarning) {
+		  html.push(`<div class="validation-section"><h3>緯度</h3>`); // *** 使用 .push() ***
+		  if(results.lat.empty.length) html.push(`<div class="validation-row"><div class="validation-label">空值</div><div class="line-number-list">${results.lat.empty.slice(0,10).map(n => `<div class="line-number-pill">${n}</div>`).join('')}</div></div>`);
+		  if(results.lat.range.length) html.push(`<div class="validation-row"><div class="validation-label">不在 -90~90 間</div><div class="line-number-list">${results.lat.range.slice(0,10).map(n => `<div class="line-number-pill">${n}</div>`).join('')}</div></div>`);
+		  if(results.lat.nonNumeric.length) html.push(`<div class="validation-row"><div class="validation-label">非數值</div><div class="line-number-list">${results.lat.nonNumeric.slice(0,10).map(n => `<div class="line-number-pill">${n}</div>`).join('')}</div></div>`);
+		  html.push('</div>');
+		}
+		
+		if (hasLonWarning) {
+		  html.push(`<div class="validation-section"><h3>經度</h3>`);
+		  if(results.lon.empty.length) html.push(`<div class="validation-row"><div class="validation-label">空值</div><div class="line-number-list">${results.lon.empty.slice(0,10).map(n => `<div class="line-number-pill">${n}</div>`).join('')}</div></div>`);
+		  if(results.lon.range.length) html.push(`<div class="validation-row"><div class="validation-label">不在 -180~180 間</div><div class="line-number-list">${results.lon.range.slice(0,10).map(n => `<div class="line-number-pill">${n}</div>`).join('')}</div></div>`);
+		  if(results.lon.nonNumeric.length) html.push(`<div class="validation-row"><div class="validation-label">非數值</div><div class="line-number-list">${results.lon.nonNumeric.slice(0,10).map(n => `<div class="line-number-pill">${n}</div>`).join('')}</div></div>`);
+		  html.push('</div>');
+		}
+		
+		container.innerHTML = html.join(''); // *** 使用 .join() ***
+	  }
+	  
+	  function createSafePopupContent(text) {
+		const div = document.createElement('div');
+		div.textContent = text; 
+		return div;
+	  }
+
+	  function updateExportButtonVisibility() {
+		const exportBtn = document.getElementById('exportJsonBtn');
+		if (!exportBtn) return;
+
+		const completedBatches = document.querySelectorAll('.batch-container .delete-batch-btn:not(.hidden)');
+		if (completedBatches.length > 0) {
+		  exportBtn.classList.remove('hidden');
+		} else {
+		  exportBtn.classList.add('hidden');
+		}
+	  }
+
+	  document.getElementById('exportJsonBtn').addEventListener('click', () => {
+		  const allBatchData = [];
+		  const batchContainers = document.querySelectorAll('#batchArea .batch-container');
+
+		  batchContainers.forEach(container => {
+			  if (container.geoPath && container.geoPath.length > 0) {
+				  const listItems = Array.from(container.querySelectorAll('.batch-list div')).map(div => div.textContent);
+
+				  if (listItems.length > 0) {
+					   const batchData = {
+						  title: container.querySelector('.batch-title').value,
+						  color: container.querySelector('.color-mini').style.background,
+						  path: container.geoPath,
+						  listItems: listItems
+					  };
+					  allBatchData.push(batchData);
+				  }
+			  }
+		  });
+
+		  if (allBatchData.length > 0) {
+			  const jsonString = JSON.stringify(allBatchData, null, 2);
+			  const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8' });
+			  const url = URL.createObjectURL(blob);
+			  const a = document.createElement('a');
+			  const now = new Date();
+			  const dateStr = [ now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0'), String(now.getHours()).padStart(2, '0'), String(now.getMinutes()).padStart(2, '0'), String(now.getSeconds()).padStart(2, '0') ].join('');
+			  a.href = url;
+			  a.download = `GEO-export-${dateStr}.json`;
+			  a.click();
+			  URL.revokeObjectURL(url);
+		  } else {
+			  alert('沒有可匯出的已完成批次資料。');
+		  }
+	  });
+
+	  function importBatch(data, container) {
+		  if (!container || !container.mapLayers) return;
+
+		  const mapLayers = container.mapLayers;
+		  const markersList = []; 
+		  
+		  let finalColor = data.color;
+		  let hexColor = rgbToHex(data.color);
+		  
+		  if (!hexColor || usedColors.has(hexColor)) {
+			  let nextColor = '#'+Math.floor(Math.random()*16777215).toString(16).padStart(6,'0');
+			  let attempts = 0;
+			  while (usedColors.has(nextColor) && attempts < 20) {
+				  nextColor = '#'+Math.floor(Math.random()*16777215).toString(16).padStart(6,'0');
+				  attempts++;
+			  }
+			  finalColor = nextColor; 
+			  hexColor = finalColor; 
+		  }
+		  
+		  if(hexColor) usedColors.add(hexColor);
+
+		  container.querySelector('.batch-title').value = data.title;
+		  const colorMini = container.querySelector('.color-mini');
+		  colorMini.style.background = finalColor;
+
+		  const listDiv = container.querySelector('.batch-list');
+		  listDiv.innerHTML = ''; 
+
+		  container.geoPath = data.path; 
+
+		  data.path.forEach((latlng, index) => {
+			  const addressText = data.listItems[index] || `${index+1}. [匯入的點位]`;
+			  const popupText = addressText.substring(addressText.indexOf('.') + 1).trim();
+
+			  const html = `<div class="marker-label" style="background:${finalColor}; width:32px; height:32px;">${index + 1}</div>`;
+			  const m = L.marker(latlng, { icon: L.divIcon({ className:'', html: html, iconSize:[32,32], iconAnchor:[16,16] }) })
+						.bindPopup(createSafePopupContent(popupText));
+
+			  mapLayers.markersCluster.addLayer(m);
+			  markersList.push(m);
+
+			  const item = document.createElement('div');
+			  item.textContent = addressText;
+			  listDiv.appendChild(item);
+
+			  m.on('click', () => {
+				clearAllActives();
+				item.classList.add('active');
+				map.setView(latlng, Math.max(14, map.getZoom()));
+			  });
+			  item.addEventListener('click', () => {
+				clearAllActives();
+				item.classList.add('active');
+				map.setView(latlng, Math.max(14, map.getZoom()));
+				
+				const currentColor = colorMini.style.background;
+				flashMarker(index, markersList, currentColor);
+			  });
+		  });
+
+		  mapLayers.polyline = L.polyline(data.path, { color: finalColor });
+
+		  const visibleCheckbox = container.querySelector('.batch-visible-checkbox');
+		  if (visibleCheckbox.checked) {
+			  map.addLayer(mapLayers.markersCluster);
+			  map.addLayer(mapLayers.polyline);
+		  }
+
+		  container.markersList = markersList;
+
+		  container.querySelector('.fileInput').classList.add('hidden');
+		  container.querySelector('.import-label').classList.add('hidden');
+		  container.querySelector('.batch-controls').classList.add('hidden');
+		  container.querySelector('.progressBar').classList.add('hidden');
+		  container.querySelector('.batchStatus').classList.add('hidden');
+		  container.querySelector('.delete-batch-btn').classList.remove('hidden');
+		  container.querySelector('.play-batch-btn').classList.remove('hidden');
+		  listDiv.classList.remove('hidden');
+		  const listToggleBtn = container.querySelector('.list-toggle-btn');
+		  if (listToggleBtn) listToggleBtn.classList.remove('hidden');
+
+		  updateExportButtonVisibility();
+		  
+		  return container;
+	  }
+
+	  document.getElementById('importJsonFile').addEventListener('change', (e) => {
+		  const file = e.target.files[0];
+		  if (!file) return;
+
+		  const reader = new FileReader();
+		  reader.onload = (event) => {
+			  let importedData = null;
+			  try {
+				  importedData = JSON.parse(event.target.result);
+				  if (Array.isArray(importedData)) {
+				  
+					  const allBatchContainers = document.querySelectorAll('#batchArea .batch-container');
+					  let lastBatchContainer = allBatchContainers.length > 0 ? allBatchContainers[allBatchContainers.length - 1] : null;
+					  
+					  let isLastBatchEmpty = lastBatchContainer && lastBatchContainer.querySelector('.delete-batch-btn.hidden');
+
+					  const newClusterGroups = [];
+						  
+					  importedData.forEach((batchObject, index) => {
+						  if (batchObject.path && batchObject.listItems && batchObject.color && batchObject.title !== undefined) {
+							  let containerToFill = null;
+								  
+							  if (index === 0) {
+								  if (isLastBatchEmpty) {
+									  containerToFill = lastBatchContainer;
+								  } else {
+									  containerToFill = addNewBatchArea();
+								  }
+							  } else {
+								  containerToFill = addNewBatchArea();
+							  }
+								  
+							  importBatch(batchObject, containerToFill);
+							  
+							  if (containerToFill && containerToFill.mapLayers && containerToFill.mapLayers.markersCluster) {
+								  newClusterGroups.push(containerToFill.mapLayers.markersCluster);
+							  }
+						  }
+					  });
+						  
+					  if (newClusterGroups.length > 0) {
+						  const featureGroup = L.featureGroup(newClusterGroups);
+						  map.fitBounds(featureGroup.getBounds());
+					  }
+
+					  addNewBatchArea();
+
+				  } else {
+					  alert('JSON 檔案格式錯誤：內容必須是一個陣列 (Array)。');
+				  }
+			  } catch (error) {
+				  alert('讀取或解析 JSON 檔案時發生錯誤：\n' + error.message);
+			  } finally {
+				  e.target.value = ''; 
+			  }
+		  };
+		  reader.readAsText(file);
+	  });
+	})(); 
   </script>
 </body>
 </html>

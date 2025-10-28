@@ -1,12 +1,9 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PDF 編輯工具</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -43,11 +40,9 @@
             align-items: center;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
-        
         .cut-marker:hover {
             transform: scale(1.1);
         }
-        
         .cut-marker.active {
             background-color: #22c55e; /* Green-500 */
             border-color: #22c55e;
@@ -68,7 +63,6 @@
             backdrop-filter: blur(5px);
             -webkit-backdrop-filter: blur(5px);
         }
-
         .split-overlay-content {
             position: relative;
         }
@@ -95,7 +89,6 @@
         .sortable-item {
             cursor: grab;
         }
-
         .sortable-item:active {
             cursor: grabbing;
         }
@@ -111,7 +104,6 @@
             @apply ring-2 ring-blue-500;
         }
 
-        /* 新增：回到首頁按鈕固定於右下角 */
         .back-home-btn {
             position: fixed;
             right: 16px;
@@ -145,7 +137,7 @@
         <h1 class="text-3xl font-bold mb-6 text-center text-blue-600">PDF 編輯工具</h1>
 
         <!-- 文件上傳區塊 -->
-        <div class="mb-8 p-6 border-2 border-dashed border-gray-300 rounded-lg text-center">
+        <div id="dropZone" class="mb-8 p-6 border-2 border-dashed border-gray-300 rounded-lg text-center transition-colors duration-200">
             <label for="fileInput" class="cursor-pointer text-blue-500 hover:text-blue-700">
                 <p class="text-lg font-medium mb-2">點擊此處或拖曳檔案至此</p>
                 <p id="fileStatus" class="text-sm text-gray-500">支援 .pdf 格式</p>
@@ -291,7 +283,7 @@
             </div>
         </div>
         
-        <!-- 新增：全螢幕提示彈窗 -->
+        <!-- 全螢幕提示彈窗 -->
         <div id="tooltipModal" class="fixed inset-0 flex items-center justify-center p-4 z-[200] hidden bg-gray-900 bg-opacity-70 backdrop-blur-sm">
             <div class="bg-white rounded-lg p-6 shadow-xl max-w-lg w-full">
                 <h3 id="tooltipTitle" class="text-2xl font-bold text-blue-600 mb-4"></h3>
@@ -321,12 +313,12 @@
         </svg>
         回到首頁
     </a>
-
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js" integrity="sha256-H8KU7v2mAuWRoGwdWvNhyuI3VrWjNPwkIdX5rMzgOOU=" crossorigin=""></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js" integrity="sha256-D5pcrQeUHwgmWGyU4InYm5GMRuXBfPLVo8b2ZuO8aU8=" crossorigin=""></script>
 <script>
-    // 設定 PDF.js worker 的路徑
 	pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
 
-    // 取得 HTML 元素
     const fileInput = document.getElementById('fileInput');
     const tabs = document.querySelectorAll('.tab-button');
     const sections = document.querySelectorAll('.tool-section');
@@ -376,8 +368,8 @@
     let fullScreenPage = 0;
     let rotateRotations = [];
     let selectedRotatePage = -1;
+	let singleLoadedFile = null;
 
-    // 提示內容資料
     const tooltipData = {
         split: {
             title: '裁切功能說明',
@@ -469,9 +461,15 @@
             currentMode = tab.id.replace('tab', '').toLowerCase();
             fileStatus.textContent = '支援 .pdf 格式';
             fileInput.value = '';
+			singleLoadedFile = null;
+			
+			if (currentMode === 'merge') {
+                fileInput.multiple = true;
+            } else {
+                fileInput.multiple = false;
+            }
             
             if (currentMode === 'pagenumber') {
-                // 修正：當切換到此頁籤時，根據 loadedPDF 的狀態來禁用或啟用按鈕
                 pageNumberNextBtn.disabled = loadedPDF === null;
             } else if (currentMode === 'merge') {
                 mergeNextBtn.disabled = filesForMerge.length === 0;
@@ -483,9 +481,8 @@
         });
     });
 
-    // 處理檔案匯入
-    fileInput.addEventListener('change', async (event) => {
-        const files = event.target.files;
+	// ==================== 裁切功能 ====================
+    async function processFiles(files) {
         if (!files.length) {
             fileStatus.textContent = '支援 .pdf 格式';
             return;
@@ -495,27 +492,29 @@
             if (files.length > 1) {
                 showMessage('此功能一次只能處理一個PDF檔案。');
                 fileInput.value = '';
+                singleLoadedFile = null; 
                 return;
             }
+            
+            singleLoadedFile = files[0]; 
             loadedPDF = null;
-            const arrayBuffer = await files[0].arrayBuffer();
+            const arrayBuffer = await singleLoadedFile.arrayBuffer(); 
             const pdfDoc = await pdfjsLib.getDocument(arrayBuffer).promise;
             loadedPDF = pdfDoc;
-            fileStatus.textContent = `已載入檔案：${files[0].name}`;
+            fileStatus.textContent = `已載入檔案：${singleLoadedFile.name}`; 
             
             if (currentMode === 'split') {
                 splitPoints = [];
                 await renderSplitThumbnails(pdfDoc);
                 updateSplitUI();
             } else if (currentMode === 'pagenumber') {
-                // 修正：載入檔案後啟用編頁碼的「下一步」按鈕
                 pageNumberNextBtn.disabled = false;
                 pageNumberFromPage.placeholder = `1 - ${loadedPDF.numPages}`;
             } else if (currentMode === 'rotate') {
                 rotateRotations = Array(loadedPDF.numPages).fill(0);
                 await renderRotateThumbnails(pdfDoc);
                 rotateNextBtn.disabled = false;
-                rotatePageBtn.disabled = true; // Initially disabled until a page is selected
+                rotatePageBtn.disabled = true;
             }
 
         } else if (currentMode === 'merge') {
@@ -524,10 +523,34 @@
         } else {
             showMessage('請選擇頁籤來匯入檔案。');
             fileInput.value = '';
+            singleLoadedFile = null; 
         }
+    }
+	
+    // 處理檔案匯入
+    fileInput.addEventListener('change', async (event) => {
+        await processFiles(event.target.files); 
+    });
+	
+	const dropZone = document.getElementById('dropZone');
+
+    dropZone.addEventListener('dragover', (event) => {
+        event.preventDefault(); 
+        dropZone.classList.add('border-blue-500', 'bg-blue-50'); 
     });
 
-    // ==================== 裁切功能 ====================
+    dropZone.addEventListener('dragleave', (event) => {
+        event.preventDefault();
+        dropZone.classList.remove('border-blue-500', 'bg-blue-50'); 
+    });
+
+    dropZone.addEventListener('drop', async (event) => {
+        event.preventDefault();
+        dropZone.classList.remove('border-blue-500', 'bg-blue-50'); 
+        const files = event.dataTransfer.files;   
+        fileInput.value = '';
+        await processFiles(files);
+    });
 
     // 渲染 PDF 縮圖
     async function renderSplitThumbnails(pdfDoc) {
@@ -671,9 +694,8 @@
         updateSplitUI();
     }
 
-    // 下一步 - 裁切
     splitNextBtn.addEventListener('click', async () => {
-        const file = fileInput.files[0];
+        const file = singleLoadedFile;
         if (!file || splitPoints.length !== 2) {
             showMessage('請匯入PDF檔案並選擇2個裁切點。');
             return;
@@ -700,13 +722,12 @@
 
         document.getElementById('exportSplit').onclick = async () => {
             try {
-                const fileToUse = fileInput.files[0];
+                const fileToUse = singleLoadedFile;
 				if (!fileToUse) {
 					showMessage('找不到已載入的檔案，請重新匯入 PDF。');
 					return;
 				}
 
-				// 優先使用目前的 splitPoints（當使用者透過縮圖點選），若沒有再 fallback 到輸入欄位
 				let startPage, endPage;
 				if (Array.isArray(splitPoints) && splitPoints.length === 2) {
 					startPage = splitPoints[0] + 1;
@@ -725,7 +746,7 @@
 					return;
 				}
 			
-				const pdfBytes = await file.arrayBuffer();
+				const pdfBytes = await fileToUse.arrayBuffer();
                 const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
                 const newPdfDoc = await PDFLib.PDFDocument.create();
 
@@ -747,7 +768,6 @@
     });
 
     // ==================== 合成功能 ====================
-
     // 處理合成檔案匯入
     async function handleMergeFiles(files) {
         for (const file of files) {
@@ -886,7 +906,6 @@
         }
     });
 
-    // 下一步 - 合成
     mergeNextBtn.addEventListener('click', async () => {
         if (filesForMerge.length === 0) {
             showMessage('請匯入至少一個檔案進行合成。');
@@ -917,7 +936,6 @@
                 const mergedPdfBytes = await mergedPdf.save();
                 const filename = document.getElementById('mergeFilename').value;
                 downloadPDF(mergedPdfBytes, filename);
-                
                 showMessage('PDF 合成並匯出成功！');
 
             } catch (error) {
@@ -937,7 +955,6 @@
         }
     });
 
-    // 修正：移除多餘的事件監聽器，避免衝突
     pageNumberNextBtn.addEventListener('click', () => {
         if (!loadedPDF) {
             showMessage('請先匯入PDF檔案。');
@@ -958,7 +975,7 @@
     });
 
     async function handlePageNumberExport() {
-        if (!loadedPDF) {
+        if (!loadedPDF || !singleLoadedFile) { 
             showMessage('請先匯入PDF檔案。');
             return;
         }
@@ -975,7 +992,7 @@
         }
 
         try {
-            const pdfDoc = await PDFLib.PDFDocument.load(await fileInput.files[0].arrayBuffer());
+            const pdfDoc = await PDFLib.PDFDocument.load(await singleLoadedFile.arrayBuffer());
             const pages = pdfDoc.getPages();
             const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
             
@@ -1062,7 +1079,6 @@
             });
         }
         
-        // 修正：在重新渲染後，保留選取狀態
         if (selectedRotatePage !== -1) {
             const currentSelectedThumb = document.querySelector(`[data-page="${selectedRotatePage}"]`);
             if (currentSelectedThumb) {
@@ -1095,14 +1111,14 @@
     });
 
     async function handleRotateExport() {
-        if (!loadedPDF) {
+        if (!loadedPDF || !singleLoadedFile) {
             showMessage('請先匯入PDF檔案。');
             return;
         }
 
         const filename = document.getElementById('rotateFilename').value;
         try {
-            const pdfDoc = await PDFLib.PDFDocument.load(await fileInput.files[0].arrayBuffer());
+            const pdfDoc = await PDFLib.PDFDocument.load(await singleLoadedFile.arrayBuffer());
             const pages = pdfDoc.getPages();
 
             for (let i = 0; i < pages.length; i++) {
@@ -1124,7 +1140,6 @@
         }
     }
 
-    // 處理鍵盤事件 (用於合成功能和旋轉功能)
     document.addEventListener('keydown', (event) => {
         if (currentMode === 'merge') {
             if (event.key === 'Delete' && selectedFileIndex !== -1) {
@@ -1207,8 +1222,6 @@
         }
     });
 
-
-    // 通用函數
     function downloadPDF(pdfBytes, filename) {
         const blob = new Blob([pdfBytes], { type: 'application/pdf' });
         const link = document.createElement('a');

@@ -258,14 +258,16 @@
                 </div>
             </div>
 
+            <div class="mb-4">
+                <button id="rotatePageBtn" class="bg-yellow-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-yellow-600 transition disabled:bg-yellow-300 disabled:cursor-not-allowed" disabled>旋轉</button>
+            </div>
+
             <div id="rotateImageSelection" class="mb-6">
                 <div id="rotateThumbnails" class="flex items-center overflow-x-auto thumb-container pb-4 px-4">
-                    <!-- PDF 縮圖會在此處動態生成 -->
-                </div>
+                    </div>
             </div>
 
             <div id="rotateAction" class="flex justify-end space-x-4 mt-8">
-                <button id="rotatePageBtn" class="bg-yellow-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-yellow-600 transition disabled:bg-yellow-300 disabled:cursor-not-allowed" disabled>旋轉</button>
                 <button id="rotateNext" class="bg-blue-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-blue-600 transition disabled:bg-blue-300 disabled:cursor-not-allowed" disabled>下一步</button>
             </div>
         </div>
@@ -287,23 +289,18 @@
                     <label class="font-medium text-gray-700">頁</label>
                 </div>
             </div>
-
             <div id="ocrImageSelection" class="mb-6">
                 <div id="ocrThumbnails" class="flex items-center overflow-x-auto thumb-container pb-4 px-4 min-h-[100px] bg-gray-50 border rounded-lg">
                     </div>
             </div>
-
             <div id="ocrAction" class="flex justify-start space-x-4 mt-8">
                  <button id="ocrStartBtn" class="bg-blue-500 text-white px-6 py-2 rounded-lg shadow-md hover:bg-blue-600 transition disabled:bg-blue-300 disabled:cursor-not-allowed" disabled>開始辨識</button>
             </div>
-
             <div id="ocrStatus" class="my-4 text-gray-600 hidden">
-                </div>
-
+            </div>
             <div id="ocrProgressContainer" class="w-full bg-gray-200 rounded-full h-2.5 mb-4 hidden">
                 <div id="ocrProgressBar" class="bg-blue-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
             </div>
-
             <div id="ocrResultTools" class="my-4 space-y-2 hidden">
                 <fieldset class="border border-gray-300 p-3 rounded-md">
                     <legend class="text-sm font-medium text-gray-700 px-2">標點符號改為全型</legend>
@@ -314,7 +311,6 @@
                     </div>
                 </fieldset>
             </div>
-            
             <div id="ocrResultArea" class="mb-6">
                 <label class="font-medium text-gray-700 mb-2 block">辨識結果：</label>
                 <textarea id="ocrResultText" class="w-full h-64 p-3 border rounded-md bg-gray-50" readonly placeholder="辨識結果將顯示於此..."></textarea>
@@ -392,7 +388,6 @@
     const messageText = document.getElementById('messageText');
     const messageOk = document.getElementById('messageOk');
     const fileStatus = document.getElementById('fileStatus');
-
     const splitTextInput = document.getElementById('splitTextInput');
     const splitImageSelection = document.getElementById('splitImageSelection');
     const splitStartPage = document.getElementById('splitStartPage');
@@ -400,26 +395,21 @@
     const splitThumbnails = document.getElementById('splitThumbnails');
     const splitNextBtn = document.getElementById('splitNext');
     const splitSelectionBox = document.getElementById('splitSelectionBox');
-
     const mergeFileList = document.getElementById('mergeFileList');
     const deleteFileBtn = document.getElementById('deleteFile');
     const mergeNextBtn = document.getElementById('mergeNext');
-    
     const pageNumberStart = document.getElementById('pageNumberStart');
     const pageNumberFromPage = document.getElementById('pageNumberFromPage');
     const pageNumberPosition = document.getElementById('pageNumberPosition');
 	const pageNumberType = document.getElementById('pageNumberType'); 
     const pageNumberNextBtn = document.getElementById('pageNumberNext');
-
     const rotateThumbnails = document.getElementById('rotateThumbnails');
-    const rotatePageBtn = document.getElementById('rotatePageBtn');
-    const rotateNextBtn = document.getElementById('rotateNext');
-
+    let rotatePageBtn = document.getElementById('rotatePageBtn');
+    let rotateNextBtn = document.getElementById('rotateNext');
     const tooltipModal = document.getElementById('tooltipModal');
     const tooltipTitle = document.getElementById('tooltipTitle');
     const tooltipContentArea = document.getElementById('tooltipContentArea');
     const tooltipOk = document.getElementById('tooltipOk');
-
     const fullScreenPreview = document.getElementById('fullScreenPreview');
     const previewImage = document.getElementById('previewImage');
     const previewPrevBtn = document.getElementById('previewPrev');
@@ -434,10 +424,10 @@
     let fullScreenPage = 0;
     let rotateRotations = [];
     let selectedRotatePage = -1;
-	let ocrSplitPoints = []; // 替換 selectedOcrPage
+	let ocrSplitPoints = []; 
 	let singleLoadedFile = null;
-    let ocrWorker = null; // Tesseract worker
-    let originalOcrText = ""; // 用於儲存原始辨識結果
+    let ocrWorker = null; 
+    let originalOcrText = ""; 
     let puncToggles = { colon: false, comma: false, paren: false }; // 標點符號開關
 
     const tooltipData = {
@@ -543,8 +533,6 @@
                     ocrStatus.classList.add('hidden');
                     ocrStatus.textContent = '';
                 }
-				//selectedOcrPage = -1;
-				
 				ocrSplitPoints = [];
             }
 			
@@ -615,11 +603,38 @@
                 pageNumberFromPage.placeholder = `1 - ${loadedPDF.numPages}`;
             } else if (currentMode === 'rotate') {
                 rotateRotations = Array(loadedPDF.numPages).fill(0);
+
+                // 重置 "rotateAction" 區域 (現在只包含 "下一步" 按鈕)
+                const rotateActionArea = document.getElementById('rotateAction');
+                rotateActionArea.innerHTML = `
+                    <button id="rotateNext" class="bg-blue-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-blue-600 transition disabled:bg-blue-300 disabled:cursor-not-allowed" disabled>下一步</button>
+                `;
+
+                // 重新尋找元素並更新 'let' 變數
+                rotateNextBtn = document.getElementById('rotateNext');
+                
+                // 重新綁定 "下一步" 按鈕的事件監聽器 (複製原始在 line 1018 的邏輯)
+                rotateNextBtn.addEventListener('click', () => {
+                    const actionArea = document.getElementById('rotateNext').parentNode;
+                    actionArea.innerHTML = `
+                        <div class="flex flex-col items-end space-y-4 w-full md:w-auto">
+                            <div class="flex items-center space-x-2">
+                                <label class="font-medium text-gray-700">檔案名稱:</label>
+                                <input type="text" id="rotateFilename" class="p-2 border rounded-md focus:ring-2 focus:ring-blue-400 focus:border-blue-400" value="旋轉-${formatDate(new Date())}">
+                            </div>
+                            <button id="exportRotate" class="bg-green-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-green-600 transition w-full md:w-auto">匯出檔案</button>
+                        </div>
+                    `;
+                    document.getElementById('exportRotate').addEventListener('click', handleRotateExport);
+                });
+
                 await renderRotateThumbnails(pdfDoc);
                 rotateNextBtn.disabled = false;
+                
+                // 因為 rotatePageBtn 已經在外部，所以它會保留，我們只需要更新它的狀態
                 rotatePageBtn.disabled = true;
             
-			} else if (currentMode === 'ocr') {
+            } else if (currentMode === 'ocr') {
 				ocrSplitPoints = [];
                 await renderOcrThumbnails(pdfDoc); // 呼叫新的渲染函式
                 updateOcrUI();
@@ -762,7 +777,6 @@
             splitStartPage.value = '';
             splitEndPage.value = '';
         }
-
         splitNextBtn.disabled = splitPoints.length !== 2;
     }
     
@@ -788,18 +802,15 @@
             splitNextBtn.disabled = true;
             return;
         }
-        
         if (isNaN(end) || end < 1 || end > numPages) {
             splitNextBtn.disabled = true;
             return;
         }
-
         if (start > end) {
             showMessage('結束頁碼不能小於起始頁碼。');
             splitNextBtn.disabled = true;
             return;
         }
-
         splitPoints.push(start - 1);
         splitPoints.push(end);
         updateSplitUI();
@@ -860,17 +871,13 @@
 				const pdfBytes = await fileToUse.arrayBuffer();
                 const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
                 const newPdfDoc = await PDFLib.PDFDocument.create();
-
                 const pagesToKeep = Array.from({ length: endPage - startPage + 1 }, (_, i) => i + startPage - 1);
                 const pages = await newPdfDoc.copyPages(pdfDoc, pagesToKeep);
                 pages.forEach(page => newPdfDoc.addPage(page));
-
                 const newPdfBytes = await newPdfDoc.save();
                 const filename = document.getElementById('splitFilename').value;
                 downloadPDF(newPdfBytes, filename);
-                
                 showMessage('PDF 裁切並匯出成功！');
-
             } catch (error) {
                 console.error('Error splitting PDF:', error);
                 showMessage('PDF 裁切時發生錯誤。');
@@ -962,7 +969,6 @@
                     deleteFileBtn.disabled = true;
                 }
             });
-
             mergeFileList.appendChild(li);
         });
         
@@ -979,7 +985,6 @@
         try {
             const arrayBuffer = await file.arrayBuffer();
             const pdfDoc = await pdfjsLib.getDocument(arrayBuffer).promise;
-            
             const numPagesToPreview = pdfDoc.numPages;
             for (let i = 1; i <= numPagesToPreview; i++) {
                 const page = await pdfDoc.getPage(i);
@@ -990,7 +995,6 @@
                 const context = canvas.getContext('2d');
                 const renderContext = { canvasContext: context, viewport: viewport };
                 await page.render(renderContext).promise;
-
                 const thumbWrapper = document.createElement('div');
                 thumbWrapper.className = 'flex-shrink-0 p-2 border rounded-md cursor-pointer hover:bg-gray-100 transition';
                 const pageNum = document.createElement('div');
@@ -999,7 +1003,6 @@
                 thumbWrapper.appendChild(canvas);
                 thumbWrapper.appendChild(pageNum);
                 container.appendChild(thumbWrapper);
-                
                 thumbWrapper.addEventListener('click', () => showFullScreenPreview(pdfDoc, i));
             }
         } catch (error) {
@@ -1048,7 +1051,6 @@
                 const filename = document.getElementById('mergeFilename').value;
                 downloadPDF(mergedPdfBytes, filename);
                 showMessage('PDF 合成並匯出成功！');
-
             } catch (error) {
                 console.error('Error merging PDFs:', error);
                 showMessage('PDF 合成時發生錯誤。');
@@ -1057,7 +1059,7 @@
     });
     
     // ==================== 編頁碼功能 ====================
-    // 修正：當檔案載入後，才啟用「下一步」按鈕
+    // 當檔案載入後，才啟用「下一步」按鈕
     fileInput.addEventListener('change', () => {
         if (currentMode === 'pagenumber' && fileInput.files.length > 0) {
             pageNumberNextBtn.disabled = false;
@@ -1071,7 +1073,6 @@
             showMessage('請先匯入PDF檔案。');
             return;
         }
-        
         const actionArea = document.getElementById('pageNumberNext').parentNode;
         actionArea.innerHTML = `
             <div class="flex flex-col items-end space-y-4 w-full md:w-auto">
@@ -1090,7 +1091,6 @@
             showMessage('請先匯入PDF檔案。');
             return;
         }
-
         const startNumber = parseInt(pageNumberStart.value) || 1;
         const fromPage = parseInt(pageNumberFromPage.value);
         const position = pageNumberPosition.value;
@@ -1117,7 +1117,6 @@
                 const textSize = 18;
                 const textWidth = font.widthOfTextAtSize(text, textSize);
                 const margin = 30;
-
                 let xPosition;
 				
 				if (type === 'same') {
@@ -1169,11 +1168,9 @@
             const context = canvas.getContext('2d');
             const renderContext = { canvasContext: context, viewport: viewport };
             await page.render(renderContext).promise;
-
             const thumbWrapper = document.createElement('div');
             thumbWrapper.className = `relative flex-shrink-0 p-2 border border-gray-200 rounded-md cursor-pointer hover:bg-gray-100 transition`;
             thumbWrapper.dataset.page = i - 1;
-
             const pageNum = document.createElement('div');
             pageNum.textContent = i;
             pageNum.className = 'text-center text-sm font-medium text-gray-600 mt-1';
@@ -1181,7 +1178,6 @@
             thumbWrapper.appendChild(canvas);
             thumbWrapper.appendChild(pageNum);
             rotateThumbnails.appendChild(thumbWrapper);
-
             thumbWrapper.addEventListener('click', () => {
                 document.querySelectorAll('#rotateThumbnails .selected-thumbnail').forEach(t => t.classList.remove('selected-thumbnail'));
                 thumbWrapper.classList.add('selected-thumbnail');
@@ -1189,7 +1185,6 @@
                 rotatePageBtn.disabled = false;
             });
         }
-        
         if (selectedRotatePage !== -1) {
             const currentSelectedThumb = document.querySelector(`[data-page="${selectedRotatePage}"]`);
             if (currentSelectedThumb) {
@@ -1203,8 +1198,58 @@
             showMessage('請先選擇要旋轉的頁面。');
             return;
         }
+        
+        // 更新旋轉角度
         rotateRotations[selectedRotatePage] = (rotateRotations[selectedRotatePage] + 90) % 360;
-        await renderRotateThumbnails(loadedPDF);
+
+        // 找到當前被選中的縮圖包裝 (父元素)
+        const thumbWrapper = document.querySelector(`#rotateThumbnails .selected-thumbnail`);
+        
+        if (!thumbWrapper || thumbWrapper.dataset.page != selectedRotatePage) {
+            console.warn('Selected thumbnail sync issue, falling back to full render.');
+            await renderRotateThumbnails(loadedPDF);
+            return;
+        }
+
+        // 找到*舊的* (當前可見的) canvas
+        const oldCanvas = thumbWrapper.querySelector('canvas');
+        if (!oldCanvas) {
+            console.error('No canvas found in selected thumbnail.');
+            await renderRotateThumbnails(loadedPDF); // Fallback
+            return;
+        }
+
+        try {
+            // 取得對應的 PDF 頁面 (getPage 是 1-based)
+            const pageNum = selectedRotatePage + 1;
+            const page = await loadedPDF.getPage(pageNum);
+            
+            // 使用新的旋轉角度計算視圖
+            const newRotation = rotateRotations[selectedRotatePage];
+            const viewport = page.getViewport({ scale: 0.3, rotation: newRotation });
+
+            // === [核心修改] 建立一個*新的* (in-memory) canvas ===
+            const newCanvas = document.createElement('canvas');
+            newCanvas.width = viewport.width;
+            newCanvas.height = viewport.height;
+            
+            // 在*新的* canvas 上渲染 (這不會影響畫面)
+            const context = newCanvas.getContext('2d');
+            const renderContext = { canvasContext: context, viewport: viewport };
+            
+            // 等待新 canvas 繪製完成
+            await page.render(renderContext).promise;
+
+            // === 渲染完成後，*替換*舊的 canvas ===
+            //    這一步是原子操作，不會有閃爍
+            //    我們替換 oldCanvas，而不是 thumbWrapper，所以 .selected-thumbnail 樣式會保留
+            oldCanvas.parentNode.replaceChild(newCanvas, oldCanvas);
+
+        } catch (error) {
+            console.error('Error re-rendering single rotated thumbnail:', error);
+            // 如果單頁更新失敗，退回舊方法以確保功能正常
+            await renderRotateThumbnails(loadedPDF);
+        }
     });
 
     rotateNextBtn.addEventListener('click', () => {
@@ -1231,7 +1276,6 @@
         try {
             const pdfDoc = await PDFLib.PDFDocument.load(await singleLoadedFile.arrayBuffer());
             const pages = pdfDoc.getPages();
-
             for (let i = 0; i < pages.length; i++) {
                 const page = pages[i];
                 if (rotateRotations[i] !== 0) {
@@ -1272,7 +1316,6 @@
             const context = canvas.getContext('2d');
             const renderContext = { canvasContext: context, viewport: viewport };
             await page.render(renderContext).promise;
-
             const thumbWrapper = document.createElement('div');
             thumbWrapper.className = 'relative flex-shrink-0 p-2 border border-gray-200 rounded-md';
             const pageNum = document.createElement('div');
@@ -1300,7 +1343,7 @@
         cutMarkerEnd.addEventListener('click', () => toggleOcrSplitPoint(numPages));
         ocrThumbnails.appendChild(cutMarkerEnd);
         
-        updateOcrUI(); // 確保初始狀態正確
+        updateOcrUI();
     }
 
     function toggleOcrSplitPoint(page) {
@@ -1384,12 +1427,10 @@
             document.getElementById('ocrStartBtn').disabled = true;
             return;
         }
-        
         if (isNaN(end) || end < 1 || end > numPages) {
             document.getElementById('ocrStartBtn').disabled = true;
             return;
         }
-
         if (start > end) {
             showMessage('結束頁碼不能小於起始頁碼。');
             document.getElementById('ocrStartBtn').disabled = true;
@@ -1413,7 +1454,6 @@
 		const progressContainer = document.getElementById('ocrProgressContainer');
         const progressBar = document.getElementById('ocrProgressBar');
         
-        // Tesseract.js v5 uses createWorker
         ocrWorker = await Tesseract.createWorker('eng+chi_tra', 1, {
             logger: m => {
                 console.log(m);
@@ -1431,7 +1471,6 @@
                     progressBar.style.width = '0%';
                     ocrStatus.textContent = `正在載入語言模型...`;
                 } else {
-                    // 其他狀態
                     progressContainer.classList.add('hidden');
                     ocrStatus.textContent = `狀態: ${m.status}`;
                 }
@@ -1440,7 +1479,6 @@
 
         ocrStatus.textContent = '辨識引擎準備就緒。';
 		ocrStatus.classList.remove('text-green-600');
-        // 準備就緒後，隱藏進度條
         progressContainer.classList.add('hidden');
         progressBar.style.width = '0%';
         
@@ -1448,9 +1486,7 @@
     }
 
     ocrStartBtn.addEventListener('click', async () => {
-        // === (S) 重構此函式以支援頁碼區間和綠色文字 ===
-        
-        // 1. 驗證頁碼區間
+        // 驗證頁碼區間
         let startPageNum, endPageNum;
         if (ocrSplitPoints.length === 2) {
             startPageNum = ocrSplitPoints[0] + 1;
@@ -1465,16 +1501,16 @@
             return;
         }
 
-        // 2. 準備 UI
+        // 準備 UI
         const progressContainer = document.getElementById('ocrProgressContainer');
         const progressBar = document.getElementById('ocrProgressBar');
 
         ocrStartBtn.disabled = true;
         ocrResultText.value = '';
-        originalOcrText = ''; // 清空原始文字
-        ocrStatus.classList.remove('text-green-600'); // 重置顏色
+        originalOcrText = '';
+        ocrStatus.classList.remove('text-green-600'); 
         document.getElementById('ocrResultTools').classList.add('hidden'); // 隱藏標點按鈕
-        document.getElementById('copyOcrTextBtn').disabled = true; // <-- 新增此行
+        document.getElementById('copyOcrTextBtn').disabled = true;
 
         // 重設標點按鈕狀態
         puncToggles = { colon: false, comma: false, paren: false };
@@ -1483,23 +1519,21 @@
         let fullText = ""; // 用於儲存所有頁面的文字
 
         try {
-            // 3. 初始化 Tesseract Worker
+            // 初始化 Tesseract Worker
             if (!ocrWorker) {
                 ocrWorker = await initializeOcrWorker();
             }
             
             ocrStatus.classList.remove('hidden');
 
-            // 4. 迴圈辨識每一頁
+            // 迴圈辨識每一頁
             for (let i = startPageNum; i <= endPageNum; i++) {
                 ocrStatus.textContent = `正在渲染第 ${i} / ${endPageNum} 頁...`;
                 ocrStatus.classList.remove('text-green-600');
                 
-                // 渲染 PDF 頁面
                 const page = await loadedPDF.getPage(i);
                 const scale = 3.0; 
                 const viewport = page.getViewport({ scale: scale });
-                
                 const canvas = document.createElement('canvas');
                 canvas.width = viewport.width;
                 canvas.height = viewport.height;
@@ -1507,25 +1541,23 @@
                 
                 await page.render({ canvasContext: context, viewport: viewport }).promise;
                 
-                // Tesseract 辨識 (logger 會自動更新進度條)
                 ocrStatus.textContent = `正在辨識第 ${i} / ${endPageNum} 頁...`;
                 const { data: { text } } = await ocrWorker.recognize(canvas);
 
-                // 組合文字 (功能1：移除空格)
                 fullText += `--- 辨識頁碼 ${i} ---\n\n`;
                 fullText += text.replace(/ /g, '') + "\n\n";
             }
 
-            // 5. 顯示最終結果
-            originalOcrText = fullText; // 儲存原始結果
-            applyPunctuationFilters(); // 應用標點符號 (目前為止是無)
+            // 顯示最終結果
+            originalOcrText = fullText; 
+            applyPunctuationFilters(); 
             
             ocrStatus.textContent = '辨識完成。';
-            ocrStatus.classList.add('text-green-600'); // (功能2：綠色文字)
+            ocrStatus.classList.add('text-green-600'); 
             
             progressBar.style.width = '100%';
             document.getElementById('ocrResultTools').classList.remove('hidden'); // 顯示標點按鈕
-            document.getElementById('copyOcrTextBtn').disabled = originalOcrText.length === 0; // <-- 新增此行
+            document.getElementById('copyOcrTextBtn').disabled = originalOcrText.length === 0;
 
         } catch (error) {
             console.error('OCR Error:', error);
@@ -1556,11 +1588,6 @@
         ocrResultText.value = tempText;
     }
 
-    // 主切換按鈕
-    //document.getElementById('togglePunctuationBtn').addEventListener('click', () => {
-    //   document.getElementById('punctuationSubButtons').classList.toggle('hidden');
-    //});
-
     // 子按鈕 (冒號、逗號、括號)
     document.querySelectorAll('.punc-btn').forEach(button => {
         button.addEventListener('click', () => {
@@ -1576,9 +1603,7 @@
         });
     });
 	
-	// 複製 OCR 結果 (新功能)
     const copyOcrTextBtn = document.getElementById('copyOcrTextBtn');
-    
     copyOcrTextBtn.addEventListener('click', () => {
         const textToCopy = document.getElementById('ocrResultText').value;
         if (!textToCopy) {
@@ -1587,13 +1612,12 @@
         }
 
         navigator.clipboard.writeText(textToCopy).then(() => {
-            // 顯示通知
             const notification = document.getElementById('copyNotification');
             notification.style.display = 'block';
             
             setTimeout(() => {
                 notification.style.opacity = '1';
-            }, 10); // 觸發淡入
+            }, 10);
 
             // 1秒後開始淡化
             setTimeout(() => {
@@ -1612,6 +1636,19 @@
     });
 
     document.addEventListener('keydown', (event) => {
+        
+        // === [新增] 開始：檢查事件目標元素 ===
+        const targetElement = event.target;
+        if (targetElement) {
+            // 將標籤名稱標準化為大寫
+            const tagName = targetElement.tagName.toUpperCase();
+            
+            // 如果使用者正在與輸入框、文字區或下拉選單互動，則不觸發任何快捷鍵
+            if (tagName === 'INPUT' || tagName === 'TEXTAREA' || tagName === 'SELECT') {
+                return;
+            }
+        }
+
         if (currentMode === 'merge') {
             if (event.key === 'Delete' && selectedFileIndex !== -1) {
                 deleteFileBtn.click();

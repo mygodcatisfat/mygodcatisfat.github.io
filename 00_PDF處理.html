@@ -3,24 +3,228 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF 編輯工具</title>
+    <title>PDF 蝺刻摩撌亙</title>
     <style>
+        :root {
+            --primary: #3b82f6; /* blue-500 */
+            --primary-hover: #2563eb; /* blue-600 */
+            --primary-light: #93c5fd; /* blue-300 */
+            --primary-bg: #eff6ff; /* blue-50 */
+            
+            --success: #22c55e; /* green-500 */
+            --success-hover: #16a34a; /* green-600 */
+            --success-light: #86efac; /* green-300 */
+            
+            --danger: #ef4444; /* red-500 */
+            --danger-hover: #dc2626; /* red-600 */
+            --danger-light: #fca5a5; /* red-300 */
+            
+            --warning: #eab308; /* yellow-500 */
+            --warning-hover: #ca8a04; /* yellow-600 */
+            --warning-light: #fde047; /* yellow-300 */
+
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+
+            --font-main: 'Inter', sans-serif;
+            --radius-md: 0.375rem;
+            --radius-lg: 0.5rem;
+            --radius-xl: 0.75rem;
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
         body {
-            font-family: 'Inter', sans-serif;
-            @apply bg-gray-100 text-gray-800;
-        }
-		
-		.punc-btn {
-            @apply px-3 py-1 border rounded-md text-sm text-gray-700 bg-white hover:bg-gray-50 transition;
-        }
-        .punc-btn.active {
-            @apply bg-blue-500 text-white border-blue-500 hover:bg-blue-600;
+            font-family: var(--font-main);
+            background-color: var(--gray-100);
+            color: var(--gray-800);
+            padding: 2rem;
+            margin: 0;
         }
 
+        /* Layout & Containers */
+        .container {
+            max-width: 72rem; /* 6xl */
+            margin: 0 auto;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-lg);
+            padding: 1.5rem;
+        }
+        @media (min-width: 768px) {
+            .card { padding: 2.5rem; }
+        }
+
+        .main-title {
+            font-size: 1.875rem; /* 3xl */
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            color: var(--primary-hover);
+        }
+
+        .section-header {
+            position: relative;
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        .section-title {
+            font-size: 1.25rem; /* xl */
+            font-weight: 600;
+        }
+
+        /* Utilities */
+        .hidden { display: none !important; }
+        .flex { display: flex; }
+        .flex-col { display: flex; flex-direction: column; }
+        .items-center { align-items: center; }
+        .justify-center { justify-content: center; }
+        .justify-between { justify-content: space-between; }
+        .justify-end { justify-content: flex-end; }
+        .justify-start { justify-content: flex-start; }
+        .space-x-2 > * + * { margin-left: 0.5rem; }
+        .space-x-4 > * + * { margin-left: 1rem; }
+        .space-y-2 > * + * { margin-top: 0.5rem; }
+        .space-y-4 > * + * { margin-top: 1rem; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .mb-6 { margin-bottom: 1.5rem; }
+        .mb-8 { margin-bottom: 2rem; }
+        .mt-2 { margin-top: 0.5rem; }
+        .mt-4 { margin-top: 1rem; }
+        .mt-6 { margin-top: 1.5rem; }
+        .mt-8 { margin-top: 2rem; }
+        .p-4 { padding: 1rem; }
+        .w-full { width: 100%; }
+        .text-center { text-align: center; }
+        .text-sm { font-size: 0.875rem; }
+        .font-medium { font-weight: 500; }
+        .text-gray-400 { color: var(--gray-400); }
+        .text-gray-500 { color: var(--gray-500); }
+        .text-gray-600 { color: var(--gray-600); }
+        .text-gray-700 { color: var(--gray-700); }
+        
+        /* Drop Zone */
+        .drop-zone {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border: 2px dashed var(--gray-300);
+            border-radius: var(--radius-lg);
+            text-align: center;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        .drop-zone label {
+            cursor: pointer;
+            color: var(--primary);
+        }
+        .drop-zone label:hover {
+            color: var(--primary-hover);
+        }
+        .drop-zone-text-main {
+            font-size: 1.125rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+        /* JS toggled classes */
+        .drop-zone.border-blue-500 { border-color: var(--primary); }
+        .drop-zone.bg-blue-50 { background-color: var(--primary-bg); }
+
+        /* Tabs */
+        .tabs-container {
+            display: flex;
+            border-bottom: 1px solid var(--gray-200);
+            margin-bottom: 1.5rem;
+            gap: 1rem;
+        }
+        .tab-button {
+            padding: 0.5rem;
+            border: none;
+            background: none;
+            cursor: pointer;
+            color: var(--gray-600);
+            font-size: 1rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
         .tab-button.active {
-            @apply border-b-2 border-blue-500 text-blue-500 font-semibold;
+            border-bottom-color: var(--primary);
+            color: var(--primary);
+            font-weight: 600;
         }
 
+        /* Buttons (General) */
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            color: white;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .btn:disabled {
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .btn-lg { padding: 0.75rem 1.5rem; }
+
+        .btn-blue { background-color: var(--primary); }
+        .btn-blue:hover:not(:disabled) { background-color: var(--primary-hover); }
+        .btn-blue:disabled { background-color: var(--primary-light); }
+
+        .btn-red { background-color: var(--danger); }
+        .btn-red:hover:not(:disabled) { background-color: var(--danger-hover); }
+        .btn-red:disabled { background-color: var(--danger-light); }
+
+        .btn-yellow { background-color: var(--warning); }
+        .btn-yellow:hover:not(:disabled) { background-color: var(--warning-hover); }
+        .btn-yellow:disabled { background-color: var(--warning-light); }
+        
+        .btn-green { background-color: var(--success); }
+        .btn-green:hover:not(:disabled) { background-color: var(--success-hover); }
+        .btn-green:disabled { background-color: var(--success-light); }
+        
+        .btn-gray { background-color: var(--gray-500); }
+        .btn-gray:hover { background-color: var(--gray-600); }
+
+        /* Inputs */
+        .form-input {
+            padding: 0.5rem;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-md);
+            transition: all 0.2s;
+            outline: none;
+        }
+        .form-input:focus {
+            ring: 2px;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5); /* blue-400 */
+            border-color: rgba(59, 130, 246, 0.5);
+        }
+        .w-24 { width: 6rem; }
+        
+        /* Thumbnails Container */
+        .thumb-container {
+            display: flex;
+            align-items: center;
+            overflow-x: auto;
+            padding-bottom: 1rem;
+            padding-left: 1rem;
+            padding-right: 1rem;
+            scrollbar-width: thin;
+        }
         .thumb-container::-webkit-scrollbar {
             height: 8px;
         }
@@ -32,7 +236,27 @@
             background-color: #e2e8f0;
             border-radius: 4px;
         }
-        
+
+        /* OCR & Punctuation Buttons */
+        .punc-btn {
+            padding: 0.25rem 0.75rem;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            color: var(--gray-700);
+            background-color: white;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .punc-btn:hover { background-color: var(--gray-50); }
+        .punc-btn.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        .punc-btn.active:hover { background-color: var(--primary-hover); }
+
+        /* Custom UI Elements */
         .cut-marker {
             width: 1.5rem;
             height: 1.5rem;
@@ -46,16 +270,79 @@
             justify-content: center;
             align-items: center;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            margin: 0 0.5rem;
+            flex-shrink: 0;
         }
         .cut-marker:hover {
             transform: scale(1.1);
         }
         .cut-marker.active {
-            background-color: #22c55e; /* Green-500 */
-            border-color: #22c55e;
+            background-color: var(--success);
+            border-color: var(--success);
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
         }
 
+        /* Tooltip Icon */
+        .info-tooltip-container {
+            position: relative;
+            margin-left: 1rem;
+        }
+        .info-tooltip-icon {
+            color: var(--gray-500);
+            cursor: pointer;
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--gray-500);
+            border-radius: 50%;
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+
+        /* Sortable List */
+        .sortable-item {
+            cursor: grab;
+            padding: 0.75rem;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-md);
+            background-color: white;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.2s;
+        }
+        .sortable-item:hover { background-color: var(--gray-50); }
+        .sortable-item:active { cursor: grabbing; }
+
+        /* Selected State (JS Toggled) */
+        .ring-2 { box-shadow: 0 0 0 2px var(--primary); }
+        .ring-blue-500 { /* Helper for JS compatibility */ }
+        .selected-thumbnail { box-shadow: 0 0 0 2px var(--primary); }
+
+        /* Modals & Overlays */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+        }
+        .overlay-bg {
+            background-color: white;
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-xl);
+            max-width: 24rem;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        /* Full Screen Preview */
         .split-overlay {
             position: fixed;
             top: 0;
@@ -70,10 +357,7 @@
             backdrop-filter: blur(5px);
             -webkit-backdrop-filter: blur(5px);
         }
-        .split-overlay-content {
-            position: relative;
-        }
-
+        .split-overlay-content { position: relative; }
         .overlay-nav-button {
             position: absolute;
             top: 50%;
@@ -85,32 +369,46 @@
             font-size: 2rem;
             cursor: pointer;
             z-index: 110;
+            border: none;
         }
-        .overlay-nav-button.left {
-            left: 20px;
-        }
-        .overlay-nav-button.right {
-            right: 20px;
-        }
-
-        .sortable-item {
-            cursor: grab;
-        }
-        .sortable-item:active {
-            cursor: grabbing;
+        .overlay-nav-button.left { left: 20px; }
+        .overlay-nav-button.right { right: 20px; }
+        #previewImage {
+            max-width: 100%;
+            max-height: 90vh;
+            object-fit: contain;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
         }
 
-        .info-tooltip-container {
-            @apply relative ml-4;
+        /* Tooltip Modal */
+        #tooltipModal {
+            background-color: rgba(17, 24, 39, 0.7); /* gray-900 opacity 70 */
+            backdrop-filter: blur(4px);
         }
-        .info-tooltip-icon {
-            @apply text-gray-500 cursor-pointer text-xl flex items-center justify-center border border-gray-500 rounded-full w-6 h-6;
+        .tooltip-card {
+            background-color: white;
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-lg);
+            max-width: 32rem; /* lg */
+            width: 100%;
         }
+        .tooltip-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-hover);
+            margin-bottom: 1rem;
+        }
+        /* Styles for injected tooltip content */
+        .prose p { margin-bottom: 0.5em; }
+        .prose ul { margin-left: 1.5em; list-style-type: disc; }
+        .text-green-500 { color: var(--success); }
+        .text-blue-500 { color: var(--primary); }
+        .text-red-500 { color: var(--danger); }
+        .text-orange-500 { color: #f97316; }
 
-        .selected-thumbnail {
-            @apply ring-2 ring-blue-500;
-        }
-
+        /* Back Home Button */
         .back-home-btn {
             position: fixed;
             right: 16px;
@@ -130,251 +428,297 @@
             display: flex;
             align-items: center;
             gap: 0.5em;
+            text-decoration: none;
         }
         .back-home-btn:hover {
             background: #1d4ed8;
             transform: translateY(-2px) scale(1.04);
             box-shadow: 0 6px 18px rgba(37,99,235,0.28);
         }
+
+        /* Notification */
+        #copyNotification {
+            position: fixed;
+            top: 5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--gray-800);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            z-index: 300;
+            opacity: 0;
+            transition: opacity 1s;
+        }
+
+        /* OCR Result Area */
+        #ocrResultText {
+            width: 100%;
+            height: 16rem;
+            padding: 0.75rem;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-md);
+            background-color: var(--gray-50);
+            resize: vertical;
+            box-sizing: border-box;
+            outline: none;
+        }
+        .ocr-progress-container {
+            width: 100%;
+            background-color: var(--gray-200);
+            border-radius: 9999px;
+            height: 0.625rem;
+            margin-bottom: 1rem;
+        }
+        .ocr-progress-bar {
+            background-color: var(--primary-hover);
+            height: 0.625rem;
+            border-radius: 9999px;
+            transition: width 0.3s;
+        }
+        .fieldset-border {
+            border: 1px solid var(--gray-300);
+            padding: 0.75rem;
+            border-radius: var(--radius-md);
+        }
+        legend { font-size: 0.875rem; font-weight: 500; color: var(--gray-700); padding: 0 0.5rem; }
+
+        /* Thumb Wrapper inside JS */
+        .thumb-wrapper {
+            position: relative;
+            flex-shrink: 0;
+            padding: 0.5rem;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-md);
+        }
     </style>
 </head>
-<body class="p-8">
-    <div class="max-w-6xl mx-auto bg-white rounded-xl shadow-lg p-6 md:p-10">
-        <h1 class="text-3xl font-bold mb-6 text-center text-blue-600">PDF 編輯工具</h1>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1 class="main-title">PDF 蝺刻摩撌亙</h1>
 
-        <!-- 文件上傳區塊 -->
-        <div id="dropZone" class="mb-8 p-6 border-2 border-dashed border-gray-300 rounded-lg text-center transition-colors duration-200">
-            <label for="fileInput" class="cursor-pointer text-blue-500 hover:text-blue-700">
-                <p class="text-lg font-medium mb-2">點擊此處或拖曳檔案至此</p>
-                <p id="fileStatus" class="text-sm text-gray-500">支援 .pdf 格式</p>
-            </label>
-            <input type="file" id="fileInput" class="hidden" multiple accept=".pdf">
-        </div>
+            <div id="dropZone" class="drop-zone">
+                <label for="fileInput">
+                    <p class="drop-zone-text-main">暺?甇方????單?獢甇?/p>
+                    <p id="fileStatus" class="text-sm text-gray-500">?舀 .pdf ?澆?</p>
+                </label>
+                <input type="file" id="fileInput" class="hidden" multiple accept=".pdf">
+            </div>
 
-        <!-- 頁籤導覽 -->
-        <div class="flex border-b border-gray-200 mb-6 space-x-4">
-            <button id="tabSplit" class="tab-button p-2 active">裁切</button>
-            <button id="tabMerge" class="tab-button p-2">合成</button>
-            <button id="tabPageNumber" class="tab-button p-2">編頁碼</button>
-            <button id="tabRotate" class="tab-button p-2">旋轉</button>
-	    <button id="tabOcr" class="tab-button p-2">文字辨識(前端)</button>
-        </div>
+            <div class="tabs-container">
+                <button id="tabSplit" class="tab-button active">鋆?</button>
+                <button id="tabMerge" class="tab-button">??</button>
+                <button id="tabPageNumber" class="tab-button">蝺券?蝣?/button>
+                <button id="tabRotate" class="tab-button">??</button>
+                <button id="tabOcr" class="tab-button">??颲刻?(?垢)</button>
+            </div>
 
-        <!-- 裁切功能區塊 -->
-        <div id="sectionSplit" class="tool-section">
-            <div class="relative flex items-center mb-6">
-                <h2 class="text-xl font-semibold">裁切功能</h2>
-                <div class="info-tooltip-container">
-                    <span class="info-tooltip-icon" data-tooltip="split">💬</span>
+            <div id="sectionSplit" class="tool-section">
+                <div class="section-header">
+                    <h2 class="section-title">鋆??</h2>
+                    <div class="info-tooltip-container">
+                        <span class="info-tooltip-icon" data-tooltip="split">?</span>
+                    </div>
+                </div>
+                
+                <div id="splitTextInput" class="mb-6 space-y-4">
+                    <div class="flex items-center space-x-4">
+                        <label class="font-medium text-gray-700">敺洵</label>
+                        <input type="number" id="splitStartPage" placeholder="?Ⅳ" class="form-input w-24">
+                        <label class="font-medium text-gray-700">???蝚?/label>
+                        <input type="number" id="splitEndPage" placeholder="?Ⅳ" class="form-input w-24">
+                        <label class="font-medium text-gray-700">??/label>
+                    </div>
+                </div>
+
+                <div id="splitImageSelection" class="mb-6">
+                    <div id="splitThumbnails" class="thumb-container">
+                        </div>
+                </div>
+
+                <div id="splitAction" class="flex justify-end mt-8">
+                    <button id="splitNext" class="btn btn-blue btn-lg" disabled>銝?甇?/button>
+                </div>
+            </div>
+
+            <div id="sectionMerge" class="tool-section hidden">
+                <div class="section-header">
+                    <h2 class="section-title">???</h2>
+                    <div class="info-tooltip-container">
+                        <span class="info-tooltip-icon" data-tooltip="merge">?</span>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <h3 class="section-title mb-4">瑼?皜</h3>
+                    <ul id="mergeFileList" class="bg-gray-50 p-4 rounded-lg border border-gray-200 min-h-[100px] space-y-2" style="background-color: var(--gray-50); border-radius: var(--radius-lg); border: 1px solid var(--gray-200); min-height: 100px; padding: 1rem;">
+                        <li class="text-gray-400 text-center py-4">隢??PDF 瑼?隞仿脰???</li>
+                    </ul>
+                </div>
+                <div class="flex justify-end space-x-4 mt-6">
+                    <button id="deleteFile" class="btn btn-red" disabled>?芷</button>
+                    <button id="mergeNext" class="btn btn-blue btn-lg" disabled>銝?甇?/button>
+                </div>
+            </div>
+
+            <div id="sectionPageNumber" class="tool-section hidden">
+                <div class="section-header">
+                    <h2 class="section-title">蝺券?蝣澆???/h2>
+                    <div class="info-tooltip-container">
+                        <span class="info-tooltip-icon" data-tooltip="pageNumber">?</span>
+                    </div>
+                </div>
+                <div id="pageNumberInput" class="mb-6 space-y-4">
+                    <div class="flex items-center space-x-4">
+                        <label class="font-medium text-gray-700">韏瑕??詨?嚗?/label>
+                        <input type="number" id="pageNumberStart" placeholder="1" value="1" class="form-input w-24">
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <label class="font-medium text-gray-700">敺洵撟暸???蝺剁?</label>
+                        <input type="number" id="pageNumberFromPage" placeholder="?Ⅳ" class="form-input w-24">
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <label class="font-medium text-gray-700">韏瑕??Ⅳ雿蔭嚗?/label>
+                        <select id="pageNumberPosition" class="form-input">
+                            <option value="left">撌?/option>
+                            <option value="right">??/option>
+                        </select>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <label class="font-medium text-gray-700">?Ⅳ?憿?嚗?/label>
+                        <select id="pageNumberType" class="form-input">
+                            <option value="same">?</option>
+                            <option value="alternate">鈭文?</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end mt-8">
+                    <button id="pageNumberNext" class="btn btn-blue btn-lg" disabled>銝?甇?/button>
+                </div>
+            </div>
+
+            <div id="sectionRotate" class="tool-section hidden">
+                <div class="section-header">
+                    <h2 class="section-title">???</h2>
+                    <div class="info-tooltip-container">
+                        <span class="info-tooltip-icon" data-tooltip="rotate">?</span>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <button id="rotatePageBtn" class="btn btn-yellow" disabled>??</button>
+                </div>
+
+                <div id="rotateImageSelection" class="mb-6">
+                    <div id="rotateThumbnails" class="thumb-container">
+                    </div>
+                </div>
+
+                <div id="rotateAction" class="flex justify-end space-x-4 mt-8">
+                    <button id="rotateNext" class="btn btn-blue btn-lg" disabled>銝?甇?/button>
+                </div>
+            </div>
+
+            <div id="sectionOcr" class="tool-section hidden">
+                <div class="section-header">
+                    <h2 class="section-title">??颲刻?? (OCR)</h2>
+                    <div class="info-tooltip-container">
+                        <span class="info-tooltip-icon" data-tooltip="ocr">?</span>
+                    </div>
+                </div>
+
+                <div id="ocrTextInput" class="mb-6 space-y-4">
+                    <div class="flex items-center space-x-4">
+                        <label class="font-medium text-gray-700">敺洵</label>
+                        <input type="number" id="ocrStartPage" placeholder="?Ⅳ" class="form-input w-24">
+                        <label class="font-medium text-gray-700">?儘霅蝚?/label>
+                        <input type="number" id="ocrEndPage" placeholder="?Ⅳ" class="form-input w-24">
+                        <label class="font-medium text-gray-700">??/label>
+                    </div>
+                </div>
+                <div id="ocrImageSelection" class="mb-6">
+                    <div id="ocrThumbnails" class="thumb-container" style="background-color: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); min-height: 100px;">
+                    </div>
+                </div>
+                <div id="ocrAction" class="flex justify-start space-x-4 mt-8">
+                     <button id="ocrStartBtn" class="btn btn-blue" disabled>??颲刻?</button>
+                </div>
+                <div id="ocrStatus" class="my-4 text-gray-600 hidden">
+                </div>
+                <div id="ocrProgressContainer" class="ocr-progress-container hidden">
+                    <div id="ocrProgressBar" class="ocr-progress-bar" style="width: 0%"></div>
+                </div>
+                <div id="ocrResultTools" class="my-4 space-y-2 hidden">
+                    <fieldset class="fieldset-border">
+                        <legend>璅?蝚西??寧?典?</legend>
+                        <div id="punctuationSubButtons" class="flex space-x-2">
+                            <button id="btnPuncColon" class="punc-btn" data-type="colon">?? ( : )</button>
+                            <button id="btnPuncComma" class="punc-btn" data-type="comma">?? ( , )</button>
+                            <button id="btnPuncParen" class="punc-btn" data-type="paren">?祈? ( )</button>
+                        </div>
+                    </fieldset>
+                </div>
+                <div id="ocrResultAreaWrapper" class="mb-6">
+                    <label class="font-medium text-gray-700 mb-2 block">颲刻?蝯?嚗?/label>
+                    <textarea id="ocrResultText" readonly placeholder="颲刻?蝯?撠＊蝷箸甇?.."></textarea>
+                    <div class="flex justify-end mt-2">
+                        <button id="copyOcrTextBtn" class="btn btn-green text-sm" disabled>銴ˊ??</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="messageBox" class="overlay hidden">
+                <div class="overlay-bg">
+                    <p id="messageText" class="text-lg font-medium mb-4"></p>
+                    <button id="messageOk" class="btn btn-blue">蝣箏?</button>
+                </div>
+            </div>
+
+            <div id="splitSelectionBox" class="overlay hidden">
+                <div class="overlay-bg">
+                    <p class="text-lg font-medium mb-4">撌脤???????嚗??豢???嚗?/p>
+                    <div class="flex flex-col space-y-2">
+                        <button id="selectFirst" class="btn btn-blue">?芷????</button>
+                        <button id="selectLast" class="btn btn-yellow">?芷敺???</button>
+                        <button id="selectCancel" class="btn btn-gray">??</button>
+                    </div>
                 </div>
             </div>
             
-            <div id="splitTextInput" class="mb-6 space-y-4">
-                <div class="flex items-center space-x-4">
-                    <label class="font-medium text-gray-700">從第</label>
-                    <input type="number" id="splitStartPage" placeholder="頁碼" class="w-24 p-2 border rounded-md focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition">
-                    <label class="font-medium text-gray-700">頁裁切到第</label>
-                    <input type="number" id="splitEndPage" placeholder="頁碼" class="w-24 p-2 border rounded-md focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition">
-                    <label class="font-medium text-gray-700">頁</label>
-                </div>
-            </div>
-
-            <div id="splitImageSelection" class="mb-6">
-                <div id="splitThumbnails" class="flex items-center overflow-x-auto thumb-container pb-4 px-4">
-                    <!-- PDF 縮圖會在此處動態生成 -->
-                </div>
-            </div>
-
-            <div id="splitAction" class="flex justify-end mt-8">
-                <button id="splitNext" class="bg-blue-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-blue-600 transition disabled:bg-blue-300 disabled:cursor-not-allowed" disabled>下一步</button>
-            </div>
-        </div>
-
-        <!-- 合成功能區塊 -->
-        <div id="sectionMerge" class="tool-section hidden">
-            <div class="relative flex items-center mb-6">
-                <h2 class="text-xl font-semibold">合成功能</h2>
-                <div class="info-tooltip-container">
-                    <span class="info-tooltip-icon" data-tooltip="merge">💬</span>
-                </div>
-            </div>
-
-            <div class="mb-6">
-                <h3 class="text-xl font-semibold mb-4">檔案清單</h3>
-                <ul id="mergeFileList" class="bg-gray-50 p-4 rounded-lg border border-gray-200 min-h-[100px] space-y-2">
-                    <!-- 檔案清單會在此處動態生成 -->
-                    <li class="text-gray-400 text-center py-4">請匯入 PDF 檔案以進行合成</li>
-                </ul>
-            </div>
-            <div class="flex justify-end space-x-4 mt-6">
-                <button id="deleteFile" class="bg-red-500 text-white px-4 py-2 rounded-lg shadow-md hover:bg-red-600 transition disabled:bg-red-300 disabled:cursor-not-allowed" disabled>刪除</button>
-                <button id="mergeNext" class="bg-blue-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-blue-600 transition disabled:bg-blue-300 disabled:cursor-not-allowed" disabled>下一步</button>
-            </div>
-        </div>
-
-        <!-- 編頁碼功能區塊 -->
-        <div id="sectionPageNumber" class="tool-section hidden">
-            <div class="relative flex items-center mb-6">
-                <h2 class="text-xl font-semibold">編頁碼功能</h2>
-                <div class="info-tooltip-container">
-                    <span class="info-tooltip-icon" data-tooltip="pageNumber">💬</span>
-                </div>
-            </div>
-            <div id="pageNumberInput" class="mb-6 space-y-4">
-                <div class="flex items-center space-x-4">
-                    <label class="font-medium text-gray-700">起始數字：</label>
-                    <input type="number" id="pageNumberStart" placeholder="1" value="1" class="w-24 p-2 border rounded-md focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition">
-                </div>
-                <div class="flex items-center space-x-4">
-                    <label class="font-medium text-gray-700">從第幾頁開始編：</label>
-                    <input type="number" id="pageNumberFromPage" placeholder="頁碼" class="w-24 p-2 border rounded-md focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition">
-                </div>
-                <div class="flex items-center space-x-4">
-                    <label class="font-medium text-gray-700">起始頁碼位置：</label>
-                    <select id="pageNumberPosition" class="p-2 border rounded-md focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition">
-                        <option value="left">左</option>
-                        <option value="right">右</option>
-                    </select>
-                </div>
-				<div class="flex items-center space-x-4">
-					<label class="font-medium text-gray-700">頁碼呈現類型：</label>
-					<select id="pageNumberType" class="p-2 border rounded-md focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition">
-						<option value="same">同側</option>
-						<option value="alternate">交叉</option>
-					</select>
-				</div>
-            </div>
-            <div class="flex justify-end mt-8">
-                <button id="pageNumberNext" class="bg-blue-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-blue-600 transition disabled:bg-blue-300 disabled:cursor-not-allowed" disabled>下一步</button>
-            </div>
-        </div>
-
-        <!-- 旋轉功能區塊 -->
-        <div id="sectionRotate" class="tool-section hidden">
-            <div class="relative flex items-center mb-6">
-                <h2 class="text-xl font-semibold">旋轉功能</h2>
-                <div class="info-tooltip-container">
-                    <span class="info-tooltip-icon" data-tooltip="rotate">💬</span>
-                </div>
-            </div>
-
-            <div class="mb-4">
-                <button id="rotatePageBtn" class="bg-yellow-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-yellow-600 transition disabled:bg-yellow-300 disabled:cursor-not-allowed" disabled>旋轉</button>
-            </div>
-
-            <div id="rotateImageSelection" class="mb-6">
-                <div id="rotateThumbnails" class="flex items-center overflow-x-auto thumb-container pb-4 px-4">
+            <div id="tooltipModal" class="overlay hidden">
+                <div class="tooltip-card">
+                    <h3 id="tooltipTitle" class="tooltip-title"></h3>
+                    <div id="tooltipContentArea" class="prose text-gray-800">
+                        </div>
+                    <div class="mt-6 text-right">
+                        <button id="tooltipOk" class="btn btn-blue">??</button>
                     </div>
-            </div>
-
-            <div id="rotateAction" class="flex justify-end space-x-4 mt-8">
-                <button id="rotateNext" class="bg-blue-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-blue-600 transition disabled:bg-blue-300 disabled:cursor-not-allowed" disabled>下一步</button>
-            </div>
-        </div>
-
-		<div id="sectionOcr" class="tool-section hidden">
-            <div class="relative flex items-center mb-6">
-                <h2 class="text-xl font-semibold">文字辨識功能 (OCR)</h2>
-                <div class="info-tooltip-container">
-                    <span class="info-tooltip-icon" data-tooltip="ocr">💬</span>
                 </div>
             </div>
+            
+            <div id="copyNotification" style="display: none;">
+                撌脰?鋆賣?摮?
+            </div>
 
-            <div id="ocrTextInput" class="mb-6 space-y-4">
-                <div class="flex items-center space-x-4">
-                    <label class="font-medium text-gray-700">從第</label>
-                    <input type="number" id="ocrStartPage" placeholder="頁碼" class="w-24 p-2 border rounded-md focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition">
-                    <label class="font-medium text-gray-700">頁辨識到第</label>
-                    <input type="number" id="ocrEndPage" placeholder="頁碼" class="w-24 p-2 border rounded-md focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition">
-                    <label class="font-medium text-gray-700">頁</label>
-                </div>
-            </div>
-            <div id="ocrImageSelection" class="mb-6">
-                <div id="ocrThumbnails" class="flex items-center overflow-x-auto thumb-container pb-4 px-4 min-h-[100px] bg-gray-50 border rounded-lg">
-                    </div>
-            </div>
-            <div id="ocrAction" class="flex justify-start space-x-4 mt-8">
-                 <button id="ocrStartBtn" class="bg-blue-500 text-white px-6 py-2 rounded-lg shadow-md hover:bg-blue-600 transition disabled:bg-blue-300 disabled:cursor-not-allowed" disabled>開始辨識</button>
-            </div>
-            <div id="ocrStatus" class="my-4 text-gray-600 hidden">
-            </div>
-            <div id="ocrProgressContainer" class="w-full bg-gray-200 rounded-full h-2.5 mb-4 hidden">
-                <div id="ocrProgressBar" class="bg-blue-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
-            </div>
-            <div id="ocrResultTools" class="my-4 space-y-2 hidden">
-                <fieldset class="border border-gray-300 p-3 rounded-md">
-                    <legend class="text-sm font-medium text-gray-700 px-2">標點符號改為全型</legend>
-                    <div id="punctuationSubButtons" class="flex space-x-2">
-                        <button id="btnPuncColon" class="punc-btn" data-type="colon">冒號 ( : )</button>
-                        <button id="btnPuncComma" class="punc-btn" data-type="comma">逗號 ( , )</button>
-                        <button id="btnPuncParen" class="punc-btn" data-type="paren">括號 ( )</button>
-                    </div>
-                </fieldset>
-            </div>
-            <div id="ocrResultArea" class="mb-6">
-                <label class="font-medium text-gray-700 mb-2 block">辨識結果：</label>
-                <textarea id="ocrResultText" class="w-full h-64 p-3 border rounded-md bg-gray-50" readonly placeholder="辨識結果將顯示於此..."></textarea>
-                <div class="flex justify-end mt-2">
-                    <button id="copyOcrTextBtn" class="bg-green-500 text-white px-4 py-2 rounded-lg shadow-md hover:bg-green-600 transition text-sm font-medium disabled:bg-green-300" disabled>複製文字</button>
+            <div id="fullScreenPreview" class="split-overlay hidden">
+                <div class="split-overlay-content">
+                    <button id="previewPrev" class="overlay-nav-button left">??/button>
+                    <img id="previewImage" src="" alt="PDF Preview">
+                    <button id="previewNext" class="overlay-nav-button right">??/button>
                 </div>
             </div>
         </div>
 
-        <!-- 彈出式訊息/提示框 (取代 alert()) -->
-        <div id="messageBox" class="fixed inset-0 flex items-center justify-center p-4 z-[200] hidden">
-            <div class="bg-white rounded-lg p-6 shadow-xl max-w-sm w-full text-center">
-                <p id="messageText" class="text-lg font-medium mb-4"></p>
-                <button id="messageOk" class="bg-blue-500 text-white px-6 py-2 rounded-lg">確定</button>
-            </div>
-        </div>
-
-        <!-- 裁切點選擇確認框 -->
-        <div id="splitSelectionBox" class="fixed inset-0 flex items-center justify-center p-4 z-[200] hidden">
-            <div class="bg-white rounded-lg p-6 shadow-xl w-full max-w-sm text-center">
-                <p class="text-lg font-medium mb-4">已選擇超過兩個裁切點，請選擇操作：</p>
-                <div class="flex flex-col space-y-2">
-                    <button id="selectFirst" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition">刪除前裁切點</button>
-                    <button id="selectLast" class="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 transition">刪除後裁切點</button>
-                    <button id="selectCancel" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition">取消</button>
-                </div>
-            </div>
-        </div>
-        
-        <!-- 全螢幕提示彈窗 -->
-        <div id="tooltipModal" class="fixed inset-0 flex items-center justify-center p-4 z-[200] hidden bg-gray-900 bg-opacity-70 backdrop-blur-sm">
-            <div class="bg-white rounded-lg p-6 shadow-xl max-w-lg w-full">
-                <h3 id="tooltipTitle" class="text-2xl font-bold text-blue-600 mb-4"></h3>
-                <div id="tooltipContentArea" class="prose max-w-none text-gray-800">
-                    <!-- Content will be injected here dynamically -->
-                </div>
-                <div class="mt-6 text-right">
-                    <button id="tooltipOk" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition">關閉</button>
-                </div>
-            </div>
-        </div>
-		
-		<div id="copyNotification" class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg z-[300] opacity-0 transition-opacity duration-1000" style="display: none;">
-            已複製文字！
-        </div>
-
-        <!-- 全螢幕預覽視窗 -->
-        <div id="fullScreenPreview" class="split-overlay hidden">
-            <div class="split-overlay-content relative">
-                <button id="previewPrev" class="overlay-nav-button left">❮</button>
-                <img id="previewImage" class="max-w-full max-h-[90vh] object-contain rounded-lg shadow-lg" src="" alt="PDF Preview">
-                <button id="previewNext" class="overlay-nav-button right">❯</button>
-            </div>
-        </div>
+        <a href="https://mygodcatisfat.github.io" class="back-home-btn" title="?擐?">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" style="width:1.25rem; height:1.25rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l9-9 9 9M4 10v10a1 1 0 001 1h3m10-11v11a1 1 0 01-1 1h-3m-4 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1" />
+            </svg>
+            ?擐?
+        </a>
     </div>
 
-    <!-- 回到首頁按鈕 -->
-    <a href="https://mygodcatisfat.github.io" class="back-home-btn" title="回到首頁">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l9-9 9 9M4 10v10a1 1 0 001 1h3m10-11v11a1 1 0 01-1 1h-3m-4 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1" />
-        </svg>
-        回到首頁
-    </a>
-<script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js" integrity="sha256-H8KU7v2mAuWRoGwdWvNhyuI3VrWjNPwkIdX5rMzgOOU=" crossorigin=""></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js" integrity="sha256-D5pcrQeUHwgmWGyU4InYm5GMRuXBfPLVo8b2ZuO8aU8=" crossorigin=""></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -428,66 +772,66 @@
 	let singleLoadedFile = null;
     let ocrWorker = null; 
     let originalOcrText = ""; 
-    let puncToggles = { colon: false, comma: false, paren: false }; // 標點符號開關
+    let puncToggles = { colon: false, comma: false, paren: false }; // 璅?蝚西???
 
     const tooltipData = {
         split: {
-            title: '裁切功能說明',
+            title: '鋆??隤芣?',
             content: `
-                <p>匯入 PDF 後，您可以透過<strong class="text-green-500">圖像介面</strong>或<strong class="text-green-500">輸入框</strong>選擇裁切範圍，兩者會自動同步。</p>
-                <p>點擊<strong class="text-green-500">綠色標記</strong>或在輸入框中輸入頁碼來選擇裁切點。</p>
-                <p>當您選擇超過兩個裁切點時，系統會提示您選擇保留<strong class="text-blue-500">最前</strong>或<strong class="text-red-500">最後</strong>的裁切點。</p>
-                <p><strong class="text-green-500">裁切點標記</strong>：</p>
+                <p>?臬 PDF 敺??典隞仿?<strong class="text-green-500">??隞</strong>??strong class="text-green-500">頛詨獢?/strong>?豢?鋆?蝭?嚗???芸??郊??/p>
+                <p>暺?<strong class="text-green-500">蝬璅?</strong>?頛詨獢葉頛詨?Ⅳ靘??????/p>
+                <p>?嗆?豢?頞??拙?????蝟餌絞??蝷箸?豢?靽?<strong class="text-blue-500">???/strong>??strong class="text-red-500">?敺?/strong>??????/p>
+                <p><strong class="text-green-500">鋆?暺?閮?/strong>嚗?/p>
                 <ul class="list-disc list-inside">
-                    <li>第一頁**前**的裁切點代表從第一頁開始。</li>
-                    <li>最後一頁**後**的裁切點代表裁切到最後一頁。</li>
+                    <li>蝚砌???*??*????隞?”敺洵銝??憪?/li>
+                    <li>?敺???*敺?*????隞?”鋆??唳?敺???/li>
                 </ul>
             `
         },
         merge: {
-            title: '合成功能說明',
+            title: '???隤芣?',
             content: `
-                <p>您可以匯入<strong class="text-blue-500">多個</strong> PDF 檔案。</p>
-                <p>透過**點擊**或**拖曳**清單來調整檔案順序。</p>
-                <p>點擊清單中的檔案可展開<strong class="text-green-500">預覽</strong>。</p>
-                <p>預覽圖支援**橫向滾動**，點擊可開啟**全螢幕預覽**。</p>
-                <p>使用<strong class="text-green-500">鍵盤</strong>快捷鍵：</p>
+                <p>?典隞亙??strong class="text-blue-500">憭?/strong> PDF 瑼???/p>
+                <p>??**暺?**??*?**皜靘矽?湔?獢?摨?/p>
+                <p>暺?皜銝剔?瑼??臬???strong class="text-green-500">?汗</strong>??/p>
+                <p>?汗???*璈怠?皛曉?**嚗????**?刻撟?閬?*??/p>
+                <p>雿輻<strong class="text-green-500">?萇</strong>敹急?蛛?</p>
                 <ul class="list-disc list-inside">
-                    <li>按 <strong class="text-red-500">Delete</strong> 鍵：刪除選取的檔案。</li>
-                    <li>按 <strong class="text-blue-500">上/下箭頭</strong> 鍵：移動選取檔案的順序。</li>
+                    <li>??<strong class="text-red-500">Delete</strong> ?蛛??芷?詨???獢?/li>
+                    <li>??<strong class="text-blue-500">銝?銝悌??/strong> ?蛛?蝘餃??詨?瑼???摨?/li>
                 </ul>
             `
         },
         pageNumber: {
-            title: '編頁碼功能說明',
+            title: '蝺券?蝣澆??質牧??,
             content: `
-                <p>請匯入 PDF 檔案，然後設定編碼的**起始數字**、**起始頁碼**、**頁碼位置**及**頁碼呈現類型**。</p>
-                <p>頁碼位置預設為<strong class="text-green-500">「同側」</strong>：不論頁碼編到哪一頁，都會固定在您選擇的起始位置。</p>
-                <p>若選擇<strong class="text-blue-500">「交叉」</strong>：頁碼會從您指定的頁碼開始依序編寫，並在頁面左右<strong class="text-red-500">交替出現</strong>。</p>
-                <p>例如：若起始位置設定為「左」，呈現類型為「交叉」，則第一組頁碼會出現在左下角，第二組會出現在右下角，依此類推。</p>
+                <p>隢??PDF 瑼?嚗敺身摰楊蝣潛?**韏瑕??詨?**??*韏瑕??Ⅳ**??*?Ⅳ雿蔭**??*?Ⅳ?憿?**??/p>
+                <p>?Ⅳ雿蔭?身??strong class="text-green-500">???氬?/strong>嚗?隢?蝣潛楊?啣銝???賣??箏??冽?豢??絲憪?蝵柴?/p>
+                <p>?仿??strong class="text-blue-500">?漱??/strong>嚗?蝣潭?敺????蝣潮?憪?摨楊撖恬?銝血?撌血<strong class="text-red-500">鈭斗?箇</strong>??/p>
+                <p>靘?嚗韏瑕?雿蔭閮剖??箝椰???憿??箝漱???洵銝蝯?蝣潭??箇?典椰銝?嚗洵鈭???曉?喃?閫?靘迨憿??/p>
             `
         },
         rotate: {
-            title: '旋轉功能說明',
+            title: '???隤芣?',
             content: `
-                <p>請匯入 PDF 檔案，然後點擊頁面縮圖來選取。</p>
-                <p>點擊<strong class="text-green-500">「旋轉」</strong>按鈕或按下鍵盤 **<strong class="text-red-500">R</strong>** 鍵**，即可將選取的頁面順時針旋轉 90 度。</p>
-                <p>您可以重複操作來達到所需的旋轉角度。</p>
+                <p>隢??PDF 瑼?嚗敺????Ｙ葬???詨???/p>
+                <p>暺?<strong class="text-green-500">??頧?/strong>????銝??**<strong class="text-red-500">R</strong>** ??*嚗?臬??詨????ａ????? 90 摨艾?/p>
+                <p>?典隞仿?銴?雿??????頧?摨艾?/p>
             `
         },
 		ocr: {
-            title: '文字辨識功能 (OCR) 說明',
+            title: '??颲刻?? (OCR) 隤芣?',
             content: `
-                <p>匯入 PDF 後，您可以透過<strong class="text-green-500">圖像介面</strong>或<strong class="text-green-500">輸入框</strong>選擇辨識的<strong class="text-blue-500">頁碼區間</strong>。</p>
-                <p>此功能會使用 Tesseract.js 引擎來辨識頁面上的<strong class="text-green-500">繁體中文</strong>與<strong class="text-green-500">英文</strong>。</p>
-                <p>辨識完成後，您可以使用<strong class="text-orange-500">「標點符號改為全型」</strong>功能，將半型標點轉換為全型。</p>
-                <p>辨識需要一些時間，請耐心等候。辨識結果將顯示在下方的文字框中。</p>
-                <p><strong class="text-red-500">注意：</strong>辨識複雜排版或低解析度圖片時，準確度可能會下降。</p>
+                <p>?臬 PDF 敺??典隞仿?<strong class="text-green-500">??隞</strong>??strong class="text-green-500">頛詨獢?/strong>?豢?颲刻???strong class="text-blue-500">?Ⅳ???/strong>??/p>
+                <p>甇文??賣?雿輻 Tesseract.js 撘?靘儘霅??Ｖ???strong class="text-green-500">蝜?銝剜?</strong>??strong class="text-green-500">?望?</strong>??/p>
+                <p>颲刻?摰?敺??典隞乩蝙??strong class="text-orange-500">??暺泵??箏??/strong>?嚗???璅?頧??箏??/p>
+                <p>颲刻??閬?鈭???隢?蝑儘霅???憿舐內?其??寧???獢葉??/p>
+                <p><strong class="text-red-500">瘜冽?嚗?/strong>颲刻?銴?????閫??摨血???嚗?蝣箏漲?航????/p>
             `
         }
     };
 
-    // 顯示訊息框
+    // 憿舐內閮獢?
     function showMessage(text) {
         messageText.textContent = text;
         messageBox.classList.remove('hidden');
@@ -497,7 +841,7 @@
         messageBox.classList.add('hidden');
     });
 
-    // 顯示提示彈窗
+    // 憿舐內?內敶?
     function showTooltip(mode) {
         const data = tooltipData[mode];
         if (data) {
@@ -507,12 +851,12 @@
         }
     }
 
-    // 關閉提示彈窗
+    // ???內敶?
     tooltipOk.addEventListener('click', () => {
         tooltipModal.classList.add('hidden');
     });
 
-    // 處理提示圖示點擊事件
+    // ???內?內暺?鈭辣
     document.querySelectorAll('.info-tooltip-icon').forEach(icon => {
         icon.addEventListener('click', () => {
             const mode = icon.dataset.tooltip;
@@ -520,10 +864,10 @@
         });
     });
 
-    // 切換頁籤
+    // ???惜
     tabs.forEach(tab => {
         tab.addEventListener('click', async () => {
-            // 終止 OCR worker (如果存在且當前模式是 ocr)
+            // 蝯迫 OCR worker (憒?摮銝?芋撘 ocr)
             if (ocrWorker && currentMode === 'ocr' && tab.id !== 'tabOcr') {
                 console.log('Terminating OCR worker...');
                 await ocrWorker.terminate();
@@ -542,7 +886,7 @@
             const sectionId = `section${tab.id.replace('tab', '')}`;
             document.getElementById(sectionId).classList.remove('hidden');
             currentMode = tab.id.replace('tab', '').toLowerCase();
-            fileStatus.textContent = '支援 .pdf 格式';
+            fileStatus.textContent = '?舀 .pdf ?澆?';
             fileInput.value = '';
 			singleLoadedFile = null;
 			
@@ -566,22 +910,22 @@
                 
                 const ocrThumbs = document.getElementById('ocrThumbnails');
                 if (ocrThumbs) ocrThumbs.innerHTML = ''; 
-                ocrSplitPoints = []; // 修改此行
+                ocrSplitPoints = []; // 靽格甇方?
                 document.getElementById('ocrResultTools').classList.add('hidden');
             }
         });
     });
 
-	// ==================== 裁切功能 ====================
+	// ==================== 鋆?? ====================
     async function processFiles(files) {
         if (!files.length) {
-            fileStatus.textContent = '支援 .pdf 格式';
+            fileStatus.textContent = '?舀 .pdf ?澆?';
             return;
         }
         
         if (currentMode === 'split' || currentMode === 'pagenumber' || currentMode === 'rotate' || currentMode === 'ocr') {
             if (files.length > 1) {
-                showMessage('此功能一次只能處理一個PDF檔案。');
+                showMessage('甇文??賭?甈∪?質????DF瑼???);
                 fileInput.value = '';
                 singleLoadedFile = null; 
                 return;
@@ -592,7 +936,7 @@
             const arrayBuffer = await singleLoadedFile.arrayBuffer(); 
             const pdfDoc = await pdfjsLib.getDocument(arrayBuffer).promise;
             loadedPDF = pdfDoc;
-            fileStatus.textContent = `已載入檔案：${singleLoadedFile.name}`; 
+            fileStatus.textContent = `撌脰??交?獢?${singleLoadedFile.name}`; 
             
             if (currentMode === 'split') {
                 splitPoints = [];
@@ -604,25 +948,25 @@
             } else if (currentMode === 'rotate') {
                 rotateRotations = Array(loadedPDF.numPages).fill(0);
 
-                // 重置 "rotateAction" 區域 (現在只包含 "下一步" 按鈕)
+                // ?蔭 "rotateAction" ???(?曉?芸???"銝?甇? ??)
                 const rotateActionArea = document.getElementById('rotateAction');
                 rotateActionArea.innerHTML = `
-                    <button id="rotateNext" class="bg-blue-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-blue-600 transition disabled:bg-blue-300 disabled:cursor-not-allowed" disabled>下一步</button>
+                    <button id="rotateNext" class="btn btn-blue btn-lg" disabled>銝?甇?/button>
                 `;
 
-                // 重新尋找元素並更新 'let' 變數
+                // ?撠??銝行??'let' 霈
                 rotateNextBtn = document.getElementById('rotateNext');
                 
-                // 重新綁定 "下一步" 按鈕的事件監聽器 (複製原始在 line 1018 的邏輯)
+                // ?蝬? "銝?甇? ????隞嗥?賢 (銴ˊ????line 1018 ??頛?
                 rotateNextBtn.addEventListener('click', () => {
                     const actionArea = document.getElementById('rotateNext').parentNode;
                     actionArea.innerHTML = `
                         <div class="flex flex-col items-end space-y-4 w-full md:w-auto">
                             <div class="flex items-center space-x-2">
-                                <label class="font-medium text-gray-700">檔案名稱:</label>
-                                <input type="text" id="rotateFilename" class="p-2 border rounded-md focus:ring-2 focus:ring-blue-400 focus:border-blue-400" value="旋轉-${formatDate(new Date())}">
+                                <label class="font-medium text-gray-700">瑼??迂:</label>
+                                <input type="text" id="rotateFilename" class="form-input" value="??-${formatDate(new Date())}">
                             </div>
-                            <button id="exportRotate" class="bg-green-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-green-600 transition w-full md:w-auto">匯出檔案</button>
+                            <button id="exportRotate" class="btn btn-green w-full md:w-auto">?臬瑼?</button>
                         </div>
                     `;
                     document.getElementById('exportRotate').addEventListener('click', handleRotateExport);
@@ -631,29 +975,29 @@
                 await renderRotateThumbnails(pdfDoc);
                 rotateNextBtn.disabled = false;
                 
-                // 因為 rotatePageBtn 已經在外部，所以它會保留，我們只需要更新它的狀態
+                // ? rotatePageBtn 撌脩??典??剁??隞亙???????閬?啣?????
                 rotatePageBtn.disabled = true;
             
             } else if (currentMode === 'ocr') {
 				ocrSplitPoints = [];
-                await renderOcrThumbnails(pdfDoc); // 呼叫新的渲染函式
+                await renderOcrThumbnails(pdfDoc); // ?澆?啁?皜脫??賢?
                 updateOcrUI();
-				document.getElementById('ocrResultText').value = ''; // 清空舊結果
-                document.getElementById('ocrStatus').classList.add('hidden'); // 隱藏狀態
+				document.getElementById('ocrResultText').value = ''; // 皜征????
+                document.getElementById('ocrStatus').classList.add('hidden'); // ?梯????
                 document.getElementById('ocrResultTools').classList.add('hidden');
             }
 
         } else if (currentMode === 'merge') {
             await handleMergeFiles(files);
-            fileStatus.textContent = `已載入 ${files.length} 個檔案。`;
+            fileStatus.textContent = `撌脰???${files.length} ??獢;
         } else {
-            showMessage('請選擇頁籤來匯入檔案。');
+            showMessage('隢??蝐支??臬瑼???);
             fileInput.value = '';
             singleLoadedFile = null; 
         }
     }
 	
-    // 處理檔案匯入
+    // ??瑼??臬
     fileInput.addEventListener('change', async (event) => {
         await processFiles(event.target.files); 
     });
@@ -678,13 +1022,13 @@
         await processFiles(files);
     });
 
-    // 渲染 PDF 縮圖
+    // 皜脫? PDF 蝮桀?
     async function renderSplitThumbnails(pdfDoc) {
         splitThumbnails.innerHTML = '';
         const numPages = pdfDoc.numPages;
 
         const cutMarkerStart = document.createElement('div');
-        cutMarkerStart.className = 'cut-marker mx-2 flex-shrink-0';
+        cutMarkerStart.className = 'cut-marker';
         cutMarkerStart.dataset.page = 0;
         cutMarkerStart.addEventListener('click', () => toggleSplitPoint(0));
         splitThumbnails.appendChild(cutMarkerStart);
@@ -700,7 +1044,7 @@
             await page.render(renderContext).promise;
 
             const thumbWrapper = document.createElement('div');
-            thumbWrapper.className = 'relative flex-shrink-0 p-2 border border-gray-200 rounded-md';
+            thumbWrapper.className = 'thumb-wrapper';
             const pageNum = document.createElement('div');
             pageNum.textContent = i;
             pageNum.className = 'text-center text-sm font-medium text-gray-600 mt-1';
@@ -713,7 +1057,7 @@
 
             if (i < numPages) {
                 const cutMarker = document.createElement('div');
-                cutMarker.className = 'cut-marker mx-2 flex-shrink-0';
+                cutMarker.className = 'cut-marker';
                 cutMarker.dataset.page = i;
                 cutMarker.addEventListener('click', () => toggleSplitPoint(parseInt(cutMarker.dataset.page)));
                 splitThumbnails.appendChild(cutMarker);
@@ -721,7 +1065,7 @@
         }
 
         const cutMarkerEnd = document.createElement('div');
-        cutMarkerEnd.className = 'cut-marker mx-2 flex-shrink-0';
+        cutMarkerEnd.className = 'cut-marker';
         cutMarkerEnd.dataset.page = numPages;
         cutMarkerEnd.addEventListener('click', () => toggleSplitPoint(numPages));
         splitThumbnails.appendChild(cutMarkerEnd);
@@ -785,7 +1129,7 @@
 
     function updateSplitPointsFromText() {
         if (!loadedPDF) {
-            showMessage('請先匯入 PDF 檔案。');
+            showMessage('隢??臬 PDF 瑼???);
             splitStartPage.value = '';
             splitEndPage.value = '';
             splitNextBtn.disabled = true;
@@ -807,7 +1151,7 @@
             return;
         }
         if (start > end) {
-            showMessage('結束頁碼不能小於起始頁碼。');
+            showMessage('蝯??Ⅳ銝撠韏瑕??Ⅳ??);
             splitNextBtn.disabled = true;
             return;
         }
@@ -819,7 +1163,7 @@
     splitNextBtn.addEventListener('click', async () => {
         const file = singleLoadedFile;
         if (!file || splitPoints.length !== 2) {
-            showMessage('請匯入PDF檔案並選擇2個裁切點。');
+            showMessage('隢?仙DF瑼?銝阡????????);
             return;
         }
 
@@ -827,7 +1171,7 @@
         const endPage = splitPoints[1];
 
         if (startPage > endPage) {
-            showMessage('起始頁碼不能大於結束頁碼。');
+            showMessage('韏瑕??Ⅳ銝憭扳蝯??Ⅳ??);
             return;
         }
 
@@ -835,10 +1179,10 @@
         actionArea.innerHTML = `
             <div class="flex flex-col items-end space-y-4 w-full md:w-auto">
                 <div class="flex items-center space-x-2">
-                    <label class="font-medium text-gray-700">檔案名稱:</label>
-                    <input type="text" id="splitFilename" class="p-2 border rounded-md focus:ring-2 focus:ring-blue-400 focus:border-blue-400" value="分割-${formatDate(new Date())}">
+                    <label class="font-medium text-gray-700">瑼??迂:</label>
+                    <input type="text" id="splitFilename" class="form-input" value="?-${formatDate(new Date())}">
                 </div>
-                <button id="exportSplit" class="bg-green-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-green-600 transition w-full md:w-auto">匯出檔案</button>
+                <button id="exportSplit" class="btn btn-green w-full md:w-auto">?臬瑼?</button>
             </div>
         `;
 
@@ -846,7 +1190,7 @@
             try {
                 const fileToUse = singleLoadedFile;
 				if (!fileToUse) {
-					showMessage('找不到已載入的檔案，請重新匯入 PDF。');
+					showMessage('?曆??啣歇頛??獢?隢??啣??PDF??);
 					return;
 				}
 
@@ -860,11 +1204,11 @@
 				}
 
 				if (isNaN(startPage) || isNaN(endPage)) {
-					showMessage('請選擇或輸入有效的起始與結束頁碼。');
+					showMessage('隢??頛詨???絲憪?蝯??Ⅳ??);
 					return;
 				}
 				if (startPage > endPage) {
-					showMessage('起始頁碼不能大於結束頁碼。');
+					showMessage('韏瑕??Ⅳ銝憭扳蝯??Ⅳ??);
 					return;
 				}
 			
@@ -877,16 +1221,16 @@
                 const newPdfBytes = await newPdfDoc.save();
                 const filename = document.getElementById('splitFilename').value;
                 downloadPDF(newPdfBytes, filename);
-                showMessage('PDF 裁切並匯出成功！');
+                showMessage('PDF 鋆?銝血?箸???');
             } catch (error) {
                 console.error('Error splitting PDF:', error);
-                showMessage('PDF 裁切時發生錯誤。');
+                showMessage('PDF 鋆???隤扎?);
             }
         };
     });
 
-    // ==================== 合成功能 ====================
-    // 處理合成檔案匯入
+    // ==================== ??? ====================
+    // ????瑼??臬
     async function handleMergeFiles(files) {
         for (const file of files) {
             filesForMerge.push(file);
@@ -895,11 +1239,11 @@
         mergeNextBtn.disabled = filesForMerge.length === 0;
     }
 
-    // 渲染合成檔案清單
+    // 皜脫???瑼?皜
     function renderMergeFileList() {
         mergeFileList.innerHTML = '';
         if (filesForMerge.length === 0) {
-            mergeFileList.innerHTML = '<li class="text-gray-400 text-center py-4">請匯入 PDF 檔案以進行合成</li>';
+            mergeFileList.innerHTML = '<li class="text-gray-400 text-center py-4">隢??PDF 瑼?隞仿脰???</li>';
             deleteFileBtn.disabled = true;
             mergeNextBtn.disabled = true;
             return;
@@ -907,18 +1251,23 @@
 
         filesForMerge.forEach((file, index) => {
             const li = document.createElement('li');
-            li.className = 'sortable-item p-3 border rounded-md bg-white hover:bg-gray-50 flex flex-col transition';
+            li.className = 'sortable-item';
             li.draggable = true;
             li.dataset.index = index;
 
-            // 檔案資訊
+            // 瑼?鞈?
             const fileHeader = document.createElement('div');
             fileHeader.className = 'flex items-center justify-between mb-2';
 
             const fileInfo = document.createElement('div');
             fileInfo.className = 'flex items-center';
             const orderNumber = document.createElement('div');
-            orderNumber.className = 'bg-blue-500 text-white w-8 h-8 flex items-center justify-center rounded-full font-bold text-lg mr-4 flex-shrink-0';
+            orderNumber.className = 'flex items-center justify-center rounded-full font-bold text-lg mr-4 flex-shrink-0';
+            orderNumber.style.backgroundColor = 'var(--primary)';
+            orderNumber.style.color = 'white';
+            orderNumber.style.width = '2rem';
+            orderNumber.style.height = '2rem';
+            
             orderNumber.textContent = index + 1;
             const fileNameSpan = document.createElement('span');
             fileNameSpan.textContent = file.name;
@@ -928,9 +1277,9 @@
             fileHeader.appendChild(fileInfo);
             li.appendChild(fileHeader);
             
-            // 預覽區塊
+            // ?汗?憛?
             const previewContainer = document.createElement('div');
-            previewContainer.className = 'thumb-container overflow-x-auto flex flex-nowrap space-x-2 hidden';
+            previewContainer.className = 'thumb-container hidden';
             li.appendChild(previewContainer);
 
             li.addEventListener('dragstart', (e) => {
@@ -996,9 +1345,18 @@
                 const renderContext = { canvasContext: context, viewport: viewport };
                 await page.render(renderContext).promise;
                 const thumbWrapper = document.createElement('div');
-                thumbWrapper.className = 'flex-shrink-0 p-2 border rounded-md cursor-pointer hover:bg-gray-100 transition';
+                // Use inline style or a class for hover effect
+                thumbWrapper.style.flexShrink = '0';
+                thumbWrapper.style.padding = '0.5rem';
+                thumbWrapper.style.border = '1px solid var(--gray-200)';
+                thumbWrapper.style.borderRadius = 'var(--radius-md)';
+                thumbWrapper.style.cursor = 'pointer';
+                thumbWrapper.style.transition = 'background-color 0.2s';
+                thumbWrapper.onmouseover = function() { this.style.backgroundColor = 'var(--gray-100)'; };
+                thumbWrapper.onmouseout = function() { this.style.backgroundColor = 'transparent'; };
+
                 const pageNum = document.createElement('div');
-                pageNum.textContent = `頁碼 ${i}`;
+                pageNum.textContent = `?Ⅳ ${i}`;
                 pageNum.className = 'text-center text-sm font-medium text-gray-600 mt-1';
                 thumbWrapper.appendChild(canvas);
                 thumbWrapper.appendChild(pageNum);
@@ -1007,11 +1365,11 @@
             }
         } catch (error) {
             console.error('Error loading PDF for preview:', error);
-            showMessage('預覽檔案時發生錯誤。');
+            showMessage('?汗瑼???隤扎?);
         }
     }
 
-    // 刪除檔案
+    // ?芷瑼?
     deleteFileBtn.addEventListener('click', () => {
         if (selectedFileIndex !== -1) {
             filesForMerge.splice(selectedFileIndex, 1);
@@ -1022,7 +1380,7 @@
 
     mergeNextBtn.addEventListener('click', async () => {
         if (filesForMerge.length === 0) {
-            showMessage('請匯入至少一個檔案進行合成。');
+            showMessage('隢?亥撠???獢脰?????);
             return;
         }
 
@@ -1030,10 +1388,10 @@
         actionArea.innerHTML = `
             <div class="flex flex-col items-end space-y-4 w-full md:w-auto">
                 <div class="flex items-center space-x-2">
-                    <label class="font-medium text-gray-700">檔案名稱:</label>
-                    <input type="text" id="mergeFilename" class="p-2 border rounded-md focus:ring-2 focus:ring-blue-400 focus:border-blue-400" value="合成-${formatDate(new Date())}">
+                    <label class="font-medium text-gray-700">瑼??迂:</label>
+                    <input type="text" id="mergeFilename" class="form-input" value="??-${formatDate(new Date())}">
                 </div>
-                <button id="exportMerge" class="bg-green-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-green-600 transition w-full md:w-auto">匯出檔案</button>
+                <button id="exportMerge" class="btn btn-green w-full md:w-auto">?臬瑼?</button>
             </div>
         `;
 
@@ -1050,16 +1408,16 @@
                 const mergedPdfBytes = await mergedPdf.save();
                 const filename = document.getElementById('mergeFilename').value;
                 downloadPDF(mergedPdfBytes, filename);
-                showMessage('PDF 合成並匯出成功！');
+                showMessage('PDF ??銝血?箸???');
             } catch (error) {
                 console.error('Error merging PDFs:', error);
-                showMessage('PDF 合成時發生錯誤。');
+                showMessage('PDF ????隤扎?);
             }
         });
     });
     
-    // ==================== 編頁碼功能 ====================
-    // 當檔案載入後，才啟用「下一步」按鈕
+    // ==================== 蝺券?蝣澆???====================
+    // ?嗆?獢??亙?嚗????銝甇乓???
     fileInput.addEventListener('change', () => {
         if (currentMode === 'pagenumber' && fileInput.files.length > 0) {
             pageNumberNextBtn.disabled = false;
@@ -1070,17 +1428,17 @@
 
     pageNumberNextBtn.addEventListener('click', () => {
         if (!loadedPDF) {
-            showMessage('請先匯入PDF檔案。');
+            showMessage('隢??臬PDF瑼???);
             return;
         }
         const actionArea = document.getElementById('pageNumberNext').parentNode;
         actionArea.innerHTML = `
             <div class="flex flex-col items-end space-y-4 w-full md:w-auto">
                 <div class="flex items-center space-x-2">
-                    <label class="font-medium text-gray-700">檔案名稱:</label>
-                    <input type="text" id="pageNumberFilename" class="p-2 border rounded-md focus:ring-2 focus:ring-blue-400 focus:border-blue-400" value="頁碼-${formatDate(new Date())}">
+                    <label class="font-medium text-gray-700">瑼??迂:</label>
+                    <input type="text" id="pageNumberFilename" class="form-input" value="?Ⅳ-${formatDate(new Date())}">
                 </div>
-                <button id="exportPageNumber" class="bg-green-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-green-600 transition w-full md:w-auto">匯出檔案</button>
+                <button id="exportPageNumber" class="btn btn-green w-full md:w-auto">?臬瑼?</button>
             </div>
         `;
         document.getElementById('exportPageNumber').addEventListener('click', handlePageNumberExport);
@@ -1088,7 +1446,7 @@
 
     async function handlePageNumberExport() {
         if (!loadedPDF || !singleLoadedFile) { 
-            showMessage('請先匯入PDF檔案。');
+            showMessage('隢??臬PDF瑼???);
             return;
         }
         const startNumber = parseInt(pageNumberStart.value) || 1;
@@ -1098,7 +1456,7 @@
         const filename = document.getElementById('pageNumberFilename').value;
 
         if (isNaN(fromPage) || fromPage < 1 || fromPage > loadedPDF.numPages) {
-            showMessage('請輸入有效的起始頁碼。');
+            showMessage('隢撓?交???韏瑕??Ⅳ??);
             return;
         }
 
@@ -1120,10 +1478,10 @@
                 let xPosition;
 				
 				if (type === 'same') {
-					// 「同側」：固定在起始位置
+					// ???氬??箏??刻絲憪?蝵?
 					xPosition = (position === 'left') ? margin : width - textWidth - margin;
 				} else {
-					// 「交叉」：交替出現 (奇數頁/偶數頁決定)
+					// ?漱??鈭斗?箇 (憟???嗆?捱摰?
 					const isOddPage = (pageNum % 2 !== 0);
 					
 					if (position === 'left') {
@@ -1146,15 +1504,15 @@
 
             const newPdfBytes = await pdfDoc.save();
             downloadPDF(newPdfBytes, filename);
-            showMessage('頁碼編寫並匯出成功！');
+            showMessage('?Ⅳ蝺典神銝血?箸???');
 
         } catch (error) {
             console.error('Error adding page numbers:', error);
-            showMessage('頁碼編寫時發生錯誤。');
+            showMessage('?Ⅳ蝺典神??隤扎?);
         }
     }
     
-    // ==================== 旋轉功能 ====================
+    // ==================== ??? ====================
     async function renderRotateThumbnails(pdfDoc) {
         rotateThumbnails.innerHTML = '';
         const numPages = pdfDoc.numPages;
@@ -1169,7 +1527,12 @@
             const renderContext = { canvasContext: context, viewport: viewport };
             await page.render(renderContext).promise;
             const thumbWrapper = document.createElement('div');
-            thumbWrapper.className = `relative flex-shrink-0 p-2 border border-gray-200 rounded-md cursor-pointer hover:bg-gray-100 transition`;
+            thumbWrapper.className = `thumb-wrapper`;
+            // Add hover effect via style or keep CSS class
+            thumbWrapper.style.cursor = 'pointer';
+            thumbWrapper.onmouseover = function() { this.style.backgroundColor = 'var(--gray-100)'; };
+            thumbWrapper.onmouseout = function() { this.style.backgroundColor = 'transparent'; };
+
             thumbWrapper.dataset.page = i - 1;
             const pageNum = document.createElement('div');
             pageNum.textContent = i;
@@ -1195,14 +1558,14 @@
 
     rotatePageBtn.addEventListener('click', async () => {
         if (selectedRotatePage === -1) {
-            showMessage('請先選擇要旋轉的頁面。');
+            showMessage('隢??豢?閬?頧????);
             return;
         }
         
-        // 更新旋轉角度
+        // ?湔??閫漲
         rotateRotations[selectedRotatePage] = (rotateRotations[selectedRotatePage] + 90) % 360;
 
-        // 找到當前被選中的縮圖包裝 (父元素)
+        // ?曉?嗅?鋡恍銝剔?蝮桀??? (?嗅?蝝?
         const thumbWrapper = document.querySelector(`#rotateThumbnails .selected-thumbnail`);
         
         if (!thumbWrapper || thumbWrapper.dataset.page != selectedRotatePage) {
@@ -1211,7 +1574,7 @@
             return;
         }
 
-        // 找到*舊的* (當前可見的) canvas
+        // ?曉*??* (?嗅??航??? canvas
         const oldCanvas = thumbWrapper.querySelector('canvas');
         if (!oldCanvas) {
             console.error('No canvas found in selected thumbnail.');
@@ -1220,34 +1583,34 @@
         }
 
         try {
-            // 取得對應的 PDF 頁面 (getPage 是 1-based)
+            // ??撠???PDF ? (getPage ??1-based)
             const pageNum = selectedRotatePage + 1;
             const page = await loadedPDF.getPage(pageNum);
             
-            // 使用新的旋轉角度計算視圖
+            // 雿輻?啁???閫漲閮?閬?
             const newRotation = rotateRotations[selectedRotatePage];
             const viewport = page.getViewport({ scale: 0.3, rotation: newRotation });
 
-            // === [核心修改] 建立一個*新的* (in-memory) canvas ===
+            // === [?詨?靽格] 撱箇?銝???啁?* (in-memory) canvas ===
             const newCanvas = document.createElement('canvas');
             newCanvas.width = viewport.width;
             newCanvas.height = viewport.height;
             
-            // 在*新的* canvas 上渲染 (這不會影響畫面)
+            // ???啁?* canvas 銝葡??(???蔣?輻??
             const context = newCanvas.getContext('2d');
             const renderContext = { canvasContext: context, viewport: viewport };
             
-            // 等待新 canvas 繪製完成
+            // 蝑???canvas 蝜芾ˊ摰?
             await page.render(renderContext).promise;
 
-            // === 渲染完成後，*替換*舊的 canvas ===
-            //    這一步是原子操作，不會有閃爍
-            //    我們替換 oldCanvas，而不是 thumbWrapper，所以 .selected-thumbnail 樣式會保留
+            // === 皜脫?摰?敺?*?踵?*?? canvas ===
+            //    ??甇交????嚗?????
+            //    ???oldCanvas嚗???thumbWrapper嚗?隞?.selected-thumbnail 璅??????
             oldCanvas.parentNode.replaceChild(newCanvas, oldCanvas);
 
         } catch (error) {
             console.error('Error re-rendering single rotated thumbnail:', error);
-            // 如果單頁更新失敗，退回舊方法以確保功能正常
+            // 憒??桅??湔憭望?嚗???寞?隞亦Ⅱ靽??賣迤撣?
             await renderRotateThumbnails(loadedPDF);
         }
     });
@@ -1257,10 +1620,10 @@
         actionArea.innerHTML = `
             <div class="flex flex-col items-end space-y-4 w-full md:w-auto">
                 <div class="flex items-center space-x-2">
-                    <label class="font-medium text-gray-700">檔案名稱:</label>
-                    <input type="text" id="rotateFilename" class="p-2 border rounded-md focus:ring-2 focus:ring-blue-400 focus:border-blue-400" value="旋轉-${formatDate(new Date())}">
+                    <label class="font-medium text-gray-700">瑼??迂:</label>
+                    <input type="text" id="rotateFilename" class="form-input" value="??-${formatDate(new Date())}">
                 </div>
-                <button id="exportRotate" class="bg-green-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-green-600 transition w-full md:w-auto">匯出檔案</button>
+                <button id="exportRotate" class="btn btn-green w-full md:w-auto">?臬瑼?</button>
             </div>
         `;
         document.getElementById('exportRotate').addEventListener('click', handleRotateExport);
@@ -1268,7 +1631,7 @@
 
     async function handleRotateExport() {
         if (!loadedPDF || !singleLoadedFile) {
-            showMessage('請先匯入PDF檔案。');
+            showMessage('隢??臬PDF瑼???);
             return;
         }
 
@@ -1287,22 +1650,22 @@
 
             const newPdfBytes = await pdfDoc.save();
             downloadPDF(newPdfBytes, filename);
-            showMessage('PDF 旋轉並匯出成功！');
+            showMessage('PDF ??銝血?箸???');
 
         } catch (error) {
             console.error('Error rotating PDF:', error);
-            showMessage('PDF 旋轉時發生錯誤。');
+            showMessage('PDF ????隤扎?);
         }
     }
 	
-	// ==================== OCR 縮圖渲染 ====================
+	// ==================== OCR 蝮桀?皜脫? ====================
     async function renderOcrThumbnails(pdfDoc) {
         const ocrThumbnails = document.getElementById('ocrThumbnails');
         ocrThumbnails.innerHTML = '';
         const numPages = pdfDoc.numPages;
 
         const cutMarkerStart = document.createElement('div');
-        cutMarkerStart.className = 'cut-marker mx-2 flex-shrink-0';
+        cutMarkerStart.className = 'cut-marker';
         cutMarkerStart.dataset.page = 0;
         cutMarkerStart.addEventListener('click', () => toggleOcrSplitPoint(0));
         ocrThumbnails.appendChild(cutMarkerStart);
@@ -1317,7 +1680,7 @@
             const renderContext = { canvasContext: context, viewport: viewport };
             await page.render(renderContext).promise;
             const thumbWrapper = document.createElement('div');
-            thumbWrapper.className = 'relative flex-shrink-0 p-2 border border-gray-200 rounded-md';
+            thumbWrapper.className = 'thumb-wrapper';
             const pageNum = document.createElement('div');
             pageNum.textContent = i;
             pageNum.className = 'text-center text-sm font-medium text-gray-600 mt-1';
@@ -1330,7 +1693,7 @@
 
             if (i < numPages) {
                 const cutMarker = document.createElement('div');
-                cutMarker.className = 'cut-marker mx-2 flex-shrink-0';
+                cutMarker.className = 'cut-marker';
                 cutMarker.dataset.page = i;
                 cutMarker.addEventListener('click', () => toggleOcrSplitPoint(parseInt(cutMarker.dataset.page)));
                 ocrThumbnails.appendChild(cutMarker);
@@ -1338,7 +1701,7 @@
         }
 
         const cutMarkerEnd = document.createElement('div');
-        cutMarkerEnd.className = 'cut-marker mx-2 flex-shrink-0';
+        cutMarkerEnd.className = 'cut-marker';
         cutMarkerEnd.dataset.page = numPages;
         cutMarkerEnd.addEventListener('click', () => toggleOcrSplitPoint(numPages));
         ocrThumbnails.appendChild(cutMarkerEnd);
@@ -1404,13 +1767,13 @@
         ocrStartBtn.disabled = ocrSplitPoints.length !== 2;
     }
     
-    // 綁定文字輸入框
+    // 蝬???頛詨獢?
     document.getElementById('ocrStartPage').addEventListener('input', updateOcrSplitPointsFromText);
     document.getElementById('ocrEndPage').addEventListener('input', updateOcrSplitPointsFromText);
 
     function updateOcrSplitPointsFromText() {
         if (!loadedPDF) {
-            showMessage('請先匯入 PDF 檔案。');
+            showMessage('隢??臬 PDF 瑼???);
             document.getElementById('ocrStartPage').value = '';
             document.getElementById('ocrEndPage').value = '';
             document.getElementById('ocrStartBtn').disabled = true;
@@ -1432,7 +1795,7 @@
             return;
         }
         if (start > end) {
-            showMessage('結束頁碼不能小於起始頁碼。');
+            showMessage('蝯??Ⅳ銝撠韏瑕??Ⅳ??);
             document.getElementById('ocrStartBtn').disabled = true;
             return;
         }
@@ -1449,7 +1812,7 @@
 
     async function initializeOcrWorker() {
         ocrStatus.classList.remove('hidden');
-        ocrStatus.textContent = '正在初始化辨識引擎... (這在首次使用時需要幾秒鐘)';
+        ocrStatus.textContent = '甇????儘霅???.. (?擐活雿輻??閬嗾蝘?)';
 		
 		const progressContainer = document.getElementById('ocrProgressContainer');
         const progressBar = document.getElementById('ocrProgressBar');
@@ -1457,28 +1820,28 @@
         ocrWorker = await Tesseract.createWorker('eng+chi_tra', 1, {
             logger: m => {
                 console.log(m);
-				ocrStatus.classList.remove('text-green-600');
+				ocrStatus.classList.remove('text-green-500');
                 if (m.status === 'recognizing text') {
-                    // 顯示進度條並更新寬度
+                    // 憿舐內?脣漲璇蒂?湔撖砍漲
                     progressContainer.classList.remove('hidden');
                     const progressValue = (m.progress * 100).toFixed(0);
                     progressBar.style.width = `${progressValue}%`;
-                    ocrStatus.textContent = `辨識中... (${progressValue}%)`;
+                    ocrStatus.textContent = `颲刻?銝?.. (${progressValue}%)`;
                     
                 } else if (m.status === 'loading language training data' || m.status === 'initializing api') {
-                    // 載入模型時隱藏進度條 (因為這沒有進度百分比)
+                    // 頛璅∪???脣漲璇?(????脣漲?曉?瘥?
                     progressContainer.classList.add('hidden');
                     progressBar.style.width = '0%';
-                    ocrStatus.textContent = `正在載入語言模型...`;
+                    ocrStatus.textContent = `甇?頛隤?璅∪?...`;
                 } else {
                     progressContainer.classList.add('hidden');
-                    ocrStatus.textContent = `狀態: ${m.status}`;
+                    ocrStatus.textContent = `??? ${m.status}`;
                 }
             }
         });
 
-        ocrStatus.textContent = '辨識引擎準備就緒。';
-		ocrStatus.classList.remove('text-green-600');
+        ocrStatus.textContent = '颲刻?撘?皞?撠梁???;
+		ocrStatus.classList.remove('text-green-500');
         progressContainer.classList.add('hidden');
         progressBar.style.width = '0%';
         
@@ -1486,7 +1849,7 @@
     }
 
     ocrStartBtn.addEventListener('click', async () => {
-        // 驗證頁碼區間
+        // 撽??Ⅳ???
         let startPageNum, endPageNum;
         if (ocrSplitPoints.length === 2) {
             startPageNum = ocrSplitPoints[0] + 1;
@@ -1497,39 +1860,39 @@
         }
 
         if (isNaN(startPageNum) || isNaN(endPageNum) || startPageNum < 1 || endPageNum > loadedPDF.numPages || startPageNum > endPageNum) {
-            showMessage(`請選擇有效的頁碼區間 (1 - ${loadedPDF.numPages})。`);
+            showMessage(`隢?????Ⅳ???(1 - ${loadedPDF.numPages})?);
             return;
         }
 
-        // 準備 UI
+        // 皞? UI
         const progressContainer = document.getElementById('ocrProgressContainer');
         const progressBar = document.getElementById('ocrProgressBar');
 
         ocrStartBtn.disabled = true;
         ocrResultText.value = '';
         originalOcrText = '';
-        ocrStatus.classList.remove('text-green-600'); 
-        document.getElementById('ocrResultTools').classList.add('hidden'); // 隱藏標點按鈕
+        ocrStatus.classList.remove('text-green-500'); 
+        document.getElementById('ocrResultTools').classList.add('hidden'); // ?梯?璅???
         document.getElementById('copyOcrTextBtn').disabled = true;
 
-        // 重設標點按鈕狀態
+        // ?身璅??????
         puncToggles = { colon: false, comma: false, paren: false };
         document.querySelectorAll('.punc-btn').forEach(btn => btn.classList.remove('active'));
 
-        let fullText = ""; // 用於儲存所有頁面的文字
+        let fullText = ""; // ?冽?脣?????Ｙ???
 
         try {
-            // 初始化 Tesseract Worker
+            // ????Tesseract Worker
             if (!ocrWorker) {
                 ocrWorker = await initializeOcrWorker();
             }
             
             ocrStatus.classList.remove('hidden');
 
-            // 迴圈辨識每一頁
+            // 餈游?颲刻?瘥???
             for (let i = startPageNum; i <= endPageNum; i++) {
-                ocrStatus.textContent = `正在渲染第 ${i} / ${endPageNum} 頁...`;
-                ocrStatus.classList.remove('text-green-600');
+                ocrStatus.textContent = `甇?皜脫?蝚?${i} / ${endPageNum} ??..`;
+                ocrStatus.classList.remove('text-green-500');
                 
                 const page = await loadedPDF.getPage(i);
                 const scale = 3.0; 
@@ -1541,29 +1904,29 @@
                 
                 await page.render({ canvasContext: context, viewport: viewport }).promise;
                 
-                ocrStatus.textContent = `正在辨識第 ${i} / ${endPageNum} 頁...`;
+                ocrStatus.textContent = `甇?颲刻?蝚?${i} / ${endPageNum} ??..`;
                 const { data: { text } } = await ocrWorker.recognize(canvas);
 
-                fullText += `--- 辨識頁碼 ${i} ---\n\n`;
+                fullText += `--- 颲刻??Ⅳ ${i} ---\n\n`;
                 fullText += text.replace(/ /g, '') + "\n\n";
             }
 
-            // 顯示最終結果
+            // 憿舐內?蝯???
             originalOcrText = fullText; 
             applyPunctuationFilters(); 
             
-            ocrStatus.textContent = '辨識完成。';
-            ocrStatus.classList.add('text-green-600'); 
+            ocrStatus.textContent = '颲刻?摰???;
+            ocrStatus.classList.add('text-green-500'); 
             
             progressBar.style.width = '100%';
-            document.getElementById('ocrResultTools').classList.remove('hidden'); // 顯示標點按鈕
+            document.getElementById('ocrResultTools').classList.remove('hidden'); // 憿舐內璅???
             document.getElementById('copyOcrTextBtn').disabled = originalOcrText.length === 0;
 
         } catch (error) {
             console.error('OCR Error:', error);
-            showMessage('文字辨識時發生錯誤。');
-            ocrStatus.textContent = `錯誤: ${error.message || '未知錯誤'}`;
-            ocrStatus.classList.remove('text-green-600');
+            showMessage('??颲刻???隤扎?);
+            ocrStatus.textContent = `?航炊: ${error.message || '?芰?航炊'}`;
+            ocrStatus.classList.remove('text-green-500');
             progressContainer.classList.add('hidden');
             progressBar.style.width = '0%';
         } finally {
@@ -1571,33 +1934,33 @@
         }
     });
     
-    // 應用過濾器並更新 textarea
+    // ??蕪?其蒂?湔 textarea
     function applyPunctuationFilters() {
         let tempText = originalOcrText;
         
         if (puncToggles.colon) {
-            tempText = tempText.replace(/:/g, '：');
+            tempText = tempText.replace(/:/g, '嚗?);
         }
         if (puncToggles.comma) {
-            tempText = tempText.replace(/,/g, '，');
+            tempText = tempText.replace(/,/g, '嚗?);
         }
         if (puncToggles.paren) {
-            tempText = tempText.replace(/\(/g, '（').replace(/\)/g, '）');
+            tempText = tempText.replace(/\(/g, '嚗?).replace(/\)/g, '嚗?);
         }
         
         ocrResultText.value = tempText;
     }
 
-    // 子按鈕 (冒號、逗號、括號)
+    // 摮???(???????
     document.querySelectorAll('.punc-btn').forEach(button => {
         button.addEventListener('click', () => {
             const type = button.dataset.type;
             if (type in puncToggles) {
-                // 切換狀態
+                // ?????
                 puncToggles[type] = !puncToggles[type];
-                // 切換視覺
+                // ??閬死
                 button.classList.toggle('active', puncToggles[type]);
-                // 重新應用過濾
+                // ???蕪
                 applyPunctuationFilters();
             }
         });
@@ -1607,7 +1970,7 @@
     copyOcrTextBtn.addEventListener('click', () => {
         const textToCopy = document.getElementById('ocrResultText').value;
         if (!textToCopy) {
-            showMessage('沒有文字可複製。');
+            showMessage('瘝????航?鋆賬?);
             return;
         }
 
@@ -1619,31 +1982,31 @@
                 notification.style.opacity = '1';
             }, 10);
 
-            // 1秒後開始淡化
+            // 1蝘???瘛∪?
             setTimeout(() => {
                 notification.style.opacity = '0';
             }, 1010); // 10ms + 1000ms
 
-            // 再1秒後消失
+            // ??蝘?瘨仃
             setTimeout(() => {
                 notification.style.display = 'none';
             }, 2010); // 1010ms + 1000ms
             
         }).catch(err => {
-            console.error('無法複製文字: ', err);
-            showMessage('複製文字失敗。');
+            console.error('?⊥?銴ˊ??: ', err);
+            showMessage('銴ˊ??憭望???);
         });
     });
 
     document.addEventListener('keydown', (event) => {
         
-        // === [新增] 開始：檢查事件目標元素 ===
+        // === [?啣?] ??嚗炎?乩?隞嗥璅?蝝?===
         const targetElement = event.target;
         if (targetElement) {
-            // 將標籤名稱標準化為大寫
+            // 撠?蝐文?蝔望?皞??箏之撖?
             const tagName = targetElement.tagName.toUpperCase();
             
-            // 如果使用者正在與輸入框、文字區或下拉選單互動，則不觸發任何快捷鍵
+            // 憒?雿輻?迤?刻?頛詨獢?摮?????桐?????閫貊隞颱?敹急??
             if (tagName === 'INPUT' || tagName === 'TEXTAREA' || tagName === 'SELECT') {
                 return;
             }
@@ -1672,14 +2035,14 @@
         }
     });
 
-    // 全螢幕預覽功能
+    // ?刻撟?閬賢???
     async function showFullScreenPreview(pdfDoc, pageNum) {
         fullScreenPDF = pdfDoc;
         fullScreenPage = pageNum;
         await renderFullScreenPage();
         fullScreenPreview.classList.remove('hidden');
 
-        // 綁定鍵盤事件
+        // 蝬??萇鈭辣
         document.addEventListener('keydown', handleFullScreenKeys);
     }
     

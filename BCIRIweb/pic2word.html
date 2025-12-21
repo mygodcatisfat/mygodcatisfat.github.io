@@ -1,0 +1,2708 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word 表格圖片批次匯入工具</title>
+    <script src="https://unpkg.com/docx@7.5.0/build/index.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        :root {
+            --a4-width: 210mm;
+            --a4-height: 297mm;
+        }
+
+        body {
+			background-color: #f0f0f0;
+			font-family: "Microsoft JhengHei", Arial, sans-serif;
+			display: flex;
+			flex-direction: row;
+			align-items: flex-start;
+			margin: 0;
+			padding: 0;
+			height: 100vh;
+			overflow: hidden;
+		}
+
+        /* 左側工具列 */
+        .toolbar {
+            width: 300px; /* 固定寬度 */
+            min-width: 300px; /* [關鍵] 防止被 flex 壓縮 */
+            flex-shrink: 0;   /* [關鍵] 防止被 flex 壓縮 */
+            background: #ffffff;
+            border-right: 1px solid #e0e0e0;
+            padding: 20px 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-sizing: border-box; /* 確保 padding 不會撐大寬度 */
+            font-family: "Segoe UI", "Microsoft JhengHei", sans-serif;
+            overflow-y: auto;
+            height: 100vh; /* 確保高度填滿 */
+        }
+
+        /* 右側主要內容區 */
+        .main-content {
+			flex-grow: 1;
+			height: 100vh;
+			overflow-y: auto;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			padding: 20px;
+			padding-bottom: 100px; 
+			box-sizing: border-box;
+			position: relative;
+		}
+		
+		/* 右側頁面導覽列 */
+		.page-navigator {
+			width: 200px;
+			height: 100vh;
+			background: #e9e9e9;
+			border-left: 1px solid #ccc;
+			display: none;
+			flex-direction: column;
+			overflow-y: auto;
+			padding: 10px;
+			box-sizing: border-box;
+			flex-shrink: 0;
+			z-index: 90;
+		}
+		
+		.page-navigator h4 {
+			margin: 0 0 10px 0;
+			font-size: 14px;
+			color: #555;
+			text-align: center;
+		}
+
+		/* 右側迷你縮圖容器 */
+		.mini-page-container {
+			width: 100%;
+			margin-bottom: 15px;
+			cursor: pointer;
+			background: #fff;
+			border: 1px solid #ddd; /* 邊框包住整個卡片(含標籤) */
+			border-radius: 4px;
+			padding: 8px;
+			box-sizing: border-box;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			transition: all 0.2s;
+		}
+
+		.mini-page-container:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+			border-color: #aaa;
+		}
+
+		.mini-page-container.active {
+			outline: 2px solid #007bff;
+			border-color: #007bff;
+		}
+
+		/* 迷你頁面標籤 (頁碼) */
+		.mini-page-label {
+			text-align: center;
+			font-size: 12px;
+			color: #555;
+			margin-top: 8px;
+			font-weight: bold;
+			width: 100%;
+			border-top: 1px solid #eee;
+			padding-top: 5px;
+		}
+
+		/* CSS 縮放技術製作縮圖 (不需額外 canvas library) */
+		.mini-page-view {
+			position: relative; /* 作為絕對定位的基準點 */
+			overflow: hidden;   /* 切除超出的部分 */
+			border: 1px solid #eee;
+			background: white;
+		}
+		
+		/* 縮圖內容層 */
+		/* 這是實際的 A4 內容，保持原始大小，但透過 transform 縮小 */
+		.mini-page-content {
+			/* [關鍵] 絕對定位：脫離排版流，確保它以 A4 原始大小渲染，不受父層寬度影響 */
+			position: absolute; 
+			top: 0;
+			left: 0;
+			transform-origin: 0 0; /* 左上對齊縮放 */
+			pointer-events: none;  /* 縮圖不可操作 */
+			margin: 0 !important;  /* 強制移除 margin，避免位移 */
+			box-shadow: none !important; /* 移除陰影 */
+		}
+		
+		.mini-page-view .print-page {
+			margin: 0 !important; /* 強制歸零，貼齊左上 */
+			box-shadow: none !important; /* 移除陰影，避免縮圖看起來很亂 */
+			/* 確保在縮圖裡也是顯示完整尺寸，再被 transform 縮小 */
+			min-width: var(--a4-width);
+			min-height: var(--a4-height);
+		}
+		.mini-page-view .print-page.landscape {
+			min-width: var(--a4-height);
+			min-height: var(--a4-width);
+		}
+
+        .step-wizard {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        .step-wizard .step {
+            width: 140px;
+            padding: 10px;
+            border-radius: 20px;
+            background: #ddd;
+            color: #666;
+            text-align: center;
+            font-weight: bold;
+            position: relative;
+            user-select: none;
+            transition: all 0.3s;
+        }
+
+        .step-wizard .step.active {
+            background: #007bff;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0,123,255,0.3);
+        }
+
+        .step-wizard .line {
+            width: 50px;
+            height: 4px;
+            background: #ddd;
+            margin: 0 10px;
+        }
+
+        .toolbar-section {
+            display: none;
+            width: 100%;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            animation: fadeIn 0.3s;
+        }
+        .toolbar-section.active { display: flex; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+		
+		/* [修改] 輸入框通用樣式 */
+        input[type="number"], input[type="text"], select, button {
+            height: 30px;
+            box-sizing: border-box;
+            font-size: 13px;
+            border-radius: 4px;
+            vertical-align: middle;
+        }
+		
+		input[type="number"], input[type="text"], select {
+            border: 1px solid #ced4da;
+            padding: 0 8px;
+            background: #fff;
+        }
+        input:focus, select:focus {
+            border-color: #80bdff;
+            outline: 0;
+            box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+        }
+
+        /* [修改] 按鈕通用樣式 */
+        button {
+            border: 1px solid #ced4da;
+            background: #e2e6ea;
+            color: #333;
+            padding: 0 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+        }
+        button:hover { background: #dbe0e5; }
+		
+		/* 特殊按鈕樣式 */
+        .btn-primary { background: #007bff !important; color: white !important; border: none !important; }
+        .btn-primary:hover { background: #0069d9 !important; }
+        .btn-danger { background: #fff5f5 !important; color: #dc3545 !important; border-color: #dc3545 !important; }
+		
+		/* 寬度輔助類別 */
+        .w-full { width: 100%; }
+        .w-half { width: 50%; }
+        .w-auto { width: auto; flex: none; }
+		
+		/* --- [重構] 邊界設定佈局 (十字架排版) --- */
+        .margin-layout {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            background: #fff;
+            border: 1px dashed #ddd;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .margin-row {
+            display: flex;
+            align-items: center;
+            gap: 15px; /* 左中右的間距 */
+        }
+        .margin-input-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+        .margin-input-box span {
+            font-size: 11px;
+            color: #888;
+        }
+        .margin-input-box input {
+            width: 50px !important;
+            text-align: center;
+        }
+        .page-icon {
+            width: 30px;
+            height: 40px;
+            border: 1px solid #999;
+            background: #f0f0f0;
+        }
+		
+		.table-input-row {
+            display: flex; 
+            align-items: center; 
+            gap: 5px; 
+            background: #fff; 
+            padding: 5px; 
+            border-radius: 4px;
+        }
+		
+		/* [新增] 邊界設定專用的格狀排列 */
+        .margin-grid {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 5px;
+            align-items: center;
+            justify-items: center;
+        }
+        .margin-grid input { width: 50px; text-align: center; }
+
+        button:hover { background-color: #e9e9e9; }
+        .primary-btn { background-color: #007bff; color: white; border: none; width: 100%; margin-top: 10px;}
+        .primary-btn:hover { background-color: #0056b3; }
+        
+        .nav-btn {
+            padding: 8px 10px;
+            font-size: 14px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            font-weight: bold;
+            width: 100%;
+        }
+        .btn-next { background-color: #28a745; color: white; border: none; }
+        .btn-next:hover { background-color: #218838; }
+        .btn-prev { background-color: #6c757d; color: white; border: none; }
+        .btn-prev:hover { background-color: #5a6268; }
+
+        .action-group {
+            width: 100%; /* [關鍵] 強制填滿容器寬度 */
+            box-sizing: border-box; /* [關鍵] 包含 padding */
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+		
+		.action-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 2px;
+        }
+		
+		/* 群組標題樣式 */
+        .group-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #495057;
+            margin: 0 0 5px 0;
+            border-left: 3px solid #007bff; /* 藍色裝飾條 */
+            padding-left: 8px;
+            line-height: 1.2;
+        }
+		
+		.row-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            width: 100%;
+        }
+		
+		
+
+        #workspace {
+            background: white;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            box-sizing: border-box;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            position: relative;
+            outline: none;
+            min-height: var(--a4-height);
+            margin-bottom: 50px;
+        }
+        
+        #workspace.multi-page-view {
+            background: transparent;
+            box-shadow: none;
+            padding: 0 !important;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            height: auto;
+            overflow: visible;
+        }
+
+        .print-page {
+            background: white;
+			box-shadow: 0 0 15px rgba(0,0,0,0.2);
+			box-sizing: border-box;
+			position: relative;
+			overflow: hidden;
+			/* 改用 min-height 與 min-width 確保不被 flex 擠壓 */
+			min-width: var(--a4-width);
+			min-height: var(--a4-height);
+			width: var(--a4-width);
+			height: var(--a4-height);
+			margin: 0 auto 30px auto; /* 增加底部間距，讓頁面之間有區隔 */
+			flex-shrink: 0; /* 關鍵：防止被父容器壓縮 */
+        }
+        .print-page.landscape {
+            min-width: var(--a4-height);
+			min-height: var(--a4-width);
+			width: var(--a4-height);
+			height: var(--a4-width);
+        }
+
+        #workspace p { margin: 0; padding: 0; }
+
+        #workspace:empty::before {
+            content: "在此處輸入文字，或使用左側工具插入表格...";
+            color: #aaa;
+            pointer-events: none;
+            display: block;
+            margin-top: 10px;
+            font-style: italic;
+            padding: 20px;
+        }
+
+        .portrait { width: var(--a4-width); height: var(--a4-height); }
+        .landscape { width: var(--a4-height); height: var(--a4-width); }
+
+        .editable-table {
+            width: auto;
+            border-collapse: collapse;
+            */table-layout: fixed;*/
+            margin-bottom: 0;
+        }
+        /*.editable-table:focus-within { outline: 2px solid #2196f3; }*/
+
+        .editable-table td {
+            border: 1px solid #000;
+            padding: 5px;
+            /* 移除固定高度，讓表格可以隨內容或整體高度調整 */
+            /* height: 50px; */ 
+            vertical-align: top;
+            text-align: left;
+            position: relative;
+            font-size: 12pt;
+            line-height: 1.5;
+            color: #000;
+            min-width: 10px;
+        }
+        .editable-table td:empty::before {
+            content: "輸入...";
+            color: #ddd;
+            font-size: 10pt;
+            pointer-events: none;
+            font-style: italic;
+        }
+        
+        .editable-table td.img-slot {
+            background-color: #e3f2fd;
+            border: 2px dashed #2196f3;
+            color: #1565c0;
+            font-weight: bold;
+            text-align: center;
+            vertical-align: middle;
+        }
+        .editable-table td.img-slot::before { content: none; }
+
+        .editable-table td img {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+            cursor: pointer; /* 讓使用者知道可以點擊 */
+        }
+        
+        /* 匯入圖片模式下，圖片 hover 顯示刪除提示 (選用) */
+        .editable-table td img:hover {
+            opacity: 0.8;
+            outline: 2px solid red;
+        }
+
+        #status { margin-bottom: 10px; color: #d32f2f; font-weight: bold; text-align: center; width: 100%; }
+
+        .format-toolbar {
+            width: 100%; 
+            margin-top: 5px; 
+            padding-top: 10px; 
+            display: flex; 
+            gap: 5px; 
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .cursor-col-resize { cursor: col-resize !important; }
+        .cursor-row-resize { cursor: row-resize !important; }
+
+        #table-tools {
+            display: none;
+            background-color: #e8f0fe;
+            border: 1px solid #b3d7ff;
+            padding: 5px;
+            border-radius: 4px;
+            width: 100%;
+        }
+
+        /* 進度條樣式 */
+        #progress-container {
+            width: 100%;
+            margin-top: 5px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+        progress {
+            width: 100%;
+            height: 20px;
+        }
+		
+		/* 圖片縮圖暫存區樣式 */
+		.thumbnail-grid {
+			display: grid;
+			grid-template-columns: repeat(3, 1fr);
+			gap: 5px;
+			width: 100%;
+			max-height: 300px;
+			overflow-y: auto;
+			margin-top: 10px;
+			border: 1px solid #eee;
+			padding: 5px;
+			background: #fafafa;
+		}
+
+		.thumbnail-item {
+			position: relative;
+			width: 100%;
+			aspect-ratio: 1;
+			border: 2px solid transparent;
+			border-radius: 4px;
+			overflow: hidden;
+			cursor: pointer;
+			background: #fff;
+		}
+
+		.thumbnail-item img {
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+		}
+
+		.thumbnail-item.selected {
+			border-color: #007bff;
+			opacity: 1;
+		}
+
+		/* 讓未選取的圖片稍微透明，區分狀態 */
+		.thumbnail-item:not(.selected) {
+			opacity: 0.6; 
+		}
+
+		.thumbnail-delete {
+			position: absolute;
+			top: 2px;
+			right: 2px;
+			background: rgba(255,0,0,0.8);
+			color: white;
+			width: 18px;
+			height: 18px;
+			border-radius: 50%;
+			font-size: 12px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			cursor: pointer;
+			z-index: 2;
+		}
+
+		/* 表格格子的選取順序標記 */
+		.cell-order-badge {
+			position: absolute;
+			top: 2px;
+			left: 2px;
+			background: #28a745;
+			color: white;
+			font-size: 10px;
+			padding: 2px 5px;
+			border-radius: 10px;
+			z-index: 5;
+			pointer-events: none;
+		}
+
+		/* 選取中的格子樣式 */
+		.editable-table td.target-selected {
+			background-color: #fff3cd !important; /* 淡黃色底 */
+			border: 2px solid #ffc107 !important;
+		}
+		
+		/* --- 浮動提示視窗 (Toast) --- */
+        #toast-notification {
+            visibility: hidden;
+            min-width: 250px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 4px;
+            padding: 16px;
+            position: fixed;
+            z-index: 1000;
+            left: 50%;
+            bottom: 30px;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.5s, bottom 0.5s;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        #toast-notification.show {
+            visibility: visible;
+            opacity: 1;
+            bottom: 50px;
+        }
+
+        /* --- 頁面預覽高保真樣式 (讓它看起來像縮小的 Main Content) --- */
+        .page-navigator {
+            /* 修改背景色與主畫面一致 */
+            background: #f0f0f0; 
+            padding: 20px 10px; /* 增加內距，模擬主畫面邊距 */
+        }
+        
+        .mini-page-container {
+            /* 移除原本的卡片樣式，使其僅顯示頁面本體 */
+            background: transparent;
+            border: none;
+            padding: 0;
+            border-radius: 0;
+            box-shadow: none;
+            /* 縮圖之間的間距 (需依比例調整，假設主畫面間距30px，縮放0.2則約為6px，這裡設稍大一點方便點擊) */
+            margin-bottom: 15px; 
+            overflow: visible; /* 允許陰影顯示 */
+        }
+
+        .mini-page-container:hover {
+            transform: none; /* 移除位移，保持位置一致 */
+            box-shadow: none;
+        }
+
+        /* 選中時只加外框提示，不改變佈局 */
+        .mini-page-container.active .mini-page-view {
+            outline: 3px solid #007bff;
+        }
+
+        /* 讓縮圖裡的頁面擁有跟主畫面一樣的陰影 */
+        .mini-page-view {
+            box-shadow: 0 0 5px rgba(0,0,0,0.2); 
+            background: white;
+            margin: 0 auto; /* 置中 */
+        }
+
+        .mini-page-label {
+            /* 調整標籤樣式使其不干擾視覺 */
+            color: #666;
+            margin-top: 5px;
+            font-weight: normal;
+            border: none;
+        }
+
+        /* --- 表格拖曳游標樣式 --- */
+        .editable-table td {
+            /* 確保相對定位，以便計算邊界 */
+            position: relative; 
+        }
+		
+		/* --- [新增] 功能 1: 系統懸浮視窗 (Modal) 樣式 --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* 半透明遮罩 */
+            z-index: 2000; /* 確保在最上層 */
+            display: none; /* 預設隱藏 */
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            width: 300px;
+            text-align: center;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .modal-box h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 18px;
+        }
+
+        .modal-box input[type="text"] {
+            width: 90%;
+            padding: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+			margin-top: 15px;
+        }
+
+        .modal-buttons button {
+            padding: 6px 20px;
+            min-width: 80px;
+        }
+		
+		.btn-confirm { background: #dc3545; color: white; border: none; padding: 6px 20px; border-radius: 4px; }
+        .btn-cancel { background: #6c757d; color: white; border: none; padding: 6px 20px; border-radius: 4px; }
+
+        /* --- 移除 fontSizeInput 下拉箭頭與數字按鈕 --- */
+        /* 隱藏 Datalist 下拉箭頭 (Chrome/Edge/Safari) */
+        #fontSizeInput::-webkit-calendar-picker-indicator {
+            display: none !important;
+        }
+        /* 隱藏數字增減箭頭 (Chrome/Edge/Safari) */
+        #fontSizeInput::-webkit-outer-spin-button,
+        #fontSizeInput::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        /* Firefox */
+        #fontSizeInput {
+            -moz-appearance: textfield;
+        }
+
+        /* --- 功能 3: 唯讀輸入框樣式 (灰階) --- */
+        input[readonly], input[disabled] {
+            background-color: #eee !important;
+            color: #888 !important;
+            cursor: not-allowed;
+            border-color: #ddd;
+        }
+
+        /* --- 功能 4: 合併按鈕樣式 (支援換行與小字體) --- */
+        .merge-btn {
+            font-size: 11px !important;
+            line-height: 1.1;
+            padding: 2px 5px !important;
+            height: auto !important; /* 允許合併按鈕高度自適應 */
+            min-height: 30px;
+        }
+		
+		/* --- 功能 1: 響應式 Toolbar 設定 --- */
+        /* 切換按鈕樣式 */
+        .toolbar-toggle {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 200; /* 比 toolbar 高 */
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            width: 40px;
+            height: 40px;
+            display: none; /* 預設隱藏，小螢幕才顯示 */
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            font-size: 20px;
+        }
+
+        /* 螢幕寬度小於 1024px 時隱藏 toolbar */
+        @media (max-width: 1024px) {
+            .toolbar {
+                position: fixed;
+                left: -280px; /* 移出畫面 */
+                transition: left 0.3s ease;
+            }
+            .toolbar.show {
+                left: 0; /* 顯示時滑入 */
+            }
+            .toolbar-toggle {
+                display: flex; /* 顯示切換按鈕 */
+            }
+            /* 調整主畫面寬度 */
+            .main-content {
+                width: 100%;
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+        }
+
+        /* --- 功能 2 & 3: 圖片控制圓圈 (紅/黃) --- */
+        .img-controls {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            display: flex;
+            gap: 5px;
+            z-index: 10;
+        }
+
+        .control-circle {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid white; /* 增加白邊讓圓圈更明顯 */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            transition: transform 0.2s;
+        }
+        .control-circle:hover {
+            transform: scale(1.1);
+        }
+
+        .circle-red {
+            background-color: #ff4444; /* 紅色 */
+        }
+        .circle-yellow {
+            background-color: #ffeb3b; /* 黃色 */
+        }
+
+        /* --- 功能 4: 大圖預覽遮罩 --- */
+        .preview-overlay {
+            display: none; /* 預設隱藏 */
+            position: fixed;
+            z-index: 2000; /* 最上層 */
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85); /* 黑色半透明背景 */
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(2px);
+        }
+
+        .preview-content {
+            max-width: 90%;
+            max-height: 90%;
+            border: 3px solid white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            animation: zoomIn 0.3s;
+            object-fit: contain;
+        }
+
+        .preview-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            z-index: 2001;
+        }
+        .preview-close:hover {
+            color: #bbb;
+        }
+
+        @keyframes zoomIn {
+            from {transform: scale(0.8); opacity: 0;}
+            to {transform: scale(1); opacity: 1;}
+        }
+    </style>
+</head>
+<body>
+	<button class="toolbar-toggle" onclick="toggleToolbar()">☰</button>
+    <div class="toolbar">
+        <div id="step1-tools" class="toolbar-section active">
+            
+            <div class="action-group" style="border-left-color: #17a2b8;">
+                <label class="group-title" style="border-left-color: #17a2b8;">模板管理</label>
+                <div class="row-group">
+                    <button onclick="exportTemplate()" class="w-full" style="background-color:#17a2b8; color:white; border:none;">匯出JSON</button>
+                    <button onclick="document.getElementById('templateInput').click()" class="w-full" style="background-color:#6c757d; color:white; border:none;">匯入</button>
+                    <input type="file" id="templateInput" accept=".json" style="display: none;" onchange="importTemplate(this.files)">
+                </div>
+            </div>
+
+            <div class="action-group">
+                <label class="group-title">版面設定</label>
+                
+                <div class="row-group w-auto" style="margin-bottom: 10px;">
+                    <button onclick="setOrientation('portrait')">直向</button>
+                    <button onclick="setOrientation('landscape')">橫向</button>
+                </div>
+
+                <div class="margin-layout">
+                    <div class="margin-input-box">
+                        <span>上 (mm)</span>
+                        <input type="number" id="marginTop" value="20" onchange="updateMargins()">
+                    </div>
+                    
+                    <div class="margin-row">
+                        <div class="margin-input-box">
+                            <span>左</span>
+                            <input type="number" id="marginLeft" value="20" onchange="updateMargins()">
+                        </div>
+                        <div class="page-icon" title="頁面示意圖"></div>
+                        <div class="margin-input-box">
+                            <span>右</span>
+                            <input type="number" id="marginRight" value="20" onchange="updateMargins()">
+                        </div>
+                    </div>
+
+                    <div class="margin-input-box">
+                        <span>下</span>
+                        <input type="number" id="marginBottom" value="20" onchange="updateMargins()">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="action-group">
+                <label class="group-title">插入表格</label>
+                <div class="row-group">
+                    <input type="number" id="rows" value="3" min="1" style="width: 50px;" placeholder="列">
+                    <span style="font-size:12px; color:#666;">列</span>
+                    <span style="color:#aaa;">x</span>
+                    <input type="number" id="cols" value="2" min="1" style="width: 50px;" placeholder="行">
+                    <span style="font-size:12px; color:#666;">行</span>
+                    <button onclick="addTable()" class="btn-primary" style="flex:1;">插入</button>
+                </div>
+            </div>
+
+            <div id="table-tools" class="action-group" style="display:none; border-left-color: #28a745;">
+                <label class="group-title" style="border-left-color: #28a745;">表格/格子屬性</label>
+                
+                <div class="table-input-row">
+                    <span style="font-size:11px; color:#888; width:20px;">表</span>
+                    <input type="number" id="tblWidth" disabled title="表格總寬(唯讀)" placeholder="W" class="w-full" style="background:#eee;">
+                    <input type="number" id="tblHeight" disabled title="表格總高(唯讀)" placeholder="H" class="w-full" style="background:#eee;">
+                </div>
+
+                <div class="table-input-row">
+                    <span style="font-size:11px; color:#28a745; width:20px; font-weight:bold;">格</span>
+                    <input type="number" id="cellWidth" oninput="updateCellSize()" placeholder="W" class="w-full">
+                    <input type="number" id="cellHeight" oninput="updateCellSize()" placeholder="H" class="w-full">
+                </div>
+                
+                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:3px; width:100%; margin-top:5px;">
+                    <button class="merge-btn" onclick="mergeCells('right')">向右<br>合併</button>
+                    <button class="merge-btn" onclick="mergeCells('down')">向下<br>合併</button>
+                    <button class="merge-btn" onclick="splitCell()" style="color:#c62828;">取消<br>合併</button>
+                </div>
+
+                <button onclick="deleteSelectedTable()" class="btn-danger w-full" style="margin-top:5px;">刪除表格</button>
+            </div>
+
+            <div class="action-group">
+                <label class="group-title">文字樣式</label>
+                <select onchange="formatDoc('fontName', this.value)" class="w-full" style="margin-bottom:5px;">
+                    <option value="Microsoft JhengHei">微軟正黑體</option>
+                    <option value="Arial">Arial</option>
+                    <option value="Times New Roman">Times New Roman</option>
+                    <option value="標楷體">標楷體</option>
+                </select>
+                
+                <div class="row-group">
+                    <input type="number" id="fontSizeInput" list="fontSizeList" value="12" onchange="setFontSizePt(this.value)" style="width: 50px;" title="字體大小">
+                    <datalist id="fontSizeList">
+                        <option value="9"></option><option value="12"></option><option value="14"></option><option value="18"></option><option value="24"></option>
+                    </datalist>
+                    
+                    <div style="display:flex; gap:0;">
+                        <button onclick="formatDoc('bold')" style="font-weight:bold; border-radius:4px 0 0 4px; border-right:none;">B</button>
+                        <button onclick="formatDoc('italic')" style="font-style:italic; border-radius:0 4px 4px 0;">I</button>
+                    </div>
+                    <input type="color" onchange="formatDoc('foreColor', this.value)" style="width:30px; padding:0; height:30px; border:none; background:none; cursor:pointer;" title="文字顏色">
+                </div>
+    
+                <div class="row-group" style="margin-top:5px; justify-content: space-between;">
+                    <div style="display:flex; gap:0;">
+                        <button onclick="formatDoc('justifyLeft')" style="border-radius:4px 0 0 4px; border-right:none;">置左</button>
+                        <button onclick="formatDoc('justifyCenter')" style="border-radius:0; border-right:none;">置中</button>
+                        <button onclick="formatDoc('justifyRight')" style="border-radius:0 4px 4px 0;">置右</button>
+                    </div>
+                    <select onchange="setLineHeight(this.value)" style="width:70px;" title="行高">
+                        <option value="1.0">1.0倍</option>
+                        <option value="1.2">1.2倍</option>
+                        <option value="1.5" selected>1.5倍</option>
+                    </select>
+                </div>
+            </div>
+
+            <button class="nav-btn btn-next w-full" onclick="goToStep(2)" style="margin-top:auto; height:40px; font-weight:bold;">下一步：匯入圖片 &gt;</button>
+        </div>
+
+        <div id="step2-tools" class="toolbar-section">
+			<h3 style="margin-top:0; border-bottom:1px solid #ddd; width:100%; padding-bottom:10px;">圖片處理</h3>
+			
+			<div class="action-group" style="flex-direction: column; align-items: flex-start;">
+				<label style="font-weight:bold; width:100%;">1. 選擇圖片：</label>
+				<div style="display:flex; gap:5px; width:100%;">
+					<button onclick="triggerImageUpload()" class="primary-btn" style="background-color:#28a745; margin-top:5px; flex:1;">+ 新增</button>
+					<input type="file" id="imageInput" multiple accept="image/*" style="display: none;" onchange="handleFiles(this.files)">
+				</div>
+				
+				<div style="display:flex; justify-content:space-between; width:100%; font-size:12px; margin-top:5px;">
+					<label><input type="checkbox" id="sortImages" onchange="renderPreview()"> 依檔名排序</label>
+					<span id="imgCount">0 張</span>
+				</div>
+
+				<div id="thumbnailContainer" class="thumbnail-grid"></div>
+				
+				<div style="display:flex; gap:5px; width:100%; margin-top:5px;">
+					<button onclick="selectAllImages(true)" style="font-size:11px; flex:1;">全選圖片</button>
+					<button onclick="selectAllImages(false)" style="font-size:11px; flex:1;">全不選</button>
+				</div>
+			</div>
+
+			<div class="action-group" style="flex-direction: column; align-items: flex-start;">
+				<label style="font-weight:bold; width:100%;">2. 表格填充設定：</label>
+				<p style="font-size:11px; color:#666; margin:2px 0;">點擊右側第一頁的格子來指定順序。若未選取則自動填滿所有格子。</p>
+				<button onclick="resetCellSelection()" style="width:100%; font-size:12px;">重設 / 全選表格</button>
+			</div>
+
+			<div class="action-group">
+				<button onclick="clearAllData()" style="width:100%; color:#d32f2f;">清空所有資料</button>
+			</div>
+
+			<button class="primary-btn" onclick="exportToDocx()">下載 Word (.docx)</button>
+			
+			<div id="progress-container" style="width: 100%; margin-top: 5px; display: none; flex-direction: column; align-items: center;">
+				<span id="progress-text" style="font-size:12px; margin-bottom:2px;">準備下載...</span>
+				<progress id="export-progress" value="0" max="100" style="width: 100%; height: 20px;"></progress>
+			</div>
+
+			<button class="nav-btn btn-prev" onclick="goToStep(1)">&lt; 返回編輯模板</button>
+		</div>
+    </div>
+
+    <div class="main-content">
+        <div class="step-wizard">
+            <div class="step active" id="step-indicator-1">1. 模板製作</div>
+            <div class="line" id="line-1"></div>
+            <div class="step" id="step-indicator-2">2. 匯入圖片</div>
+        </div>
+
+        <div id="status"></div>
+        <div id="workspace" class="portrait" contenteditable="true" spellcheck="false"></div>
+    </div>
+	
+	<div class="page-navigator" id="pageNavigator">
+		<h4>頁面預覽</h4>
+		<div id="miniPageList">
+			</div>
+	</div>
+	
+	<div id="toast-notification">提示訊息</div>
+	<div id="exportModal" class="modal-overlay">
+        <div class="modal-box">
+            <h3>匯出模板</h3>
+            <p style="font-size:12px; color:#666; margin-bottom:5px; text-align:left; padding-left:12px;">請輸入檔案名稱：</p>
+            <input type="text" id="exportFilenameInput" placeholder="輸入檔名">
+            <div class="modal-buttons">
+                <button onclick="closeModal()" style="background:#6c757d; color:white; border:none;">取消</button>
+                <button onclick="confirmExport()" class="primary-btn" style="background:#007bff; width:auto; margin-top:0;">確定</button>
+            </div>
+        </div>
+    </div>
+	
+	<div id="confirmModal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="color:#d32f2f; margin-top:0;">⚠️ 確認刪除</h3>
+            <p id="confirmMessage" style="color:#555; font-size:14px;">確定要刪除嗎？</p>
+            <div class="modal-buttons">
+                <button onclick="closeConfirmModal()" class="btn-cancel">取消</button>
+                <button id="confirmYesBtn" class="btn-confirm">刪除</button>
+            </div>
+        </div>
+    </div>
+	
+	<div id="imagePreviewModal" class="preview-overlay" onclick="closeImagePreview()">
+        <span class="preview-close">&times;</span>
+        <img class="preview-content" id="previewImg">
+    </div>
+
+    <script>
+        // --- 全域變數 ---
+		const pageNavigator = document.getElementById('pageNavigator');
+		const miniPageList = document.getElementById('miniPageList');
+		const workspace = document.getElementById('workspace');
+		const statusDiv = document.getElementById('status');
+		const tableToolsDiv = document.getElementById('table-tools');
+		const cellToolsDiv = document.getElementById('cell-tools');
+		const tblWidthInput = document.getElementById('tblWidth');
+		const tblHeightInput = document.getElementById('tblHeight');
+		const cellWidthInput = document.getElementById('cellWidth');
+		const cellHeightInput = document.getElementById('cellHeight');
+
+		let currentStep = 1;
+		let selectedTable = null;
+		let selectedCell = null;
+		let importedImages = []; // 存放圖片物件 {id, name, src, selected}
+		let targetCellIndices = []; // 存放使用者在步驟二選取的格子索引 [0, 2, ...]
+		let templateHTML = ""; // 儲存步驟一設計好的模板 HTML
+
+		// 卷軸同步功能
+        function initScrollSync() {
+            const main = document.querySelector('.main-content');
+            const nav = document.getElementById('pageNavigator');
+            
+            let isSyncingMain = false;
+            let isSyncingNav = false;
+
+            // 主畫面捲動 -> 驅動導覽列
+            main.onscroll = function() {
+                if (!isSyncingNav) {
+                    isSyncingMain = true;
+                    // 計算比例：主畫面捲動比例 = 導覽列捲動比例
+                    // 修正：因為導覽列內容高度與主畫面內容高度成固定比例 (scale)，直接用百分比同步最準確
+                    const percentage = main.scrollTop / (main.scrollHeight - main.clientHeight);
+                    nav.scrollTop = percentage * (nav.scrollHeight - nav.clientHeight);
+                }
+                isSyncingNav = false;
+            };
+
+            // 導覽列捲動 -> 驅動主畫面
+            nav.onscroll = function() {
+                if (!isSyncingMain) {
+                    isSyncingNav = true;
+                    const percentage = nav.scrollTop / (nav.scrollHeight - nav.clientHeight);
+                    main.scrollTop = percentage * (main.scrollHeight - main.clientHeight);
+                }
+                isSyncingMain = false;
+            };
+        }
+
+        // 初始化函式 (window.onload)
+        window.onload = function() {
+            updateMargins();
+            initTableResizing(); // 啟動表格拖曳功能
+			initWorkspaceZoom();
+        };
+		
+		// 即時同步變數
+        let contentObserver = null;
+
+        // 啟動內容同步監聽 (主畫面 -> 縮圖)
+        function initContentSync() {
+            // 先停止舊的監聽器，避免重複
+            if (contentObserver) {
+                contentObserver.disconnect();
+            }
+
+            const config = { 
+                attributes: true, 
+                childList: true, 
+                subtree: true, 
+                characterData: true 
+            };
+
+            contentObserver = new MutationObserver((mutations) => {
+                // 使用 Set 來避免同一頁面多次重複更新 (Debounce 的簡單實作)
+                let dirtyPagesIndices = new Set();
+
+                mutations.forEach((mutation) => {
+                    // 尋找變動發生在哪一頁
+                    const targetPage = mutation.target.closest('.print-page');
+                    if (targetPage && targetPage.id) {
+                        // 從 id "print-page-0" 取得索引 "0"
+                        const pageIdParts = targetPage.id.split('-');
+                        const pageIndex = pageIdParts[pageIdParts.length - 1];
+                        dirtyPagesIndices.add(pageIndex);
+                    }
+                });
+
+                // 更新所有有變動的縮圖
+                dirtyPagesIndices.forEach(index => {
+                    syncThumbnail(index);
+                });
+            });
+
+            contentObserver.observe(workspace, config);
+        }
+
+        // 執行單頁同步
+        function syncThumbnail(index) {
+            const sourcePage = document.getElementById(`print-page-${index}`);
+            // 取得對應的縮圖內容層 (.mini-page-content)
+            // 注意：miniPageList 的結構是 .mini-page-container -> .mini-page-view -> .mini-page-content
+            const thumbsContainer = document.getElementById('miniPageList');
+            if (!thumbsContainer) return;
+            
+            const thumbItems = thumbsContainer.querySelectorAll('.mini-page-container');
+            if (thumbItems[index]) {
+                const thumbContent = thumbItems[index].querySelector('.mini-page-content');
+                if (sourcePage && thumbContent) {
+                    // 同步 HTML 內容 (包含圖片與文字變更)
+                    thumbContent.innerHTML = sourcePage.innerHTML;
+                    // 重新綁定縮圖內的事件 (因為 innerHTML 重寫後事件會消失，雖然縮圖通常不可操作，但若有特定樣式需保持一致)
+                    // 這裡主要是確保外觀一致，縮圖內的圖片通常設為 pointer-events: none 或不可點擊，故單純複製 HTML 即可
+                }
+            }
+        }
+		
+		// [修改] 功能 5 (寬度跳動修正版): Table 改用 border-box 鎖定，徹底消除邊框造成的寬度誤差
+        // [修改] 功能 6 (最終完美版): 修正合併儲存格導致的拖曳錯位問題
+        // [修改] 功能 6 (最終修正版): 解決複雜合併表格的拖曳異常與連動問題
+        function initTableResizing() {
+            let isResizing = false;
+            let currentCell = null;
+            let startX, startY;
+            let startTableWidth;
+            let resizeType = ''; // 'col' or 'row'
+            
+            // 存放所有需要調整的格子資訊
+            let resizingCells = []; 
+
+            // 1. 監聽移動以改變游標樣式
+            workspace.addEventListener('mousemove', function(e) {
+                if (isResizing) return;
+                if (currentStep === 2) return;
+
+                const td = e.target.closest('td');
+                if (!td) {
+                    workspace.style.cursor = 'default';
+                    return;
+                }
+
+                const rect = td.getBoundingClientRect();
+                const rightEdge = rect.right - e.clientX < 10;
+                const bottomEdge = rect.bottom - e.clientY < 10;
+
+                if (rightEdge) {
+                    td.style.cursor = 'col-resize';
+                    td.dataset.resizeType = 'col';
+                } else if (bottomEdge) {
+                    td.style.cursor = 'row-resize';
+                    td.dataset.resizeType = 'row';
+                } else {
+                    td.style.cursor = 'default';
+                    delete td.dataset.resizeType;
+                }
+            });
+
+            // 2. 開始拖曳 (mousedown)
+            workspace.addEventListener('mousedown', function(e) {
+                if (currentStep === 2) return;
+                const td = e.target.closest('td');
+                
+                if (td && td.dataset.resizeType) {
+                    isResizing = true;
+                    currentCell = td;
+                    resizeType = td.dataset.resizeType;
+                    
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    
+                    const table = td.closest('table');
+                    
+                    // A. 鎖定表格狀態 (border-box + fixed layout)
+                    table.style.boxSizing = 'border-box';
+                    startTableWidth = table.offsetWidth; // 記錄含邊框的寬度
+
+                    // B. 鎖定所有格子像素 (防止未調整的格子變形)
+                    Array.from(table.rows).forEach(row => {
+                        Array.from(row.cells).forEach(cell => {
+                            const computed = window.getComputedStyle(cell);
+                            cell.style.width = computed.width;
+                            cell.style.height = computed.height;
+                        });
+                        const rowComputed = window.getComputedStyle(row);
+                        row.style.height = rowComputed.height;
+                    });
+                    
+                    table.style.width = startTableWidth + 'px';
+                    table.style.tableLayout = 'fixed';
+
+                    // C. 準備調整清單
+                    resizingCells = []; 
+
+                    if (resizeType === 'col') {
+                        // --- 核心邏輯：找出視覺欄位 ---
+                        
+                        // 1. 計算當前點擊的格子，其「右邊界」對應的是第幾個視覺欄位 (0-based)
+                        // 例如：第一欄(index 0)的右邊界是 index 0 (因為拖曳的是該欄位的右線)
+                        // 如果是合併儲存格(跨 0, 1)，右邊界對應的是 index 1
+                        let targetVisualColIndex = -1;
+                        
+                        // 先算出 currentCell 的結束位置
+                        const parentRow = currentCell.parentElement;
+                        let colCounter = 0;
+                        for (let c of parentRow.cells) {
+                            let span = parseInt(c.getAttribute('colspan') || 1);
+                            // colCounter ~ colCounter + span - 1 是這個格子的範圍
+                            if (c === currentCell) {
+                                // 我們拖曳的是這個格子的右邊界，也就是這個範圍的最後一欄
+                                targetVisualColIndex = colCounter + span - 1;
+                                break;
+                            }
+                            colCounter += span;
+                        }
+
+                        // 2. 找出全表格中，所有「包含」這個 targetVisualColIndex 的格子
+                        // 只要一個格子包含了這一欄，當這一欄變寬時，該格子也必須變寬
+                        Array.from(table.rows).forEach(row => {
+                            let currentIdx = 0;
+                            for (let c of row.cells) {
+                                let span = parseInt(c.getAttribute('colspan') || 1);
+                                let startIdx = currentIdx;
+                                let endIdx = currentIdx + span - 1;
+
+                                // 判斷：目標欄位是否落在這個格子的範圍內？
+                                if (targetVisualColIndex >= startIdx && targetVisualColIndex <= endIdx) {
+                                    resizingCells.push({
+                                        cell: c,
+                                        startWidth: parseFloat(window.getComputedStyle(c).width)
+                                    });
+                                }
+                                currentIdx += span;
+                            }
+                        });
+
+                    } else {
+                        // --- 高度調整 (相對簡單，維持原樣) ---
+                        const row = td.parentElement;
+                        resizingCells.push({
+                            cell: td, // 代表
+                            row: row,
+                            startHeight: parseFloat(window.getComputedStyle(td).height)
+                        });
+                    }
+
+                    e.preventDefault(); 
+                }
+            });
+
+            // 3. 拖曳中 (mousemove)
+            document.addEventListener('mousemove', function(e) {
+                if (!isResizing || !currentCell) return;
+                
+                const table = currentCell.closest('table');
+
+                if (resizeType === 'col') {
+                    // --- 調整寬度 ---
+                    const diff = e.clientX - startX;
+                    
+                    // 1. 同步調整所有相關格子
+                    // 這樣無論是單一格子還是合併格子，只要包含該欄位，都會一起變寬/變窄
+                    resizingCells.forEach(item => {
+                        const newW = Math.max(20, item.startWidth + diff);
+                        item.cell.style.width = newW + 'px';
+                    });
+
+                    // 2. 調整表格總寬
+                    // 表格總寬 = 原始寬度 + 移動距離 (因為我們是用 fixed layout 且鎖死了所有格子)
+                    const newTableWidth = Math.max(100, startTableWidth + diff);
+                    table.style.width = newTableWidth + 'px';
+
+                    // 3. 更新 UI
+                    // 顯示當前操作格子的新數值
+                    const currentItem = resizingCells.find(x => x.cell === currentCell);
+                    if (currentItem && selectedCell === currentCell) {
+                        cellWidthInput.value = Math.max(20, currentItem.startWidth + diff);
+                        tblWidthInput.value = newTableWidth;
+                    }
+
+                } else if (resizeType === 'row') {
+                    // --- 調整高度 ---
+                    const diff = e.clientY - startY;
+                    const item = resizingCells[0]; 
+                    const newHeight = Math.max(20, item.startHeight + diff);
+                    
+                    const row = item.row;
+                    row.style.height = newHeight + 'px';
+                    Array.from(row.cells).forEach(c => c.style.height = newHeight + 'px');
+
+                    if(selectedCell === currentCell) {
+                        cellHeightInput.value = newHeight;
+                        tblHeightInput.value = table.offsetHeight;
+                    }
+                }
+            });
+
+            // 4. 結束拖曳
+            document.addEventListener('mouseup', function() {
+                if (isResizing) {
+                    isResizing = false;
+                    currentCell = null;
+                    resizingCells = []; 
+                    workspace.style.cursor = 'default';
+                }
+            });
+        }
+
+		// 更新邊界 (同時套用於主畫面與右側縮圖)
+        function updateMargins() {
+            const top = document.getElementById('marginTop').value;
+            const bottom = document.getElementById('marginBottom').value;
+            const left = document.getElementById('marginLeft').value;
+            const right = document.getElementById('marginRight').value;
+            const paddingVal = `${top}mm ${right}mm ${bottom}mm ${left}mm`;
+
+            // 修改選取範圍：不只選 workspace，而是選取整個文件中所有的 print-page
+            // 這樣包含右側 page-navigator 裡的 .mini-page-content (它也有 print-page class) 都能被更新
+            const pages = document.querySelectorAll('.print-page');
+            
+            if (pages.length > 0) {
+                pages.forEach(page => page.style.padding = paddingVal);
+            } else {
+                // 若尚無頁面 (步驟一初始狀態)，維持設定 workspace
+                workspace.style.padding = paddingVal;
+            }
+        }
+
+		function setOrientation(type) {
+			const pages = workspace.querySelectorAll('.print-page');
+			if (pages.length > 0) {
+				pages.forEach(page => page.className = `print-page ${type}`);
+			} else {
+				workspace.className = type;
+			}
+		}
+		
+		// 顯示浮動提示視窗
+        function showToast(message) {
+            const toast = document.getElementById("toast-notification");
+            toast.innerText = message;
+            toast.className = "show";
+
+            // 點擊立即消失
+            toast.onclick = function(){
+                toast.className = toast.className.replace("show", "");
+            };
+
+            // 3秒後自動消失
+            setTimeout(function(){ 
+                toast.className = toast.className.replace("show", ""); 
+            }, 3000);
+        }
+
+		// 步驟切換邏輯 (尋找原有的 goToStep 函式並替換 alert 部分)
+        function goToStep(step) {
+            currentStep = step;
+            
+            const step1 = document.getElementById('step-indicator-1');
+            const step2 = document.getElementById('step-indicator-2');
+            const tools1 = document.getElementById('step1-tools');
+            const tools2 = document.getElementById('step2-tools');
+
+            if (step === 1) {
+                step1.classList.add('active');
+                step2.classList.remove('active');
+                tools1.classList.add('active');
+                tools2.classList.remove('active');
+                statusDiv.innerText = "";
+                pageNavigator.style.display = 'none';
+                clearAllData(); 
+                if (templateHTML) {
+                    workspace.innerHTML = templateHTML;
+                    workspace.classList.remove('multi-page-view');
+                }
+                updateMargins();
+                initTableResizing(); 
+
+                // 離開步驟二時，停止監聽以節省資源
+                if (contentObserver) {
+                    contentObserver.disconnect();
+                    contentObserver = null;
+                }
+
+            } else {
+                const slots = workspace.querySelectorAll('.img-slot');
+                if (slots.length === 0) {
+                    showToast("請先插入表格並設定「圖片預留位」！");
+                    goToStep(1); 
+                    return;
+                }
+
+                workspace.classList.remove('multi-page-view'); 
+                templateHTML = workspace.innerHTML;
+
+                step1.classList.remove('active');
+                step2.classList.add('active');
+                tools1.classList.remove('active');
+                tools2.classList.add('active');
+                
+                selectedTable = null;
+                tableToolsDiv.style.display = 'none';
+                targetCellIndices = []; 
+                statusDiv.innerText = "請選擇圖片。點擊右側第一頁的表格格子可指定匯入位置。";
+                pageNavigator.style.display = 'flex';
+                
+                renderPreview();
+                
+                initScrollSync();
+                
+                // 這裡呼叫同步監聽，確保修改 main-content 時縮圖會動
+                initContentSync();
+            }
+        }
+
+		// --- 圖片處理邏輯 ---
+		function triggerImageUpload() {
+			document.getElementById('imageInput').click();
+		}
+
+		// 處理檔案選取
+		function handleFiles(files) {
+			if (files.length === 0) return;
+
+			Array.from(files).forEach(file => {
+				const reader = new FileReader();
+				reader.onload = function(e) {
+					importedImages.push({
+						id: Date.now() + Math.random(),
+						name: file.name,
+						src: e.target.result,
+						selected: true // 預設全選
+					});
+					// 全部讀取完後再渲染 (這裡簡單做，每讀一張刷一次，若圖多建議用 Promise.all)
+					renderThumbnails(); 
+					renderPreview();
+				};
+				reader.readAsDataURL(file);
+			});
+			// 清空 input 避免重複選取失效
+			document.getElementById('imageInput').value = '';
+		}
+
+		// 渲染左側縮圖區
+		function renderThumbnails() {
+			const container = document.getElementById('thumbnailContainer');
+			const sortCheckbox = document.getElementById('sortImages');
+			const countLabel = document.getElementById('imgCount');
+			
+			// 排序邏輯
+			let displayList = [...importedImages];
+			if (sortCheckbox.checked) {
+				displayList.sort((a, b) => a.name.localeCompare(b.name));
+			}
+
+			countLabel.innerText = `${importedImages.length} 張`;
+			container.innerHTML = '';
+
+			displayList.forEach(img => {
+				const div = document.createElement('div');
+				div.className = `thumbnail-item ${img.selected ? 'selected' : ''}`;
+				div.onclick = () => toggleImageSelection(img.id);
+				
+				const image = document.createElement('img');
+				image.src = img.src;
+				
+				const delBtn = document.createElement('div');
+				delBtn.className = 'thumbnail-delete';
+				delBtn.innerHTML = '×';
+				delBtn.onclick = (e) => {
+					e.stopPropagation();
+					deleteImage(img.id);
+				};
+
+				div.appendChild(image);
+				div.appendChild(delBtn);
+				container.appendChild(div);
+			});
+		}
+
+		function toggleImageSelection(id) {
+			const img = importedImages.find(x => x.id === id);
+			if (img) {
+				img.selected = !img.selected;
+				renderThumbnails();
+				renderPreview();
+			}
+		}
+
+		function selectAllImages(selectAll) {
+			importedImages.forEach(img => img.selected = selectAll);
+			renderThumbnails();
+			renderPreview();
+		}
+
+		function deleteImage(id) {
+			importedImages = importedImages.filter(x => x.id !== id);
+			renderThumbnails();
+			renderPreview();
+		}
+
+		function clearAllData() {
+			if(currentStep === 2 && importedImages.length > 0) {
+				if(!confirm("確定要清空所有圖片和設定嗎？")) return;
+			}
+			importedImages = [];
+			targetCellIndices = [];
+			renderThumbnails();
+			
+			if(currentStep === 2) {
+				workspace.innerHTML = templateHTML;
+				workspace.classList.remove('multi-page-view');
+				renderPreview(); // 重新綁定事件
+			}
+		}
+
+		// --- 表格格子指定邏輯 ---
+		function resetCellSelection() {
+			targetCellIndices = [];
+			renderPreview();
+		}
+
+		// 處理步驟二的 Workspace 點擊 (定義 Pattern)
+		// 邏輯：我們始終讓第一頁保持為「樣板互動區」。
+		function handleStep2CellClick(index) {
+			// 檢查是否已在陣列中
+			const existIdx = targetCellIndices.indexOf(index);
+			
+			if (existIdx === -1) {
+				// 新增選取
+				targetCellIndices.push(index);
+			} else {
+				// 取消選取
+				targetCellIndices.splice(existIdx, 1);
+			}
+			
+			renderPreview();
+		}
+
+		// --- 核心：渲染預覽 (Render Preview) ---
+		// 這是最複雜的部分，負責將圖片依照 pattern 填入多頁
+		// renderPreview：修正縮圖排版與結構
+		// renderPreview：修復縮圖排版錯亂與標籤位置
+		function renderPreview() {
+			if (currentStep !== 2) return;
+
+			const sortCheckbox = document.getElementById('sortImages');
+			let activeImages = importedImages.filter(img => img.selected);
+			if (sortCheckbox && sortCheckbox.checked) {
+				activeImages.sort((a, b) => a.name.localeCompare(b.name));
+			}
+
+			// 1. 還原單頁模板以取得乾淨 HTML
+			workspace.innerHTML = templateHTML;
+			workspace.classList.remove('multi-page-view');
+			
+			// 清空縮圖列表
+			miniPageList.innerHTML = '';
+
+			const allSlots = Array.from(workspace.querySelectorAll('.img-slot'));
+
+			// 重新綁定第一頁事件 (設定 Pattern)
+			allSlots.forEach((slot, index) => {
+				slot.style.cursor = "pointer";
+				slot.onclick = (e) => {
+					e.stopPropagation(); 
+					handleStep2CellClick(index);
+				};
+				const orderIndex = targetCellIndices.indexOf(index);
+				if (orderIndex !== -1) {
+					slot.classList.add('target-selected');
+					const badge = document.createElement('div');
+					badge.className = 'cell-order-badge';
+					badge.innerText = orderIndex + 1;
+					slot.appendChild(badge);
+				} else {
+					slot.classList.remove('target-selected');
+					const oldBadge = slot.querySelector('.cell-order-badge');
+					if(oldBadge) oldBadge.remove();
+				}
+			});
+
+			// 計算分頁需求
+			let targetSlotsIndices = targetCellIndices.length > 0 ? targetCellIndices : allSlots.map((_, i) => i);
+			const slotsPerPage = targetSlotsIndices.length;
+			const totalImages = activeImages.length;
+			const pagesNeeded = totalImages > 0 ? Math.ceil(totalImages / slotsPerPage) : 1;
+
+			const firstPageHTML = workspace.innerHTML; 
+			
+			// 進入多頁模式
+			workspace.innerHTML = "";
+			workspace.classList.add('multi-page-view');
+			
+			// 判斷版面方向
+			const isLandscape = templateHTML.includes('print-page landscape') || templateHTML.includes('landscape');
+			
+			// 定義 A4 像素尺寸 (96 DPI 基準)
+			// 這些數值必須與 CSS 中的 var(--a4-width/height) 對應
+			const portraitW = 794;  // 210mm
+			const portraitH = 1123; // 297mm
+			
+			const baseW = isLandscape ? portraitH : portraitW;
+			const baseH = isLandscape ? portraitW : portraitH;
+			
+			const scale = 0.2; // 縮放比例 (約 20%)
+
+			let imgIndex = 0;
+
+			for (let p = 0; p < pagesNeeded; p++) {
+				// === 生成主畫面頁面 ===
+				const pageDiv = document.createElement('div');
+				const pageId = `print-page-${p}`;
+				pageDiv.id = pageId; 
+				
+				const orientationClass = isLandscape ? 'landscape' : 'portrait';
+				pageDiv.className = `print-page ${orientationClass}`; 
+				
+				if (p === 0) {
+					pageDiv.innerHTML = firstPageHTML;
+					// 重新綁定第一頁事件
+					const p1Slots = pageDiv.querySelectorAll('.img-slot');
+					p1Slots.forEach((slot, idx) => {
+						slot.onclick = (e) => {
+							e.stopPropagation();
+							handleStep2CellClick(idx);
+						};
+					});
+				} else {
+					pageDiv.innerHTML = templateHTML;
+					const pNSlots = pageDiv.querySelectorAll('.img-slot');
+					pNSlots.forEach(s => s.style.cursor = 'default');
+				}
+				
+				workspace.appendChild(pageDiv);
+
+				// === 填入圖片 (主畫面) ===
+				// === 2. 填入圖片 (主畫面) ===
+				const pageSlots = Array.from(pageDiv.querySelectorAll('.img-slot'));
+				for (let i = 0; i < targetSlotsIndices.length; i++) {
+					if (imgIndex >= totalImages) break;
+					const slotIndex = targetSlotsIndices[i];
+					const targetSlot = pageSlots[slotIndex];
+					if (targetSlot) {
+						// 清空文字內容
+						Array.from(targetSlot.childNodes).forEach(node => {
+							if (node.nodeType === Node.TEXT_NODE) node.remove();
+						});
+						
+						const imgObj = activeImages[imgIndex];
+						
+						// 建立圖片元素
+						const img = document.createElement('img');
+						img.src = imgObj.src;
+						// [修改] 功能 3: 移除圖片原本的點擊刪除功能，避免誤觸
+						img.style.cursor = "default";
+						// img.onclick = ... (已移除)
+
+						// [新增] 功能 2 & 3: 建立控制按鈕容器 (紅/黃圓圈)
+						const controls = document.createElement('div');
+						controls.className = 'img-controls';
+
+						// 紅色圓圈：移除圖片 (移回暫存區)
+						const redBtn = document.createElement('div');
+						redBtn.className = 'control-circle circle-red';
+						redBtn.title = '移除圖片';
+						redBtn.onclick = (e) => {
+							e.stopPropagation(); // 防止觸發格子點擊
+							// 功能 3: 將移除功能移至此處
+							toggleImageSelection(imgObj.id); 
+						};
+
+						// 黃色圓圈：放大檢視
+						const yellowBtn = document.createElement('div');
+						yellowBtn.className = 'control-circle circle-yellow';
+						yellowBtn.title = '放大檢視';
+						yellowBtn.onclick = (e) => {
+							e.stopPropagation();
+							// 功能 4: 呼叫大圖預覽
+							showLargePreview(imgObj.src);
+						};
+
+						controls.appendChild(redBtn);
+						controls.appendChild(yellowBtn);
+
+						// 確保格子是相對定位，以便按鈕絕對定位於右上角
+						targetSlot.style.position = 'relative';
+						
+						targetSlot.appendChild(img);
+						targetSlot.appendChild(controls);
+						
+						imgIndex++;
+					}
+				}
+
+				// === 生成右側導覽縮圖 (結構修正) ===
+				const thumbContainer = document.createElement('div');
+				thumbContainer.className = `mini-page-container ${p === 0 ? 'active' : ''}`;
+				thumbContainer.onclick = () => scrollToPage(pageId);
+
+				// 建立視窗 (Clipping Mask) - 這裡設定縮小後的寬高
+				const thumbView = document.createElement('div');
+				thumbView.className = 'mini-page-view';
+				thumbView.style.width = (baseW * scale) + 'px';
+				thumbView.style.height = (baseH * scale) + 'px';
+
+				// 建立內容層 (複製主畫面 DOM)
+				const thumbContent = pageDiv.cloneNode(true);
+				thumbContent.id = ''; // 移除 ID
+				// 加入 mini-page-content class，並移除可能的干擾 class
+				// 但保留 print-page 與方向 class 以維持表格樣式
+				thumbContent.className = `${orientationClass} print-page mini-page-content`;
+				
+				// 強制設定為原始 A4 像素寬高，這會強迫瀏覽器以全尺寸排版
+				thumbContent.style.width = baseW + 'px';
+				thumbContent.style.height = baseH + 'px';
+				
+				// 進行縮放
+				thumbContent.style.transform = `scale(${scale})`;
+				
+				// 組合
+				thumbView.appendChild(thumbContent);
+				thumbContainer.appendChild(thumbView);
+				
+				// 標籤 (放在 Container 內)
+				const label = document.createElement('div');
+				label.className = 'mini-page-label';
+				label.innerText = `第 ${p + 1} 頁`;
+				thumbContainer.appendChild(label);
+
+				miniPageList.appendChild(thumbContainer);
+			}
+
+			updateMargins();
+			setOrientation(isLandscape ? 'landscape' : 'portrait');
+			statusDiv.innerText = `已選取 ${totalImages} 張圖片，依指定順序填入 ${pagesNeeded} 頁。`;
+		}
+		
+		// 捲動到指定頁面
+		function scrollToPage(elementId) {
+			const el = document.getElementById(elementId);
+			if (el) {
+				el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+				
+				// 更新縮圖選取狀態 (視覺優化)
+				const allThumbs = miniPageList.querySelectorAll('.mini-page-container');
+				allThumbs.forEach(t => t.classList.remove('active'));
+				// 這裡比較難直接對應，簡單做法是點擊時加 class
+				// 實際應用可搭配 IntersectionObserver 偵測目前在看哪頁
+			}
+		}
+
+		// --- 事件監聽 ---
+		workspace.addEventListener('click', function(e) {
+			if (currentStep === 2) return;
+
+			const targetTable = e.target.closest('table');
+			const targetCell = e.target.closest('td');
+			if (targetTable && workspace.contains(targetTable)) {
+				selectedTable = targetTable;
+				if (targetCell) {
+					selectedCell = targetCell;
+				} else {
+					selectedCell = null;
+				}
+				showTableTools();
+			} else {
+				if (!e.target.closest('.toolbar')) {
+					selectedTable = null;
+					selectedCell = null;
+					tableToolsDiv.style.display = 'none';
+					// 同時隱藏格子工具
+					if(cellToolsDiv) cellToolsDiv.style.display = 'none';
+				}
+			}
+		});
+
+		// [修改] 更新 showTableTools 函式以配合新 UI
+        function showTableTools() {
+            if (!selectedTable) return;
+            tableToolsDiv.style.display = 'flex'; // 改為 flex 配合 column layout
+            
+            // 更新唯讀的表格 W/H 數值
+            tblWidthInput.value = selectedTable.offsetWidth;
+            tblHeightInput.value = selectedTable.offsetHeight;
+
+            const cellToolsSection = document.getElementById('cell-tools');
+            
+            // 顯示格子數值
+            if (selectedCell && cellToolsSection) {
+                cellToolsSection.style.display = 'block';
+                cellWidthInput.value = selectedCell.offsetWidth;
+                cellHeightInput.value = selectedCell.offsetHeight;
+                
+                // 視覺提示
+                workspace.querySelectorAll('td').forEach(td => td.style.outline = '');
+                selectedCell.style.outline = '2px solid #28a745';
+            } else if (cellToolsSection) {
+                cellToolsSection.style.display = 'none';
+            }
+        }
+
+		// 強制改變表格寬高
+		function updateTableSize() {
+			if (!selectedTable) return;
+			const w = tblWidthInput.value;
+			const h = tblHeightInput.value;
+
+			// 設定寬度
+			if (w) {
+				selectedTable.style.width = w + "px";
+				// 如果表格原本受 CSS width:100% 影響，這裡的 inline style 會覆蓋它
+			}
+
+			// 設定高度 (關鍵修正)
+			if (h) {
+				// 表格高度是由列 (Row) 決定的
+				const rows = selectedTable.rows;
+				if (rows.length > 0) {
+					// 計算平均每一列應該多高
+					const avgRowHeight = h / rows.length;
+					
+					for (let i = 0; i < rows.length; i++) {
+						// 強制設定每一列的高度
+						rows[i].style.height = avgRowHeight + "px";
+						
+						// 為了確保萬無一失，連同裡面的格子也設定高度
+						Array.from(rows[i].cells).forEach(cell => {
+							cell.style.height = avgRowHeight + "px";
+						});
+					}
+				}
+				// 設定表格本體高度 (有些瀏覽器需要這個屬性來撐開外框)
+				selectedTable.style.height = h + "px";
+			}
+		}
+		
+		// 手動輸入數值調整格子時，同步更新表格寬度
+        function updateCellSize() {
+            if (!selectedCell) return;
+            
+            const w = parseInt(cellWidthInput.value);
+            const h = parseInt(cellHeightInput.value);
+            const table = selectedCell.closest('table');
+
+            // 調整寬度
+            if (!isNaN(w)) {
+                const currentCellWidth = selectedCell.offsetWidth;
+                const diff = w - currentCellWidth; // 計算差值
+
+                // 調整該欄所有格子
+                const parentRow = selectedCell.parentElement;
+                const index = selectedCell.cellIndex;
+                Array.from(table.rows).forEach(row => {
+                    if(row.cells[index]) row.cells[index].style.width = w + "px";
+                });
+
+                // [關鍵] 同步增加表格寬度
+                table.style.width = (table.offsetWidth + diff) + "px";
+                
+                // 更新顯示
+                tblWidthInput.value = table.offsetWidth;
+            }
+
+            // 調整高度 (保持不變)
+            if (!isNaN(h)) {
+                const parentRow = selectedCell.parentElement;
+                if (parentRow) {
+                    parentRow.style.height = h + "px";
+                    Array.from(parentRow.cells).forEach(cell => {
+                        cell.style.height = h + "px";
+                    });
+                    setTimeout(() => {
+                        tblHeightInput.value = table.offsetHeight;
+                    }, 0);
+                }
+            }
+        }
+
+		// 刪除按鈕觸發
+        function deleteSelectedTable() {
+            if (!selectedTable) return;
+            showConfirmModal("確定要刪除選取的表格嗎？此動作無法復原。", function() {
+                selectedTable.remove();
+                selectedTable = null;
+                selectedCell = null;
+                tableToolsDiv.style.display = 'none';
+                if(typeof cellToolsDiv !== 'undefined' && cellToolsDiv) cellToolsDiv.style.display = 'none';
+                showToast("表格已刪除");
+            });
+        }
+		
+		// 顯示確認視窗的通用函式
+        function showConfirmModal(msg, callback) {
+            const modal = document.getElementById('confirmModal');
+            const msgEl = document.getElementById('confirmMessage');
+            const yesBtn = document.getElementById('confirmYesBtn');
+            
+            msgEl.innerText = msg;
+            modal.style.display = 'flex';
+            
+            // 綁定新的點擊事件 (先移除舊的以防重複綁定)
+            yesBtn.onclick = function() {
+                callback();
+                closeConfirmModal();
+            };
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').style.display = 'none';
+        }
+
+		function formatDoc(cmd, value) {
+			document.execCommand(cmd, false, value);
+			workspace.focus();
+		}
+
+		function setFontSizePt(pt) {
+			const sel = window.getSelection();
+			if (sel.rangeCount && !sel.isCollapsed) {
+				const span = document.createElement("span");
+				span.style.fontSize = pt + "pt";
+				span.textContent = sel.toString();
+				const range = sel.getRangeAt(0);
+				range.deleteContents();
+				range.insertNode(span);
+			}
+			workspace.focus();
+		}
+
+		function setLineHeight(val) {
+			const sel = window.getSelection();
+			if (!sel.rangeCount) return;
+			let node = sel.anchorNode;
+			while (node && node !== workspace) {
+				if (node.nodeType === 1 && (['P', 'DIV', 'TD', 'LI'].includes(node.tagName))) {
+					node.style.lineHeight = val;
+					break;
+				}
+				node = node.parentNode;
+			}
+			workspace.focus();
+		}
+
+		// addTable：初始建立時就使用 px 而非 %
+		function addTable() {
+			const rows = document.getElementById('rows').value;
+			const cols = document.getElementById('cols').value;
+			const table = document.createElement('table');
+			table.className = 'editable-table';
+			
+			// 計算初始寬度：假設 A4 寬度扣掉邊界 (大約 700px) 平均分配
+			// 這樣一開始就是固定像素，調整起來不會跑
+			const defaultTotalWidth = 700; 
+			const cellWidth = Math.floor(defaultTotalWidth / cols);
+
+			for (let i = 0; i < rows; i++) {
+				const tr = document.createElement('tr');
+				for (let j = 0; j < cols; j++) {
+					const td = document.createElement('td');
+					td.style.width = cellWidth + "px"; 
+					td.style.height = "50px";
+					tr.appendChild(td);
+				}
+				table.appendChild(tr);
+			}
+			
+			const sel = window.getSelection();
+			if (sel.rangeCount > 0 && workspace.contains(sel.anchorNode)) {
+				const range = sel.getRangeAt(0);
+				range.insertNode(table);
+				range.collapse(false);
+				const p = document.createElement('p');
+				p.innerHTML = '<br>';
+				range.insertNode(p);
+			} else {
+				workspace.appendChild(table);
+				const p = document.createElement('p');
+				p.innerHTML = '<br>';
+				workspace.appendChild(p);
+			}
+		}
+
+		// 雙擊切換圖片格
+		workspace.addEventListener('dblclick', function(e) {
+			if (currentStep === 2) return;
+			if (e.target.tagName === 'TD' && !e.target.dataset.resizeType) {
+				toggleCellType(e.target);
+			}
+		});
+
+		function toggleCellType(td) {
+			if (td.classList.contains('img-slot')) {
+				td.classList.remove('img-slot');
+				td.innerText = "";
+				td.contentEditable = "true"; 
+			} else {
+				td.classList.add('img-slot');
+				td.innerText = "[圖片預留位]";
+				td.contentEditable = "false"; 
+			}
+		}
+		
+		// --- 修正後的合併儲存格邏輯 (矩陣映射法) ---
+
+        // 建立表格的虛擬矩陣 (解決 colspan/rowspan 定位問題)
+        function getTableMatrix(table) {
+            let matrix = [];
+            let rows = table.rows;
+            
+            // 初始化矩陣
+            for (let r = 0; r < rows.length; r++) {
+                matrix[r] = [];
+            }
+
+            for (let r = 0; r < rows.length; r++) {
+                let cells = rows[r].cells;
+                let cIndex = 0; // 當前處理的實際 DOM cell index
+                
+                for (let c = 0; c < matrix[r].length + cells.length; c++) {
+                    // 如果這個位置已經被上面的 rowspan 佔據，跳過
+                    if (matrix[r][c]) continue;
+                    
+                    // 找到對應的 cell
+                    let cell = cells[cIndex];
+                    if (!cell) break;
+                    
+                    let colspan = parseInt(cell.getAttribute('colspan') || 1);
+                    let rowspan = parseInt(cell.getAttribute('rowspan') || 1);
+                    
+                    // 填滿矩陣
+                    for (let rs = 0; rs < rowspan; rs++) {
+                        for (let cs = 0; cs < colspan; cs++) {
+                            // 確保陣列空間存在
+                            if (!matrix[r + rs]) matrix[r + rs] = [];
+                            matrix[r + rs][c + cs] = cell;
+                        }
+                    }
+                    cIndex++;
+                }
+            }
+            return matrix;
+        }
+		
+		// 功能 4 (修正版): 支援寬度累加與複雜邊界檢查的合併邏輯
+        function mergeCells(direction) {
+            if (!selectedCell) return;
+            let table = selectedCell.closest('table');
+            
+            // 取得目前的 span
+            let colSpan = parseInt(selectedCell.getAttribute('colspan') || 1);
+            let rowSpan = parseInt(selectedCell.getAttribute('rowspan') || 1);
+
+            // 建立地圖並找出目前 selectedCell 的座標
+            let matrix = getTableMatrix(table);
+            let startRow = -1;
+            let startCol = -1;
+
+            // 搜尋 selectedCell 在矩陣中的起始位置
+            outerLoop:
+            for (let r = 0; r < matrix.length; r++) {
+                for (let c = 0; c < matrix[r].length; c++) {
+                    if (matrix[r][c] === selectedCell) {
+                        startRow = r;
+                        startCol = c;
+                        break outerLoop;
+                    }
+                }
+            }
+
+            if (startRow === -1) return; 
+
+            if (direction === 'right') {
+                // 目標是右邊的那一欄 (目前的起始欄 + 目前的寬度)
+                let targetColIdx = startCol + colSpan;
+                
+                // 邊界檢查：右邊是否還有欄位
+                if (targetColIdx >= matrix[0].length) return;
+
+                let cellsToRemove = new Set();
+                let contentToMerge = "";
+                let targetNextColSpan = -1;
+                
+                // [關鍵修正 1] 紀錄右側欄位的寬度 (取第一個鄰居的寬度即可，因為同欄位寬度應一致)
+                // 這解決了「表格變形」的問題
+                let addedWidth = 0;
+                let firstNeighbor = matrix[startRow][targetColIdx];
+                if (firstNeighbor) addedWidth = firstNeighbor.offsetWidth;
+
+                // 遍歷目前格子佔據的「每一列」，找出右邊對應的鄰居
+                for (let r = startRow; r < startRow + rowSpan; r++) {
+                    if (r >= matrix.length) return;
+
+                    let neighbor = matrix[r][targetColIdx];
+
+                    // 鄰居不存在或錯誤，中止
+                    if (!neighbor || neighbor === selectedCell) return;
+                    
+                    cellsToRemove.add(neighbor);
+                }
+
+                if (cellsToRemove.size === 0) return;
+
+                // 嚴格邊界檢查 (防止合併後出現缺角或破壞矩形)
+                for (let cell of cellsToRemove) {
+                    // 檢查 A: 寬度一致性
+                    let cSpan = parseInt(cell.getAttribute('colspan') || 1);
+                    if (targetNextColSpan === -1) {
+                        targetNextColSpan = cSpan;
+                    } else if (targetNextColSpan !== cSpan) {
+                        showToast("無法合併：右側格子的寬度不一致");
+                        return;
+                    }
+
+                    // 檢查 B: 垂直範圍一致性 (防止吃掉跨列過度的格子)
+                    // 取得該格子的起始列與結束列
+                    let cellStartRow = cell.parentElement.rowIndex;
+                    let cellRowSpan = parseInt(cell.getAttribute('rowspan') || 1);
+                    let cellEndRow = cellStartRow + cellRowSpan;
+                    
+                    let myEndRow = startRow + rowSpan;
+
+                    // 如果鄰居的起始列比我們早，或是結束列比我們晚，代表它突出了我們的範圍
+                    if (cellStartRow < startRow || cellEndRow > myEndRow) {
+                        showToast("無法合併：右側儲存格垂直範圍不符 (請先拆分右側格子)");
+                        return;
+                    }
+                }
+
+                // 執行合併
+                cellsToRemove.forEach(cell => {
+                    if (cell.innerHTML) contentToMerge += " " + cell.innerHTML;
+                    cell.remove();
+                });
+
+                // 更新屬性
+                selectedCell.setAttribute('colspan', colSpan + targetNextColSpan);
+                if (contentToMerge) selectedCell.innerHTML += contentToMerge;
+                
+                // 更新寬度，防止表格變形
+                // 累加目前寬度 + 右側欄位寬度
+                let currentWidth = selectedCell.offsetWidth;
+                selectedCell.style.width = (currentWidth + addedWidth) + "px";
+
+            } 
+            else if (direction === 'down') {
+                // --- 向下合併 (維持原邏輯，加入基本的 Matrix 操作) ---
+                
+                let targetRowIdx = startRow + rowSpan;
+                if (targetRowIdx >= matrix.length) return; 
+
+                let cellsToRemove = new Set(); 
+                let contentToMerge = "";
+
+                // 找出下一列中，對應目前格子寬度 (colspan) 的所有格子
+                for (let c = startCol; c < startCol + colSpan; c++) {
+                    let cellInNextRow = matrix[targetRowIdx][c];
+                    if (!cellInNextRow || cellInNextRow === selectedCell) continue;
+                    cellsToRemove.add(cellInNextRow);
+                }
+
+                if (cellsToRemove.size === 0) return;
+
+                let firstNextCell = cellsToRemove.values().next().value;
+                let addedRowSpan = parseInt(firstNextCell.getAttribute('rowspan') || 1);
+
+                cellsToRemove.forEach(cell => {
+                    if (cell.innerHTML) contentToMerge += " " + cell.innerHTML;
+                    cell.remove();
+                });
+
+                selectedCell.setAttribute('rowspan', rowSpan + addedRowSpan);
+                if (contentToMerge) selectedCell.innerHTML += contentToMerge;
+            }
+            
+            showTableTools();
+        }
+
+        // 取消合併 (也建議稍微增強以應對複雜情況，維持簡易版即可，但加上邊界檢查)
+        function splitCell() {
+            if (!selectedCell) return;
+            
+            let colSpan = parseInt(selectedCell.getAttribute('colspan') || 1);
+            let rowSpan = parseInt(selectedCell.getAttribute('rowspan') || 1);
+            
+            if (colSpan === 1 && rowSpan === 1) return; 
+
+            selectedCell.removeAttribute('colspan');
+            selectedCell.removeAttribute('rowspan');
+
+            // 1. 水平補回 (ColSpan)
+            // 在自己後面補上 (colSpan - 1) 個格子
+            for (let i = 0; i < colSpan - 1; i++) {
+                let newCell = document.createElement('td');
+                newCell.style.cssText = selectedCell.style.cssText;
+                newCell.style.width = "auto"; 
+                // 清空新格子的 rowspan (因為我們已經拆掉了)
+                newCell.removeAttribute('rowspan'); 
+                newCell.removeAttribute('colspan');
+                
+                selectedCell.parentElement.insertBefore(newCell, selectedCell.nextSibling);
+            }
+
+            // 2. 垂直補回 (RowSpan)
+            // 這在複雜表格很難完美還原，這裡維持簡易邏輯：
+            // 在下方的每一列，嘗試補回 colSpan 個格子
+            if (rowSpan > 1) {
+                let row = selectedCell.parentElement;
+                let table = row.parentElement;
+                let rowIndex = row.rowIndex;
+
+                for (let r = 1; r < rowSpan; r++) {
+                    let targetRow = table.rows[rowIndex + r];
+                    if (targetRow) {
+                        for (let c = 0; c < colSpan; c++) {
+                            let newCell = document.createElement('td');
+                            newCell.style.cssText = selectedCell.style.cssText;
+                            newCell.style.width = "auto";
+                            newCell.style.height = "auto";
+                            
+                            // 簡易插入：插在最前面 (若表格結構複雜，這裡會亂掉，但這是簡易編輯器的限制)
+                            // 進階做法是需要上述的 matrix 來找插入點，若需優化可再提出
+                            if (targetRow.children.length > 0) {
+                                targetRow.insertBefore(newCell, targetRow.children[0]);
+                            } else {
+                                targetRow.appendChild(newCell);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- [新增] 功能 2: Ctrl + 滾輪 縮放功能 ---
+        
+        let currentZoom = 1.0;
+
+        function initWorkspaceZoom() {
+            // 綁定在 workspace 父層或直接綁定 workspace
+            const container = document.querySelector('.main-content');
+            
+            container.addEventListener('wheel', function(e) {
+                // 檢查是否按下 Ctrl 鍵
+                if (e.ctrlKey) {
+                    e.preventDefault(); // 防止瀏覽器預設縮放
+                    
+                    const delta = e.deltaY;
+                    if (delta < 0) {
+                        // 向上滾動，放大
+                        currentZoom += 0.1;
+                    } else {
+                        // 向下滾動，縮小
+                        currentZoom -= 0.1;
+                    }
+                    
+                    // 限制縮放範圍 (例如 0.5x ~ 3.0x)
+                    currentZoom = Math.min(Math.max(0.5, currentZoom), 3.0);
+                    
+                    // 應用縮放
+                    workspace.style.transformOrigin = "top center"; // 設定縮放基準點
+                    workspace.style.transform = `scale(${currentZoom})`;
+                    
+                    // 為了避免縮放後排版問題，可以調整 margin
+                    // 但因為 main-content 是 flex center，scale 通常運作良好
+                }
+            }, { passive: false });
+        }
+		
+		// --- [新增] 功能 1: 模板匯出與匯入功能 ---
+
+        // 輔助函式：取得格式化的時間字串 (yyyymmddhhmmss)
+        function getFormattedTimestamp() {
+            const now = new Date();
+            const pad = (n) => (n < 10 ? '0' + n : n);
+            return '' + now.getFullYear() +
+                   pad(now.getMonth() + 1) +
+                   pad(now.getDate()) +
+                   pad(now.getHours()) +
+                   pad(now.getMinutes()) +
+                   pad(now.getSeconds());
+        }
+
+        // 匯出模板
+        // --- [修改] 功能 1: 匯出模板 (改用 Modal) ---
+
+        function exportTemplate() {
+            // 1. 蒐集當前狀態
+            let currentOrientation = 'portrait';
+            const page = workspace.querySelector('.print-page'); // 改抓 .print-page 比較準確
+            if (workspace.classList.contains('landscape') || (page && page.classList.contains('landscape'))) {
+                currentOrientation = 'landscape';
+            }
+
+            // 將資料存入 window 物件，確保 confirmExport 讀取得到
+            window.templateDataToExport = {
+                html: workspace.innerHTML,
+                margins: {
+                    top: document.getElementById('marginTop').value,
+                    bottom: document.getElementById('marginBottom').value,
+                    left: document.getElementById('marginLeft').value,
+                    right: document.getElementById('marginRight').value
+                },
+                orientation: currentOrientation
+            };
+
+            // 2. 開啟懸浮視窗
+            showExportModal();
+        }
+
+        function showExportModal() {
+            const modal = document.getElementById('exportModal');
+            const input = document.getElementById('exportFilenameInput');
+            
+            // 設定預設檔名
+            input.value = `${getFormattedTimestamp()}-模板`;
+            
+            modal.style.display = 'flex';
+            input.focus();
+            input.select();
+        }
+
+        function closeModal() {
+            document.getElementById('exportModal').style.display = 'none';
+        }
+
+        function confirmExport() {
+            const input = document.getElementById('exportFilenameInput');
+            let filename = input.value.trim();
+            if (!filename) filename = `${getFormattedTimestamp()}-模板`;
+
+            // 從 window 物件讀取資料
+            if (window.templateDataToExport) {
+                try {
+                    const blob = new Blob([JSON.stringify(window.templateDataToExport)], { type: "application/json;charset=utf-8" });
+                    saveAs(blob, filename + ".json");
+                    showToast("模板匯出成功！");
+                } catch (e) {
+                    console.error(e);
+                    alert("匯出失敗：" + e.message);
+                }
+            } else {
+                alert("錯誤：找不到匯出資料，請重新點擊「匯出JSON」按鈕。");
+            }
+            closeModal();
+        }
+        
+        // [補充] 點擊遮罩關閉視窗 (選用)
+        document.getElementById('exportModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        // 匯入模板
+        function importTemplate(files) {
+            if (files.length === 0) return;
+            const file = files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    // 恢復 HTML 結構
+                    if (data.html !== undefined) {
+                        workspace.innerHTML = data.html;
+                    }
+                    
+                    // 恢復邊界設定
+                    if (data.margins) {
+                        document.getElementById('marginTop').value = data.margins.top;
+                        document.getElementById('marginBottom').value = data.margins.bottom;
+                        document.getElementById('marginLeft').value = data.margins.left;
+                        document.getElementById('marginRight').value = data.margins.right;
+                    }
+                    
+                    // 恢復方向設定
+                    if (data.orientation) {
+                        setOrientation(data.orientation);
+                    }
+                    
+                    // 應用變更並重新初始化功能
+                    updateMargins();
+                    
+                    // 重設 file input，否則重複選同一個檔案不會觸發 onchange
+                    document.getElementById('templateInput').value = '';
+                    
+                    showToast("模板匯入成功！");
+                    
+                } catch (err) {
+                    alert("匯入失敗：檔案格式錯誤或損毀");
+                    console.error(err);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+		// 匯出功能 (保持原有的高保真匯出)
+		async function exportToDocx() {
+			const { Document, Packer, Paragraph, Table, TableRow, TableCell, WidthType, ImageRun, TextRun, AlignmentType, VerticalAlign, BorderStyle, HeightRule } = docx;
+			
+			// 進度條相關
+			const progressContainer = document.getElementById('progress-container');
+			const progressBar = document.getElementById('export-progress');
+			const progressText = document.getElementById('progress-text');
+			progressContainer.style.display = 'flex';
+			progressBar.value = 0;
+			
+			// 取得資料
+			const pages = workspace.querySelectorAll('.print-page');
+			// 注意：若沒有 pages (步驟一)，target 為 workspace
+			const targetContainers = pages.length > 0 ? pages : [workspace];
+			const allChildren = [];
+			const isLandscape = workspace.classList.contains('landscape') || (pages.length > 0 && pages[0].classList.contains('landscape'));
+
+			const topMm = document.getElementById('marginTop').value;
+			const bottomMm = document.getElementById('marginBottom').value;
+			const leftMm = document.getElementById('marginLeft').value;
+			const rightMm = document.getElementById('marginRight').value;
+			
+			const marginConfig = {
+				top: Math.round(topMm * 56.7),
+				bottom: Math.round(bottomMm * 56.7),
+				left: Math.round(leftMm * 56.7),
+				right: Math.round(rightMm * 56.7),
+			};
+
+			const totalSteps = targetContainers.length;
+			
+			// 輔助計算函式
+			const pxToTwip = (px) => Math.round(px * 15);
+			const pxToHalfPt = (px) => Math.round(parseFloat(px) * 1.5);
+			function rgbToHex(rgb) {
+				if (!rgb || rgb === 'rgba(0, 0, 0, 0)') return "000000";
+				if (rgb.startsWith('#')) return rgb.replace('#', '');
+				const sep = rgb.indexOf(",") > -1 ? "," : " ";
+				const rgbValues = rgb.substr(4).split(")")[0].split(sep);
+				let r = (+rgbValues[0]).toString(16),
+					g = (+rgbValues[1]).toString(16),
+					b = (+rgbValues[2]).toString(16);
+				if (r.length == 1) r = "0" + r;
+				if (g.length == 1) g = "0" + g;
+				if (b.length == 1) b = "0" + b;
+				return r + g + b;
+			}
+
+			async function parseHighFidelityContent(container) {
+				const children = [];
+				const nodes = Array.from(container.childNodes);
+				
+				for (let node of nodes) {
+					if (node.nodeType === Node.TEXT_NODE) {
+						if (node.textContent.trim() !== "") {
+							children.push(new Paragraph({ children: [new TextRun(node.textContent)] }));
+						}
+					} 
+					else if (node.tagName === 'P' || node.tagName === 'DIV') {
+						if (node.classList.contains('print-page') || node.classList.contains('cell-order-badge')) continue;
+						
+						const style = window.getComputedStyle(node);
+						const alignMap = { 'left': AlignmentType.LEFT, 'center': AlignmentType.CENTER, 'right': AlignmentType.RIGHT, 'justify': AlignmentType.JUSTIFIED };
+						
+						children.push(new Paragraph({
+							children: [new TextRun({
+								text: node.innerText,
+								size: pxToHalfPt(style.fontSize),
+								color: rgbToHex(style.color),
+								bold: style.fontWeight === 'bold' || parseInt(style.fontWeight) >= 700,
+								italics: style.fontStyle === 'italic',
+								font: style.fontFamily.split(',')[0].replace(/['"]/g, '')
+							})],
+							alignment: alignMap[style.textAlign] || AlignmentType.LEFT,
+							spacing: { after: 0, before: 0 }
+						}));
+					} 
+					else if (node.tagName === 'TABLE') {
+						const tableRows = [];
+						const htmlRows = node.querySelectorAll('tr');
+						
+						for (let tr of htmlRows) {
+							const tableCells = [];
+							const htmlCells = tr.querySelectorAll('td');
+							const trHeight = tr.getBoundingClientRect().height; 
+
+							for (let td of htmlCells) {
+								const cellChildren = [];
+								const style = window.getComputedStyle(td);
+								const img = td.querySelector('img');
+								const tdRect = td.getBoundingClientRect();
+								const cellWidthTwips = pxToTwip(tdRect.width);
+								const vAlignMap = { 'top': VerticalAlign.TOP, 'middle': VerticalAlign.CENTER, 'bottom': VerticalAlign.BOTTOM };
+								const hAlignMap = { 'left': AlignmentType.LEFT, 'center': AlignmentType.CENTER, 'right': AlignmentType.RIGHT };
+								
+								if (img) {
+									const base64Data = img.src;
+									const blob = await fetch(base64Data).then(r => r.blob());
+									const imageBuffer = await blob.arrayBuffer();
+									const imgRect = img.getBoundingClientRect();
+									
+									cellChildren.push(new Paragraph({
+										children: [
+											new ImageRun({
+												data: imageBuffer,
+												transformation: {
+													width: imgRect.width,
+													height: imgRect.height
+												},
+											}),
+										],
+										alignment: AlignmentType.CENTER
+									}));
+								} else {
+									const textContent = td.innerText.replace("[圖片預留位]", "").replace(/^\d+$/, ""); 
+									// 注意：我們用 innerText 取值時，因為 badge 是 div，可能會被取出換行或數字
+									// 這裡需要更精確地過濾 badge
+									// 遍歷 childNodes，只取 text node 或非 badge element
+									let cleanText = "";
+									td.childNodes.forEach(n => {
+										if(n.nodeType === 3) cleanText += n.textContent;
+										else if(n.nodeType === 1 && !n.classList.contains('cell-order-badge')) cleanText += n.innerText;
+									});
+									cleanText = cleanText.replace("[圖片預留位]", "");
+
+									if(cleanText) {
+										cellChildren.push(new Paragraph({
+											children: [new TextRun({
+												text: cleanText,
+												size: pxToHalfPt(style.fontSize),
+												color: rgbToHex(style.color),
+												bold: style.fontWeight === 'bold' || parseInt(style.fontWeight) >= 700,
+												italics: style.fontStyle === 'italic',
+												font: style.fontFamily.split(',')[0].replace(/['"]/g, '')
+											})],
+											alignment: hAlignMap[style.textAlign] || AlignmentType.LEFT,
+											spacing: { after: 0, before: 0 }
+										}));
+									} else {
+										cellChildren.push(new Paragraph({}));
+									}
+								}
+
+								tableCells.push(new TableCell({
+									children: cellChildren,
+									width: { size: cellWidthTwips, type: WidthType.DXA },
+									verticalAlign: vAlignMap[style.verticalAlign] || VerticalAlign.TOP,
+									borders: {
+										top: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+										bottom: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+										left: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+										right: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+									}
+								}));
+							}
+							
+							tableRows.push(new TableRow({ 
+								children: tableCells,
+								height: { value: pxToTwip(trHeight), rule: HeightRule.AT_LEAST }
+							}));
+						}
+
+						children.push(new Table({
+							rows: tableRows,
+							width: { size: 100, type: WidthType.PERCENTAGE },
+						}));
+						children.push(new Paragraph({ text: "", spacing: { after: 0 } }));
+					}
+				}
+				return children;
+			}
+
+			for (let i = 0; i < targetContainers.length; i++) {
+				progressText.innerText = `正在處理第 ${i + 1} / ${totalSteps} 頁...`;
+				
+				const container = targetContainers[i];
+				const pageContent = await parseHighFidelityContent(container);
+				
+				allChildren.push(...pageContent);
+
+				if (i < targetContainers.length - 1) {
+					allChildren.push(new Paragraph({
+						children: [],
+						pageBreakBefore: true
+					}));
+				}
+				
+				progressBar.value = ((i + 1) / totalSteps) * 100;
+				await new Promise(r => setTimeout(r, 10)); 
+			}
+
+			progressText.innerText = "正在打包檔案...";
+			
+			const doc = new Document({
+				sections: [{
+					properties: {
+						page: {
+							size: { orientation: isLandscape ? "landscape" : "portrait" },
+							margin: marginConfig
+						},
+					},
+					children: allChildren,
+				}],
+			});
+
+			Packer.toBlob(doc).then((blob) => {
+				saveAs(blob, "word_export_fidelity.docx");
+				progressText.innerText = "下載完成！";
+				setTimeout(() => { progressContainer.style.display = 'none'; }, 2000);
+			});
+		}
+		
+		// --- [新增] 功能 1: 切換 Toolbar 顯示/隱藏 ---
+        function toggleToolbar() {
+            const toolbar = document.querySelector('.toolbar');
+            toolbar.classList.toggle('show');
+        }
+
+        // --- [新增] 功能 4: 顯示大圖預覽 ---
+        function showLargePreview(src) {
+            const modal = document.getElementById('imagePreviewModal');
+            const img = document.getElementById('previewImg');
+            img.src = src;
+            modal.style.display = "flex";
+        }
+
+        // --- [新增] 功能 4: 關閉大圖預覽 ---
+        function closeImagePreview() {
+            document.getElementById('imagePreviewModal').style.display = "none";
+        }
+    </script>
+</body>
+</html>

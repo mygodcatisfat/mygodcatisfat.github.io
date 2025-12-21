@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>銀行查詢條件 CSV 產生器</title>
+    <style>
+        body {
+            font-family: "Microsoft JhengHei", Arial, sans-serif;
+            background-color: #f4f4f4;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .form-group label {
+            width: 220px; 
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .form-group input, .form-group select {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #fff; 
+        }
+        .input-error {
+            background-color: #f8d7da !important;
+            border-color: #dc3545 !important;
+        }
+        
+        .hint {
+            font-size: 0.85em;
+            color: red;
+            margin-left: 220px;
+            margin-top: 5px;
+            display: block;
+            width: 100%;
+        }
+        .field-status {
+            font-size: 0.85em;
+            margin-left: 5px;
+            font-weight: normal;
+        }
+        .status-required {
+            color: #dc3545;
+        }
+        
+        .btn-area {
+            text-align: center;
+            margin-top: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        button {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            margin: 0 5px;
+        }
+        .btn-add { background-color: #28a745; color: white; }
+        .btn-export { background-color: #007bff; color: white; }
+        .btn-update { background-color: #ffc107; color: #000; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: center; vertical-align: middle; }
+        th { background-color: #4a86e8; color: white; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+        }
+        .btn-edit { background-color: #17a2b8; color: white; padding: 5px 10px; font-size: 14px; margin: 0; }
+        .delete-btn { background-color: #dc3545; color: white; padding: 5px 10px; font-size: 14px; margin: 0; }
+        button:hover { opacity: 0.9; }
+
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1000; 
+            left: 0;
+            top: 0;
+            width: 100%; 
+            height: 100%; 
+            overflow: auto; 
+            background-color: rgba(0,0,0,0.5); 
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto; 
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%; 
+            max-width: 400px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .close-btn {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-btn:hover,
+        .close-btn:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        #modalMessage {
+            margin-top: 20px;
+            margin-bottom: 20px;
+            font-size: 16px;
+            line-height: 1.5;
+            white-space: pre-line;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>查詢條件 CSV 產生工具</h2>
+    
+    <div class="form-group">
+        <label for="queryType">查詢種類</label>
+        <select id="queryType" onchange="updateFormState()">
+            <option value="1">1. 以身分證號查詢全部帳戶之開戶資料</option>
+            <option value="2">2. 以身分證號查詢全部帳戶特定期間之往來明細</option>
+            <option value="3">3. 以特定帳號查詢該帳戶開戶人資料</option>
+            <option value="4">4. 以特定帳號查詢該帳戶特定期間之往來明細</option>
+            <option value="5">5. 以身分證號查詢全部保管箱之承租資料</option>
+            <option value="6">6. 以身分證號查詢網銀/APP操作紀錄</option>
+            <option value="7">7. 以特定帳號查詢網銀/APP操作紀錄</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="idNo">身分證統一編號 <span id="idNoStatus" class="field-status"></span></label>
+        <input type="text" id="idNo" placeholder="10碼個人、8碼法人或其他長度" maxlength="20">
+    </div>
+
+    <div class="form-group">
+        <label for="accountNo">帳號 <span id="accountNoStatus" class="field-status"></span></label>
+        <input type="text" id="accountNo" placeholder="銀行實際長度帳號(限數字)" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+    </div>
+
+    <div class="form-group">
+        <label for="startDate"><span id="startDateLabel">往來明細查詢起日</span> <span id="startDateStatus" class="field-status"></span></label>
+        <input type="text" id="startDate" placeholder="yyyymmdd (例如：20230101)" maxlength="8">
+        <span class="hint" id="dateHint">往來明細查詢起日最大為申請日5年內</span>
+    </div>
+
+    <div class="form-group">
+        <label for="endDate"><span id="endDateLabel">往來明細查詢訖日</span> <span id="endDateStatus" class="field-status"></span></label>
+        <input type="text" id="endDate" placeholder="yyyymmdd (例如：20230630)" maxlength="8">
+    </div>
+
+    <div class="btn-area">
+        <button id="btnAdd" class="btn-add" onclick="addData()">加入清單</button>
+        <button class="btn-export" onclick="exportCSV()">匯出 CSV</button>
+    </div>
+
+    <h3>已加入清單 (預覽)</h3>
+    <table id="resultTable">
+        <thead>
+            <tr>
+                <th>查詢種類</th>
+                <th>身分證統一編號</th>
+                <th>帳號</th>
+                <th>查詢起日</th>
+                <th>查詢訖日</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            </tbody>
+    </table>
+</div>
+
+<div id="customModal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeModal()">&times;</span>
+        <h3 style="margin-top:0; color:#333;">系統提示</h3>
+        <p id="modalMessage"></p>
+        <div style="text-align: center;">
+            <button class="btn-add" style="padding: 8px 30px;" onclick="closeModal()">確定</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let dataList = [];
+    let editingIndex = -1;
+	
+	function updateQueryTypeLock() {
+        const qSelect = document.getElementById('queryType');
+        
+        if (editingIndex === -1) {
+            // 新增模式：只要清單有資料(>0)，就鎖住不讓改；無資料則開放
+            qSelect.disabled = dataList.length > 0;
+        } else {
+            // 編輯模式：若清單只有1筆資料，開放修改；若有多筆資料，則鎖住
+            qSelect.disabled = dataList.length > 1;
+        }
+        
+        // 視覺回饋：如果被鎖住，背景變灰
+        qSelect.style.backgroundColor = qSelect.disabled ? "#e9ecef" : "#fff";
+    }
+
+    // 定義各查詢種類的設定 (必填欄位, 日期標籤類型, 日期限制年限)
+    const typeConfig = {
+        '1': { required: ['idNo'], labelType: 'txn', limit: '5y' },
+        '2': { required: ['idNo', 'startDate', 'endDate'], labelType: 'txn', limit: '5y' },
+        '3': { required: ['accountNo'], labelType: 'txn', limit: '5y' },
+        '4': { required: ['accountNo', 'startDate', 'endDate'], labelType: 'txn', limit: '5y' },
+        '5': { required: ['idNo'], labelType: 'txn', limit: '5y' },
+        '6': { required: ['idNo', 'startDate', 'endDate'], labelType: 'app', limit: '6m' },
+        '7': { required: ['accountNo', 'startDate', 'endDate'], labelType: 'app', limit: '6m' }
+    };
+
+    function showModal(message) {
+        document.getElementById('modalMessage').innerText = message;
+        document.getElementById('customModal').style.display = "block";
+    }
+
+    function closeModal() {
+        document.getElementById('customModal').style.display = "none";
+    }
+
+    window.onclick = function(event) {
+        const modal = document.getElementById('customModal');
+        if (event.target == modal) {
+            closeModal();
+        }
+    }
+
+    // 更新表單狀態 (標籤文字、提示文字、必填標示)
+    function updateFormState() {
+        const type = document.getElementById('queryType').value;
+        const config = typeConfig[type];
+        const startLabel = document.getElementById('startDateLabel');
+        const endLabel = document.getElementById('endDateLabel');
+        
+        if (config.labelType === 'txn') {
+            startLabel.innerText = "往來明細查詢起日";
+            endLabel.innerText = "往來明細查詢訖日";
+        } else {
+            startLabel.innerText = "網銀APP查詢起日";
+            endLabel.innerText = "網銀APP查詢訖日";
+        }
+
+        const dateHint = document.getElementById('dateHint');
+        if (config.limit === '6m') {
+            dateHint.innerText = "網銀APP查詢起日最大為申請日6個月內";
+        } else {
+            dateHint.innerText = "往來明細查詢起日最大為申請日5年內";
+        }
+
+        ['idNo', 'accountNo', 'startDate', 'endDate'].forEach(id => {
+            const statusSpan = document.getElementById(id + 'Status');
+            statusSpan.innerText = "";
+            statusSpan.className = "field-status";
+        });
+
+        config.required.forEach(reqId => {
+            const statusSpan = document.getElementById(reqId + 'Status');
+            statusSpan.innerText = "(必填)";
+            statusSpan.className = "field-status status-required";
+        });
+        
+        // 切換種類時，清除之前的紅色錯誤底色
+        clearErrorStyles();
+    }
+
+    function clearErrorStyles() {
+        const inputs = document.querySelectorAll('.form-group input');
+        inputs.forEach(input => {
+            input.classList.remove('input-error');
+        });
+    }
+
+    function validateDate(dateStr) {
+        if (!/^\d{8}$/.test(dateStr)) return false;
+        const y = parseInt(dateStr.substr(0, 4));
+        const m = parseInt(dateStr.substr(4, 2));
+        const d = parseInt(dateStr.substr(6, 2));
+        if (m < 1 || m > 12) return false;
+        if (d < 1 || d > 31) return false;
+        return true;
+    }
+
+    // 檢查日期限制 (5年 或 6個月)
+    function checkDateLimit(dateStr, limitType) {
+        const y = parseInt(dateStr.substr(0, 4));
+        const m = parseInt(dateStr.substr(4, 2)) - 1;
+        const d = parseInt(dateStr.substr(6, 2));
+        const inputDate = new Date(y, m, d);
+        
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        
+        const limitDate = new Date(today);
+        
+        if (limitType === '6m') {
+            limitDate.setMonth(today.getMonth() - 6);
+        } else {
+            limitDate.setFullYear(today.getFullYear() - 5);
+        }
+
+        // 輸入日期 必須 >= 限制日期
+        return inputDate >= limitDate;
+    }
+
+    function addData() {
+        // 清除舊錯誤樣式
+        clearErrorStyles();
+
+        const type = document.getElementById('queryType').value;
+        const idNo = document.getElementById('idNo');
+        const accountNo = document.getElementById('accountNo');
+        const startDate = document.getElementById('startDate');
+        const endDate = document.getElementById('endDate');
+        
+        const values = {
+            idNo: idNo.value.trim(),
+            accountNo: accountNo.value.trim(),
+            startDate: startDate.value.trim(),
+            endDate: endDate.value.trim()
+        };
+
+        const config = typeConfig[type];
+        let errors = [];
+
+        // 必填欄位檢查
+        config.required.forEach(fieldId => {
+            if (!values[fieldId]) {
+                // 找到對應的 input 元素並加上 class
+                document.getElementById(fieldId).classList.add('input-error');
+                
+                // 產生錯誤訊息文字
+                let fieldName = "";
+                if(fieldId === 'idNo') fieldName = "身分證統一編號";
+                if(fieldId === 'accountNo') fieldName = "帳號";
+                if(fieldId === 'startDate') fieldName = (config.labelType === 'txn' ? "往來明細查詢起日" : "網銀APP查詢起日");
+                if(fieldId === 'endDate') fieldName = (config.labelType === 'txn' ? "往來明細查詢訖日" : "網銀APP查詢訖日");
+                
+                errors.push(`「${fieldName}」為必填欄位`);
+            }
+        });
+
+        // 日期格式檢查 (如果有填寫才檢查)
+        if (values.startDate && !validateDate(values.startDate)) {
+            document.getElementById('startDate').classList.add('input-error');
+            errors.push("查詢起日格式錯誤，須為 yyyymmdd 8碼數字");
+        }
+        if (values.endDate && !validateDate(values.endDate)) {
+            document.getElementById('endDate').classList.add('input-error');
+            errors.push("查詢訖日格式錯誤，須為 yyyymmdd 8碼數字");
+        }
+
+        // 日期範圍限制檢查 (5年 或 6個月)
+        if (values.startDate && validateDate(values.startDate)) {
+            if (!checkDateLimit(values.startDate, config.limit)) {
+                document.getElementById('startDate').classList.add('input-error');
+                if (config.limit === '6m') {
+                    errors.push("網銀APP查詢起日最大為申請日6個月內");
+                } else {
+                    errors.push("往來明細查詢起日最大為申請日5年內");
+                }
+            }
+        }
+
+        // 起訖日大小檢查
+        if (values.startDate && values.endDate && validateDate(values.startDate) && validateDate(values.endDate)) {
+            if (parseInt(values.startDate) > parseInt(values.endDate)) {
+                document.getElementById('startDate').classList.add('input-error');
+                document.getElementById('endDate').classList.add('input-error');
+                errors.push("查詢起日不可大於查詢訖日");
+            }
+        }
+
+        if (errors.length > 0) {
+            const uniqueErrors = [...new Set(errors)];
+            showModal(uniqueErrors.join("\n"));
+            return;
+        }
+
+        const row = { 
+            type, 
+            idNo: values.idNo, 
+            accountNo: values.accountNo, 
+            startDate: values.startDate, 
+            endDate: values.endDate 
+        };
+
+        if (editingIndex === -1) {
+            dataList.push(row);
+        } else {
+            dataList[editingIndex] = row;
+            cancelEdit();
+        }
+
+        renderTable();
+        
+        if (editingIndex === -1) {
+            resetInputs();
+        }
+		
+		updateQueryTypeLock();
+    }
+
+    function resetInputs() {
+        document.getElementById('idNo').value = '';
+        document.getElementById('accountNo').value = '';
+        document.getElementById('startDate').value = '';
+        document.getElementById('endDate').value = '';
+        clearErrorStyles();
+    }
+
+    function editData(index) {
+        clearErrorStyles();
+        const item = dataList[index];
+        document.getElementById('queryType').value = item.type;
+        updateFormState();
+
+        document.getElementById('idNo').value = item.idNo;
+        document.getElementById('accountNo').value = item.accountNo;
+        document.getElementById('startDate').value = item.startDate;
+        document.getElementById('endDate').value = item.endDate;
+
+        editingIndex = index;
+        const btn = document.getElementById('btnAdd');
+        btn.innerText = "確認修改";
+        btn.classList.remove('btn-add');
+        btn.classList.add('btn-update');
+        
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+		
+		updateQueryTypeLock();
+    }
+
+    function cancelEdit() {
+        editingIndex = -1;
+        const btn = document.getElementById('btnAdd');
+        btn.innerText = "加入清單";
+        btn.classList.remove('btn-update');
+        btn.classList.add('btn-add');
+        
+        resetInputs();
+		
+		updateQueryTypeLock();
+    }
+
+    function renderTable() {
+        const tbody = document.querySelector('#resultTable tbody');
+        tbody.innerHTML = '';
+
+        dataList.forEach((item, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${item.type}</td>
+                <td>${item.idNo}</td>
+                <td>${item.accountNo}</td>
+                <td>${item.startDate}</td>
+                <td>${item.endDate}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn-edit" onclick="editData(${index})">編輯</button>
+                        <button class="delete-btn" onclick="removeData(${index})">刪除</button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function removeData(index) {
+        if (editingIndex === index) {
+            cancelEdit();
+        } else if (editingIndex > index) {
+            editingIndex--;
+        }
+        dataList.splice(index, 1);
+        renderTable();
+		
+		updateQueryTypeLock();
+    }
+
+    function exportCSV() {
+        if (dataList.length === 0) {
+            showModal("目前沒有資料可匯出");
+            return;
+        }
+		
+        const firstType = dataList[0].type;
+
+        let startHeader = "";
+        let endHeader = "";
+
+        if (['6', '7'].includes(firstType)) {
+            startHeader = "網銀APP查詢起日";
+            endHeader = "網銀APP查詢訖日";
+        } else {
+            startHeader = "往來明細查詢起日";
+            endHeader = "往來明細查詢訖日";
+        }
+
+        let csvContent = `"查詢種類","身分證統一編號","帳號","${startHeader}","${endHeader}"\n`;
+        
+		dataList.forEach(row => {
+            const cType = row.type ? `"${row.type}"` : `""`;
+            const cId = row.idNo ? `"${row.idNo}"` : `""`;
+            const cAcc = row.accountNo ? `"${row.accountNo}"` : `""`;
+            const cStart = row.startDate ? `"${row.startDate}"` : `""`;
+            const cEnd = row.endDate ? `"${row.endDate}"` : `""`;
+            
+            csvContent += `${cType},${cId},${cAcc},${cStart},${cEnd}\n`;
+        });
+
+        const bom = "\uFEFF";
+        const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        const now = new Date();
+        const timeStr = now.toISOString().slice(0,19).replace(/[-T:]/g,"");
+        link.setAttribute("download", `query_list_${timeStr}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    updateFormState();
+</script>
+
+</body>
+</html>

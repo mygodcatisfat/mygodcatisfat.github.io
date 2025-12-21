@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的工具作品集 | My Toolkit Portfolio</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+		:root {
+			--ac-green: #8dd6bd;
+			--ac-bg-pattern: #84cbb2;
+			--ac-cream: #fffdf6;
+			--ac-brown: #7c6c53;
+			--ac-orange: #f4a261;
+			--ac-blue: #60a5fa;
+            --ac-red: #ff8787; /* 動森風格紅色 */
+            --ac-gray: #e5e7eb;
+			--shadow-color: rgba(124, 108, 83, 0.2);
+		}
+
+		body {
+			font-family: 'M PLUS Rounded 1c', 'Segoe UI', sans-serif;
+			background-color: var(--ac-green);
+			background-image: radial-gradient(var(--ac-bg-pattern) 20%, transparent 20%),
+							  radial-gradient(var(--ac-bg-pattern) 20%, transparent 20%);
+			background-size: 30px 30px;
+			background-position: 0 0, 15px 15px;
+			
+			color: var(--ac-brown);
+			margin: 0;
+			padding: 0;
+			line-height: 1.7;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+		}
+
+		header {
+			background-color: transparent;
+			padding: 60px 20px 30px 20px;
+			text-align: center;
+			margin-bottom: 20px;
+		}
+
+		header h1 {
+			display: inline-block;
+			background-color: var(--ac-cream);
+			padding: 15px 40px;
+			border-radius: 50px;
+			font-size: 2rem;
+			color: var(--ac-orange);
+			border: 4px solid white;
+			box-shadow: 0 6px 0 rgba(0,0,0,0.1);
+			margin: 0;
+			transform: rotate(-2deg);
+		}
+
+		header p {
+			background-color: rgba(255, 255, 255, 0.8);
+			display: inline-block;
+			padding: 5px 20px;
+			border-radius: 20px;
+			margin-top: 20px;
+			font-weight: bold;
+			color: var(--ac-brown);
+		}
+
+		.container {
+			max-width: 1000px;
+			margin: 0 auto;
+			padding: 0 20px 40px 20px;
+            flex: 1; /* 讓內容區撐開，確保 footer 在底部 */
+		}
+
+		.grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+			gap: 40px;
+		}
+
+		.tool-card {
+			background: var(--ac-cream);
+			border-radius: 35px;
+			padding: 30px;
+			box-shadow: 
+				0 8px 0 var(--shadow-color),
+				0 15px 20px rgba(0,0,0,0.05);
+			transition: transform 0.2s;
+			display: flex;
+			flex-direction: column;
+			border: 4px solid white;
+			position: relative;
+		}
+
+		.tool-card:hover {
+			transform: translateY(-5px);
+		}
+
+		.tool-card::after {
+			content: '';
+			position: absolute;
+			top: 15px;
+			right: 15px;
+			width: 12px;
+			height: 12px;
+			background-color: #e5e7eb;
+			border-radius: 50%;
+			box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+		}
+
+        .card-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+		.tool-tag {
+			display: inline-block;
+			background-color: var(--ac-blue);
+			color: white;
+			padding: 4px 12px;
+			border-radius: 15px;
+			font-size: 0.85rem;
+			font-weight: 700;
+			box-shadow: 0 3px 0 rgba(0,0,0,0.1);
+		}
+
+        .tool-tag.secondary {
+            background-color: var(--ac-green);
+        }
+
+		.tool-title {
+			font-size: 1.6rem;
+			margin: 0 0 10px 0;
+			color: var(--ac-brown);
+			font-weight: 800;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+		}
+
+        .version-badge {
+            font-size: 0.9rem;
+            background-color: var(--ac-gray);
+            color: #6b7280;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            transform: translateY(2px);
+            transition: all 0.3s ease;
+        }
+
+        /* 新增：特殊警示紅色樣式 (無版本號時使用) */
+        .version-badge.alert {
+            background-color: var(--ac-red);
+            color: white;
+            box-shadow: 0 2px 0 rgba(0,0,0,0.1);
+        }
+
+		.tool-desc {
+			color: #8c8170;
+			margin-bottom: 25px;
+			flex-grow: 1;
+			font-weight: 500;
+		}
+
+		.btn-link {
+			display: block;
+			text-align: center;
+			background-color: var(--ac-orange);
+			color: white;
+			text-decoration: none;
+			padding: 14px;
+			border-radius: 50px;
+			font-weight: 800;
+			font-size: 1.1rem;
+			box-shadow: 0 5px 0 #d97706;
+			transition: all 0.1s;
+			border: 2px solid white;
+		}
+
+		.btn-link:active {
+			transform: translateY(5px);
+			box-shadow: 0 0 0 #d97706;
+		}
+
+		.btn-link:hover {
+			filter: brightness(1.1);
+		}
+
+        .btn-link.disabled {
+            background-color: #d1d5db;
+            box-shadow: none;
+            cursor: not-allowed;
+            color: #9ca3af;
+            border-color: #e5e7eb;
+            pointer-events: none;
+            transform: none;
+        }
+
+		footer {
+			text-align: center;
+			padding: 40px 20px;
+			color: white;
+			font-weight: bold;
+			text-shadow: 1px 1px 0 rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 25px;
+		}
+
+        /* 導覽列樣式 (移至 Footer) */
+        .nav-bar {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            background-color: var(--ac-cream);
+            color: var(--ac-brown);
+            text-decoration: none;
+            padding: 10px 25px;
+            border-radius: 30px;
+            font-weight: 800;
+            border: 3px solid white;
+            box-shadow: 0 4px 0 rgba(0,0,0,0.1);
+            transition: transform 0.1s;
+            font-size: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            background-color: white;
+        }
+
+        .nav-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 0 0 rgba(0,0,0,0.1);
+        }
+
+        .nav-icon {
+            font-size: 1.2rem;
+        }
+	</style>
+</head>
+<body>
+    <header>
+        <h1>My Toolkit Portfolio</h1>
+        <p>這裡展示偶開發的各種實用小工具，目的在提升日常生活、工作中的效率。</p>
+    </header>
+
+    <div class="container">
+        <div class="grid">
+
+            <article class="tool-card">
+                <div class="card-meta">
+                    <span class="tool-tag">檔案處理</span>
+                    <span class="tool-tag secondary">辦公室</span>
+                </div>
+                <h2 class="tool-title">
+                    PDF 處理 
+                    <span class="version-badge">v1.2</span>
+                </h2>
+                <p class="tool-desc">
+                    這是一個純前端運行的多功能 PDF 編輯工具，提供包含裁切 PDF 頁面、合成多個 PDF 檔案、插入頁碼、旋轉頁面以及文字辨識 (OCR) 等實用功能。
+                </p>
+                <a href="https://mygodcatisfat.github.io/00_PDF%E8%99%95%E7%90%86.html" target="_blank" class="btn-link">前往工具 ➔</a>
+            </article>
+
+            <article class="tool-card">
+                <div class="card-meta">
+                    <span class="tool-tag">影像工具</span>
+                    <span class="tool-tag secondary">自動化</span>
+                </div>
+                <h2 class="tool-title">
+                    圖片裁切
+                    <span class="version-badge">v2.0</span>
+                </h2>
+                <p class="tool-desc">
+                    這是一個專為快速大量處理圖片設計的線上裁切工具，使用者可設定自訂命名規則與輸出格式，並透過滑鼠框選與鍵盤快捷鍵來高效裁切圖片。
+                </p>
+                <a href="https://mygodcatisfat.github.io/Bulk_Rapid_Cut/%E5%BF%AB%E9%80%9F%E8%A3%81%E5%88%87%E5%A4%A7%E9%87%8F%E5%9C%96%E7%89%87.html" target="_blank" class="btn-link">前往工具 ➔</a>
+            </article>
+
+            <article class="tool-card">
+                <div class="card-meta">
+                    <span class="tool-tag">工作效率</span>
+                    <span class="tool-tag secondary">地圖</span>
+                </div>
+                <h2 class="tool-title">
+                    經緯度轉地址
+                    <span class="version-badge">v1.5</span>
+                </h2>
+                <p class="tool-desc">
+                    這是一個可以將經緯度轉換成地址的工具，提供單點查詢及批次匯入轉換，並提供互動式地圖視覺化、路徑播放、資料匯出入以及地圖截圖等功能。
+                </p>
+                <a href="https://mygodcatisfat.github.io/LatLon2Address/GEO.html" target="_blank" class="btn-link">前往工具 ➔</a>
+            </article>
+
+            <article class="tool-card">
+                <div class="card-meta">
+                    <span class="tool-tag">工作效率</span>
+                    <span class="tool-tag secondary">專案管理</span>
+                </div>
+                <h2 class="tool-title">
+                    專案管理
+                    <span class="version-badge">v15.3</span>
+                </h2>
+                <p class="tool-desc">
+                    這是一個個人專案管理工具，支援建立與管理多個專案及流程，提供儀表板監控進度、全局項目控管（人、事、地、物），並具備模板匯入、計時器以及資料自動或手動備份等功能。
+                </p>
+                <a href="https://mygodcatisfat.github.io/Project_Management/PigMan.html" target="_blank" class="btn-link">前往工具 ➔</a>
+            </article>
+			
+			<article class="tool-card">
+                <div class="card-meta">
+                    <span class="tool-tag">偵查工作</span>
+                    <span class="tool-tag secondary">金融機構</span>
+                </div>
+                <h2 class="tool-title">
+                    資料調閱匯出
+                    <span class="version-badge">v1.3</span>
+                </h2>
+                <p class="tool-desc">
+                    這是一個專門用於產生銀行查詢條件 CSV 檔案的線上工具，使用者可設定不同的查詢種類（如查詢開戶資料、往來明細、保管箱資料或網銀操作紀錄等），輸入身分證字號、帳號及日期區間後，將這些條件加入清單並批次匯出成 CSV 檔，以利進行後續的查詢或資料交換作業。
+                </p>
+                <a href="https://mygodcatisfat.github.io/Bank2CSV/bank2csv.html" target="_blank" class="btn-link">前往工具 ➔</a>
+            </article>
+			
+			<article class="tool-card">
+                <div class="card-meta">
+                    <span class="tool-tag">偵查工作</span>
+					<span class="tool-tag secondary">IP</span>
+                    <span class="tool-tag secondary">ISP</span>
+                </div>
+                <h2 class="tool-title">
+                    IP轉ISP
+                    <span class="version-badge">v10.4</span>
+                </h2>
+                <p class="tool-desc">
+                    這是一個自動化 IP 資料查詢與處理工具，具備欄位對應、時間序分析視覺化功能，並可將查詢後的電信業者資料匯出。
+                </p>
+                <a href="https://mygodcatisfat.github.io/IP2ISP/ip2isp.html" target="_blank" class="btn-link">前往工具 ➔</a>
+            </article>
+			
+			<article class="tool-card">
+                <div class="card-meta">
+                    <span class="tool-tag">工作效率</span>
+                    <span class="tool-tag secondary">圖片</span>
+					<span class="tool-tag secondary">WORD</span>
+                </div>
+                <h2 class="tool-title">
+                    圖片快速匯入
+                    <span class="version-badge">Coming Soon</span>
+                </h2>
+                <p class="tool-desc">
+                    開發中。
+                </p>
+                <a href="https://mygodcatisfat.github.io/Project_Management/PigMan.html" target="_blank" class="btn-link">前往工具 ➔</a>
+            </article>
+        </div>
+    </div>
+
+    <footer>
+        <nav class="nav-bar">
+            <a href="https://mygodcatisfat.github.io/" class="nav-btn">
+                <span class="nav-icon">🏠</span> 回到首頁
+            </a>
+            <a href="mailto:mygodcatisfat@gmail.com" class="nav-btn">
+                <span class="nav-icon">📮</span> 聯絡我
+            </a>
+        </nav>
+
+        <div>&copy; 2024 My Portfolio. All rights reserved.</div>
+    </footer>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const cards = document.querySelectorAll('.tool-card');
+            
+            cards.forEach(card => {
+                const versionBadge = card.querySelector('.version-badge');
+                const linkBtn = card.querySelector('.btn-link');
+
+                if (versionBadge && linkBtn) {
+                    const versionText = versionBadge.textContent.trim().toLowerCase();
+                    
+                    if (!versionText.includes('v')) {
+                        linkBtn.classList.add('disabled');
+                        linkBtn.removeAttribute('href');
+                        versionBadge.classList.add('alert');
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

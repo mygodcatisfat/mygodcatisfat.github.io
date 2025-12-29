@@ -14,7 +14,11 @@
             font-size: 0.85rem; 
         }
         
-        h2 { font-size: 1.5rem; }
+        .header-container {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        h2 { font-size: 1.5rem; margin-bottom: 0; }
         h4 { font-size: 1.2rem; }
         
         .card { margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
@@ -47,8 +51,8 @@
         #resTableAccount thead th {
             position: sticky;
             top: 0;
-            z-index: 100; 
-            background-color: #e9ecef;
+            z-index: 100;
+            background-color: #e9ecef; 
             box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
         }
         
@@ -121,7 +125,7 @@
         
         .detail-table th, .detail-table td {
             font-size: 0.75rem;
-            white-space: nowrap; 
+            white-space: nowrap;
         }
         
         .detail-table thead th {
@@ -183,8 +187,14 @@
     </style>
 </head>
 <body>
+
 <div class="container">
-    <h2 class="text-center mb-4">金融帳戶資金流向分析工具</h2>
+    <div class="header-container text-center mb-4">
+        <h2 class="d-inline-block">金融帳戶資金流向分析工具</h2>
+        <button class="btn btn-outline-info btn-sm ms-3" data-bs-toggle="modal" data-bs-target="#helpModal">
+            <i class="bi bi-question-circle"></i> 使用說明
+        </button>
+    </div>
     
     <div class="card p-3" id="step1">
         <h4>1. 匯入資料</h4>
@@ -234,9 +244,14 @@
         <div class="checkbox-container d-flex flex-wrap gap-3 align-items-center" id="columnCheckboxes"></div>
 
         <div class="mb-3">
-            <div class="input-group mb-2">
-                <input type="text" class="form-control" id="searchAccount" placeholder="搜尋帳號..." onkeyup="filterTable('resTableAccount', this.value)">
-                <button class="btn btn-outline-secondary" type="button" onclick="clearSearch()">清除</button>
+            <div class="d-flex gap-2 mb-2">
+                <div class="input-group flex-grow-1">
+                    <input type="text" class="form-control" id="searchAccount" placeholder="搜尋帳號..." onkeyup="filterTable('resTableAccount', this.value)">
+                    <button class="btn btn-outline-secondary" type="button" onclick="clearSearch()">清除</button>
+                </div>
+                <button class="btn btn-success text-nowrap" onclick="exportToExcel()">
+                    <i class="bi bi-file-earmark-excel"></i> 匯出 .xlsx
+                </button>
             </div>
             
             <div class="table-responsive">
@@ -244,6 +259,7 @@
                     <thead>
                         <tr>
                             <th style="width: 50px;">明細</th>
+                            <th>序號</th>
                             <th class="sortable" onclick="toggleSort('account')">帳號 <span id="sort-icon-account"></span></th>
                             <th class="sortable" onclick="toggleSort('inCount')">轉入次數 (進) <span id="sort-icon-inCount"></span></th>
                             <th class="sortable" onclick="toggleSort('inTotal')">轉入總額 <span id="sort-icon-inTotal"></span></th>
@@ -259,8 +275,75 @@
     </div>
 </div>
 
+<div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title" id="helpModalLabel"><i class="bi bi-book"></i> 系統功能使用說明</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <strong>1. 資料匯入：</strong> 支援點擊按鈕或直接拖曳 <code>.xls</code> / <code>.xlsx</code> 檔案至匯入區。重新匯入會自動清除舊資料。
+                    </li>
+                    <li class="list-group-item">
+                        <strong>2. 預覽與選擇：</strong> 系統自動讀取工作表，提供資料預覽（前 5 筆）。上方表頭會凍結，方便查看。
+                    </li>
+                    <li class="list-group-item">
+                        <strong>3. 智慧欄位對應：</strong> 
+                        <ul>
+                            <li>自動偵測「支出」、「存入」、「帳號」等關鍵欄位。</li>
+                            <li>支援直接從預覽表頭 <strong>拖曳</strong> 欄位名稱至設定框。</li>
+                            <li>不同欄位以顏色區分（橘色支出、綠色存入、紫色帳號），並即時連動預覽表底色。</li>
+                        </ul>
+                    </li>
+                    <li class="list-group-item">
+                        <strong>4. 自動化分析：</strong> 
+                        <ul>
+                            <li>自動計算每個帳號的轉入/轉出次數、總金額與淨流量。</li>
+                            <li>提供四大關鍵指標卡片（最高次數/金額），點擊可快速篩選該帳號。</li>
+                        </ul>
+                    </li>
+                    <li class="list-group-item">
+                        <strong>5. 互動式明細：</strong> 
+                        <ul>
+                            <li>點擊 <code>+</code> 展開查看該帳號的所有交易明細。</li>
+                            <li><strong>序號顯示：</strong> 分析列表及明細列表皆有自動序號，明細序號位於最前方。</li>
+                            <li>明細底色區分：<strong>綠色</strong>為存入，<strong>橘色</strong>為支出。</li>
+                            <li>支援自訂顯示欄位（Checkbox 全選/反選邏輯）。</li>
+                            <li>支援欄位排序（主表與明細表皆可點擊表頭排序）。</li>
+                            <li>捲動時，明細表頭會凍結在主表頭下方，且不會遮蔽最後一欄資料。</li>
+                        </ul>
+                    </li>
+                    <li class="list-group-item">
+                        <strong>6. 搜尋與匯出：</strong> 
+                        <ul>
+                            <li>支援帳號模糊搜尋，並提供一鍵清除按鈕。</li>
+                            <li><strong>匯出功能：</strong> 可將目前的分析彙總結果（帳號、次數、金額）匯出為 Excel 檔，方便後續利用。</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+    function escapeHtml(text) {
+        if (text === null || text === undefined) return "";
+        return String(text)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
     let workbook = null;
     let jsonData = null;
     let headers = [];
@@ -269,7 +352,6 @@
     let detailSortState = {};
     let rawTransactions = {}; 
     let expandedRows = new Set();
-
     const dropZone = document.getElementById('step1');
     const fileInput = document.getElementById('fileInput');
 
@@ -333,7 +415,7 @@
                     const btn = document.createElement('button');
                     btn.className = `nav-link ${index === 0 ? 'active' : ''}`;
                     btn.type = 'button';
-                    btn.textContent = name;
+                    btn.textContent = name; 
                     
                     btn.onclick = function() {
                         document.querySelectorAll('#sheetTabs .nav-link').forEach(b => b.classList.remove('active'));
@@ -401,13 +483,13 @@
         
         let tableHtml = '<thead class="table-light"><tr>';
         headers.forEach(h => {
-            tableHtml += `<th draggable="true" ondragstart="drag(event)">${h}</th>`;
+            tableHtml += `<th draggable="true" ondragstart="drag(event)">${escapeHtml(h)}</th>`;
         });
         tableHtml += '</tr></thead><tbody>';
         
         jsonData.slice(0, 5).forEach(row => {
             tableHtml += '<tr>';
-            headers.forEach(h => tableHtml += `<td>${row[h]}</td>`);
+            headers.forEach(h => tableHtml += `<td>${escapeHtml(row[h])}</td>`);
             tableHtml += '</tr>';
         });
         tableHtml += '</tbody>';
@@ -423,8 +505,8 @@
             select.innerHTML = '<option value="">(不選擇/無此欄)</option>';
             headers.forEach(h => {
                 const option = document.createElement('option');
-                option.text = h;
-                option.value = h;
+                option.text = h; 
+                option.value = h; 
                 select.add(option);
             });
             if(oldVal && headers.includes(oldVal)) {
@@ -547,6 +629,7 @@
         });
     }
 
+    // --- 分析主邏輯 ---
     function analyzeData() {
         const colWithdraw = document.getElementById('colWithdraw').value;
         const colDeposit = document.getElementById('colDeposit').value;
@@ -557,6 +640,7 @@
             return;
         }
 
+        // 重置資料
         let accountStatsObj = {}; 
         rawTransactions = {}; 
         expandedRows.clear();
@@ -596,7 +680,6 @@
                     accountStatsObj[targetAcc].outCount++;
                     accountStatsObj[targetAcc].outTotal += withdrawAmt;
                 }
-
                 if(depositAmt > 0 || withdrawAmt > 0){
                     rawTransactions[targetAcc].push(row);
                 }
@@ -647,10 +730,10 @@
         cards.forEach(c => {
             html += `
                 <div class="col-md-6 col-lg-3">
-                    <div class="stat-card" onclick="applySearch('${c.acc}')">
-                        <div class="stat-title">${c.title}</div>
-                        <div class="stat-value ${c.color}">${c.val}</div>
-                        <div class="stat-account mt-1">帳號: ${c.acc}</div>
+                    <div class="stat-card" onclick="applySearch('${escapeHtml(c.acc).replace(/'/g, "\\'")}')">
+                        <div class="stat-title">${escapeHtml(c.title)}</div>
+                        <div class="stat-value ${escapeHtml(c.color)}">${escapeHtml(c.val)}</div>
+                        <div class="stat-account mt-1">帳號: ${escapeHtml(c.acc)}</div>
                     </div>
                 </div>
             `;
@@ -666,7 +749,6 @@
 
     function applySearch(account) {
         expandedRows.forEach(accName => {
-            // Find index by account name
             const index = globalAccountStats.findIndex(s => s.account === accName);
             if (index !== -1) {
                 const detailRow = document.getElementById(`detail-${index}`);
@@ -686,6 +768,29 @@
         document.getElementById('resTableAccount').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
+    function exportToExcel() {
+        if (!globalAccountStats || globalAccountStats.length === 0) {
+            alert("無資料可匯出");
+            return;
+        }
+
+        const dataToExport = globalAccountStats.map(item => ({
+            "帳號": item.account,
+            "轉入次數 (進)": item.inCount,
+            "轉入總額": item.inTotal,
+            "轉出次數 (出)": item.outCount,
+            "轉出總額": item.outTotal,
+            "淨流量": item.net
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(dataToExport);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "分析結果");
+        
+        const timestamp = new Date().toISOString().slice(0,10).replace(/-/g,"");
+        XLSX.writeFile(wb, `資金流向分析結果_${timestamp}.xlsx`);
+    }
+
     function renderColumnCheckboxes() {
         const container = document.getElementById('columnCheckboxes');
         
@@ -700,9 +805,9 @@
         headers.forEach(h => {
             html += `
                 <div class="form-check">
-                    <input class="form-check-input column-toggle" type="checkbox" value="${h}" id="cb-${h}" checked onchange="checkSelectAllStatus(); updateDetailColumns()">
-                    <label class="form-check-label" for="cb-${h}">
-                        ${h}
+                    <input class="form-check-input column-toggle" type="checkbox" value="${escapeHtml(h)}" id="cb-${escapeHtml(h)}" checked onchange="checkSelectAllStatus(); updateDetailColumns()">
+                    <label class="form-check-label" for="cb-${escapeHtml(h)}">
+                        ${escapeHtml(h)}
                     </label>
                 </div>
             `;
@@ -713,7 +818,6 @@
     function toggleAllColumns() {
         const selectAllCb = document.getElementById('cb-all');
         const isChecked = selectAllCb.checked;
-        
         const toggles = document.querySelectorAll('.column-toggle');
         toggles.forEach(cb => {
             cb.checked = isChecked;
@@ -742,6 +846,7 @@
         return Array.from(checkboxes).map(cb => cb.value);
     }
 
+    // --- 主表排序功能 ---
     function toggleSort(key) {
         if (currentSort.key !== key) {
             currentSort.key = key;
@@ -795,6 +900,7 @@
         });
     }
 
+    // --- 明細表排序功能 ---
     function toggleDetailSort(accountIndex, colKey) {
         const account = globalAccountStats[accountIndex].account;
         
@@ -845,6 +951,7 @@
         });
     }
 
+    // --- 渲染結果表格 ---
     function renderResults() {
         const accTbody = document.querySelector('#resTableAccount tbody');
         accTbody.innerHTML = '';
@@ -857,35 +964,34 @@
             const rowId = `detail-${index}`;
             const account = data.account;
             const isExpanded = expandedRows.has(account); 
-            
             const sortState = detailSortState[account] || { key: null, dir: 'none' };
-            
-            const headerRowHtml = displayHeaders.map(h => {
+            const headerRowHtml = `<th>序號</th>` + displayHeaders.map(h => {
                 let icon = '';
                 if(sortState.key === h && sortState.dir !== 'none') {
                     icon = sortState.dir === 'asc' ? '<span style="color:red">↑</span>' : '<span style="color:red">↓</span>';
                 }
-                return `<th class="sortable" onclick="toggleDetailSort(${index}, '${h}')">${h} ${icon}</th>`;
+                return `<th class="sortable" onclick="toggleDetailSort(${index}, '${escapeHtml(h)}')">${escapeHtml(h)} ${icon}</th>`;
             }).join('');
 
             let rowHtml = `
-                <tr class="main-row" onclick="toggleDetails(${index}, '${account}')">
+                <tr class="main-row" onclick="toggleDetails(${index}, '${escapeHtml(account).replace(/'/g, "\\'")}')">
                     <td class="text-center">
                         <button class="btn-circle ${isExpanded ? 'collapsed' : ''}" id="btn-${index}">${isExpanded ? '-' : '+'}</button>
                     </td>
-                    <td>${data.account}</td>
-                    <td>${data.inCount}</td>
-                    <td class="text-success">${formatMoney(data.inTotal)}</td>
-                    <td>${data.outCount}</td>
-                    <td class="text-danger">${formatMoney(data.outTotal)}</td>
-                    <td class="${data.net >=0 ? 'text-success':'text-danger'} fw-bold">${formatMoney(data.net)}</td>
+                    <td>${index + 1}</td>
+                    <td>${escapeHtml(data.account)}</td>
+                    <td>${escapeHtml(data.inCount)}</td>
+                    <td class="text-success">${escapeHtml(formatMoney(data.inTotal))}</td>
+                    <td>${escapeHtml(data.outCount)}</td>
+                    <td class="text-danger">${escapeHtml(formatMoney(data.outTotal))}</td>
+                    <td class="${data.net >=0 ? 'text-success':'text-danger'} fw-bold">${escapeHtml(formatMoney(data.net))}</td>
                 </tr>
             `;
 
             let detailRows = '';
             const txList = rawTransactions[data.account] || [];
             
-            txList.forEach(row => {
+            txList.forEach((row, txIndex) => {
                 let isDeposit = false;
                 let isWithdraw = false;
                 let rowClass = "";
@@ -902,15 +1008,15 @@
                 if(isDeposit && !isWithdraw) rowClass = "table-success"; 
                 else if(isWithdraw && !isDeposit) rowClass = "table-warning"; 
                 
-                let tds = displayHeaders.map(h => `<td>${row[h] !== undefined ? row[h] : ''}</td>`).join('');
+                let tds = `<td>${txIndex + 1}</td>` + displayHeaders.map(h => `<td>${escapeHtml(row[h] !== undefined ? row[h] : '')}</td>`).join('');
                 detailRows += `<tr class="${rowClass}">${tds}</tr>`;
             });
 
             let detailHtml = `
                 <tr id="${rowId}" class="detail-row ${isExpanded ? 'show' : ''}">
-                    <td colspan="7">
+                    <td colspan="8">
                         <div class="p-3">
-                            <strong>${data.account} - 交易明細 (${txList.length} 筆)</strong>
+                            <strong>${escapeHtml(data.account)} - 交易明細 (${txList.length} 筆)</strong>
                             <div class="table-responsive mt-2" style="max-height: 300px;">
                                 <table class="table table-bordered detail-table mb-0">
                                     <thead>
@@ -968,7 +1074,7 @@
             const detailRowId = tr.getAttribute("onclick").match(/\d+/)[0]; 
             const detailRow = document.getElementById(`detail-${detailRowId}`);
             
-            const tdAcc = tr.getElementsByTagName("td")[1];
+            const tdAcc = tr.getElementsByTagName("td")[2];
             if (tdAcc) {
                 const txtValue = tdAcc.textContent || tdAcc.innerText;
                 if (txtValue.toUpperCase().indexOf(filter) > -1) {

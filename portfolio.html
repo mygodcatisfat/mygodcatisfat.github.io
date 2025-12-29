@@ -15,7 +15,7 @@
 			--ac-brown: #7c6c53;
 			--ac-orange: #f4a261;
 			--ac-blue: #60a5fa;
-            --ac-red: #ff8787; /* 動森風格紅色 */
+            --ac-red: #ff8787;
             --ac-gray: #e5e7eb;
 			--shadow-color: rgba(124, 108, 83, 0.2);
 		}
@@ -71,7 +71,7 @@
 			max-width: 1000px;
 			margin: 0 auto;
 			padding: 0 20px 40px 20px;
-            flex: 1; /* 讓內容區撐開，確保 footer 在底部 */
+            flex: 1;
 		}
 
 		.grid {
@@ -155,7 +155,6 @@
             transition: all 0.3s ease;
         }
 
-        /* 新增：特殊警示紅色樣式 (無版本號時使用) */
         .version-badge.alert {
             background-color: var(--ac-red);
             color: white;
@@ -215,7 +214,6 @@
             gap: 25px;
 		}
 
-        /* 導覽列樣式 (移至 Footer) */
         .nav-bar {
             display: flex;
             justify-content: center;
@@ -352,6 +350,22 @@
                     這是一個自動化 IP 資料查詢與處理工具，具備欄位對應、時間序分析視覺化功能，並可將查詢後的電信業者資料匯出。
                 </p>
                 <a href="https://mygodcatisfat.github.io/IP2ISP/ip2isp.html" target="_blank" class="btn-link">前往工具 ➔</a>
+            </article>
+
+			<article class="tool-card">
+                <div class="card-meta">
+                    <span class="tool-tag">偵查工作</span>
+					<span class="tool-tag secondary">金流</span>
+                    <span class="tool-tag secondary">資料分析</span>
+                </div>
+                <h2 class="tool-title">
+                    金融帳戶資金流向分析
+                    <span class="version-badge">v3.2</span>
+                </h2>
+                <p class="tool-desc">
+                    這是一個純前端運行的金融帳戶資金流向分析工具，使用者可匯入 Excel 檔案，透過拖曳方式設定欄位（如支出、存入金額及對手帳號），系統即可自動計算並呈現各帳戶的轉入、轉出次數及總額與淨流量分析結果。
+                </p>
+                <a href="https://mygodcatisfat.github.io/money_investigate/money_investigate.html" target="_blank" class="btn-link">前往工具 ➔</a>
             </article>
 			
 			<article class="tool-card">

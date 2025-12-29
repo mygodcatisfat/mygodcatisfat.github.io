@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>金融帳戶資金流向分析工具</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <style>
+        body { 
+            background-color: #f8f9fa; 
+            padding: 20px; 
+            font-size: 0.85rem; 
+        }
+        
+        h2 { font-size: 1.5rem; }
+        h4 { font-size: 1.2rem; }
+        
+        .card { margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .step-container { display: none; }
+        
+        .table-responsive {
+            max-height: 600px;
+            overflow-y: auto;
+            overflow-x: auto; 
+        }
+        
+        #previewTable th, #previewTable td,
+        #resTableAccount th, #resTableAccount td {
+            white-space: nowrap; 
+            font-size: 0.8rem;
+        }
+
+        #previewTable th {
+            cursor: grab;
+            user-select: none;
+            position: sticky; 
+            top: 0; 
+            background: #e9ecef;
+            z-index: 10;
+        }
+        #previewTable th:active {
+            cursor: grabbing;
+        }
+
+        #resTableAccount thead th {
+            position: sticky;
+            top: 0;
+            z-index: 100; 
+            background-color: #e9ecef;
+            box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .form-control, .form-select, .btn { font-size: 0.85rem; }
+
+        .nav-tabs .nav-link {
+            cursor: pointer;
+            color: #495057;
+            font-size: 0.85rem;
+            padding: 0.5rem 1rem;
+        }
+        .nav-tabs .nav-link.active {
+            font-weight: bold;
+            color: #0d6efd;
+        }
+
+        .drag-over-input {
+            border: 2px dashed #0d6efd !important;
+            background-color: #e9ecef;
+        }
+
+        #step1 {
+            transition: all 0.3s ease;
+            border: 2px dashed transparent;
+        }
+        #step1.drag-active {
+            border-color: #0d6efd;
+            background-color: #e9f2ff;
+        }
+
+        .bg-withdraw { background-color: rgba(255, 193, 7, 0.4) !important; }
+        .bg-deposit { background-color: rgba(25, 135, 84, 0.3) !important; }
+        .bg-account { background-color: rgba(111, 66, 193, 0.3) !important; }
+
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+        }
+        .sortable:hover {
+            background-color: #f1f1f1;
+        }
+        
+        .btn-circle {
+            width: 24px;
+            height: 24px;
+            padding: 0;
+            border-radius: 50%;
+            text-align: center;
+            font-size: 14px;
+            line-height: 22px; 
+            font-weight: bold;
+            background-color: #0d6efd;
+            color: white;
+            border: none;
+            display: inline-block;
+            margin-right: 8px;
+            transition: transform 0.2s;
+        }
+        .btn-circle.collapsed {
+            background-color: #6c757d;
+        }
+
+        .detail-row {
+            display: none;
+            background-color: #f8f9fa;
+        }
+        .detail-row.show {
+            display: table-row;
+        }
+        
+        .detail-table th, .detail-table td {
+            font-size: 0.75rem;
+            white-space: nowrap; 
+        }
+        
+        .detail-table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 10; 
+            background-color: #e2e3e5; 
+            box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1); 
+        }
+
+        .detail-table th:last-child, 
+        .detail-table td:last-child {
+            padding-right: 20px; 
+        }
+
+        .main-row {
+            cursor: pointer;
+        }
+        .main-row:hover {
+            background-color: #e9ecef !important;
+        }
+
+        .stat-card {
+            background-color: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 12px;
+            padding: 15px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            height: 100%;
+        }
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-color: #0d6efd;
+        }
+        .stat-title {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #212529;
+        }
+        .stat-account {
+            font-size: 0.85rem;
+            color: #0d6efd;
+            word-break: break-all;
+        }
+
+        .checkbox-container {
+            background-color: #f1f3f5;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2 class="text-center mb-4">金融帳戶資金流向分析工具</h2>
+    
+    <div class="card p-3" id="step1">
+        <h4>1. 匯入資料</h4>
+        <p class="text-primary small mb-2"><i class="bi bi-info-circle"></i> 點擊下方按鈕選擇檔案，或直接將 .xls 或 .xlsx 檔案拖曳至此處</p>
+        <input type="file" class="form-control" id="fileInput" accept=".xlsx, .xls" onclick="this.value=null">
+    </div>
+
+    <div class="card p-3 step-container" id="step2">
+        <h4>2. 選擇工作表</h4>
+        <p class="text-primary small mb-2"><i class="bi bi-info-circle"></i> 提示：可按住上方表格欄位，直接拖曳至下方設定框</p>
+        
+        <ul class="nav nav-tabs mb-3" id="sheetTabs"></ul>
+        
+        <div class="table-responsive mb-3">
+            <table class="table table-bordered table-sm" id="previewTable"></table>
+        </div>
+    </div>
+
+    <div class="card p-3 step-container" id="step3">
+        <h4>3. 欄位對應設定</h4>
+        <p class="text-primary small mb-3"><i class="bi bi-info-circle"></i> 請設定對應欄位 (系統會自動判斷，您也可以手動修改或從上方拖曳欄位)</p>
+        
+        <div class="row g-3">
+            <div class="col-md-6 col-lg-3">
+                <label class="form-label">支出/提款金額 <span class="text-danger">*</span></label>
+                <select class="form-select column-select" id="colWithdraw" data-color="bg-withdraw"></select>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <label class="form-label">存入/存款金額 <span class="text-danger">*</span></label>
+                <select class="form-select column-select" id="colDeposit" data-color="bg-deposit"></select>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <label class="form-label">轉出入行庫代碼及帳號</label>
+                <select class="form-select column-select" id="colAccount" data-color="bg-account"></select>
+            </div>
+        </div>
+    </div>
+
+    <div class="card p-3 step-container" id="step4">
+        <h4 class="mb-3">分析結果</h4>
+        
+        <div class="row g-3 mb-4" id="summaryCards"></div>
+
+        <div class="mb-2">
+            <strong><i class="bi bi-layout-three-columns"></i> 詳細明細顯示欄位</strong>
+        </div>
+        <div class="checkbox-container d-flex flex-wrap gap-3 align-items-center" id="columnCheckboxes"></div>
+
+        <div class="mb-3">
+            <div class="input-group mb-2">
+                <input type="text" class="form-control" id="searchAccount" placeholder="搜尋帳號..." onkeyup="filterTable('resTableAccount', this.value)">
+                <button class="btn btn-outline-secondary" type="button" onclick="clearSearch()">清除</button>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-sm" id="resTableAccount">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;">明細</th>
+                            <th class="sortable" onclick="toggleSort('account')">帳號 <span id="sort-icon-account"></span></th>
+                            <th class="sortable" onclick="toggleSort('inCount')">轉入次數 (進) <span id="sort-icon-inCount"></span></th>
+                            <th class="sortable" onclick="toggleSort('inTotal')">轉入總額 <span id="sort-icon-inTotal"></span></th>
+                            <th class="sortable" onclick="toggleSort('outCount')">轉出次數 (出) <span id="sort-icon-outCount"></span></th>
+                            <th class="sortable" onclick="toggleSort('outTotal')">轉出總額 <span id="sort-icon-outTotal"></span></th>
+                            <th class="sortable" onclick="toggleSort('net')">淨流量 <span id="sort-icon-net"></span></th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    let workbook = null;
+    let jsonData = null;
+    let headers = [];
+    let globalAccountStats = []; 
+    let currentSort = { key: null, dir: 'none' };
+    let detailSortState = {};
+    let rawTransactions = {}; 
+    let expandedRows = new Set();
+
+    const dropZone = document.getElementById('step1');
+    const fileInput = document.getElementById('fileInput');
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight(e) {
+        dropZone.classList.add('drag-active');
+    }
+
+    function unhighlight(e) {
+        dropZone.classList.remove('drag-active');
+    }
+
+    dropZone.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if(files.length > 0) {
+            handleFiles(files[0]);
+        }
+    }
+
+    fileInput.addEventListener('change', function(e) {
+        if(this.files.length > 0) {
+            handleFiles(this.files[0]);
+        }
+    });
+
+    function handleFiles(file) {
+        clearPreviousData();
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            try {
+                workbook = XLSX.read(data, {type: 'array'});
+                
+                const sheetTabs = document.getElementById('sheetTabs');
+                sheetTabs.innerHTML = '';
+                
+                workbook.SheetNames.forEach((name, index) => {
+                    const li = document.createElement('li');
+                    li.className = 'nav-item';
+                    
+                    const btn = document.createElement('button');
+                    btn.className = `nav-link ${index === 0 ? 'active' : ''}`;
+                    btn.type = 'button';
+                    btn.textContent = name;
+                    
+                    btn.onclick = function() {
+                        document.querySelectorAll('#sheetTabs .nav-link').forEach(b => b.classList.remove('active'));
+                        this.classList.add('active');
+                        loadSheetData(name);
+                    };
+                    
+                    li.appendChild(btn);
+                    sheetTabs.appendChild(li);
+                });
+
+                loadSheetData(workbook.SheetNames[0]);
+                
+                document.getElementById('step2').style.display = 'block';
+                document.getElementById('step3').style.display = 'block';
+                
+            } catch (error) {
+                alert("檔案讀取失敗，請確認格式為 .xls 或 .xlsx");
+                console.error(error);
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function clearPreviousData() {
+        workbook = null;
+        jsonData = null;
+        headers = [];
+        globalAccountStats = [];
+        rawTransactions = {};
+        currentSort = { key: null, dir: 'none' };
+        detailSortState = {};
+        expandedRows.clear();
+
+        document.getElementById('sheetTabs').innerHTML = '';
+        document.getElementById('previewTable').innerHTML = '';
+        document.querySelector('#resTableAccount tbody').innerHTML = '';
+        document.getElementById('summaryCards').innerHTML = '';
+        document.getElementById('columnCheckboxes').innerHTML = '';
+        
+        document.getElementById('step2').style.display = 'none';
+        document.getElementById('step3').style.display = 'none';
+        document.getElementById('step4').style.display = 'none';
+        
+        document.querySelectorAll('.column-select').forEach(select => {
+            select.innerHTML = '';
+            select.className = 'form-select column-select';
+            select.classList.remove('bg-withdraw', 'bg-deposit', 'bg-account');
+        });
+        
+        resetSortIcons();
+    }
+
+    function loadSheetData(sheetName) {
+        const worksheet = workbook.Sheets[sheetName];
+        jsonData = XLSX.utils.sheet_to_json(worksheet, {defval: ""});
+        
+        if (jsonData.length === 0) {
+            alert("此工作表無資料");
+            document.getElementById('previewTable').innerHTML = '';
+            return;
+        }
+
+        headers = Object.keys(jsonData[0]);
+        
+        let tableHtml = '<thead class="table-light"><tr>';
+        headers.forEach(h => {
+            tableHtml += `<th draggable="true" ondragstart="drag(event)">${h}</th>`;
+        });
+        tableHtml += '</tr></thead><tbody>';
+        
+        jsonData.slice(0, 5).forEach(row => {
+            tableHtml += '<tr>';
+            headers.forEach(h => tableHtml += `<td>${row[h]}</td>`);
+            tableHtml += '</tr>';
+        });
+        tableHtml += '</tbody>';
+        document.getElementById('previewTable').innerHTML = tableHtml;
+
+        updateStep3Options();
+    }
+
+    function updateStep3Options() {
+        const selects = document.querySelectorAll('.column-select');
+        selects.forEach(select => {
+            const oldVal = select.value;
+            select.innerHTML = '<option value="">(不選擇/無此欄)</option>';
+            headers.forEach(h => {
+                const option = document.createElement('option');
+                option.text = h;
+                option.value = h;
+                select.add(option);
+            });
+            if(oldVal && headers.includes(oldVal)) {
+                select.value = oldVal;
+            } else {
+                select.value = "";
+            }
+        });
+
+        if(!document.getElementById('colWithdraw').value) autoSelect('colWithdraw', ['支出', '借方', '提款', '出金', 'Withdraw']);
+        if(!document.getElementById('colDeposit').value) autoSelect('colDeposit', ['存入', '貸方', '存款', '入金', 'Deposit']);
+        if(!document.getElementById('colAccount').value) autoSelect('colAccount', ['轉出入行庫代碼及帳號'], true);
+
+        initStep3Events();
+        updateColors();
+        
+        analyzeData();
+    }
+
+    function autoSelect(elementId, keywords, strict = false) {
+        const select = document.getElementById(elementId);
+        if(select.value) return;
+
+        for (let i = 0; i < select.options.length; i++) {
+            const text = select.options[i].text;
+            let match = false;
+            if (strict) {
+                match = keywords.some(k => text.trim() === k.trim());
+            } else {
+                match = keywords.some(k => text.includes(k));
+            }
+
+            if (match) {
+                select.selectedIndex = i;
+                break;
+            }
+        }
+    }
+
+    function initStep3Events() {
+        const selects = document.querySelectorAll('.column-select');
+        
+        selects.forEach(select => {
+            select.addEventListener('change', function() {
+                updateColors();
+                analyzeData();
+            });
+
+            select.addEventListener('dragover', allowDrop);
+            select.addEventListener('dragleave', removeDragStyle);
+            select.addEventListener('drop', drop);
+        });
+    }
+
+    function drag(ev) {
+        ev.dataTransfer.setData("text", ev.target.innerText);
+    }
+
+    function allowDrop(ev) {
+        ev.preventDefault();
+        ev.target.classList.add('drag-over-input');
+    }
+
+    function removeDragStyle(ev) {
+        ev.target.classList.remove('drag-over-input');
+    }
+
+    function drop(ev) {
+        ev.preventDefault();
+        ev.target.classList.remove('drag-over-input');
+        const colName = ev.dataTransfer.getData("text");
+        
+        if (ev.target.tagName === 'SELECT') {
+            let found = false;
+            for(let opt of ev.target.options) {
+                if(opt.value === colName) {
+                    ev.target.value = colName;
+                    found = true;
+                    break;
+                }
+            }
+            if(found) {
+                updateColors();
+                analyzeData();
+            }
+        }
+    }
+
+    function updateColors() {
+        const table = document.getElementById('previewTable');
+        const ths = table.querySelectorAll('th');
+        const trs = table.querySelectorAll('tbody tr');
+        
+        ths.forEach(th => th.className = ''); 
+        trs.forEach(tr => {
+            Array.from(tr.children).forEach(td => td.style.backgroundColor = '');
+        });
+
+        const selects = document.querySelectorAll('.column-select');
+        selects.forEach(select => {
+            const colorClass = select.getAttribute('data-color');
+            const selectedCol = select.value;
+            
+            select.classList.remove('bg-withdraw', 'bg-deposit', 'bg-account');
+
+            if (selectedCol) {
+                select.classList.add(colorClass);
+
+                const colIndex = headers.indexOf(selectedCol);
+                if (colIndex !== -1) {
+                    const targetTh = table.querySelector(`thead th:nth-child(${colIndex + 1})`);
+                    if(targetTh) targetTh.classList.add(colorClass);
+
+                    trs.forEach(tr => {
+                        const targetTd = tr.querySelector(`td:nth-child(${colIndex + 1})`);
+                        if(targetTd) targetTd.style.backgroundColor = getComputedStyle(document.querySelector('.'+colorClass)).backgroundColor;
+                    });
+                }
+            }
+        });
+    }
+
+    function analyzeData() {
+        const colWithdraw = document.getElementById('colWithdraw').value;
+        const colDeposit = document.getElementById('colDeposit').value;
+        const colAccount = document.getElementById('colAccount').value;
+
+        if (!colWithdraw && !colDeposit) {
+            document.getElementById('step4').style.display = 'none';
+            return;
+        }
+
+        let accountStatsObj = {}; 
+        rawTransactions = {}; 
+        expandedRows.clear();
+        detailSortState = {};
+
+        jsonData.forEach(row => {
+            let withdrawAmt = 0;
+            let depositAmt = 0;
+
+            if (colWithdraw && row[colWithdraw]) {
+                withdrawAmt = parseFloat(String(row[colWithdraw]).replace(/,/g, '')) || 0;
+            }
+            if (colDeposit && row[colDeposit]) {
+                depositAmt = parseFloat(String(row[colDeposit]).replace(/,/g, '')) || 0;
+            }
+
+            withdrawAmt = Math.abs(withdrawAmt); 
+
+            let targetAcc = colAccount ? String(row[colAccount] || "").trim() : "";
+
+            if (targetAcc && targetAcc !== "0") {
+                if (!accountStatsObj[targetAcc]) {
+                    accountStatsObj[targetAcc] = { 
+                        account: targetAcc,
+                        inCount: 0, inTotal: 0, 
+                        outCount: 0, outTotal: 0, 
+                        net: 0
+                    };
+                    rawTransactions[targetAcc] = [];
+                }
+                
+                if (depositAmt > 0) {
+                    accountStatsObj[targetAcc].inCount++;
+                    accountStatsObj[targetAcc].inTotal += depositAmt;
+                }
+                if (withdrawAmt > 0) {
+                    accountStatsObj[targetAcc].outCount++;
+                    accountStatsObj[targetAcc].outTotal += withdrawAmt;
+                }
+
+                if(depositAmt > 0 || withdrawAmt > 0){
+                    rawTransactions[targetAcc].push(row);
+                }
+            }
+        });
+
+        globalAccountStats = Object.values(accountStatsObj).map(data => {
+            data.net = data.inTotal - data.outTotal;
+            return data;
+        });
+
+        currentSort = { key: null, dir: 'none' };
+        resetSortIcons();
+        globalAccountStats.sort((a, b) => (b.inCount + b.outCount) - (a.inCount + a.outCount));
+
+        renderSummaryCards(globalAccountStats);
+        renderColumnCheckboxes();
+        renderResults();
+        document.getElementById('step4').style.display = 'block';
+    }
+
+    function renderSummaryCards(stats) {
+        if (stats.length === 0) {
+            document.getElementById('summaryCards').innerHTML = '';
+            return;
+        }
+
+        let maxInCount = { val: -1, acc: '無' };
+        let maxOutCount = { val: -1, acc: '無' };
+        let maxInTotal = { val: -1, acc: '無' };
+        let maxOutTotal = { val: -1, acc: '無' };
+
+        stats.forEach(s => {
+            if (s.inCount > maxInCount.val) maxInCount = { val: s.inCount, acc: s.account };
+            if (s.outCount > maxOutCount.val) maxOutCount = { val: s.outCount, acc: s.account };
+            if (s.inTotal > maxInTotal.val) maxInTotal = { val: s.inTotal, acc: s.account };
+            if (s.outTotal > maxOutTotal.val) maxOutTotal = { val: s.outTotal, acc: s.account };
+        });
+
+        const cards = [
+            { title: "最高轉入次數", val: maxInCount.val, acc: maxInCount.acc, color: "text-success" },
+            { title: "最高轉出次數", val: maxOutCount.val, acc: maxOutCount.acc, color: "text-danger" },
+            { title: "最高轉入總額", val: formatMoney(maxInTotal.val), acc: maxInTotal.acc, color: "text-success" },
+            { title: "最高轉出總額", val: formatMoney(maxOutTotal.val), acc: maxOutTotal.acc, color: "text-danger" }
+        ];
+
+        let html = '';
+        cards.forEach(c => {
+            html += `
+                <div class="col-md-6 col-lg-3">
+                    <div class="stat-card" onclick="applySearch('${c.acc}')">
+                        <div class="stat-title">${c.title}</div>
+                        <div class="stat-value ${c.color}">${c.val}</div>
+                        <div class="stat-account mt-1">帳號: ${c.acc}</div>
+                    </div>
+                </div>
+            `;
+        });
+        document.getElementById('summaryCards').innerHTML = html;
+    }
+
+    function clearSearch() {
+        const input = document.getElementById('searchAccount');
+        input.value = '';
+        filterTable('resTableAccount', '');
+    }
+
+    function applySearch(account) {
+        expandedRows.forEach(accName => {
+            // Find index by account name
+            const index = globalAccountStats.findIndex(s => s.account === accName);
+            if (index !== -1) {
+                const detailRow = document.getElementById(`detail-${index}`);
+                const btn = document.getElementById(`btn-${index}`);
+                if (detailRow) detailRow.classList.remove('show');
+                if (btn) {
+                    btn.textContent = '+';
+                    btn.classList.remove('collapsed');
+                }
+            }
+        });
+        expandedRows.clear();
+
+        const input = document.getElementById('searchAccount');
+        input.value = account;
+        filterTable('resTableAccount', account);
+        document.getElementById('resTableAccount').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function renderColumnCheckboxes() {
+        const container = document.getElementById('columnCheckboxes');
+        
+        let html = `
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="cb-all" checked onchange="toggleAllColumns()">
+                <label class="form-check-label fw-bold" for="cb-all">全選</label>
+            </div>
+            <div class="vr mx-2"></div>
+        `;
+
+        headers.forEach(h => {
+            html += `
+                <div class="form-check">
+                    <input class="form-check-input column-toggle" type="checkbox" value="${h}" id="cb-${h}" checked onchange="checkSelectAllStatus(); updateDetailColumns()">
+                    <label class="form-check-label" for="cb-${h}">
+                        ${h}
+                    </label>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    function toggleAllColumns() {
+        const selectAllCb = document.getElementById('cb-all');
+        const isChecked = selectAllCb.checked;
+        
+        const toggles = document.querySelectorAll('.column-toggle');
+        toggles.forEach(cb => {
+            cb.checked = isChecked;
+        });
+        updateDetailColumns();
+    }
+
+    function checkSelectAllStatus() {
+        const toggles = document.querySelectorAll('.column-toggle');
+        const checkedToggles = document.querySelectorAll('.column-toggle:checked');
+        const selectAllCb = document.getElementById('cb-all');
+
+        if (checkedToggles.length === toggles.length) {
+            selectAllCb.checked = true;
+        } else {
+            selectAllCb.checked = false;
+        }
+    }
+    
+    function updateDetailColumns() {
+        renderResults();
+    }
+    
+    function getCheckedHeaders() {
+        const checkboxes = document.querySelectorAll('.column-toggle:checked');
+        return Array.from(checkboxes).map(cb => cb.value);
+    }
+
+    function toggleSort(key) {
+        if (currentSort.key !== key) {
+            currentSort.key = key;
+            currentSort.dir = 'asc';
+        } else {
+            if (currentSort.dir === 'none') currentSort.dir = 'asc';
+            else if (currentSort.dir === 'asc') currentSort.dir = 'desc';
+            else if (currentSort.dir === 'desc') currentSort.dir = 'none';
+        }
+
+        updateSortIcons(key, currentSort.dir);
+        sortData();
+        renderResults();
+    }
+
+    function sortData() {
+        if (currentSort.dir === 'none') {
+            globalAccountStats.sort((a, b) => (b.inCount + b.outCount) - (a.inCount + a.outCount));
+            return;
+        }
+
+        globalAccountStats.sort((a, b) => {
+            let valA = a[currentSort.key];
+            let valB = b[currentSort.key];
+
+            if (typeof valA === 'string') valA = valA.toUpperCase();
+            if (typeof valB === 'string') valB = valB.toUpperCase();
+
+            if (valA < valB) return currentSort.dir === 'asc' ? -1 : 1;
+            if (valA > valB) return currentSort.dir === 'asc' ? 1 : -1;
+            return 0;
+        });
+    }
+
+    function updateSortIcons(activeKey, dir) {
+        resetSortIcons();
+        if (dir !== 'none') {
+            const iconSpan = document.getElementById(`sort-icon-${activeKey}`);
+            if (iconSpan) {
+                iconSpan.textContent = dir === 'asc' ? '↑' : '↓';
+                iconSpan.style.color = 'red';
+            }
+        }
+    }
+
+    function resetSortIcons() {
+        const icons = document.querySelectorAll('[id^="sort-icon-"]');
+        icons.forEach(icon => {
+            icon.textContent = '';
+            icon.style.color = '';
+        });
+    }
+
+    function toggleDetailSort(accountIndex, colKey) {
+        const account = globalAccountStats[accountIndex].account;
+        
+        if (!detailSortState[account]) {
+            detailSortState[account] = { key: null, dir: 'none' };
+        }
+        
+        let state = detailSortState[account];
+        
+        if (state.key !== colKey) {
+            state.key = colKey;
+            state.dir = 'asc';
+        } else {
+            if (state.dir === 'none') state.dir = 'asc';
+            else if (state.dir === 'asc') state.dir = 'desc';
+            else if (state.dir === 'desc') state.dir = 'none';
+        }
+
+        sortDetailData(account);
+        expandedRows.add(account); 
+        renderResults();
+    }
+
+    function sortDetailData(account) {
+        const state = detailSortState[account];
+        if (!state || state.dir === 'none') {
+            return; 
+        }
+
+        rawTransactions[account].sort((a, b) => {
+            let valA = a[state.key];
+            let valB = b[state.key];
+
+            let numA = parseFloat(String(valA).replace(/,/g, ''));
+            let numB = parseFloat(String(valB).replace(/,/g, ''));
+
+            if (!isNaN(numA) && !isNaN(numB)) {
+                valA = numA;
+                valB = numB;
+            } else {
+                if (typeof valA === 'string') valA = valA.toUpperCase();
+                if (typeof valB === 'string') valB = valB.toUpperCase();
+            }
+
+            if (valA < valB) return state.dir === 'asc' ? -1 : 1;
+            if (valA > valB) return state.dir === 'asc' ? 1 : -1;
+            return 0;
+        });
+    }
+
+    function renderResults() {
+        const accTbody = document.querySelector('#resTableAccount tbody');
+        accTbody.innerHTML = '';
+        
+        const displayHeaders = getCheckedHeaders();
+        const colWithdraw = document.getElementById('colWithdraw').value;
+        const colDeposit = document.getElementById('colDeposit').value;
+
+        globalAccountStats.forEach((data, index) => {
+            const rowId = `detail-${index}`;
+            const account = data.account;
+            const isExpanded = expandedRows.has(account); 
+            
+            const sortState = detailSortState[account] || { key: null, dir: 'none' };
+            
+            const headerRowHtml = displayHeaders.map(h => {
+                let icon = '';
+                if(sortState.key === h && sortState.dir !== 'none') {
+                    icon = sortState.dir === 'asc' ? '<span style="color:red">↑</span>' : '<span style="color:red">↓</span>';
+                }
+                return `<th class="sortable" onclick="toggleDetailSort(${index}, '${h}')">${h} ${icon}</th>`;
+            }).join('');
+
+            let rowHtml = `
+                <tr class="main-row" onclick="toggleDetails(${index}, '${account}')">
+                    <td class="text-center">
+                        <button class="btn-circle ${isExpanded ? 'collapsed' : ''}" id="btn-${index}">${isExpanded ? '-' : '+'}</button>
+                    </td>
+                    <td>${data.account}</td>
+                    <td>${data.inCount}</td>
+                    <td class="text-success">${formatMoney(data.inTotal)}</td>
+                    <td>${data.outCount}</td>
+                    <td class="text-danger">${formatMoney(data.outTotal)}</td>
+                    <td class="${data.net >=0 ? 'text-success':'text-danger'} fw-bold">${formatMoney(data.net)}</td>
+                </tr>
+            `;
+
+            let detailRows = '';
+            const txList = rawTransactions[data.account] || [];
+            
+            txList.forEach(row => {
+                let isDeposit = false;
+                let isWithdraw = false;
+                let rowClass = "";
+
+                let dAmt = 0; 
+                if(colDeposit && row[colDeposit]) dAmt = parseFloat(String(row[colDeposit]).replace(/,/g, '')) || 0;
+                
+                let wAmt = 0;
+                if(colWithdraw && row[colWithdraw]) wAmt = Math.abs(parseFloat(String(row[colWithdraw]).replace(/,/g, '')) || 0);
+
+                if(dAmt > 0) isDeposit = true;
+                if(wAmt > 0) isWithdraw = true;
+
+                if(isDeposit && !isWithdraw) rowClass = "table-success"; 
+                else if(isWithdraw && !isDeposit) rowClass = "table-warning"; 
+                
+                let tds = displayHeaders.map(h => `<td>${row[h] !== undefined ? row[h] : ''}</td>`).join('');
+                detailRows += `<tr class="${rowClass}">${tds}</tr>`;
+            });
+
+            let detailHtml = `
+                <tr id="${rowId}" class="detail-row ${isExpanded ? 'show' : ''}">
+                    <td colspan="7">
+                        <div class="p-3">
+                            <strong>${data.account} - 交易明細 (${txList.length} 筆)</strong>
+                            <div class="table-responsive mt-2" style="max-height: 300px;">
+                                <table class="table table-bordered detail-table mb-0">
+                                    <thead>
+                                        <tr>${headerRowHtml}</tr>
+                                    </thead>
+                                    <tbody>
+                                        ${detailRows}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            `;
+
+            accTbody.innerHTML += rowHtml + detailHtml;
+        });
+
+        const currentSearch = document.getElementById('searchAccount').value;
+        if(currentSearch) {
+            filterTable('resTableAccount', currentSearch);
+        }
+    }
+
+    // --- 展開/收合功能 ---
+    window.toggleDetails = function(index, account) {
+        const detailRow = document.getElementById(`detail-${index}`);
+        const btn = document.getElementById(`btn-${index}`);
+        
+        if (detailRow.classList.contains('show')) {
+            detailRow.classList.remove('show');
+            btn.textContent = '+';
+            btn.classList.remove('collapsed');
+            expandedRows.delete(account); 
+        } else {
+            detailRow.classList.add('show');
+            btn.textContent = '-';
+            btn.classList.add('collapsed');
+            expandedRows.add(account); 
+        }
+    }
+
+    function formatMoney(num) {
+        if (typeof num === 'string') return num; 
+        return num.toLocaleString('zh-TW', { style: 'currency', currency: 'TWD', minimumFractionDigits: 0 });
+    }
+
+    function filterTable(tableId, query) {
+        const filter = query.toUpperCase();
+        const table = document.getElementById(tableId);
+        const trs = table.getElementsByClassName("main-row");
+        
+        for (let i = 0; i < trs.length; i++) {
+            const tr = trs[i];
+            const detailRowId = tr.getAttribute("onclick").match(/\d+/)[0]; 
+            const detailRow = document.getElementById(`detail-${detailRowId}`);
+            
+            const tdAcc = tr.getElementsByTagName("td")[1];
+            if (tdAcc) {
+                const txtValue = tdAcc.textContent || tdAcc.innerText;
+                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                    tr.style.display = "";
+                } else {
+                    tr.style.display = "none";
+                    if(detailRow) detailRow.classList.remove('show');
+                }
+            }       
+        }
+    }
+</script>
+</body>
+</html>

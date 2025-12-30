@@ -371,7 +371,9 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+			cursor: grab; user-select: none;
         }
+		.sidebar-header:active { cursor: grabbing; }
         .sidebar-body {
             flex: 1;
             overflow-y: auto;
@@ -419,19 +421,157 @@
         }
         .idx-tag:hover { background: #dee2e6; }
 		
+		/* 新增：匯出設定區塊調整，使其可以垂直排列 */
+        .export-settings-container {
+            display: flex;
+            flex-direction: column;
+            margin-right: 15px;
+            font-size: 0.85rem;
+        }
+        .export-row {
+            display: flex;
+            align-items: center;
+        }
+        .result-header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .result-header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .result-header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .export-controls {
+            display: flex;
+            align-items: stretch; /* 確保內容等高 */
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            overflow: hidden; /* 確保圓角 */
+        }
+        .export-group {
+            position: relative; /* 為了讓標題絕對定位 */
+            display: flex;
+            flex-direction: column; /* 改為垂直排列以容納內容 */
+            justify-content: center;
+            padding: 16px 12px 6px 12px; /* 上方預留空間給標題 */
+            border-right: 1px solid #dee2e6;
+            font-size: 0.85rem;
+            min-height: 50px; /* 設定最小高度確保視覺一致 */
+        }
+        .export-group:last-child {
+            border-right: none;
+        }
+		.group-title {
+            position: absolute;
+            top: 2px;
+            left: 8px;
+            font-size: 0.7rem;
+            color: #6c757d;
+            font-weight: bold;
+            line-height: 1;
+        }
+		.group-content-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .export-input-num {
+            width: 50px;
+            padding: 2px 4px;
+            font-size: 0.85rem;
+            border: 1px solid #ced4da;
+            border-radius: 3px;
+            text-align: center;
+        }
+
+        /* 新增：縮小後的小精靈圓圈樣式 */
+        .minimized-sprite {
+            position: fixed;
+            width: 70px; /* 稍微加大以容納文字 */
+            height: 70px;
+            background-color: #0d6efd;
+            color: white;
+            border-radius: 50%;
+            display: none; /* 預設隱藏 */
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-size: 0.75rem;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            cursor: grab; /* 提示可拖曳 */
+            z-index: 1001; 
+            user-select: none;
+            line-height: 1.2;
+            padding: 5px;
+            border: 2px solid #fff;
+            font-weight: bold;
+        }
+		.minimized-sprite:active {
+            cursor: grabbing;
+        }
+        .minimized-sprite:hover {
+            background-color: #0b5ed7;
+            transform: scale(1.05);
+        }
+		
+		.savings-list-container {
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+        .savings-list-item {
+            display: flex;
+            flex-direction: column; /* 改為垂直堆疊 */
+            padding: 10px;
+            border-bottom: 1px solid #f1f1f1;
+            transition: background-color 0.2s;
+        }
+        .savings-list-item:last-child { border-bottom: none; }
+        .savings-list-item:hover { background-color: #f8f9fa; }
+        .savings-row-top { margin-bottom: 4px; }
+        .savings-row-bottom { display: flex; align-items: center; }
+		
+        .savings-info { display: flex; flex-direction: column; }
+        .savings-ip { font-weight: bold; color: #495057; font-size: 0.9rem; }
+        .savings-desc { font-size: 0.8rem; color: #6c757d; margin-top: 2px; }
+        
+        .savings-badge-group { text-align: right; }
+        .savings-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #0f5132;
+            background-color: #d1e7dd;
+            margin-right: 8px; /* 與後方文字保持距離 */
+        }
+		
+		
         @media (min-width: 1600px) {
             .container { margin-left: 340px; }
         }
     </style>
 </head>
 <body>
+<div id="minimizedSprite" class="minimized-sprite">ISP<br>對照與分組</div>
+
 <div class="floating-sidebar" id="ispSidebar" style="display:none;">
-    <div class="sidebar-header">
+    <div class="sidebar-header" id="sidebarHeader">
         <span>ISP 對照與分組</span>
-        <button type="button" class="btn-close small" onclick="document.getElementById('ispSidebar').style.display='none'" aria-label="Close">×</button>
+        <button type="button" class="btn-close small" onclick="toggleSidebar(false)" aria-label="Close">×</button>
     </div>
     <div class="sidebar-body" id="ispSidebarContent">
-        </div>
+    </div>
 </div>
 
 <div class="container">
@@ -562,26 +702,46 @@
     </div>
 
     <div class="card result-section" id="resultSection">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <div class="d-flex align-items-center">
-				<span>3. 處理結果預覽</span>
-				<span id="currentApiStatus" class="small text-muted ms-3" style="border-left: 1px solid #ccc; padding-left: 10px;">
-					等待處理中...
-				</span>
+        <div class="card-header result-header-container">
+            <div class="result-header-left">
+                <div class="d-flex align-items-center">
+                    <span class="fw-bold">3. 處理結果預覽</span>
+                    <span id="currentApiStatus" class="small text-muted ms-3" style="border-left: 1px solid #ccc; padding-left: 10px;">
+                        等待處理中...
+                    </span>
+                </div>
             </div>
-			<div class="d-flex align-items-center">
-				<div class="me-3 d-flex align-items-center" style="margin-right: 10px;">
-					<span class="text-danger me-2" style="font-size: 0.75rem; font-weight: bold;">(設定僅影響匯出結果)</span>
-					<div class="form-check form-check-inline m-0">
-						<input class="form-check-input" type="checkbox" id="chkIpv6Pad" checked>
-						<label class="form-check-label" style="font-size: 0.85rem;" for="chkIpv6Pad">IPV6補0</label>
-					</div>
-					<div class="form-check form-check-inline m-0">
-						<input class="form-check-input" type="checkbox" id="chkIpv6Upper" checked>
-						<label class="form-check-label" style="font-size: 0.85rem;" for="chkIpv6Upper">IPV6大寫</label>
-					</div>
-				</div>
-				<button type="button" class="btn btn-success btn-sm me-2" onclick="exportFile('xlsx')">下載 .xlsx</button>
+
+            <div class="result-header-right">
+                <div class="export-controls">
+                    <div class="export-group">
+                        <span class="group-title">IPv6</span>
+                        <div class="group-content-row">
+                            <div class="form-check form-check-inline m-0 p-0">
+                                <input class="form-check-input" type="checkbox" id="chkIpv6Pad" checked>
+                                <label class="form-check-label" for="chkIpv6Pad">補0</label>
+                            </div>
+                            <div class="form-check form-check-inline m-0 p-0">
+                                <input class="form-check-input" type="checkbox" id="chkIpv6Upper" checked>
+                                <label class="form-check-label" for="chkIpv6Upper">大寫</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="export-group">
+                        <span class="group-title">檔案分割</span>
+                        <div class="group-content-row">
+                            <div class="form-check form-check-inline m-0 p-0">
+                                <input class="form-check-input" type="checkbox" id="chkSplitFile" checked>
+                                <label class="form-check-label me-1" for="chkSplitFile">以</label>
+                            </div>
+                            <input type="number" id="txtSplitBase" class="export-input-num" value="200" min="1" style="margin-bottom: 10px;">
+                            <span class="ms-1" style="margin-bottom: 10px;">筆為基數製檔</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn-success btn-sm" onclick="exportFile('xlsx')">下載 .xlsx</button>
                 <button type="button" class="btn btn-secondary btn-sm" onclick="exportFile('csv')">下載 .csv</button>
             </div>
         </div>
@@ -677,6 +837,7 @@
 <div id="toastNotify" class="toast-notify"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" integrity="sha512-r22gChDnGvBylk90+2e/ycr3RVrDi8DIOkIGNhJlKfuyQM4tIRAI062MaV8sfjQKYVGjOBaZBOA87z+IhZE9DA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://raw.githack.com/SheetJS/js-codepage/master/dist/cptable.full.js" integrity="sha512-DbGpYRMWqvjKfwmyVt7VO+f+jdsTr10lTFC/MSlDO0b91F7CNoYOMu/91BQr48/RQY3pLqN8cz7fD2WwmnjqCw==" crossorigin="anonymous"></script>
 <script>
     let rawSheetData = []; 
 	let rawData = [];      
@@ -691,7 +852,65 @@
     let savingsData = null; 
     let currentProcessingMode = 'original';
 	let ispGroups = {};
-	const ipCache = {}; 
+	let ipCache = {}; 
+	
+	// --- 彈珠物理變數 ---
+    let spriteState = {
+        x: 0, y: 0,
+        vx: 0, vy: 0,        // 初始速度設為 0
+        width: 70, height: 70,
+        rafId: null,
+        isBouncing: false,
+        lastMouseX: 0,
+        lastMouseY: 0,
+        friction: 0.99       // 摩擦係數 (0.9 ~ 0.99，越小停越快)
+    };
+
+    // --- 物理運動迴圈 (加入摩擦力) ---
+    function runSpritePhysics() {
+        if (!spriteState.isBouncing) return;
+
+        const el = document.getElementById('minimizedSprite');
+        const winW = window.innerWidth;
+        const winH = window.innerHeight;
+
+        // 1. 套用摩擦力 (讓速度漸漸變慢)
+        spriteState.vx *= spriteState.friction;
+        spriteState.vy *= spriteState.friction;
+
+        // 2. 更新位置
+        spriteState.x += spriteState.vx;
+        spriteState.y += spriteState.vy;
+
+        // 3. 邊界碰撞反彈 (反彈時稍微損耗更多能量 * 0.8)
+        if (spriteState.x + spriteState.width >= winW) {
+            spriteState.x = winW - spriteState.width;
+            spriteState.vx = -spriteState.vx * 0.8;
+        } else if (spriteState.x <= 0) {
+            spriteState.x = 0;
+            spriteState.vx = -spriteState.vx * 0.8;
+        }
+
+        if (spriteState.y + spriteState.height >= winH) {
+            spriteState.y = winH - spriteState.height;
+            spriteState.vy = -spriteState.vy * 0.8;
+        } else if (spriteState.y <= 0) {
+            spriteState.y = 0;
+            spriteState.vy = -spriteState.vy * 0.8;
+        }
+
+        // 4. [關鍵] 停止判定：如果速度極慢，就直接停下來，不要維持均速
+        if (Math.abs(spriteState.vx) < 0.1 && Math.abs(spriteState.vy) < 0.1) {
+            spriteState.isBouncing = false;
+            cancelAnimationFrame(spriteState.rafId);
+            return;
+        }
+
+        el.style.left = spriteState.x + 'px';
+        el.style.top = spriteState.y + 'px';
+
+        spriteState.rafId = requestAnimationFrame(runSpritePhysics);
+    }
 	
     function escapeHtml(text) {
         if (text === null || text === undefined) return '';
@@ -737,7 +956,6 @@
         }
     };
 
-    // --- 初始化監聽 ---
     dom.dropZone.addEventListener('click', () => dom.fileInput.click());
     dom.dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dom.dropZone.style.backgroundColor = '#e9ecef'; });
     dom.dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); dom.dropZone.style.backgroundColor = '#fff'; });
@@ -749,7 +967,7 @@
             handleFile(currentFile);
         }
     });
-    // 點擊時清空 value，確保重複選擇同檔名可觸發 change
+	
     dom.fileInput.addEventListener('click', () => { dom.fileInput.value = ''; });
     dom.fileInput.addEventListener('change', (e) => {
         if (e.target.files.length) {
@@ -759,20 +977,15 @@
     });
     dom.encodingSelect.addEventListener('change', () => { if(currentFile) handleFile(currentFile); });
     
-    // 欄位選擇變更 -> 更新 Timeline & Stats & 若有已處理資料則更新它 (即時渲染)
     Object.values(dom.selects).forEach(el => {
         el.addEventListener('change', function() {
             updateSelectStyle(this);
-            // 當欄位變更時，立即重新計算預覽
             updateTimelineAndStats();
             
-            // 如果已經有處理結果 (表格已顯示)，且變更是影響分組的 (如 Port)，則嘗試即時重新處理
-            // 若欄位選擇不完整，則清空表格
             if (isProcessed) {
                 if (dom.selects.ip.value && dom.selects.time.value) {
                     runProcess(currentProcessingMode === 'moneySaver');
                 } else {
-                    // 欄位不完整，清空結果
                     isProcessed = false;
                     dom.resultBody.innerHTML = '';
                     dom.resultSection.style.display = 'none';
@@ -785,8 +998,6 @@
 
     dom.modeFit.addEventListener('change', () => generateTimeline());
     dom.modeScale.addEventListener('change', () => generateTimeline());
-
-    // 標題列 Checkbox 切換 -> 重新解析資料，並保持當前處理狀態 (即時渲染)
     dom.headerCheck.addEventListener('change', function() {
         if (currentFile && rawSheetData.length > 0) {
             const wasResultVisible = dom.resultSection.style.display !== 'none';
@@ -901,7 +1112,6 @@
 		});
 	}
 
-    // --- File Handling Logic ---
     function handleFile(file, retainResults = false) {
         if (!retainResults) {
             rawSheetData = [];
@@ -1127,7 +1337,7 @@
         let originalCount = 0;
         let mergedCount = 0;
         let mergedGroups = []; 
-        let detailsHtml = '<ul class="mb-0 pl-3">';
+        let detailsHtml = '<ul class="mb-0" style="padding-left: 0; list-style: none;">';
 
         for (const [key, items] of Object.entries(groups)) {
             originalCount += items.length;
@@ -1182,10 +1392,20 @@
             totalMergedMinutes += mergedMins;
 
             if (items.length > merged.length) {
-                detailsHtml += `<li><strong>${key}</strong>: 原始 ${items.length} 筆整合為 ${merged.length} 筆 (節省 ${Math.round(originalMins - mergedMins)} 分鐘)</li>`;
+                const savedMins = Math.round(originalMins - mergedMins);
+                detailsHtml += `
+                    <li class="savings-list-item">
+                        <div class="savings-row-top">
+                            <span class="savings-ip">${escapeHtml(key)}</span>
+                        </div>
+                        <div class="savings-row-bottom">
+                            <span class="savings-badge">省 ${savedMins} 分鐘</span>
+                            <span class="savings-desc">原始 ${items.length} 筆 &rarr; 合併後 ${merged.length} 筆</span>
+                        </div>
+                    </li>`;
             }
         }
-        detailsHtml += '</ul>';
+        detailsHtml = `<ul class="savings-list-container">${detailsHtml}</ul>`;
 
         const savedMinutes = Math.round(totalOriginalMinutes - totalMergedMinutes);
         const reducedRequests = originalCount - mergedCount;
@@ -1448,15 +1668,19 @@
         });
     }
 
-    // --- 原始處理 ---
     dom.btnProcess.addEventListener('click', async () => {
         runProcess(false);
     });
 
-    // --- 省錢處理 ---
     dom.btnMoneyProcess.addEventListener('click', async () => {
         runProcess(true);
     });
+	
+    function formatTimeNoMs(dateObj) {
+        if (!dateObj || isNaN(dateObj.getTime())) return "";
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${dateObj.getFullYear()}/${pad(dateObj.getMonth()+1)}/${pad(dateObj.getDate())} ${pad(dateObj.getHours())}:${pad(dateObj.getMinutes())}:${pad(dateObj.getSeconds())}`;
+    }
 
     async function runProcess(isMoneySaving) {
         currentProcessingMode = isMoneySaving ? 'moneySaver' : 'original';
@@ -1538,7 +1762,11 @@
                 tPlusVisual = formatDateForDisplay(dEnd);
                 
                 originalTimeDisplay = `<div class="original-time-stack">` + 
-                    item.originalTimes.map(t => `<span class="tag-original">${escapeHtml(t)}</span>`).join('') + 
+                    item.originalTimes.map(t => {
+                        let d = parseFlexibleDate(t);
+                        let displayT = d ? formatTimeNoMs(d) : t;
+                        return `<span class="tag-original">${escapeHtml(displayT)}</span>`;
+                    }).join('') + 
                     `</div>`;
             } else {
                 tMinus = item.tMinus;
@@ -1553,7 +1781,11 @@
                 } else {
                     tMinusVisual = ""; tPlusVisual = "";
                 }
-                originalTimeDisplay = `<div><span class="tag-original">原始時間：${escapeHtml(item.originalTimeStr)}</span></div>`;
+				
+				let dOriginal = parseFlexibleDate(item.originalTimeStr);
+                let cleanOriginalTime = dOriginal ? formatTimeNoMs(dOriginal) : item.originalTimeStr;
+				
+                originalTimeDisplay = `<div><span class="tag-original">原始時間：${escapeHtml(cleanOriginalTime)}</span></div>`;
             }
 
             let ispResult = { original: "無效IP", display: "格式錯誤", isMatched: false, source: 'none' };
@@ -1573,8 +1805,8 @@
 			const rawKey = ispResult.original || "Unknown";
             if (!ispGroups[rawKey]) {
                 ispGroups[rawKey] = {
-                    display: ispResult.display, // 預設使用 translateISP 判斷出的中文
-                    isError: !ispResult.success && ispResult.original !== "Unknown" && !ispResult.isMatched, // 判斷是否為錯誤類
+                    display: ispResult.display, 
+                    isError: !ispResult.success && ispResult.original !== "Unknown" && !ispResult.isMatched, 
                     indices: []
                 };
             }
@@ -1630,7 +1862,19 @@
         updateRowIndices();
 
         renderSidebar(); 
-        document.getElementById('ispSidebar').style.display = 'flex';
+
+		// --- 重新渲染時，確保隱藏彈珠並停止物理運算 ---
+		// 1. 停止物理動畫 (如果有定義 spriteState)
+		if (typeof spriteState !== 'undefined') {
+			spriteState.isBouncing = false;
+			if (spriteState.rafId) cancelAnimationFrame(spriteState.rafId);
+		}
+
+		// 2. 確保彈珠消失
+		document.getElementById('minimizedSprite').style.display = 'none';
+
+		// 3. 顯示側邊欄
+		document.getElementById('ispSidebar').style.display = 'flex';
 
         dom.statusEl.innerText = '處理完成';
         dom.btnProcess.disabled = false;
@@ -1701,56 +1945,97 @@
     }
 
     window.exportFile = function(type) {
-		const rawData = window.finalProcessedData || [];
-		if (rawData.length === 0) { alert("無資料可匯出"); return; }
-		
-		// 取得設定狀態
-		const needPad = document.getElementById('chkIpv6Pad').checked;
-		const needUpper = document.getElementById('chkIpv6Upper').checked;
-		const hasPort = dom.selects.port.value !== ""; 
-		const exportData = rawData.map(row => {
-			let newRow = Object.assign({}, row);
-			let ipStr = newRow['IP:Port'];
+        const rawData = window.finalProcessedData || [];
+        if (rawData.length === 0) { alert("無資料可匯出"); return; }
+        
+        const needPad = document.getElementById('chkIpv6Pad').checked;
+        const needUpper = document.getElementById('chkIpv6Upper').checked;
+        const hasPort = dom.selects.port.value !== ""; 
+        const needSplit = document.getElementById('chkSplitFile').checked;
+        const splitBaseStr = document.getElementById('txtSplitBase').value;
+        let splitBase = parseInt(splitBaseStr);
+        if (isNaN(splitBase) || splitBase < 1) splitBase = 200; 
 
-			// 只有當字串包含冒號 (代表可能是 IPv6) 時才進行處理
-			if (ipStr && ipStr.indexOf(':') > -1) {
-				let parts = ipStr.split(':');
-				
-				// 分離 IP 與 Port (如果系統設定有 Port，則最後一段視為 Port)
-				let ipSegments = hasPort ? parts.slice(0, -1) : parts;
-				let portSegment = hasPort ? parts[parts.length - 1] : null;
+        const processedData = rawData.map(row => {
+            let newRow = Object.assign({}, row);
+            let ipStr = newRow['IP:Port'];
 
-				// 遍歷每個區段，如果是空字串(::的情況)則不動，否則補0
-				ipSegments = ipSegments.map(seg => {
-					// 略過空字串 (::) 或包含點的 (IPv4)
-					if (seg.length === 0 || seg.includes('.')) return seg;
-					
-					let newSeg = seg;
-					if (needPad) {
-						newSeg = newSeg.padStart(4, '0');
-					}
-					if (needUpper) {
-						newSeg = newSeg.toUpperCase();
-					}
-					return newSeg;
-				});
+            if (ipStr && ipStr.indexOf(':') > -1) {
+                let parts = ipStr.split(':');
+                let ipSegments = hasPort ? parts.slice(0, -1) : parts;
+                let portSegment = hasPort ? parts[parts.length - 1] : null;
 
-				// 重新組合
-				let formattedIP = ipSegments.join(':');
-				if (hasPort && portSegment) {
-					formattedIP += ':' + portSegment;
-				}
-				
-				newRow['IP:Port'] = formattedIP;
-			}
-			return newRow;
-		});
-		
-		const ws = XLSX.utils.json_to_sheet(exportData, { skipHeader: true });
-		const wb = XLSX.utils.book_new();
-		XLSX.utils.book_append_sheet(wb, ws, "Result");
-		XLSX.writeFile(wb, `result_${Date.now()}.${type}`, { bookType: type === 'csv' ? 'csv' : 'xlsx' });
-	}
+                ipSegments = ipSegments.map(seg => {
+                    if (seg.length === 0 || seg.includes('.')) return seg;
+                    let newSeg = seg;
+                    if (needPad) newSeg = newSeg.padStart(4, '0');
+                    if (needUpper) newSeg = newSeg.toUpperCase();
+                    return newSeg;
+                });
+
+                let formattedIP = ipSegments.join(':');
+                if (hasPort && portSegment) formattedIP += ':' + portSegment;
+                newRow['IP:Port'] = formattedIP;
+            }
+            return newRow;
+        });
+        
+        const baseName = `result_${Date.now()}`;
+        
+        const downloadAnsi = (ws, filename) => {
+            // 產生 CSV 字串
+            const csv = XLSX.utils.sheet_to_csv(ws);
+            // 使用 cptable 將字串轉為 Big5 (CodePage 950) 的 Uint8Array
+            const data = (typeof cptable !== 'undefined') 
+                         ? cptable.utils.encode(950, csv) 
+                         : new TextEncoder().encode(csv); // 若庫未載入則退回 UTF-8
+            // 建立 Blob 並觸發下載
+			const blob = new Blob([new Uint8Array(data)], { type: "application/octet-stream" });
+            // const blob = new Blob([data], { type: "text/csv;charset=big5" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        };
+
+        if (needSplit && processedData.length > splitBase) {
+            let partCount = 0;
+            for (let i = 0; i < processedData.length; i += splitBase) {
+                partCount++;
+                const chunk = processedData.slice(i, i + splitBase);
+                const ws_chunk = XLSX.utils.json_to_sheet(chunk, { skipHeader: true }); 
+                
+                setTimeout(() => {
+                    if (type === 'csv') {
+                        // 若是 CSV，呼叫自定義 ANSI 下載
+                        downloadAnsi(ws_chunk, `${baseName}_part${partCount}.csv`);
+                    } else {
+                        // 若是 XLSX，維持原樣
+                        const wb = XLSX.utils.book_new();
+                        XLSX.utils.book_append_sheet(wb, ws_chunk, "Result");
+                        XLSX.writeFile(wb, `${baseName}_part${partCount}.xlsx`, { bookType: 'xlsx' });
+                    }
+                }, partCount * 500);
+            }
+            showToast(`已開始下載 ${partCount} 個分割檔案`);
+        } else {
+            const ws = XLSX.utils.json_to_sheet(processedData, { skipHeader: true }); 
+            
+            if (type === 'csv') {
+                // 若是 CSV，呼叫自定義 ANSI 下載
+                downloadAnsi(ws, `${baseName}.csv`);
+            } else {
+                // 若是 XLSX，維持原樣
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Result");
+                XLSX.writeFile(wb, `${baseName}.${type}`, { bookType: 'xlsx' });
+            }
+        }
+    }
 	
     dom.btnPause.addEventListener('click', function() {
         isPaused = !isPaused;
@@ -1767,12 +2052,10 @@
     document.getElementById('btnHelp').addEventListener('click', () => helpModal.style.display = 'flex');
     helpModal.addEventListener('click', () => helpModal.style.display = 'none');
 	
-	// === 新增函式：渲染側邊懸浮窗 ===
     function renderSidebar() {
         const container = document.getElementById('ispSidebarContent');
         container.innerHTML = '';
 
-        // 將群組排序：錯誤的放前面，其餘依名稱排序
         const sortedKeys = Object.keys(ispGroups).sort((a, b) => {
             if (ispGroups[a].isError && !ispGroups[b].isError) return -1;
             if (!ispGroups[a].isError && ispGroups[b].isError) return 1;
@@ -1791,16 +2074,10 @@
             div.className = `isp-group-item ${isErrorClass}`;
             
             let tagsHtml = '';
-            const maxTags = 5000;
-            group.indices.slice(0, maxTags).forEach(idx => {
+			group.indices.forEach(idx => {
                 tagsHtml += `<span class="idx-tag" onclick="highlightRow(${idx})">${idx + 1}</span>`;
             });
-            if (group.indices.length > maxTags) {
-                tagsHtml += `<span class="idx-tag">...共${group.indices.length}筆</span>`;
-            }
 
-            // 處理 ERROR 值的說明
-            // 如果 rawKey 是 API 錯誤訊息，這欄位允許使用者自訂為 "查詢失敗" 或其他備註
             div.innerHTML = `
                 <div class="isp-raw-name" title="${escapeHtml(rawKey)}">API: ${escapeHtml(rawKey)}</div>
                 <input type="text" class="isp-edit-input" 
@@ -1813,7 +2090,6 @@
         });
     }
 
-    // === 新增函式：即時更新 ISP 名稱 ===
     window.updateGlobalIspName = function(rawKey, newName) {
         if (!ispGroups[rawKey]) return;
 
@@ -1823,7 +2099,6 @@
         const resultBody = document.getElementById('resultBody');
         
         indices.forEach(rowIndex => {
-            // 確認該列是否存在
             if (resultBody.rows[rowIndex]) {
                 const row = resultBody.rows[rowIndex];
                 const cell = row.cells[2];
@@ -1831,9 +2106,6 @@
                 if (convertedSpan) {
                     convertedSpan.innerText = `轉換：${newName}`;
                 } else {
-                    // 如果原本沒有轉換結構 (例如純錯誤)，則強制加上
-                    // 但通常 renderIspCellHtml 會生成 .converted-data
-                    // 若是 "Error" 原本可能沒有 .converted-data，這裡做個防呆
                      cell.innerHTML = cell.innerHTML.replace(/>[^<]+<\/div>$/, `>${escapeHtml(newName)}</div>`); 
                 }
             }
@@ -1852,6 +2124,157 @@
             setTimeout(() => { row.style.backgroundColor = ''; }, 2000);
         }
     };
+    
+    const ispSidebar = document.getElementById('ispSidebar');
+    const minimizedSprite = document.getElementById('minimizedSprite');
+    const sidebarHeader = document.getElementById('sidebarHeader');
+
+    window.toggleSidebar = function(show) {
+        if (show) {
+            // 開啟側邊欄：停止彈射，隱藏圓圈
+            spriteState.isBouncing = false;
+            if (spriteState.rafId) cancelAnimationFrame(spriteState.rafId);
+
+            const rect = minimizedSprite.getBoundingClientRect();
+            minimizedSprite.style.display = 'none';
+            ispSidebar.style.display = 'flex';
+            ispSidebar.style.left = rect.left + 'px';
+            ispSidebar.style.top = rect.top + 'px';
+            ensureInViewport(ispSidebar);
+            
+        } else {
+            // 關閉側邊欄（顯示小圓圈）：設定初始位置並開始彈射
+            const rect = ispSidebar.getBoundingClientRect();
+            ispSidebar.style.display = 'none';
+            minimizedSprite.style.display = 'flex';
+            
+            // 同步位置變數
+            spriteState.x = rect.left;
+            spriteState.y = rect.top;
+            
+            // 給予一個隨機的初始速度 (讓它噴出去)
+            spriteState.vx = 0;
+            spriteState.vy = 0;
+            
+            ensureInViewport(minimizedSprite);
+            
+            // 雖然速度是 0 還是可以呼叫一下 update 位置，但不啟動迴圈以節省資源
+            minimizedSprite.style.left = spriteState.x + 'px';
+            minimizedSprite.style.top = spriteState.y + 'px';
+        }
+    };
+
+    let isDraggingSprite = false;
+    minimizedSprite.addEventListener('click', function(e) {
+        if (!isDraggingSprite) {
+            toggleSidebar(true);
+        }
+        isDraggingSprite = false; 
+    });
+
+    function makeDraggable(element, handle, isSprite = false) {
+        let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+        let isDragStarted = false;
+
+        handle.onmousedown = dragMouseDown;
+
+        function dragMouseDown(e) {
+            e = e || window.event;
+            // 允許右鍵或中鍵操作不觸發拖曳(選擇性)，這裡維持原樣只擋非左鍵
+            if (e.button !== 0) return;
+            
+            e.preventDefault();
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            
+            if (isSprite) {
+                spriteState.isBouncing = false;
+                if (spriteState.rafId) cancelAnimationFrame(spriteState.rafId);
+                // 記錄抓取時的滑鼠位置，用於計算投擲速度
+                spriteState.lastMouseX = e.clientX;
+                spriteState.lastMouseY = e.clientY;
+            }
+
+            isDragStarted = false;
+            document.onmouseup = closeDragElement;
+            document.onmousemove = elementDrag;
+        }
+
+        function elementDrag(e) {
+            e = e || window.event;
+            e.preventDefault();
+            
+            isDragStarted = true;
+            if (isSprite) {
+                isDraggingSprite = true;
+                // --- [修改] 計算投擲速度 (當前位置 - 上次位置) ---
+                spriteState.vx = e.clientX - spriteState.lastMouseX;
+                spriteState.vy = e.clientY - spriteState.lastMouseY;
+                spriteState.lastMouseX = e.clientX;
+                spriteState.lastMouseY = e.clientY;
+            }
+
+            pos1 = pos3 - e.clientX;
+            pos2 = pos4 - e.clientY;
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            
+            const newTop = (element.offsetTop - pos2);
+            const newLeft = (element.offsetLeft - pos1);
+
+            element.style.top = newTop + "px";
+            element.style.left = newLeft + "px";
+            
+            // 如果是 Sprite，同步更新物理位置變數，避免放開瞬間跳動
+            if (isSprite) {
+                spriteState.x = newLeft;
+                spriteState.y = newTop;
+            }
+        }
+
+        function closeDragElement() {
+            document.onmouseup = null;
+            document.onmousemove = null;
+            
+            // --- 放開滑鼠後的物理行為 ---
+            if (isSprite && isDragStarted) {
+                // 限制最大投擲速度
+                spriteState.vx = Math.max(Math.min(spriteState.vx, 20), -20);
+                spriteState.vy = Math.max(Math.min(spriteState.vy, 20), -20);
+                
+                // 只有當速度夠快時(有甩動)，才啟動物理動畫
+                if (Math.abs(spriteState.vx) > 1 || Math.abs(spriteState.vy) > 1) {
+                    spriteState.isBouncing = true;
+                    runSpritePhysics();
+                } else {
+                    // 沒甩動則靜止
+                    spriteState.vx = 0;
+                    spriteState.vy = 0;
+                    spriteState.isBouncing = false;
+                }
+            }
+        }
+    }
+
+    makeDraggable(ispSidebar, sidebarHeader); 
+    makeDraggable(minimizedSprite, minimizedSprite, true);
+
+    function ensureInViewport(el) {
+        const rect = el.getBoundingClientRect();
+        const winW = window.innerWidth;
+        const winH = window.innerHeight;
+        
+        let newLeft = rect.left;
+        let newTop = rect.top;
+
+        if (newLeft < 0) newLeft = 10;
+        if (newLeft + 50 > winW) newLeft = winW - 100;
+        if (newTop < 0) newTop = 10;
+        if (newTop + 50 > winH) newTop = winH - 100;
+
+        el.style.left = newLeft + 'px';
+        el.style.top = newTop + 'px';
+    }
 </script>
 </body>
 </html>

@@ -346,9 +346,93 @@
             flex-direction: column;
             gap: 2px;
         }
+		
+        .floating-sidebar {
+            position: fixed;
+            top: 80px;
+            left: 20px;
+            width: 300px;
+            max-height: calc(100vh - 100px);
+            background: #fff;
+            border: 1px solid #dee2e6;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: transform 0.3s;
+        }
+        .sidebar-header {
+            padding: 10px 15px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sidebar-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            font-size: 0.85rem;
+        }
+        .isp-group-item {
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 8px;
+            margin-bottom: 10px;
+            background: #fff;
+        }
+        .isp-group-item.is-error {
+            border-color: #f5c6cb;
+            background-color: #f8d7da;
+        }
+        .isp-raw-name {
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 4px;
+            word-break: break-all;
+        }
+        .isp-edit-input {
+            width: 100%;
+            padding: 4px;
+            border: 1px solid #ced4da;
+            border-radius: 3px;
+            margin-bottom: 6px;
+        }
+        .tag-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 3px;
+			max-height: 110px; 
+            overflow-y: auto;
+        }
+        .idx-tag {
+            background: #e9ecef;
+            color: #495057;
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+        .idx-tag:hover { background: #dee2e6; }
+		
+        @media (min-width: 1600px) {
+            .container { margin-left: 340px; }
+        }
     </style>
 </head>
 <body>
+<div class="floating-sidebar" id="ispSidebar" style="display:none;">
+    <div class="sidebar-header">
+        <span>ISP 對照與分組</span>
+        <button type="button" class="btn-close small" onclick="document.getElementById('ispSidebar').style.display='none'" aria-label="Close">×</button>
+    </div>
+    <div class="sidebar-body" id="ispSidebarContent">
+        </div>
+</div>
 
 <div class="container">
     <div class="d-flex align-items-center mb-4">
@@ -547,15 +631,27 @@
             <li><strong>檢視模式：</strong>預設為「分鐘刻度」模式，可左右捲動查看細節；亦可切換至「適應寬度」查看整體分佈。</li>
             <li><strong>省錢模式分析：</strong>系統會自動計算若將重疊時間合併查詢，預計可節省的查詢次數與時間成本。</li>
         </ul>
+		
+		<div class="help-section-title">3. 處理與 ISP 編輯功能 <span style="color:red; font-size:0.8em;">(NEW)</span></div>
+        <ul class="help-list">
+            <li><strong>ISP 懸浮窗：</strong>頁面左側會顯示所有判斷出的 ISP 列表。</li>
+            <li><strong>即時編輯：</strong>若 API 回傳的名稱不符合需求，或顯示為 Error，您可在左側輸入框直接修改中文名稱，右側表格與匯出檔案將即時更新。</li>
+            <li><strong>Tag 導航：</strong>點擊懸浮窗內的數字標籤，可快速捲動至該筆資料。</li>
+        </ul>
 
-        <div class="help-section-title">3. 查詢處理</div>
+        <div class="help-section-title">4. 匯出設定 <span style="color:red; font-size:0.8em;">(NEW)</span></div>
+        <ul class="help-list">
+            <li><strong>IPV6 格式化：</strong>在下載按鈕旁可勾選「IPV6補0」與「IPV6大寫」，此設定僅影響匯出的 Excel/CSV 內容，不影響網頁顯示。</li>
+        </ul>
+
+        <div class="help-section-title">5. 查詢處理</div>
         <ul class="help-list">
             <li><strong>原始處理：</strong>針對每一筆原始資料，逐一進行 API 查詢，不進行合併。</li>
             <li><strong>省錢處理：</strong>根據分析結果，將重疊的時間區段自動合併為單一筆查詢，大幅減少 API 呼叫次數。結果表格會顯示合併後的起訖時間，並標註合併筆數。</li>
             <li><strong>暫停功能：</strong>處理過程中可隨時暫停與繼續，避免誤操作或網路不穩。</li>
         </ul>
 
-        <div class="help-section-title">4. 結果輸出</div>
+        <div class="help-section-title">6. 結果輸出</div>
         <ul class="help-list">
             <li><strong>操作功能：</strong>可針對單筆結果進行「重呼」(重新查詢) 或「刪除」該筆資料。</li>
             <li><strong>匯出檔案：</strong>支援下載 .xlsx 或 .csv 格式。省錢模式下，匯出的備註欄位統一標示為「通訊使用者資料」，與原始處理一致。</li>
@@ -582,7 +678,6 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" integrity="sha512-r22gChDnGvBylk90+2e/ycr3RVrDi8DIOkIGNhJlKfuyQM4tIRAI062MaV8sfjQKYVGjOBaZBOA87z+IhZE9DA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
-	// 全域變數
     let rawSheetData = []; 
 	let rawData = [];      
     let headers = [];
@@ -595,6 +690,7 @@
     let timelineDataCache = []; 
     let savingsData = null; 
     let currentProcessingMode = 'original';
+	let ispGroups = {};
 	const ipCache = {}; 
 	
     function escapeHtml(text) {
@@ -607,7 +703,6 @@
             .replace(/'/g, "&#039;");
     }
 
-    // DOM 快取
     const dom = {
         dropZone: document.getElementById('dropZone'),
         fileNameDisplay: document.getElementById('fileNameDisplay'),
@@ -727,18 +822,13 @@
             ? `https://ipwho.is/${safeIp}` 
             : `http://ip-api.com/json/${safeIp}`;
         
-        // 針對 source, apiRawValue, display 進行 HTML Escape
         const safeSource = escapeHtml(ispResult.source);
         const linkIcon = `<a href="${linkUrl}" target="_blank" class="link-icon" title="查看來源資料 (${safeSource})" type="button">🔗</a>`;
         const apiRawValue = escapeHtml(ispResult.original);
         const displayValue = escapeHtml(ispResult.display);
-
-        if (ispResult.isMatched) {
-            return `<div><span class="original-data">API：${apiRawValue}</span></div>
-                    <div><span class="converted-data">轉換：${displayValue}</span></div>${linkIcon}`;
-        } else {
-            return `<div style="font-weight:bold;">${apiRawValue}</div>${linkIcon}`;
-        }
+        
+        return `<div><span class="original-data">API：${apiRawValue}</span></div>
+                <div><span class="converted-data">轉換：${displayValue}</span></div>${linkIcon}`;
     }
 
 	async function retryRow(btn, ip) {
@@ -1289,10 +1379,9 @@
                 const startPct = ((item.tMinusObj.getTime() - startTime) / totalDuration) * 100;
                 const widthPct = ((item.tPlusObj.getTime() - item.tMinusObj.getTime()) / totalDuration) * 100;
                 const centerPct = ((item.timeObj.getTime() - startTime) / totalDuration) * 100;
-
                 const tooltipText = `匯入時間：${fmt(item.timeObj)}\n時間區間：${fmt(item.tMinusObj)} ~ ${fmt(item.tPlusObj)}\n重複時段：無`;
-
                 const bar = document.createElement('div');
+				
                 bar.className = 'tl-bar';
                 bar.style.left = `${startPct}%`;
                 bar.style.width = `${widthPct}%`;
@@ -1309,13 +1398,12 @@
             overlaps.forEach(ov => {
                 const startPct = ((ov.start - startTime) / totalDuration) * 100;
                 const widthPct = ((ov.end - ov.start) / totalDuration) * 100;
-                
                 const unionStartStr = fmt(new Date(ov.unionStart));
                 const unionEndStr = fmt(new Date(ov.unionEnd));
                 const ovTooltip = `匯入時間：(多筆重疊)\n時間區間：${unionStartStr} ~ ${unionEndStr}\n重複時段：${unionStartStr} ~ ${unionEndStr}`;
-
                 const ovBar = document.createElement('div');
-                ovBar.className = 'tl-overlap';
+                
+				ovBar.className = 'tl-overlap';
                 ovBar.style.left = `${startPct}%`;
                 ovBar.style.width = `${widthPct}%`;
                 ovBar.title = ovTooltip;
@@ -1392,6 +1480,9 @@
         dom.resultSection.style.display = 'block';
         dom.resultBody.innerHTML = '';
         
+		ispGroups = {}; 
+        document.getElementById('ispSidebar').style.display = 'none'; 
+		
         let exportData = [];
         window.finalProcessedData = [];
         firstDataBackup = null; 
@@ -1478,7 +1569,18 @@
                     ipCache[originalIP] = ispResult; 
                 }
             }
+			
+			const rawKey = ispResult.original || "Unknown";
+            if (!ispGroups[rawKey]) {
+                ispGroups[rawKey] = {
+                    display: ispResult.display, // 預設使用 translateISP 判斷出的中文
+                    isError: !ispResult.success && ispResult.original !== "Unknown" && !ispResult.isMatched, // 判斷是否為錯誤類
+                    indices: []
+                };
+            }
+            ispGroups[rawKey].indices.push(i);
 
+            const currentDisplay = ispGroups[rawKey].display;
 			const ispCellHtml = renderIspCellHtml(ispResult, originalIP);
             
 			exportData.push({
@@ -1527,6 +1629,9 @@
 
         updateRowIndices();
 
+        renderSidebar(); 
+        document.getElementById('ispSidebar').style.display = 'flex';
+
         dom.statusEl.innerText = '處理完成';
         dom.btnProcess.disabled = false;
         dom.btnMoneyProcess.disabled = false;
@@ -1542,6 +1647,8 @@
 			
 			if (data.success) {
 				const originalText = data.connection?.org || data.org || "Unknown";
+				// const originalText = data.connection?.isp || data.isp || data.connection?.org || data.org || "Unknown";
+				// 台灣固網為台灣大哥大關係企業，隸屬於台灣大哥大集團，所以單看ISP會錯
 				const result = translateISP(originalText);
 				return { 
 					original: originalText, 
@@ -1577,9 +1684,13 @@
 
     function translateISP(text) {
         const lower = text.toLowerCase();
+        if (lower.includes("taiwan fixed network")) return { text: "台灣固網", matched: true };
         if (lower.includes("chunghwa") || lower.includes("hinet")) return { text: "中華電信網路", matched: true };
-        if (lower.includes("taiwan mobile") || lower.includes("taiwan fixed network")) return { text: "台灣大哥大", matched: true };
+        if (lower.includes("taiwan mobile") || lower.includes("taiwanmobile")) return { text: "台灣大哥大", matched: true };
         if (lower.includes("far eastone") || lower.includes("fareastone") || lower.includes("far easttone")) return { text: "遠傳電信股份有限公司", matched: true };
+        
+        if (text === "Error" || text === "無效IP" || text === "Unknown") return { text: "查詢失敗", matched: false };
+        
         return { text: text, matched: false };
     }
 
@@ -1596,9 +1707,7 @@
 		// 取得設定狀態
 		const needPad = document.getElementById('chkIpv6Pad').checked;
 		const needUpper = document.getElementById('chkIpv6Upper').checked;
-		const hasPort = dom.selects.port.value !== ""; // 判斷原始資料是否有包含 Port 欄位
-
-		// 複製並處理資料 (不影響網頁顯示，只影響匯出)
+		const hasPort = dom.selects.port.value !== ""; 
 		const exportData = rawData.map(row => {
 			let newRow = Object.assign({}, row);
 			let ipStr = newRow['IP:Port'];
@@ -1657,6 +1766,92 @@
     const helpModal = document.getElementById('helpModal');
     document.getElementById('btnHelp').addEventListener('click', () => helpModal.style.display = 'flex');
     helpModal.addEventListener('click', () => helpModal.style.display = 'none');
+	
+	// === 新增函式：渲染側邊懸浮窗 ===
+    function renderSidebar() {
+        const container = document.getElementById('ispSidebarContent');
+        container.innerHTML = '';
+
+        // 將群組排序：錯誤的放前面，其餘依名稱排序
+        const sortedKeys = Object.keys(ispGroups).sort((a, b) => {
+            if (ispGroups[a].isError && !ispGroups[b].isError) return -1;
+            if (!ispGroups[a].isError && ispGroups[b].isError) return 1;
+            return a.localeCompare(b);
+        });
+
+        if (sortedKeys.length === 0) {
+            container.innerHTML = '<div class="text-muted text-center mt-3">無資料</div>';
+            return;
+        }
+
+        sortedKeys.forEach(rawKey => {
+            const group = ispGroups[rawKey];
+            const isErrorClass = group.isError ? 'is-error' : '';
+            const div = document.createElement('div');
+            div.className = `isp-group-item ${isErrorClass}`;
+            
+            let tagsHtml = '';
+            const maxTags = 5000;
+            group.indices.slice(0, maxTags).forEach(idx => {
+                tagsHtml += `<span class="idx-tag" onclick="highlightRow(${idx})">${idx + 1}</span>`;
+            });
+            if (group.indices.length > maxTags) {
+                tagsHtml += `<span class="idx-tag">...共${group.indices.length}筆</span>`;
+            }
+
+            // 處理 ERROR 值的說明
+            // 如果 rawKey 是 API 錯誤訊息，這欄位允許使用者自訂為 "查詢失敗" 或其他備註
+            div.innerHTML = `
+                <div class="isp-raw-name" title="${escapeHtml(rawKey)}">API: ${escapeHtml(rawKey)}</div>
+                <input type="text" class="isp-edit-input" 
+                       value="${escapeHtml(group.display)}" 
+                       oninput="updateGlobalIspName('${escapeHtml(rawKey).replace(/'/g, "\\'")}', this.value)"
+                       placeholder="輸入中文對照名稱">
+                <div class="tag-container">${tagsHtml}</div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    // === 新增函式：即時更新 ISP 名稱 ===
+    window.updateGlobalIspName = function(rawKey, newName) {
+        if (!ispGroups[rawKey]) return;
+
+        ispGroups[rawKey].display = newName;
+
+        const indices = ispGroups[rawKey].indices;
+        const resultBody = document.getElementById('resultBody');
+        
+        indices.forEach(rowIndex => {
+            // 確認該列是否存在
+            if (resultBody.rows[rowIndex]) {
+                const row = resultBody.rows[rowIndex];
+                const cell = row.cells[2];
+                const convertedSpan = cell.querySelector('.converted-data');
+                if (convertedSpan) {
+                    convertedSpan.innerText = `轉換：${newName}`;
+                } else {
+                    // 如果原本沒有轉換結構 (例如純錯誤)，則強制加上
+                    // 但通常 renderIspCellHtml 會生成 .converted-data
+                    // 若是 "Error" 原本可能沒有 .converted-data，這裡做個防呆
+                     cell.innerHTML = cell.innerHTML.replace(/>[^<]+<\/div>$/, `>${escapeHtml(newName)}</div>`); 
+                }
+            }
+            
+            if (window.finalProcessedData && window.finalProcessedData[rowIndex]) {
+                window.finalProcessedData[rowIndex]['電信業者'] = newName;
+            }
+        });
+    };
+
+    window.highlightRow = function(rowIndex) {
+        const row = document.getElementById('resultBody').rows[rowIndex];
+        if (row) {
+            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            row.style.backgroundColor = '#ffffd0';
+            setTimeout(() => { row.style.backgroundColor = ''; }, 2000);
+        }
+    };
 </script>
 </body>
 </html>

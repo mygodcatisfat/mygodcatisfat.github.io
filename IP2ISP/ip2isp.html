@@ -556,6 +556,41 @@
             margin-right: 8px; /* 與後方文字保持距離 */
         }
 		
+		/* --- 新增樣式：原始處理的重複分析區塊 (藍色系) --- */
+        .original-stats-section {
+            background-color: #e7f1ff;
+            border: 1px solid #b6d4fe;
+            border-radius: 0.5rem;
+            padding: 20px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: none;
+        }
+        .original-stats-header {
+            display: flex; align-items: center; margin-bottom: 15px;
+            border-bottom: 1px solid #cfe2ff; padding-bottom: 10px;
+        }
+        .original-stats-title {
+            color: #084298; font-weight: bold; font-size: 1.1rem; margin: 0;
+        }
+        .original-stat-value {
+            font-size: 1.2rem; font-weight: bold; color: #0d6efd;
+        }
+        .original-details-box {
+            background: #fff; border: 1px solid #cfe2ff; border-radius: 4px;
+            padding: 10px; font-size: 0.9rem; max-height: 150px;
+            overflow-y: auto; margin-bottom: 0;
+        }
+        .dup-tag-container {
+            margin: 4px 0; line-height: 1.4;
+        }
+        .dup-tag {
+            display: inline-block; background-color: #dc3545; color: white;
+            padding: 1px 6px; border-radius: 4px; font-size: 0.8em;
+            margin-right: 4px; font-weight: bold;
+        }
+        /* ------------------------------------------------ */
 		
         @media (min-width: 1600px) {
             .container { margin-left: 340px; }
@@ -662,7 +697,25 @@
                     </div>
 
                     <div class="d-grid gap-2">
-                        <button type="button" class="btn btn-primary w-100" id="btnProcess">原始處理 (API查詢中請勿關閉)</button>
+                        <div class="original-stats-section" id="originalStatsSection">
+							<div class="original-stats-header">
+								<h6 class="original-stats-title">重複資料分析 (原始模式)</h6>
+							</div>
+							<div class="savings-stats-grid">
+								<div class="stat-card">
+									<div class="original-stat-value" id="origDupItems">0</div>
+									<div class="stat-label">預計重複筆數</div>
+								</div>
+								<div class="stat-card">
+									<div class="original-stat-value" id="origReducedCount">0</div>
+									<div class="stat-label">可減少查詢</div>
+								</div>
+							</div>
+							<div class="original-details-box" id="originalDetailsList"></div>
+						</div>
+						<div class="d-grid gap-2">
+							<button type="button" class="btn btn-primary w-100" id="btnProcess">原始處理 (API查詢中請勿關閉)</button>
+						</div>
                     </div>
 
                     <div class="savings-section" id="savingsSection" style="display:none;">
@@ -850,6 +903,7 @@
 	let rowToDelete = null;
     let timelineDataCache = []; 
     let savingsData = null; 
+	let originalDupMap = {};
     let currentProcessingMode = 'original';
 	let ispGroups = {};
 	let ipCache = {}; 
@@ -1318,6 +1372,7 @@
 
         generateTimeline(true);
         calculateSavings(); 
+		calculateOriginalDuplicates();
     }
 
     function calculateSavings() {
@@ -1417,6 +1472,78 @@
         dom.savingsSection.style.display = 'block';
         savingsData = mergedGroups; 
     }
+	
+	// --- 新增功能：計算原始模式的重複資料 ---
+    function calculateOriginalDuplicates() {
+        const ipCol = dom.selects.ip.value;
+        const timeCol = dom.selects.time.value;
+        const portCol = dom.selects.port.value;
+        
+        if (!ipCol || !timeCol || rawData.length === 0) {
+            document.getElementById('originalStatsSection').style.display = 'none';
+            return;
+        }
+
+        originalDupMap = {}; // 重置 Map: Key -> Array of Indices (0-based)
+        
+        // 1. 建立重複群組
+        rawData.forEach((row, idx) => {
+            const originalIP = row[ipCol] || '';
+            const originalTime = row[timeCol];
+            // 產生唯一 Key: IP:Port|Time
+            const formattedIP = portCol && row[portCol] ? `${originalIP}:${row[portCol]}` : originalIP;
+            const uniqueKey = `${formattedIP}|${originalTime}`;
+            
+            if (!originalDupMap[uniqueKey]) originalDupMap[uniqueKey] = [];
+            originalDupMap[uniqueKey].push(idx);
+        });
+
+        // 2. 計算統計數據
+        let totalItems = rawData.length;
+        let uniqueItems = 0;
+        let duplicateItems = 0;
+        let reducedQueries = 0;
+        let detailsHtml = '<ul class="savings-list-container">';
+        let hasDuplicates = false;
+
+        for (const [key, indices] of Object.entries(originalDupMap)) {
+            if (indices.length > 1) {
+                hasDuplicates = true;
+                const count = indices.length;
+                duplicateItems += count;
+                reducedQueries += (count - 1); // N筆變1筆，省 N-1 次
+                
+                // 解析 Key 顯示於列表
+                const [ipPart, timePart] = key.split('|');
+                
+                detailsHtml += `
+                    <li class="savings-list-item">
+                        <div class="savings-row-top">
+                            <span class="savings-ip" style="color:#084298">${escapeHtml(ipPart)}</span>
+                        </div>
+                        <div class="savings-row-bottom">
+                            <span class="savings-desc">時間：${escapeHtml(timePart)}</span>
+                            <span class="savings-badge" style="background-color:#cfe2ff; color:#084298; margin-left:auto;">
+                                原始 ${count} 筆 &rarr; 合併後 1 筆
+                            </span>
+                        </div>
+                    </li>`;
+            }
+            uniqueItems++;
+        }
+        detailsHtml += '</ul>';
+
+        // 3. 更新 UI
+        if (hasDuplicates) {
+            document.getElementById('origDupItems').innerText = duplicateItems;
+            document.getElementById('origReducedCount').innerText = reducedQueries;
+            document.getElementById('originalDetailsList').innerHTML = detailsHtml;
+            document.getElementById('originalStatsSection').style.display = 'block';
+        } else {
+            document.getElementById('originalStatsSection').style.display = 'none';
+        }
+    }
+    // ------------------------------------
 
     function generateTimeline(useCache = true) {
         const container = dom.timelineContainer;
@@ -1752,6 +1879,8 @@
             });
         }
 
+        // ... (runProcess 前半段保持不變) ...
+
         const total = processItems.length;
 
         for (let i = 0; i < total; i++) {
@@ -1762,41 +1891,44 @@
 			const formattedIP = isMoneySaving ? item.key : item.formattedKey;
 
             let tMinus, tPlus, tMinusVisual, tPlusVisual, originalTimeDisplay;
-            let durationHtml = ''; // 用於存放紅字提示
-            let tsStart = 0; // 用於紀錄實際開始時間戳記 (省錢模式用)
-            let tsEnd = 0;   // 用於紀錄實際結束時間戳記 (省錢模式用)
+            let durationHtml = ''; 
+            let duplicateTagsHtml = ''; // 新增：存放重複標籤 HTML
+            let tsStart = 0; 
+            let tsEnd = 0;   
             
             if (isMoneySaving) {
-                tsStart = item.start;
-                tsEnd = item.end;
-                const dStart = new Date(tsStart);
-                const dEnd = new Date(tsEnd);
-                tMinus = formatDate(dStart);
-                tPlus = formatDate(dEnd);
-                tMinusVisual = formatDateForDisplay(dStart);
-                tPlusVisual = formatDateForDisplay(dEnd);
-                
-                originalTimeDisplay = `<div class="original-time-stack">` + 
-                    item.originalTimes.map(t => {
-                        let d = parseFlexibleDate(t);
-                        let displayT = d ? formatTimeNoMs(d) : t;
-                        return `<span class="tag-original">${escapeHtml(displayT)}</span>`;
-                    }).join('') + 
-                    `</div>`;
-
-                // --- 計算時間差並生成提示文字 ---
-                const diff = tsEnd - tsStart;
-                const durationStr = formatDuration(diff);
-                const oneHourMs = 3600000;
-
-                if (diff > oneHourMs) {
-                    const splitCount = Math.ceil(diff / oneHourMs);
-                    durationHtml = `<div style="color: #dc3545; font-size: 0.85em; font-weight: bold; margin: 4px 0;">時間區間為${durationStr} → 拆分成${splitCount}筆資料</div>`;
-                } else {
-                    durationHtml = `<div style="color: #dc3545; font-size: 0.85em; font-weight: bold; margin: 4px 0;">時間區間為${durationStr}</div>`;
-                }
+                // ... (省錢模式邏輯保持不變) ...
+                // 省錢模式不需要顯示單筆重複 Tag，因為已經合併了
+                 tsStart = item.start;
+                 tsEnd = item.end;
+                 const dStart = new Date(tsStart);
+                 const dEnd = new Date(tsEnd);
+                 tMinus = formatDate(dStart);
+                 tPlus = formatDate(dEnd);
+                 tMinusVisual = formatDateForDisplay(dStart);
+                 tPlusVisual = formatDateForDisplay(dEnd);
+                 
+                 originalTimeDisplay = `<div class="original-time-stack">` + 
+                     item.originalTimes.map(t => {
+                         let d = parseFlexibleDate(t);
+                         let displayT = d ? formatTimeNoMs(d) : t;
+                         return `<span class="tag-original">${escapeHtml(displayT)}</span>`;
+                     }).join('') + 
+                     `</div>`;
+ 
+                 const diff = tsEnd - tsStart;
+                 const durationStr = formatDuration(diff);
+                 const oneHourMs = 3600000;
+ 
+                 if (diff > oneHourMs) {
+                     const splitCount = Math.ceil(diff / oneHourMs);
+                     durationHtml = `<div style="color: #dc3545; font-size: 0.85em; font-weight: bold; margin: 4px 0;">時間區間為${durationStr} → 拆分成${splitCount}筆資料</div>`;
+                 } else {
+                     durationHtml = `<div style="color: #dc3545; font-size: 0.85em; font-weight: bold; margin: 4px 0;">時間區間為${durationStr}</div>`;
+                 }
 
             } else {
+                // --- 原始模式邏輯修改 ---
                 tMinus = item.tMinus;
                 tPlus = item.tPlus;
                 
@@ -1814,10 +1946,21 @@
                 let cleanOriginalTime = dOriginal ? formatTimeNoMs(dOriginal) : item.originalTimeStr;
 				
                 originalTimeDisplay = `<div><span class="tag-original">原始時間：${escapeHtml(cleanOriginalTime)}</span></div>`;
+
+                // --- 新增功能：檢查重複並生成紅底白字 Tag ---
+                // 組合 Key: IP:Port|Time (需與 calculateOriginalDuplicates 邏輯一致)
+                const uniqueKey = `${formattedIP}|${item.originalTimeStr}`;
+                if (originalDupMap[uniqueKey] && originalDupMap[uniqueKey].length > 1) {
+                    const indices = originalDupMap[uniqueKey];
+                    // 生成 Tags (顯示 row index + 1)
+                    let tags = indices.map(idx => `<span class="dup-tag">#${idx + 1}</span>`).join('');
+                    duplicateTagsHtml = `<div class="dup-tag-container">${tags}</div>`;
+                }
+                // --------------------------------------------
             }
 
             let ispResult = { original: "無效IP", display: "格式錯誤", isMatched: false, source: 'none' };
-            
+            // ... (API 呼叫與 ISP 邏輯保持不變) ...
             if (originalIP && isValidIP(originalIP)) {
                 if (ipCache[originalIP]) {
                     ispResult = ipCache[originalIP];
@@ -1840,6 +1983,7 @@
             }
             ispGroups[rawKey].indices.push(i);
 
+            // 準備匯出資料物件
 			let exportRow = {
 				'類別': 'IP',
 				'電信業者': ispResult.isMatched ? ispResult.display : ispResult.original,
@@ -1849,12 +1993,16 @@
 				'備註': '通訊使用者資料'
 			};
             
-            // --- 若為省錢模式，紀錄時間戳記供匯出拆分使用 ---
+             // 原始模式也加入原始時間以便 exportFile 進行去重比對
+            if (!isMoneySaving) {
+                exportRow._rawTime = item.originalTimeStr; 
+            }
+
             if (isMoneySaving) {
                 exportRow._tsStart = tsStart;
                 exportRow._tsEnd = tsEnd;
             }
-			
+
             exportData.push(exportRow);
 
 			const tr = dom.resultBody.insertRow();
@@ -1865,9 +2013,11 @@
 			
 			const tdTime = tr.insertCell();
 			tdTime.colSpan = 2;
-            // --- 插入 durationHtml ---
+            
+            // --- 修改：插入 duplicateTagsHtml ---
 			tdTime.innerHTML = `${originalTimeDisplay}
                                 ${durationHtml}
+                                ${duplicateTagsHtml}
 								<div class="time-group">
 									<div class="time-cell-half">
 										<div class="text-visual">${tMinusVisual}</div>
@@ -1878,6 +2028,8 @@
 										<div>${tPlus}</div>
 									</div>
 								</div>`;
+            // ------------------------------------
+            
 			tr.insertCell().innerText = '通訊使用者資料';
 			
 			tr.insertCell().innerHTML = `
@@ -1890,6 +2042,8 @@
 			dom.progressBar.style.width = `${percent}%`;
 			dom.progressText.innerText = `${percent}%`;
 		}
+
+        // ... (runProcess 後半段保持不變) ...
 
         window.finalProcessedData = exportData;
         isProcessed = true;
@@ -1978,37 +2132,51 @@
         let rawData = window.finalProcessedData || [];
         if (rawData.length === 0) { alert("無資料可匯出"); return; }
         
-        // --- 匯出前檢查是否需要拆分資料 (省錢模式超過1小時) ---
+        // --- 新增功能：匯出前去重 (針對原始處理模式) ---
+        // 如果資料中有 _rawTime (由原始處理產生)，則進行去重過濾
+        let filteredData = [];
+        let seenKeys = new Set();
+        
+        rawData.forEach(row => {
+            // 判斷是否為原始模式資料 (有 _rawTime)
+            if (row.hasOwnProperty('_rawTime')) {
+                const uniqueKey = `${row['IP:Port']}|${row._rawTime}`;
+                if (!seenKeys.has(uniqueKey)) {
+                    seenKeys.add(uniqueKey);
+                    let cleanRow = Object.assign({}, row);
+                    delete cleanRow._rawTime; // 移除內部標記
+                    filteredData.push(cleanRow);
+                }
+            } else {
+                // 省錢模式或其他，直接保留 (省錢模式本身已合併，無 _rawTime)
+                filteredData.push(row);
+            }
+        });
+        rawData = filteredData;
+        // ---------------------------------------------
+
+        // --- 以下接續原本的省錢模式拆分邏輯 ---
         let expandedData = [];
         const oneHourMs = 3600000;
 
         rawData.forEach(row => {
+             // ... (原本的拆分邏輯保持不變) ...
             // 檢查是否有標記時間戳記 (由 runProcess 在省錢模式下產生) 且長度超過 1 小時
             if (row._tsStart && row._tsEnd && (row._tsEnd - row._tsStart > oneHourMs)) {
                 let curr = row._tsStart;
                 let end = row._tsEnd;
                 
                 while (curr < end) {
-                    // 下一個切分點：目前時間 + 1小時，或是總結束時間 (取較小者)
                     let next = Math.min(curr + oneHourMs, end);
-                    
-                    // 複製原始資料
                     let newRow = Object.assign({}, row);
-                    
-                    // 更新時間欄位格式
                     newRow['時間-30分'] = formatDate(new Date(curr));
                     newRow['時間+30分'] = formatDate(new Date(next));
-                    
-                    // 移除內部使用的標記，避免匯出到 Excel
                     delete newRow._tsStart;
                     delete newRow._tsEnd;
-                    
                     expandedData.push(newRow);
-                    
                     curr = next;
                 }
             } else {
-                // 不需要拆分，直接使用，但要移除內部標記
                 let cleanRow = Object.assign({}, row);
                 delete cleanRow._tsStart;
                 delete cleanRow._tsEnd;
@@ -2016,8 +2184,8 @@
             }
         });
         
-        // 將處理對象指向擴展後的資料
         rawData = expandedData;
+        // ... (後續匯出邏輯保持不變) ...
 
         const needPad = document.getElementById('chkIpv6Pad').checked;
         const needUpper = document.getElementById('chkIpv6Upper').checked;

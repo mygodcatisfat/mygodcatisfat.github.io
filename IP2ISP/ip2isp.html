@@ -863,7 +863,7 @@
         isBouncing: false,
         lastMouseX: 0,
         lastMouseY: 0,
-        friction: 0.99       // 摩擦係數 (0.9 ~ 0.99，越小停越快)
+        friction: 0.97       // 摩擦係數 (0.9 ~ 0.99，越小停越快)
     };
 
     // --- 物理運動迴圈 (加入摩擦力) ---
@@ -1681,6 +1681,16 @@
         const pad = (n) => String(n).padStart(2, '0');
         return `${dateObj.getFullYear()}/${pad(dateObj.getMonth()+1)}/${pad(dateObj.getDate())} ${pad(dateObj.getHours())}:${pad(dateObj.getMinutes())}:${pad(dateObj.getSeconds())}`;
     }
+	
+	function formatDuration(ms) {
+        let seconds = Math.floor(ms / 1000);
+        let hours = Math.floor(seconds / 3600);
+        seconds %= 3600;
+        let minutes = Math.floor(seconds / 60);
+        seconds %= 60;
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${pad(hours)}時${pad(minutes)}分${pad(seconds)}秒`;
+    }
 
     async function runProcess(isMoneySaving) {
         currentProcessingMode = isMoneySaving ? 'moneySaver' : 'original';
@@ -1752,10 +1762,15 @@
 			const formattedIP = isMoneySaving ? item.key : item.formattedKey;
 
             let tMinus, tPlus, tMinusVisual, tPlusVisual, originalTimeDisplay;
+            let durationHtml = ''; // 用於存放紅字提示
+            let tsStart = 0; // 用於紀錄實際開始時間戳記 (省錢模式用)
+            let tsEnd = 0;   // 用於紀錄實際結束時間戳記 (省錢模式用)
             
             if (isMoneySaving) {
-                const dStart = new Date(item.start);
-                const dEnd = new Date(item.end);
+                tsStart = item.start;
+                tsEnd = item.end;
+                const dStart = new Date(tsStart);
+                const dEnd = new Date(tsEnd);
                 tMinus = formatDate(dStart);
                 tPlus = formatDate(dEnd);
                 tMinusVisual = formatDateForDisplay(dStart);
@@ -1768,6 +1783,19 @@
                         return `<span class="tag-original">${escapeHtml(displayT)}</span>`;
                     }).join('') + 
                     `</div>`;
+
+                // --- 計算時間差並生成提示文字 ---
+                const diff = tsEnd - tsStart;
+                const durationStr = formatDuration(diff);
+                const oneHourMs = 3600000;
+
+                if (diff > oneHourMs) {
+                    const splitCount = Math.ceil(diff / oneHourMs);
+                    durationHtml = `<div style="color: #dc3545; font-size: 0.85em; font-weight: bold; margin: 4px 0;">時間區間為${durationStr} → 拆分成${splitCount}筆資料</div>`;
+                } else {
+                    durationHtml = `<div style="color: #dc3545; font-size: 0.85em; font-weight: bold; margin: 4px 0;">時間區間為${durationStr}</div>`;
+                }
+
             } else {
                 tMinus = item.tMinus;
                 tPlus = item.tPlus;
@@ -1812,27 +1840,34 @@
             }
             ispGroups[rawKey].indices.push(i);
 
-            const currentDisplay = ispGroups[rawKey].display;
-			const ispCellHtml = renderIspCellHtml(ispResult, originalIP);
-            
-			exportData.push({
+			let exportRow = {
 				'類別': 'IP',
 				'電信業者': ispResult.isMatched ? ispResult.display : ispResult.original,
 				'IP:Port': formattedIP,
 				'時間-30分': tMinus,
 				'時間+30分': tPlus,
 				'備註': '通訊使用者資料'
-			});
+			};
+            
+            // --- 若為省錢模式，紀錄時間戳記供匯出拆分使用 ---
+            if (isMoneySaving) {
+                exportRow._tsStart = tsStart;
+                exportRow._tsEnd = tsEnd;
+            }
+			
+            exportData.push(exportRow);
 
 			const tr = dom.resultBody.insertRow();
 			tr.insertCell().innerText = i + 1;
 			tr.insertCell().innerText = 'IP';
-			tr.insertCell().innerHTML = ispCellHtml;
+			tr.insertCell().innerHTML = renderIspCellHtml(ispResult, originalIP);
 			tr.insertCell().innerText = formattedIP;
 			
 			const tdTime = tr.insertCell();
 			tdTime.colSpan = 2;
+            // --- 插入 durationHtml ---
 			tdTime.innerHTML = `${originalTimeDisplay}
+                                ${durationHtml}
 								<div class="time-group">
 									<div class="time-cell-half">
 										<div class="text-visual">${tMinusVisual}</div>
@@ -1863,17 +1898,12 @@
 
         renderSidebar(); 
 
-		// --- 重新渲染時，確保隱藏彈珠並停止物理運算 ---
-		// 1. 停止物理動畫 (如果有定義 spriteState)
 		if (typeof spriteState !== 'undefined') {
 			spriteState.isBouncing = false;
 			if (spriteState.rafId) cancelAnimationFrame(spriteState.rafId);
 		}
 
-		// 2. 確保彈珠消失
 		document.getElementById('minimizedSprite').style.display = 'none';
-
-		// 3. 顯示側邊欄
 		document.getElementById('ispSidebar').style.display = 'flex';
 
         dom.statusEl.innerText = '處理完成';
@@ -1945,9 +1975,50 @@
     }
 
     window.exportFile = function(type) {
-        const rawData = window.finalProcessedData || [];
+        let rawData = window.finalProcessedData || [];
         if (rawData.length === 0) { alert("無資料可匯出"); return; }
         
+        // --- 匯出前檢查是否需要拆分資料 (省錢模式超過1小時) ---
+        let expandedData = [];
+        const oneHourMs = 3600000;
+
+        rawData.forEach(row => {
+            // 檢查是否有標記時間戳記 (由 runProcess 在省錢模式下產生) 且長度超過 1 小時
+            if (row._tsStart && row._tsEnd && (row._tsEnd - row._tsStart > oneHourMs)) {
+                let curr = row._tsStart;
+                let end = row._tsEnd;
+                
+                while (curr < end) {
+                    // 下一個切分點：目前時間 + 1小時，或是總結束時間 (取較小者)
+                    let next = Math.min(curr + oneHourMs, end);
+                    
+                    // 複製原始資料
+                    let newRow = Object.assign({}, row);
+                    
+                    // 更新時間欄位格式
+                    newRow['時間-30分'] = formatDate(new Date(curr));
+                    newRow['時間+30分'] = formatDate(new Date(next));
+                    
+                    // 移除內部使用的標記，避免匯出到 Excel
+                    delete newRow._tsStart;
+                    delete newRow._tsEnd;
+                    
+                    expandedData.push(newRow);
+                    
+                    curr = next;
+                }
+            } else {
+                // 不需要拆分，直接使用，但要移除內部標記
+                let cleanRow = Object.assign({}, row);
+                delete cleanRow._tsStart;
+                delete cleanRow._tsEnd;
+                expandedData.push(cleanRow);
+            }
+        });
+        
+        // 將處理對象指向擴展後的資料
+        rawData = expandedData;
+
         const needPad = document.getElementById('chkIpv6Pad').checked;
         const needUpper = document.getElementById('chkIpv6Upper').checked;
         const hasPort = dom.selects.port.value !== ""; 
@@ -1983,15 +2054,11 @@
         const baseName = `result_${Date.now()}`;
         
         const downloadAnsi = (ws, filename) => {
-            // 產生 CSV 字串
             const csv = XLSX.utils.sheet_to_csv(ws);
-            // 使用 cptable 將字串轉為 Big5 (CodePage 950) 的 Uint8Array
             const data = (typeof cptable !== 'undefined') 
                          ? cptable.utils.encode(950, csv) 
-                         : new TextEncoder().encode(csv); // 若庫未載入則退回 UTF-8
-            // 建立 Blob 並觸發下載
+                         : new TextEncoder().encode(csv); 
 			const blob = new Blob([new Uint8Array(data)], { type: "application/octet-stream" });
-            // const blob = new Blob([data], { type: "text/csv;charset=big5" });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -2011,10 +2078,8 @@
                 
                 setTimeout(() => {
                     if (type === 'csv') {
-                        // 若是 CSV，呼叫自定義 ANSI 下載
                         downloadAnsi(ws_chunk, `${baseName}_part${partCount}.csv`);
                     } else {
-                        // 若是 XLSX，維持原樣
                         const wb = XLSX.utils.book_new();
                         XLSX.utils.book_append_sheet(wb, ws_chunk, "Result");
                         XLSX.writeFile(wb, `${baseName}_part${partCount}.xlsx`, { bookType: 'xlsx' });
@@ -2026,10 +2091,8 @@
             const ws = XLSX.utils.json_to_sheet(processedData, { skipHeader: true }); 
             
             if (type === 'csv') {
-                // 若是 CSV，呼叫自定義 ANSI 下載
                 downloadAnsi(ws, `${baseName}.csv`);
             } else {
-                // 若是 XLSX，維持原樣
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, "Result");
                 XLSX.writeFile(wb, `${baseName}.${type}`, { bookType: 'xlsx' });
@@ -2207,7 +2270,7 @@
             isDragStarted = true;
             if (isSprite) {
                 isDraggingSprite = true;
-                // --- [修改] 計算投擲速度 (當前位置 - 上次位置) ---
+                // --- 計算投擲速度 (當前位置 - 上次位置) ---
                 spriteState.vx = e.clientX - spriteState.lastMouseX;
                 spriteState.vy = e.clientY - spriteState.lastMouseY;
                 spriteState.lastMouseX = e.clientX;

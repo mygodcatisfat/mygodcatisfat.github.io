@@ -6,22 +6,22 @@
     <title>PDF 編輯工具</title>
     <style>
         :root {
-            --primary: #3b82f6; /* blue-500 */
-            --primary-hover: #2563eb; /* blue-600 */
-            --primary-light: #93c5fd; /* blue-300 */
-            --primary-bg: #eff6ff; /* blue-50 */
+            --primary: #3b82f6;
+            --primary-hover: #2563eb; 
+            --primary-light: #93c5fd;
+            --primary-bg: #eff6ff;
             
-            --success: #22c55e; /* green-500 */
-            --success-hover: #16a34a; /* green-600 */
-            --success-light: #86efac; /* green-300 */
+            --success: #22c55e;
+            --success-hover: #16a34a;
+            --success-light: #86efac;
             
-            --danger: #ef4444; /* red-500 */
-            --danger-hover: #dc2626; /* red-600 */
-            --danger-light: #fca5a5; /* red-300 */
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --danger-light: #fca5a5;
             
-            --warning: #eab308; /* yellow-500 */
-            --warning-hover: #ca8a04; /* yellow-600 */
-            --warning-light: #fde047; /* yellow-300 */
+            --warning: #eab308;
+            --warning-hover: #ca8a04;
+            --warning-light: #fde047;
 
             --gray-50: #f9fafb;
             --gray-100: #f3f4f6;
@@ -50,9 +50,8 @@
             margin: 0;
         }
 
-        /* Layout & Containers */
         .container {
-            max-width: 72rem; /* 6xl */
+            max-width: 72rem;
             margin: 0 auto;
         }
 
@@ -67,7 +66,7 @@
         }
 
         .main-title {
-            font-size: 1.875rem; /* 3xl */
+            font-size: 1.875rem; 
             font-weight: 700;
             margin-bottom: 1.5rem;
             text-align: center;
@@ -81,11 +80,10 @@
             margin-bottom: 1.5rem;
         }
         .section-title {
-            font-size: 1.25rem; /* xl */
+            font-size: 1.25rem; 
             font-weight: 600;
         }
 
-        /* Utilities */
         .hidden { display: none !important; }
         .flex { display: flex; }
         .flex-col { display: flex; flex-direction: column; }
@@ -116,7 +114,6 @@
         .text-gray-600 { color: var(--gray-600); }
         .text-gray-700 { color: var(--gray-700); }
         
-        /* Drop Zone */
         .drop-zone {
             margin-bottom: 2rem;
             padding: 1.5rem;
@@ -137,11 +134,9 @@
             font-weight: 500;
             margin-bottom: 0.5rem;
         }
-        /* JS toggled classes */
         .drop-zone.border-blue-500 { border-color: var(--primary); }
         .drop-zone.bg-blue-50 { background-color: var(--primary-bg); }
 
-        /* Tabs */
         .tabs-container {
             display: flex;
             border-bottom: 1px solid var(--gray-200);
@@ -164,7 +159,6 @@
             font-weight: 600;
         }
 
-        /* Buttons (General) */
         .btn {
             padding: 0.5rem 1rem;
             border-radius: var(--radius-lg);
@@ -200,7 +194,6 @@
         .btn-gray { background-color: var(--gray-500); }
         .btn-gray:hover { background-color: var(--gray-600); }
 
-        /* Inputs */
         .form-input {
             padding: 0.5rem;
             border: 1px solid var(--gray-200);
@@ -215,7 +208,6 @@
         }
         .w-24 { width: 6rem; }
         
-        /* Thumbnails Container */
         .thumb-container {
             display: flex;
             align-items: center;
@@ -237,7 +229,6 @@
             border-radius: 4px;
         }
 
-        /* OCR & Punctuation Buttons */
         .punc-btn {
             padding: 0.25rem 0.75rem;
             border: 1px solid var(--gray-200);
@@ -256,7 +247,6 @@
         }
         .punc-btn.active:hover { background-color: var(--primary-hover); }
 
-        /* Custom UI Elements */
         .cut-marker {
             width: 1.5rem;
             height: 1.5rem;
@@ -282,10 +272,8 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
         }
 
-        /* Tooltip Icon */
         .info-tooltip-container {
             position: relative;
-            margin-left: 1rem;
         }
         .info-tooltip-icon {
             color: var(--gray-500);
@@ -294,13 +282,27 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 1px solid var(--gray-500);
-            border-radius: 50%;
-            width: 1.5rem;
-            height: 1.5rem;
+            width: auto;
+            height: auto;
+            padding: 0 0.25rem;
+            border: none;
         }
 
-        /* Sortable List */
+        #mergeFileList li {
+            list-style-type: none;
+        }
+
+        .preview-canvas {
+            filter: blur(5px);
+            opacity: 0.6;
+            transition: filter 0.4s ease, opacity 0.4s ease;
+            display: block;
+        }
+        .preview-canvas.loaded {
+            filter: blur(0);
+            opacity: 1;
+        }
+
         .sortable-item {
             cursor: grab;
             padding: 0.75rem;
@@ -314,12 +316,10 @@
         .sortable-item:hover { background-color: var(--gray-50); }
         .sortable-item:active { cursor: grabbing; }
 
-        /* Selected State (JS Toggled) */
         .ring-2 { box-shadow: 0 0 0 2px var(--primary); }
         .ring-blue-500 { /* Helper for JS compatibility */ }
         .selected-thumbnail { box-shadow: 0 0 0 2px var(--primary); }
 
-        /* Modals & Overlays */
         .overlay {
             position: fixed;
             top: 0;
@@ -330,6 +330,8 @@
             justify-content: center;
             align-items: center;
             z-index: 200;
+			background-color: rgba(0, 0, 0, 0.5); 
+            backdrop-filter: blur(2px);
         }
         .overlay-bg {
             background-color: white;
@@ -342,7 +344,6 @@
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
         }
         
-        /* Full Screen Preview */
         .split-overlay {
             position: fixed;
             top: 0;
@@ -381,7 +382,6 @@
             box-shadow: var(--shadow-lg);
         }
 
-        /* Tooltip Modal */
         #tooltipModal {
             background-color: rgba(17, 24, 39, 0.7); /* gray-900 opacity 70 */
             backdrop-filter: blur(4px);
@@ -400,7 +400,6 @@
             color: var(--primary-hover);
             margin-bottom: 1rem;
         }
-        /* Styles for injected tooltip content */
         .prose p { margin-bottom: 0.5em; }
         .prose ul { margin-left: 1.5em; list-style-type: disc; }
         .text-green-500 { color: var(--success); }
@@ -408,7 +407,6 @@
         .text-red-500 { color: var(--danger); }
         .text-orange-500 { color: #f97316; }
 
-        /* Back Home Button */
         .back-home-btn {
             position: fixed;
             right: 16px;
@@ -436,7 +434,6 @@
             box-shadow: 0 6px 18px rgba(37,99,235,0.28);
         }
 
-        /* Notification */
         #copyNotification {
             position: fixed;
             top: 5rem;
@@ -452,7 +449,6 @@
             transition: opacity 1s;
         }
 
-        /* OCR Result Area */
         #ocrResultText {
             width: 100%;
             height: 16rem;
@@ -484,13 +480,29 @@
         }
         legend { font-size: 0.875rem; font-weight: 500; color: var(--gray-700); padding: 0 0.5rem; }
 
-        /* Thumb Wrapper inside JS */
         .thumb-wrapper {
             position: relative;
             flex-shrink: 0;
             padding: 0.5rem;
             border: 1px solid var(--gray-200);
             border-radius: var(--radius-md);
+        }
+		
+        .ml-auto { margin-left: auto; }
+
+        .btn-text-red {
+            background: none;
+            border: none;
+            color: var(--danger);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-md);
+            transition: background-color 0.2s;
+        }
+        .btn-text-red:hover {
+            background-color: #fee2e2;
         }
     </style>
 </head>
@@ -521,6 +533,7 @@
                     <div class="info-tooltip-container">
                         <span class="info-tooltip-icon" data-tooltip="split">💬</span>
                     </div>
+					<button id="clearSplit" class="btn-text-red ml-auto">清除資料</button>
                 </div>
                 
                 <div id="splitTextInput" class="mb-6 space-y-4">
@@ -549,6 +562,7 @@
                     <div class="info-tooltip-container">
                         <span class="info-tooltip-icon" data-tooltip="merge">💬</span>
                     </div>
+					<button id="clearMerge" class="btn-text-red ml-auto">清除資料</button>
                 </div>
 
                 <div class="mb-6">
@@ -569,6 +583,7 @@
                     <div class="info-tooltip-container">
                         <span class="info-tooltip-icon" data-tooltip="pageNumber">💬</span>
                     </div>
+					<button id="clearPageNumber" class="btn-text-red ml-auto">清除資料</button>
                 </div>
                 <div id="pageNumberInput" class="mb-6 space-y-4">
                     <div class="flex items-center space-x-4">
@@ -605,6 +620,7 @@
                     <div class="info-tooltip-container">
                         <span class="info-tooltip-icon" data-tooltip="rotate">💬</span>
                     </div>
+					<button id="clearRotate" class="btn-text-red ml-auto">清除資料</button>
                 </div>
 
                 <div class="mb-4">
@@ -627,6 +643,7 @@
                     <div class="info-tooltip-container">
                         <span class="info-tooltip-icon" data-tooltip="ocr">💬</span>
                     </div>
+					<button id="clearOcr" class="btn-text-red ml-auto">清除資料</button>
                 </div>
 
                 <div id="ocrTextInput" class="mb-6 space-y-4">
@@ -712,9 +729,6 @@
         </div>
 
         <a href="https://mygodcatisfat.github.io" class="back-home-btn" title="回到首頁">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" style="width:1.25rem; height:1.25rem;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l9-9 9 9M4 10v10a1 1 0 001 1h3m10-11v11a1 1 0 01-1 1h-3m-4 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1" />
-            </svg>
             回到首頁
         </a>
     </div>
@@ -758,6 +772,7 @@
     const previewImage = document.getElementById('previewImage');
     const previewPrevBtn = document.getElementById('previewPrev');
     const previewNextBtn = document.getElementById('previewNext');
+	let currentRenderId = 0; 
 
     let currentMode = 'split';
     let loadedPDF = null;
@@ -772,7 +787,27 @@
 	let singleLoadedFile = null;
     let ocrWorker = null; 
     let originalOcrText = ""; 
-    let puncToggles = { colon: false, comma: false, paren: false }; // 標點符號開關
+    let puncToggles = { colon: false, comma: false, paren: false }; 
+	
+	// 建立 IntersectionObserver 用於延遲載入
+	const thumbnailObserver = new IntersectionObserver((entries, observer) => {
+		entries.forEach(entry => {
+			if (entry.isIntersecting) {
+				const container = entry.target;
+				// 執行預先綁定的渲染函式
+				if (container.renderFunction) {
+					container.renderFunction();
+					// 渲染後就不需要再觀察了，釋放資源
+					container.renderFunction = null; 
+				}
+				observer.unobserve(container);
+			}
+		});
+	}, {
+		root: null, 
+		rootMargin: '100px', // 預先載入視窗邊緣外 100px 的內容
+		threshold: 0.01
+	});
 
     const tooltipData = {
         split: {
@@ -867,7 +902,6 @@
     // 切換頁籤
     tabs.forEach(tab => {
         tab.addEventListener('click', async () => {
-            // 終止 OCR worker (如果存在且當前模式是 ocr)
             if (ocrWorker && currentMode === 'ocr' && tab.id !== 'tabOcr') {
                 console.log('Terminating OCR worker...');
                 await ocrWorker.terminate();
@@ -922,6 +956,8 @@
             fileStatus.textContent = '支援 .pdf 格式';
             return;
         }
+		
+		currentRenderId++;
         
         if (currentMode === 'split' || currentMode === 'pagenumber' || currentMode === 'rotate' || currentMode === 'ocr') {
             if (files.length > 1) {
@@ -948,16 +984,12 @@
             } else if (currentMode === 'rotate') {
                 rotateRotations = Array(loadedPDF.numPages).fill(0);
 
-                // 重置 "rotateAction" 區域 (現在只包含 "下一步" 按鈕)
                 const rotateActionArea = document.getElementById('rotateAction');
                 rotateActionArea.innerHTML = `
                     <button id="rotateNext" class="btn btn-blue btn-lg" disabled>下一步</button>
                 `;
 
-                // 重新尋找元素並更新 'let' 變數
                 rotateNextBtn = document.getElementById('rotateNext');
-                
-                // 重新綁定 "下一步" 按鈕的事件監聽器 (複製原始在 line 1018 的邏輯)
                 rotateNextBtn.addEventListener('click', () => {
                     const actionArea = document.getElementById('rotateNext').parentNode;
                     actionArea.innerHTML = `
@@ -980,10 +1012,10 @@
             
             } else if (currentMode === 'ocr') {
 				ocrSplitPoints = [];
-                await renderOcrThumbnails(pdfDoc); // 呼叫新的渲染函式
+                await renderOcrThumbnails(pdfDoc);
                 updateOcrUI();
-				document.getElementById('ocrResultText').value = ''; // 清空舊結果
-                document.getElementById('ocrStatus').classList.add('hidden'); // 隱藏狀態
+				document.getElementById('ocrResultText').value = '';
+                document.getElementById('ocrStatus').classList.add('hidden');
                 document.getElementById('ocrResultTools').classList.add('hidden');
             }
 
@@ -997,7 +1029,6 @@
         }
     }
 	
-    // 處理檔案匯入
     fileInput.addEventListener('change', async (event) => {
         await processFiles(event.target.files); 
     });
@@ -1022,54 +1053,85 @@
         await processFiles(files);
     });
 
-    // 渲染 PDF 縮圖
-    async function renderSplitThumbnails(pdfDoc) {
-        splitThumbnails.innerHTML = '';
-        const numPages = pdfDoc.numPages;
+	async function renderSplitThumbnails(pdfDoc) {
+		splitThumbnails.innerHTML = '';
+		const numPages = pdfDoc.numPages;
+		
+		const thisRenderId = currentRenderId;
 
-        const cutMarkerStart = document.createElement('div');
-        cutMarkerStart.className = 'cut-marker';
-        cutMarkerStart.dataset.page = 0;
-        cutMarkerStart.addEventListener('click', () => toggleSplitPoint(0));
-        splitThumbnails.appendChild(cutMarkerStart);
+		const cutMarkerStart = document.createElement('div');
+		cutMarkerStart.className = 'cut-marker';
+		cutMarkerStart.dataset.page = 0;
+		cutMarkerStart.addEventListener('click', () => toggleSplitPoint(0));
+		splitThumbnails.appendChild(cutMarkerStart);
 
-        for (let i = 1; i <= numPages; i++) {
-            const page = await pdfDoc.getPage(i);
-            const viewport = page.getViewport({ scale: 0.3 });
-            const canvas = document.createElement('canvas');
-            canvas.width = viewport.width;
-            canvas.height = viewport.height;
-            const context = canvas.getContext('2d');
-            const renderContext = { canvasContext: context, viewport: viewport };
-            await page.render(renderContext).promise;
+		for (let i = 1; i <= numPages; i++) {
+			if (thisRenderId !== currentRenderId) return;
+			
+			// 建立容器
+			const thumbWrapper = document.createElement('div');
+			thumbWrapper.className = 'thumb-wrapper';
+			// 設定固定高度或最小高度，確保卷軸能正確產生，這對 Lazy Load 很重要
+			thumbWrapper.style.minHeight = '150px'; 
+			thumbWrapper.style.minWidth = '120px';
+			thumbWrapper.style.display = 'flex';
+			thumbWrapper.style.flexDirection = 'column';
+			thumbWrapper.style.alignItems = 'center';
+			thumbWrapper.style.justifyContent = 'center';
 
-            const thumbWrapper = document.createElement('div');
-            thumbWrapper.className = 'thumb-wrapper';
-            const pageNum = document.createElement('div');
-            pageNum.textContent = i;
-            pageNum.className = 'text-center text-sm font-medium text-gray-600 mt-1';
-            
-            thumbWrapper.appendChild(canvas);
-            thumbWrapper.appendChild(pageNum);
-            splitThumbnails.appendChild(thumbWrapper);
-            
-            canvas.addEventListener('click', () => showFullScreenPreview(pdfDoc, i));
+			const pageNum = document.createElement('div');
+			pageNum.textContent = i;
+			pageNum.className = 'text-center text-sm font-medium text-gray-600 mt-1';
+			
+			// 定義渲染邏輯，但不立即執行
+			thumbWrapper.renderFunction = async () => {
+				if (thisRenderId !== currentRenderId) return; // 再次檢查 ID 防止非同步衝突
+				try {
+					const page = await pdfDoc.getPage(i);
+					const viewport = page.getViewport({ scale: 0.3 });
+					const canvas = document.createElement('canvas');
+					canvas.width = viewport.width;
+					canvas.height = viewport.height;
+					const context = canvas.getContext('2d');
+					
+					// 點擊預覽
+					canvas.addEventListener('click', () => showFullScreenPreview(pdfDoc, i));
+					
+					// 渲染
+					await page.render({ canvasContext: context, viewport: viewport }).promise;
+					
+					// 將 canvas 插入 wrapper 最前面
+					thumbWrapper.prepend(canvas);
+					
+					// 移除最小寬高限制，讓內容撐開
+					thumbWrapper.style.minHeight = '';
+					thumbWrapper.style.minWidth = '';
+				} catch (e) {
+					console.error(`Page ${i} render error`, e);
+				}
+			};
 
-            if (i < numPages) {
-                const cutMarker = document.createElement('div');
-                cutMarker.className = 'cut-marker';
-                cutMarker.dataset.page = i;
-                cutMarker.addEventListener('click', () => toggleSplitPoint(parseInt(cutMarker.dataset.page)));
-                splitThumbnails.appendChild(cutMarker);
-            }
-        }
+			thumbWrapper.appendChild(pageNum);
+			splitThumbnails.appendChild(thumbWrapper);
+			
+			// 加入觀察清單
+			thumbnailObserver.observe(thumbWrapper);
 
-        const cutMarkerEnd = document.createElement('div');
-        cutMarkerEnd.className = 'cut-marker';
-        cutMarkerEnd.dataset.page = numPages;
-        cutMarkerEnd.addEventListener('click', () => toggleSplitPoint(numPages));
-        splitThumbnails.appendChild(cutMarkerEnd);
-    }
+			if (i < numPages) {
+				const cutMarker = document.createElement('div');
+				cutMarker.className = 'cut-marker';
+				cutMarker.dataset.page = i;
+				cutMarker.addEventListener('click', () => toggleSplitPoint(parseInt(cutMarker.dataset.page)));
+				splitThumbnails.appendChild(cutMarker);
+			}
+		}
+
+		const cutMarkerEnd = document.createElement('div');
+		cutMarkerEnd.className = 'cut-marker';
+		cutMarkerEnd.dataset.page = numPages;
+		cutMarkerEnd.addEventListener('click', () => toggleSplitPoint(numPages));
+		splitThumbnails.appendChild(cutMarkerEnd);
+	}
 
     function toggleSplitPoint(page) {
         const index = splitPoints.indexOf(page);
@@ -1230,7 +1292,6 @@
     });
 
     // ==================== 合成功能 ====================
-    // 處理合成檔案匯入
     async function handleMergeFiles(files) {
         for (const file of files) {
             filesForMerge.push(file);
@@ -1239,7 +1300,6 @@
         mergeNextBtn.disabled = filesForMerge.length === 0;
     }
 
-    // 渲染合成檔案清單
     function renderMergeFileList() {
         mergeFileList.innerHTML = '';
         if (filesForMerge.length === 0) {
@@ -1255,18 +1315,20 @@
             li.draggable = true;
             li.dataset.index = index;
 
-            // 檔案資訊
             const fileHeader = document.createElement('div');
             fileHeader.className = 'flex items-center justify-between mb-2';
 
             const fileInfo = document.createElement('div');
             fileInfo.className = 'flex items-center';
+            
             const orderNumber = document.createElement('div');
-            orderNumber.className = 'flex items-center justify-center rounded-full font-bold text-lg mr-4 flex-shrink-0';
+            orderNumber.className = 'flex items-center justify-center font-bold text-lg mr-4 flex-shrink-0';
+            
             orderNumber.style.backgroundColor = 'var(--primary)';
             orderNumber.style.color = 'white';
             orderNumber.style.width = '2rem';
             orderNumber.style.height = '2rem';
+            orderNumber.style.borderRadius = '6px';
             
             orderNumber.textContent = index + 1;
             const fileNameSpan = document.createElement('span');
@@ -1277,22 +1339,19 @@
             fileHeader.appendChild(fileInfo);
             li.appendChild(fileHeader);
             
-            // 預覽區塊
             const previewContainer = document.createElement('div');
             previewContainer.className = 'thumb-container hidden';
             li.appendChild(previewContainer);
 
-            li.addEventListener('dragstart', (e) => {
-                e.dataTransfer.setData('text/plain', index);
-            });
+            li.addEventListener('dragstart', (e) => { e.dataTransfer.setData('text/plain', index); });
             li.addEventListener('dragover', (e) => e.preventDefault());
             li.addEventListener('drop', (e) => {
-                e.preventDefault();
-                const fromIndex = e.dataTransfer.getData('text/plain');
-                const toIndex = index;
-                const fileToMove = filesForMerge.splice(fromIndex, 1)[0];
-                filesForMerge.splice(toIndex, 0, fileToMove);
-                renderMergeFileList();
+                 e.preventDefault();
+                 const fromIndex = e.dataTransfer.getData('text/plain');
+                 const toIndex = index;
+                 const fileToMove = filesForMerge.splice(fromIndex, 1)[0];
+                 filesForMerge.splice(toIndex, 0, fileToMove);
+                 renderMergeFileList();
             });
 
             li.addEventListener('click', async (event) => {
@@ -1311,7 +1370,7 @@
                     li.classList.add('ring-2', 'ring-blue-500');
                     selectedFileIndex = index;
                     deleteFileBtn.disabled = false;
-                    await renderPreviewThumbnails(file, previewContainer);
+                    renderPreviewThumbnails(file, previewContainer);
                     previewContainer.classList.remove('hidden');
                 } else {
                     selectedFileIndex = -1;
@@ -1329,43 +1388,134 @@
         }
     }
 
-    async function renderPreviewThumbnails(file, container) {
-        container.innerHTML = '';
-        try {
-            const arrayBuffer = await file.arrayBuffer();
-            const pdfDoc = await pdfjsLib.getDocument(arrayBuffer).promise;
-            const numPagesToPreview = pdfDoc.numPages;
-            for (let i = 1; i <= numPagesToPreview; i++) {
-                const page = await pdfDoc.getPage(i);
-                const viewport = page.getViewport({ scale: 0.2 });
-                const canvas = document.createElement('canvas');
-                canvas.width = viewport.width;
-                canvas.height = viewport.height;
-                const context = canvas.getContext('2d');
-                const renderContext = { canvasContext: context, viewport: viewport };
-                await page.render(renderContext).promise;
-                const thumbWrapper = document.createElement('div');
-                // Use inline style or a class for hover effect
-                thumbWrapper.style.flexShrink = '0';
-                thumbWrapper.style.padding = '0.5rem';
-                thumbWrapper.style.border = '1px solid var(--gray-200)';
-                thumbWrapper.style.borderRadius = 'var(--radius-md)';
-                thumbWrapper.style.cursor = 'pointer';
-                thumbWrapper.style.transition = 'background-color 0.2s';
-                thumbWrapper.onmouseover = function() { this.style.backgroundColor = 'var(--gray-100)'; };
-                thumbWrapper.onmouseout = function() { this.style.backgroundColor = 'transparent'; };
+	async function renderPreviewThumbnails(file, container) {
+		currentRenderId++;
+		const thisRenderId = currentRenderId;
+		container.innerHTML = '';
+		
+		try {
+			const arrayBuffer = await file.arrayBuffer();
+			const pdfDoc = await pdfjsLib.getDocument(arrayBuffer).promise;
+			
+			// 原本限制 5 頁，現在因為有效能優化，您可以考慮放寬，
+			// 但為了保持介面簡潔，維持 5 頁或適度增加皆可。
+			const maxPreviewPages = 5; 
+			const numPagesToPreview = Math.min(pdfDoc.numPages, maxPreviewPages);
 
-                const pageNum = document.createElement('div');
-                pageNum.textContent = `頁碼 ${i}`;
-                pageNum.className = 'text-center text-sm font-medium text-gray-600 mt-1';
-                thumbWrapper.appendChild(canvas);
-                thumbWrapper.appendChild(pageNum);
-                container.appendChild(thumbWrapper);
-                thumbWrapper.addEventListener('click', () => showFullScreenPreview(pdfDoc, i));
+			for (let i = 1; i <= numPagesToPreview; i++) {
+				if (thisRenderId !== currentRenderId) return;
+
+				const thumbWrapper = document.createElement('div');
+				thumbWrapper.style.flexShrink = '0';
+				thumbWrapper.style.padding = '0.5rem';
+				thumbWrapper.style.border = '1px solid var(--gray-200)';
+				thumbWrapper.style.borderRadius = 'var(--radius-md)';
+				thumbWrapper.style.cursor = 'pointer';
+				thumbWrapper.style.transition = 'background-color 0.2s';
+				thumbWrapper.style.width = '120px'; 
+				thumbWrapper.style.height = '160px';
+				thumbWrapper.style.display = 'flex';
+				thumbWrapper.style.flexDirection = 'column';
+				thumbWrapper.style.alignItems = 'center';
+				thumbWrapper.style.justifyContent = 'center';
+
+				thumbWrapper.onmouseover = function() { this.style.backgroundColor = 'var(--gray-100)'; };
+				thumbWrapper.onmouseout = function() { this.style.backgroundColor = 'transparent'; };
+
+				const pageNum = document.createElement('div');
+				pageNum.textContent = `頁碼 ${i}`;
+				pageNum.className = 'text-center text-sm font-medium text-gray-600 mt-1';
+
+				// 延遲渲染邏輯
+				thumbWrapper.renderFunction = async () => {
+					if (thisRenderId !== currentRenderId) return;
+					try {
+						const page = await pdfDoc.getPage(i);
+						const targetScale = 0.2;
+						const viewport = page.getViewport({ scale: targetScale });
+						const canvas = document.createElement('canvas');
+						canvas.width = viewport.width;
+						canvas.height = viewport.height;
+						
+						const ctx = canvas.getContext('2d');
+						await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+						
+						// 點擊事件
+						thumbWrapper.addEventListener('click', (e) => {
+							e.stopPropagation(); 
+							showFullScreenPreview(pdfDoc, i);
+						});
+						
+						// 插入 canvas (放在 pageNum 之前)
+						thumbWrapper.insertBefore(canvas, pageNum);
+						
+						// 移除佔位樣式
+						thumbWrapper.style.width = '';
+						thumbWrapper.style.height = '';
+					} catch(e) { console.error(e); }
+				};
+
+				thumbWrapper.appendChild(pageNum);
+				container.appendChild(thumbWrapper);
+				
+				// 加入觀察
+				thumbnailObserver.observe(thumbWrapper);
+			}
+
+			if (pdfDoc.numPages > numPagesToPreview) {
+				const moreInfo = document.createElement('div');
+				moreInfo.className = 'flex items-center justify-center p-2 text-sm text-gray-500';
+				moreInfo.textContent = `(尚有 ${pdfDoc.numPages - numPagesToPreview} 頁)`;
+				container.appendChild(moreInfo);
+			}
+
+		} catch (error) {
+			console.error('Error loading PDF for preview:', error);
+			if (container.children.length === 0) {
+				 showMessage('預覽檔案時發生錯誤。');
+			}
+		}
+	}
+
+    async function drawPageAsync(page, canvas, targetViewport, renderId) {
+        try {
+            // 如果發現控制台印出 "Render ID is NaN"，請檢查變數宣告
+            if (Number.isNaN(renderId)) {
+                console.warn('Render ID is NaN! 請檢查 let currentRenderId = 0;');
             }
-        } catch (error) {
-            console.error('Error loading PDF for preview:', error);
-            showMessage('預覽檔案時發生錯誤。');
+
+            const ctx = canvas.getContext('2d');
+
+            // 極速渲染 (模糊版)
+            const lowResScale = targetViewport.scale / 5; 
+            const lowResViewport = page.getViewport({ scale: lowResScale });
+            
+            canvas.width = lowResViewport.width;
+            canvas.height = lowResViewport.height;
+
+            await page.render({ canvasContext: ctx, viewport: lowResViewport }).promise;
+            
+            // 延遲後渲染清晰版
+            setTimeout(async () => {
+                // 檢查：如果 renderId 有值且與當前 ID 不符，才停止
+                // (這裡加上防呆：如果 renderId 是無效的，我們選擇繼續畫，避免永遠模糊)
+                if (renderId !== undefined && !Number.isNaN(renderId) && renderId !== currentRenderId) {
+                    return;
+                }
+
+                // 重設尺寸 (這會清空畫布)
+                canvas.width = targetViewport.width;
+                canvas.height = targetViewport.height;
+                
+                // 渲染清晰圖
+                await page.render({ canvasContext: ctx, viewport: targetViewport }).promise;
+                
+                // 移除模糊濾鏡
+                canvas.classList.add('loaded');
+            }, 50);
+
+        } catch (err) {
+            console.warn('Page render error:', err);
         }
     }
 
@@ -1391,27 +1541,52 @@
                     <label class="font-medium text-gray-700">檔案名稱:</label>
                     <input type="text" id="mergeFilename" class="form-input" value="合成-${formatDate(new Date())}">
                 </div>
+                <div id="mergeProgress" class="text-sm text-blue-600 font-medium hidden">準備中...</div>
                 <button id="exportMerge" class="btn btn-green w-full md:w-auto">匯出檔案</button>
             </div>
         `;
 
         document.getElementById('exportMerge').addEventListener('click', async () => {
+            const btn = document.getElementById('exportMerge');
+            const progressDiv = document.getElementById('mergeProgress');
+            const filename = document.getElementById('mergeFilename').value;
+            
+            // 鎖定按鈕並顯示進度
+            btn.disabled = true;
+            btn.textContent = '處理中...';
+            progressDiv.classList.remove('hidden');
+
             try {
                 const mergedPdf = await PDFLib.PDFDocument.create();
-                for (const file of filesForMerge) {
+                
+                for (let i = 0; i < filesForMerge.length; i++) {
+                    const file = filesForMerge[i];
+                    
+                    progressDiv.textContent = `正在處理第 ${i + 1} / ${filesForMerge.length} 個檔案：${file.name}`;
+                    
+                    await new Promise(resolve => setTimeout(resolve, 10));
+
                     const pdfBytes = await file.arrayBuffer();
                     const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
                     const copiedPages = await mergedPdf.copyPages(pdfDoc, pdfDoc.getPageIndices());
                     copiedPages.forEach(page => mergedPdf.addPage(page));
                 }
+                
+                progressDiv.textContent = '正在儲存檔案...';
+                await new Promise(resolve => setTimeout(resolve, 10)); 
 
                 const mergedPdfBytes = await mergedPdf.save();
-                const filename = document.getElementById('mergeFilename').value;
                 downloadPDF(mergedPdfBytes, filename);
+                
                 showMessage('PDF 合成並匯出成功！');
             } catch (error) {
                 console.error('Error merging PDFs:', error);
                 showMessage('PDF 合成時發生錯誤。');
+            } finally {
+                // 恢復按鈕狀態
+                btn.disabled = false;
+                btn.textContent = '匯出檔案';
+                progressDiv.classList.add('hidden');
             }
         });
     });
@@ -1513,48 +1688,77 @@
     }
     
     // ==================== 旋轉功能 ====================
-    async function renderRotateThumbnails(pdfDoc) {
-        rotateThumbnails.innerHTML = '';
-        const numPages = pdfDoc.numPages;
-        
-        for (let i = 1; i <= numPages; i++) {
-            const page = await pdfDoc.getPage(i);
-            const viewport = page.getViewport({ scale: 0.3, rotation: rotateRotations[i - 1] });
-            const canvas = document.createElement('canvas');
-            canvas.width = viewport.width;
-            canvas.height = viewport.height;
-            const context = canvas.getContext('2d');
-            const renderContext = { canvasContext: context, viewport: viewport };
-            await page.render(renderContext).promise;
-            const thumbWrapper = document.createElement('div');
-            thumbWrapper.className = `thumb-wrapper`;
-            // Add hover effect via style or keep CSS class
-            thumbWrapper.style.cursor = 'pointer';
-            thumbWrapper.onmouseover = function() { this.style.backgroundColor = 'var(--gray-100)'; };
-            thumbWrapper.onmouseout = function() { this.style.backgroundColor = 'transparent'; };
+	async function renderRotateThumbnails(pdfDoc) {
+		rotateThumbnails.innerHTML = '';
+		const numPages = pdfDoc.numPages;
+		const thisRenderId = currentRenderId;
+		
+		for (let i = 1; i <= numPages; i++) {
+			if (thisRenderId !== currentRenderId) return;
 
-            thumbWrapper.dataset.page = i - 1;
-            const pageNum = document.createElement('div');
-            pageNum.textContent = i;
-            pageNum.className = 'text-center text-sm font-medium text-gray-600 mt-1';
-            
-            thumbWrapper.appendChild(canvas);
-            thumbWrapper.appendChild(pageNum);
-            rotateThumbnails.appendChild(thumbWrapper);
-            thumbWrapper.addEventListener('click', () => {
-                document.querySelectorAll('#rotateThumbnails .selected-thumbnail').forEach(t => t.classList.remove('selected-thumbnail'));
-                thumbWrapper.classList.add('selected-thumbnail');
-                selectedRotatePage = i - 1;
-                rotatePageBtn.disabled = false;
-            });
-        }
-        if (selectedRotatePage !== -1) {
-            const currentSelectedThumb = document.querySelector(`[data-page="${selectedRotatePage}"]`);
-            if (currentSelectedThumb) {
-                currentSelectedThumb.classList.add('selected-thumbnail');
-            }
-        }
-    }
+			const thumbWrapper = document.createElement('div');
+			thumbWrapper.className = `thumb-wrapper`;
+			thumbWrapper.style.cursor = 'pointer';
+			thumbWrapper.style.minHeight = '150px';
+			thumbWrapper.style.minWidth = '120px';
+			thumbWrapper.style.display = 'flex';
+			thumbWrapper.style.flexDirection = 'column';
+			thumbWrapper.style.alignItems = 'center';
+			
+			thumbWrapper.onmouseover = function() { this.style.backgroundColor = 'var(--gray-100)'; };
+			thumbWrapper.onmouseout = function() { this.style.backgroundColor = 'transparent'; };
+
+			thumbWrapper.dataset.page = i - 1;
+			const pageNum = document.createElement('div');
+			pageNum.textContent = i;
+			pageNum.className = 'text-center text-sm font-medium text-gray-600 mt-1';
+			
+			// 延遲渲染邏輯
+			thumbWrapper.renderFunction = async () => {
+				if (thisRenderId !== currentRenderId) return;
+				try {
+					const page = await pdfDoc.getPage(i);
+					const viewport = page.getViewport({ scale: 0.3, rotation: rotateRotations[i - 1] });
+					const canvas = document.createElement('canvas');
+					canvas.width = viewport.width;
+					canvas.height = viewport.height;
+					const context = canvas.getContext('2d');
+					await page.render({ canvasContext: context, viewport: viewport }).promise;
+					
+					thumbWrapper.prepend(canvas);
+					thumbWrapper.style.minHeight = '';
+					thumbWrapper.style.minWidth = '';
+				} catch (e) {
+					console.error(e);
+				}
+			};
+
+			thumbWrapper.appendChild(pageNum);
+			rotateThumbnails.appendChild(thumbWrapper);
+
+			// 綁定點擊事件 (選取頁面)
+			thumbWrapper.addEventListener('click', () => {
+				document.querySelectorAll('#rotateThumbnails .selected-thumbnail').forEach(t => t.classList.remove('selected-thumbnail'));
+				thumbWrapper.classList.add('selected-thumbnail');
+				selectedRotatePage = i - 1;
+				rotatePageBtn.disabled = false;
+			});
+
+			// 加入觀察
+			thumbnailObserver.observe(thumbWrapper);
+		}
+		
+		// 如果有已選取的頁面，重新標記
+		if (selectedRotatePage !== -1) {
+			// 這裡需要稍微延遲或等待 DOM 更新，簡單處理即可
+			setTimeout(() => {
+				const currentSelectedThumb = document.querySelector(`[data-page="${selectedRotatePage}"]`);
+				if (currentSelectedThumb) {
+					currentSelectedThumb.classList.add('selected-thumbnail');
+				}
+			}, 100);
+		}
+	}
 
     rotatePageBtn.addEventListener('click', async () => {
         if (selectedRotatePage === -1) {
@@ -1574,7 +1778,6 @@
             return;
         }
 
-        // 找到*舊的* (當前可見的) canvas
         const oldCanvas = thumbWrapper.querySelector('canvas');
         if (!oldCanvas) {
             console.error('No canvas found in selected thumbnail.');
@@ -1583,34 +1786,24 @@
         }
 
         try {
-            // 取得對應的 PDF 頁面 (getPage 是 1-based)
             const pageNum = selectedRotatePage + 1;
             const page = await loadedPDF.getPage(pageNum);
-            
-            // 使用新的旋轉角度計算視圖
             const newRotation = rotateRotations[selectedRotatePage];
             const viewport = page.getViewport({ scale: 0.3, rotation: newRotation });
-
-            // === [核心修改] 建立一個*新的* (in-memory) canvas ===
             const newCanvas = document.createElement('canvas');
+			
             newCanvas.width = viewport.width;
             newCanvas.height = viewport.height;
             
-            // 在*新的* canvas 上渲染 (這不會影響畫面)
             const context = newCanvas.getContext('2d');
             const renderContext = { canvasContext: context, viewport: viewport };
             
-            // 等待新 canvas 繪製完成
             await page.render(renderContext).promise;
 
-            // === 渲染完成後，*替換*舊的 canvas ===
-            //    這一步是原子操作，不會有閃爍
-            //    我們替換 oldCanvas，而不是 thumbWrapper，所以 .selected-thumbnail 樣式會保留
             oldCanvas.parentNode.replaceChild(newCanvas, oldCanvas);
 
         } catch (error) {
             console.error('Error re-rendering single rotated thumbnail:', error);
-            // 如果單頁更新失敗，退回舊方法以確保功能正常
             await renderRotateThumbnails(loadedPDF);
         }
     });
@@ -1659,55 +1852,77 @@
     }
 	
 	// ==================== OCR 縮圖渲染 ====================
-    async function renderOcrThumbnails(pdfDoc) {
-        const ocrThumbnails = document.getElementById('ocrThumbnails');
-        ocrThumbnails.innerHTML = '';
-        const numPages = pdfDoc.numPages;
+	async function renderOcrThumbnails(pdfDoc) {
+		const ocrThumbnails = document.getElementById('ocrThumbnails');
+		ocrThumbnails.innerHTML = '';
+		const numPages = pdfDoc.numPages;
+		const thisRenderId = currentRenderId;
 
-        const cutMarkerStart = document.createElement('div');
-        cutMarkerStart.className = 'cut-marker';
-        cutMarkerStart.dataset.page = 0;
-        cutMarkerStart.addEventListener('click', () => toggleOcrSplitPoint(0));
-        ocrThumbnails.appendChild(cutMarkerStart);
+		const cutMarkerStart = document.createElement('div');
+		cutMarkerStart.className = 'cut-marker';
+		cutMarkerStart.dataset.page = 0;
+		cutMarkerStart.addEventListener('click', () => toggleOcrSplitPoint(0));
+		ocrThumbnails.appendChild(cutMarkerStart);
 
-        for (let i = 1; i <= numPages; i++) {
-            const page = await pdfDoc.getPage(i);
-            const viewport = page.getViewport({ scale: 0.3 });
-            const canvas = document.createElement('canvas');
-            canvas.width = viewport.width;
-            canvas.height = viewport.height;
-            const context = canvas.getContext('2d');
-            const renderContext = { canvasContext: context, viewport: viewport };
-            await page.render(renderContext).promise;
-            const thumbWrapper = document.createElement('div');
-            thumbWrapper.className = 'thumb-wrapper';
-            const pageNum = document.createElement('div');
-            pageNum.textContent = i;
-            pageNum.className = 'text-center text-sm font-medium text-gray-600 mt-1';
-            
-            thumbWrapper.appendChild(canvas);
-            thumbWrapper.appendChild(pageNum);
-            ocrThumbnails.appendChild(thumbWrapper);
-            
-            canvas.addEventListener('click', () => showFullScreenPreview(pdfDoc, i));
+		for (let i = 1; i <= numPages; i++) {
+			if (thisRenderId !== currentRenderId) return;
+			
+			const thumbWrapper = document.createElement('div');
+			thumbWrapper.className = 'thumb-wrapper';
+			thumbWrapper.style.minHeight = '150px';
+			thumbWrapper.style.minWidth = '120px';
+			thumbWrapper.style.display = 'flex';
+			thumbWrapper.style.flexDirection = 'column';
+			thumbWrapper.style.alignItems = 'center';
 
-            if (i < numPages) {
-                const cutMarker = document.createElement('div');
-                cutMarker.className = 'cut-marker';
-                cutMarker.dataset.page = i;
-                cutMarker.addEventListener('click', () => toggleOcrSplitPoint(parseInt(cutMarker.dataset.page)));
-                ocrThumbnails.appendChild(cutMarker);
-            }
-        }
+			const pageNum = document.createElement('div');
+			pageNum.textContent = i;
+			pageNum.className = 'text-center text-sm font-medium text-gray-600 mt-1';
+			
+			// 延遲渲染邏輯
+			thumbWrapper.renderFunction = async () => {
+				if (thisRenderId !== currentRenderId) return;
+				try {
+					const page = await pdfDoc.getPage(i);
+					const viewport = page.getViewport({ scale: 0.3 });
+					const canvas = document.createElement('canvas');
+					canvas.width = viewport.width;
+					canvas.height = viewport.height;
+					const context = canvas.getContext('2d');
+					
+					canvas.addEventListener('click', () => showFullScreenPreview(pdfDoc, i));
+					
+					await page.render({ canvasContext: context, viewport: viewport }).promise;
+					
+					thumbWrapper.prepend(canvas);
+					thumbWrapper.style.minHeight = '';
+					thumbWrapper.style.minWidth = '';
+				} catch (e) { console.error(e); }
+			};
+			
+			thumbWrapper.appendChild(pageNum);
+			ocrThumbnails.appendChild(thumbWrapper);
+			
+			// 加入觀察
+			thumbnailObserver.observe(thumbWrapper);
 
-        const cutMarkerEnd = document.createElement('div');
-        cutMarkerEnd.className = 'cut-marker';
-        cutMarkerEnd.dataset.page = numPages;
-        cutMarkerEnd.addEventListener('click', () => toggleOcrSplitPoint(numPages));
-        ocrThumbnails.appendChild(cutMarkerEnd);
-        
-        updateOcrUI();
-    }
+			if (i < numPages) {
+				const cutMarker = document.createElement('div');
+				cutMarker.className = 'cut-marker';
+				cutMarker.dataset.page = i;
+				cutMarker.addEventListener('click', () => toggleOcrSplitPoint(parseInt(cutMarker.dataset.page)));
+				ocrThumbnails.appendChild(cutMarker);
+			}
+		}
+
+		const cutMarkerEnd = document.createElement('div');
+		cutMarkerEnd.className = 'cut-marker';
+		cutMarkerEnd.dataset.page = numPages;
+		cutMarkerEnd.addEventListener('click', () => toggleOcrSplitPoint(numPages));
+		ocrThumbnails.appendChild(cutMarkerEnd);
+		
+		updateOcrUI();
+	}
 
     function toggleOcrSplitPoint(page) {
         const index = ocrSplitPoints.indexOf(page);
@@ -1864,7 +2079,6 @@
             return;
         }
 
-        // 準備 UI
         const progressContainer = document.getElementById('ocrProgressContainer');
         const progressBar = document.getElementById('ocrProgressBar');
 
@@ -1872,10 +2086,9 @@
         ocrResultText.value = '';
         originalOcrText = '';
         ocrStatus.classList.remove('text-green-500'); 
-        document.getElementById('ocrResultTools').classList.add('hidden'); // 隱藏標點按鈕
+        document.getElementById('ocrResultTools').classList.add('hidden'); 
         document.getElementById('copyOcrTextBtn').disabled = true;
 
-        // 重設標點按鈕狀態
         puncToggles = { colon: false, comma: false, paren: false };
         document.querySelectorAll('.punc-btn').forEach(btn => btn.classList.remove('active'));
 
@@ -1951,16 +2164,12 @@
         ocrResultText.value = tempText;
     }
 
-    // 子按鈕 (冒號、逗號、括號)
     document.querySelectorAll('.punc-btn').forEach(button => {
         button.addEventListener('click', () => {
             const type = button.dataset.type;
             if (type in puncToggles) {
-                // 切換狀態
                 puncToggles[type] = !puncToggles[type];
-                // 切換視覺
                 button.classList.toggle('active', puncToggles[type]);
-                // 重新應用過濾
                 applyPunctuationFilters();
             }
         });
@@ -1999,14 +2208,9 @@
     });
 
     document.addEventListener('keydown', (event) => {
-        
-        // === [新增] 開始：檢查事件目標元素 ===
         const targetElement = event.target;
         if (targetElement) {
-            // 將標籤名稱標準化為大寫
             const tagName = targetElement.tagName.toUpperCase();
-            
-            // 如果使用者正在與輸入框、文字區或下拉選單互動，則不觸發任何快捷鍵
             if (tagName === 'INPUT' || tagName === 'TEXTAREA' || tagName === 'SELECT') {
                 return;
             }
@@ -2111,6 +2315,151 @@
         const min = date.getMinutes().toString().padStart(2, '0');
         const ss = date.getSeconds().toString().padStart(2, '0');
         return `${yyyy}${mm}${dd}${hh}${min}${ss}`;
+    }
+	
+    function resetFileStatus() {
+		currentRenderId++;
+        loadedPDF = null;
+        singleLoadedFile = null;
+        fileInput.value = '';
+        fileStatus.textContent = '支援 .pdf 格式';
+    }
+
+    // 清除裁切 (Split) 資料
+    const clearSplitBtn = document.getElementById('clearSplit');
+    if (clearSplitBtn) {
+        clearSplitBtn.addEventListener('click', () => {
+            // 重置全域檔案狀態
+            resetFileStatus();
+            
+            // 清空縮圖容器 (視覺上移除 PDF)
+            splitThumbnails.innerHTML = '';
+            
+            // 重置輸入框與變數
+            document.getElementById('splitStartPage').value = '';
+            document.getElementById('splitEndPage').value = '';
+            splitPoints = [];
+            
+            // 禁用按鈕
+            splitNextBtn.disabled = true;
+        });
+    }
+
+    // 清除合成 (Merge) 資料
+    const clearMergeBtn = document.getElementById('clearMerge');
+    if (clearMergeBtn) {
+        clearMergeBtn.addEventListener('click', () => {
+            // 合成模式有自己的檔案陣列，需獨立處理
+            filesForMerge = [];
+            selectedFileIndex = -1;
+            
+            // 重置清單顯示
+            renderMergeFileList(); // 這會自動顯示「請匯入 PDF...」
+            
+            // 重置狀態文字與 Input
+            fileStatus.textContent = '支援 .pdf 格式';
+            fileInput.value = '';
+            
+            // 禁用按鈕
+            mergeNextBtn.disabled = true;
+        });
+    }
+
+    // 清除頁碼 (PageNumber) 資料
+    const clearPageNumberBtn = document.getElementById('clearPageNumber');
+    if (clearPageNumberBtn) {
+        clearPageNumberBtn.addEventListener('click', () => {
+            // 重置全域檔案狀態
+            resetFileStatus();
+            
+            // 重置輸入框為預設值
+            document.getElementById('pageNumberStart').value = '1';
+            document.getElementById('pageNumberFromPage').value = '';
+            document.getElementById('pageNumberFromPage').placeholder = '頁碼'; // 重置 placeholder
+            document.getElementById('pageNumberPosition').value = 'left';
+            document.getElementById('pageNumberType').value = 'same';
+            
+            // 禁用按鈕
+            pageNumberNextBtn.disabled = true;
+        });
+    }
+
+    // 清除旋轉 (Rotate) 資料
+    const clearRotateBtn = document.getElementById('clearRotate');
+    if (clearRotateBtn) {
+        clearRotateBtn.addEventListener('click', () => {
+            // 重置全域檔案狀態
+            resetFileStatus();
+            
+            // 清空縮圖容器
+            rotateThumbnails.innerHTML = '';
+            
+            // 重置變數
+            rotateRotations = [];
+            selectedRotatePage = -1;
+            
+            // 重置操作區域 (如果已經變成匯出介面，要還原回「下一步」按鈕)
+            const rotateActionArea = document.getElementById('rotateAction');
+            rotateActionArea.innerHTML = `
+                <button id="rotateNext" class="btn btn-blue btn-lg" disabled>下一步</button>
+            `;
+            // 重新抓取 DOM 並綁定事件 (因為被 innerHTML 覆蓋了)
+            rotateNextBtn = document.getElementById('rotateNext');
+            // 綁定事件邏輯 (與原本邏輯相同)
+            rotateNextBtn.addEventListener('click', () => {
+                const actionArea = document.getElementById('rotateNext').parentNode;
+                actionArea.innerHTML = `
+                    <div class="flex flex-col items-end space-y-4 w-full md:w-auto">
+                        <div class="flex items-center space-x-2">
+                            <label class="font-medium text-gray-700">檔案名稱:</label>
+                            <input type="text" id="rotateFilename" class="form-input" value="旋轉-${formatDate(new Date())}">
+                        </div>
+                        <button id="exportRotate" class="btn btn-green w-full md:w-auto">匯出檔案</button>
+                    </div>
+                `;
+                document.getElementById('exportRotate').addEventListener('click', handleRotateExport);
+            });
+
+            // 禁用按鈕
+            rotatePageBtn.disabled = true;
+            rotateNextBtn.disabled = true;
+        });
+    }
+
+    // 清除 OCR 資料
+    const clearOcrBtn = document.getElementById('clearOcr');
+    if (clearOcrBtn) {
+        clearOcrBtn.addEventListener('click', () => {
+            // 重置全域檔案狀態
+            resetFileStatus();
+            
+            // 清空縮圖容器
+            document.getElementById('ocrThumbnails').innerHTML = '';
+            
+            // 重置輸入框與變數
+            document.getElementById('ocrStartPage').value = '';
+            document.getElementById('ocrEndPage').value = '';
+            ocrSplitPoints = [];
+            
+            // 清空結果與隱藏工具列
+            const ocrResultText = document.getElementById('ocrResultText');
+            if (ocrResultText) ocrResultText.value = '';
+            originalOcrText = '';
+            
+            document.getElementById('ocrStatus').classList.add('hidden');
+            document.getElementById('ocrStatus').textContent = '';
+            document.getElementById('ocrResultTools').classList.add('hidden');
+            document.getElementById('copyOcrTextBtn').disabled = true;
+            document.getElementById('ocrProgressContainer').classList.add('hidden');
+            document.getElementById('ocrProgressBar').style.width = '0%';
+
+            // 重置標點符號按鈕
+            puncToggles = { colon: false, comma: false, paren: false };
+            document.querySelectorAll('.punc-btn').forEach(btn => btn.classList.remove('active'));
+            
+            // 禁用開始按鈕
+            document.getElementById('ocrStartBtn').disabled = true;
+        });
     }
 </script>
 </body>

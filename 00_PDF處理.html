@@ -276,16 +276,9 @@
             position: relative;
         }
         .info-tooltip-icon {
-            color: var(--gray-500);
-            cursor: pointer;
-            font-size: 1.25rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: inline-block; 
             width: auto;
             height: auto;
-            padding: 0 0.25rem;
-            border: none;
         }
 
         #mergeFileList li {
@@ -504,6 +497,47 @@
         .btn-text-red:hover {
             background-color: #fee2e2;
         }
+		
+        .btn-text-yellow {
+            background: none;
+            border: none;
+            color: var(--warning-hover); 
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            border-radius: var(--radius-md);
+            transition: background-color 0.2s;
+        }
+        .btn-text-yellow:hover {
+            background-color: #fef9c3; 
+        }
+
+        .remove-file-btn {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 1.5rem;
+            height: 1.5rem;
+            background-color: var(--danger);
+            color: white;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            line-height: 1;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            z-index: 10;
+            transition: transform 0.2s, background-color 0.2s;
+        }
+        .remove-file-btn:hover {
+            background-color: var(--danger-hover);
+            transform: scale(1.1);
+        }
     </style>
 </head>
 <body>
@@ -530,10 +564,8 @@
             <div id="sectionSplit" class="tool-section">
                 <div class="section-header">
                     <h2 class="section-title">裁切功能</h2>
-                    <div class="info-tooltip-container">
-                        <span class="info-tooltip-icon" data-tooltip="split">💬</span>
-                    </div>
-					<button id="clearSplit" class="btn-text-red ml-auto">清除資料</button>
+                    <button class="btn-text-yellow info-tooltip-icon ml-auto" data-tooltip="split">功能說明</button>
+                    <button id="clearSplit" class="btn-text-red">清除資料</button>
                 </div>
                 
                 <div id="splitTextInput" class="mb-6 space-y-4">
@@ -559,10 +591,8 @@
             <div id="sectionMerge" class="tool-section hidden">
                 <div class="section-header">
                     <h2 class="section-title">合成功能</h2>
-                    <div class="info-tooltip-container">
-                        <span class="info-tooltip-icon" data-tooltip="merge">💬</span>
-                    </div>
-					<button id="clearMerge" class="btn-text-red ml-auto">清除資料</button>
+                    <button class="btn-text-yellow info-tooltip-icon ml-auto" data-tooltip="merge">功能說明</button>
+                    <button id="clearMerge" class="btn-text-red">清除資料</button>
                 </div>
 
                 <div class="mb-6">
@@ -580,20 +610,21 @@
             <div id="sectionPageNumber" class="tool-section hidden">
                 <div class="section-header">
                     <h2 class="section-title">編頁碼功能</h2>
-                    <div class="info-tooltip-container">
-                        <span class="info-tooltip-icon" data-tooltip="pageNumber">💬</span>
-                    </div>
-					<button id="clearPageNumber" class="btn-text-red ml-auto">清除資料</button>
+                    <button class="btn-text-yellow info-tooltip-icon ml-auto" data-tooltip="pageNumber">功能說明</button>
+                    <button id="clearPageNumber" class="btn-text-red">清除資料</button>
                 </div>
+				
                 <div id="pageNumberInput" class="mb-6 space-y-4">
                     <div class="flex items-center space-x-4">
                         <label class="font-medium text-gray-700">起始數字：</label>
                         <input type="number" id="pageNumberStart" placeholder="1" value="1" class="form-input w-24">
                     </div>
+					
                     <div class="flex items-center space-x-4">
                         <label class="font-medium text-gray-700">從第幾頁開始編：</label>
                         <input type="number" id="pageNumberFromPage" placeholder="頁碼" class="form-input w-24">
                     </div>
+					
                     <div class="flex items-center space-x-4">
                         <label class="font-medium text-gray-700">起始頁碼位置：</label>
                         <select id="pageNumberPosition" class="form-input">
@@ -601,6 +632,7 @@
                             <option value="right">右</option>
                         </select>
                     </div>
+					
                     <div class="flex items-center space-x-4">
                         <label class="font-medium text-gray-700">頁碼呈現類型：</label>
                         <select id="pageNumberType" class="form-input">
@@ -617,10 +649,8 @@
             <div id="sectionRotate" class="tool-section hidden">
                 <div class="section-header">
                     <h2 class="section-title">旋轉功能</h2>
-                    <div class="info-tooltip-container">
-                        <span class="info-tooltip-icon" data-tooltip="rotate">💬</span>
-                    </div>
-					<button id="clearRotate" class="btn-text-red ml-auto">清除資料</button>
+                    <button class="btn-text-yellow info-tooltip-icon ml-auto" data-tooltip="rotate">功能說明</button>
+                    <button id="clearRotate" class="btn-text-red">清除資料</button>
                 </div>
 
                 <div class="mb-4">
@@ -640,10 +670,8 @@
             <div id="sectionOcr" class="tool-section hidden">
                 <div class="section-header">
                     <h2 class="section-title">文字辨識功能 (OCR)</h2>
-                    <div class="info-tooltip-container">
-                        <span class="info-tooltip-icon" data-tooltip="ocr">💬</span>
-                    </div>
-					<button id="clearOcr" class="btn-text-red ml-auto">清除資料</button>
+                    <button class="btn-text-yellow info-tooltip-icon ml-auto" data-tooltip="ocr">功能說明</button>
+                    <button id="clearOcr" class="btn-text-red">清除資料</button>
                 </div>
 
                 <div id="ocrTextInput" class="mb-6 space-y-4">
@@ -1314,6 +1342,27 @@
             li.className = 'sortable-item';
             li.draggable = true;
             li.dataset.index = index;
+			li.style.position = 'relative';
+			
+			const removeBtn = document.createElement('button');
+            removeBtn.className = 'remove-file-btn';
+            removeBtn.innerHTML = '&times;';
+            removeBtn.title = '移除此檔案';
+            
+            removeBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); 
+                filesForMerge.splice(index, 1);
+                
+                if (selectedFileIndex === index) {
+                    selectedFileIndex = -1;
+                } else if (selectedFileIndex > index) {
+                    selectedFileIndex--;
+                }
+                
+                renderMergeFileList();
+            });
+            
+            li.appendChild(removeBtn);
 
             const fileHeader = document.createElement('div');
             fileHeader.className = 'flex items-center justify-between mb-2';

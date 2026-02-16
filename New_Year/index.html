@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🐴 金馬奔騰接紅包 🐴</title>
+    <title>🐴 品喬邀您金馬奔騰接紅包 🐴</title>
     <style>
         body {
             margin: 0; padding: 0;
@@ -80,8 +80,17 @@
         .rule-desc { flex-grow: 1; text-align: left; padding-left: 10px; font-size: 0.9rem;}
         .item { 
             position: absolute; font-size: 3.5rem; 
+            padding: 25px;
+            margin: -25px;
+            border-radius: 50%;
             animation: fall linear forwards; z-index: 5; 
             cursor: pointer; -webkit-tap-highlight-color: transparent;
+            touch-action: none; 
+            user-select: none;
+        }
+        .item:active {
+            transform: scale(0.9);
+            filter: brightness(1.2);
         }
         @media (max-width: 600px) { .item { font-size: 3rem; } h1 { font-size: 1.8rem; } }
         @keyframes fall { to { transform: translateY(110vh) rotate(360deg); } }
@@ -290,7 +299,7 @@
         const el = document.createElement('div');
         el.classList.add('item');
         el.innerText = selectedItem.symbol;
-        el.style.left = (Math.random() * 80 + 5) + '%';
+        el.style.left = (Math.random() * 70 + 10) + '%';
         el.style.animationDuration = (Math.random() * 1.5 + 2) + 's';
 
         el.onpointerdown = (e) => {

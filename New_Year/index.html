@@ -185,7 +185,7 @@
     </div>
 
     <div id="start-screen" class="overlay">
-        <h1>🐴 品喬邀您金馬奔騰接紅包 🐴</h1>
+        <h1>🐴品喬邀您金馬奔騰接紅包🐴</h1>
         <p>準備好你的手指，一起搶好運！</p>
         <div class="instruction-box">
             <div class="rule-row"><span class="rule-icon">🧧</span><span class="rule-desc">大紅包</span><span class="rule-score">+10</span></div>
@@ -207,18 +207,18 @@
         </div>
         <p style="margin-top:20px; font-size:0.9rem;">輸入暱稱上傳排行榜：</p>
         <input type="text" id="username" placeholder="例：帥氣表哥" maxlength="8">
-        <button class="btn" onclick="submitScore()">📤 送出成績</button>
-        <button class="btn btn-secondary" onclick="returnToStart()">🏠 回首頁</button>
+        <button class="btn" onclick="submitScore()">送出成績</button>
+        <button class="btn btn-secondary" onclick="returnToStart()">返回首頁</button>
         <p id="submit-status" style="color:#aaa; font-size:0.8rem; height:1rem;"></p>
     </div>
 
     <div id="leaderboard-screen" class="overlay hidden">
         <h2>🏆 風雲榜 🏆</h2>
         <div id="leaderboard-list">
-            <div class="rank-header"><span>#</span><span>暱稱</span><span>分數</span></div>
+            <div class="rank-header"><span>名次</span><span>暱稱</span><span>分數</span></div>
             <div id="rank-content"></div>
         </div>
-        <button class="btn" onclick="returnToStart()">🔙 返回首頁</button>
+        <button class="btn" onclick="returnToStart()">返回首頁</button>
     </div>
 </div>
 
@@ -254,10 +254,10 @@
 
     const horseBlessings = [
         { min: 0, text: "馬年平安！健康就是最大的財富！" },
-        { min: 100, text: "一馬當先！今年運勢跑第一！" },
-        { min: 200, text: "龍馬精神！活力滿滿賺大錢！" },
-        { min: 300, text: "馬到成功！心想事成萬事順！" },
-        { min: 450, text: "萬馬奔騰！氣勢如虹，無人能擋！" }
+        { min: 250, text: "一馬當先！今年運勢跑第一！" },
+        { min: 500, text: "龍馬精神！活力滿滿賺大錢！" },
+        { min: 750, text: "馬到成功！心想事成萬事順！" },
+        { min: 1000, text: "萬馬奔騰！氣勢如虹，無人能擋！" }
     ];
 
     function toggleMusic() {
@@ -294,7 +294,6 @@
             if (timeLeft <= 0) endGame();
         }, 1000);
 
-        // 修改需求：將間隔從 350ms 縮短至 200ms 以增加個數
         spawnInterval = setInterval(spawnItem, 200);
     }
 

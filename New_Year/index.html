@@ -10,7 +10,6 @@
             width: 100%; height: 100%;
             overflow: hidden;
             touch-action: none; 
-            
             -webkit-user-select: none; 
             user-select: none;
             -webkit-touch-callout: none; 
@@ -65,6 +64,12 @@
             text-shadow: 0 0 15px #ff0000; 
             font-size: 2.2rem; line-height: 1.2;
         }
+        
+        #leaderboard-screen h2 {
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
         p { margin: 10px 0; font-size: 1.1rem; color: #eee; }
 
         .btn {
@@ -102,7 +107,6 @@
             animation: fall linear forwards; 
             z-index: 5; 
             cursor: pointer; 
-            
             touch-action: none;
             -webkit-tap-highlight-color: transparent;
         }
@@ -149,12 +153,20 @@
             border-bottom: 1px solid rgba(255,255,255,0.1); align-items: center; text-align: left;
         }
         .rank-item:nth-child(even) { background: rgba(255,255,255,0.05); }
-        .rank-num { text-align: center; font-weight: bold; }
-        .rank-name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding-right: 10px;}
+        
+        .rank-num { 
+            text-align: center; 
+            font-weight: bold; 
+            font-size: 1.2em;
+            text-shadow: 0 0 5px rgba(0,0,0,0.8);
+            color: #CD7F32;
+        }
+        .rank-name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding-right: 10px; color: #fff}
         .rank-score { text-align: right; color: #FFD700; font-family: monospace; font-size: 1.1em;}
-        .rank-item:nth-child(2) .rank-num { color: #FFD700; text-shadow: 0 0 5px gold; font-size: 1.2em; } 
-        .rank-item:nth-child(3) .rank-num { color: #C0C0C0; text-shadow: 0 0 5px silver; font-size: 1.2em;} 
-        .rank-item:nth-child(4) .rank-num { color: #CD7F32; text-shadow: 0 0 5px orange; font-size: 1.2em;}
+        
+        .rank-item:nth-child(2) .rank-num { color: #FFD700; text-shadow: 0 0 8px gold; } 
+        .rank-item:nth-child(3) .rank-num { color: #C0C0C0; text-shadow: 0 0 8px silver; } 
+        .rank-item:nth-child(4) .rank-num { color: #CD7F32; text-shadow: 0 0 8px orange; }
     </style>
 </head>
 <body>
@@ -212,26 +224,18 @@
 
 <script>
     document.addEventListener('touchstart', function(event) {
-        if (event.touches.length > 1) {
-            event.preventDefault(); 
-        }
+        if (event.touches.length > 1) event.preventDefault(); 
     }, { passive: false });
 
     let lastTouchEnd = 0;
     document.addEventListener('touchend', function(event) {
         const now = (new Date()).getTime();
-        if (now - lastTouchEnd <= 200) {
-            event.preventDefault();
-        }
+        if (now - lastTouchEnd <= 200) event.preventDefault();
         lastTouchEnd = now;
     }, { passive: false });
-    
-    document.addEventListener('gesturestart', function(event) {
-        event.preventDefault();
-    });
 
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx4_K6xu2-KK3rEXaIy4qCLYWbLAqQkXA7SmMROErLi5txdcmZeSTfjZrzk-X068vuDRw/exec'; 
-
+	
     let score = 0;
     let timeLeft = 30;
     let gameInterval, spawnInterval;
@@ -273,12 +277,8 @@
         musicBtn.innerText = "🔇"; musicBtn.style.borderColor = "#FFD700";
     }
 
-    function tryPlayMusic() {
-        if (!isMusicOn && bgm.paused) { playBgm(); }
-    }
-
     function startGame() {
-        tryPlayMusic();
+        if (!isMusicOn && bgm.paused) playBgm();
         score = 0; timeLeft = 30; isPlaying = true;
         
         document.body.classList.add('game-running');
@@ -286,9 +286,7 @@
         document.getElementById('time-display').innerText = `⏳ ${timeLeft}s`;
         
         hideAllScreens();
-        
-        document.querySelectorAll('.item').forEach(e => e.remove());
-        document.querySelectorAll('.pop').forEach(e => e.remove());
+        document.querySelectorAll('.item, .pop').forEach(e => e.remove());
 
         gameInterval = setInterval(() => {
             timeLeft--;
@@ -296,7 +294,8 @@
             if (timeLeft <= 0) endGame();
         }, 1000);
 
-        spawnInterval = setInterval(spawnItem, 350);
+        // 修改需求：將間隔從 350ms 縮短至 200ms 以增加個數
+        spawnInterval = setInterval(spawnItem, 200);
     }
 
     function spawnItem() {
@@ -313,20 +312,19 @@
         const el = document.createElement('div');
         el.classList.add('item');
         el.innerText = selectedItem.symbol;
-        el.style.left = (Math.random() * 70 + 10) + '%';
-        el.style.animationDuration = (Math.random() * 1.5 + 2) + 's';
+        el.style.left = (Math.random() * 80 + 10) + '%';
+        
+        // 修改需求：速度有快有慢，原本是 2~3.5s，改為 1.2s~4.0s
+        const speed = (Math.random() * 2.8 + 1.2).toFixed(2);
+        el.style.animationDuration = speed + 's';
+        
         el.onpointerdown = (e) => {
             e.preventDefault();
-            e.stopPropagation(); 
-
             if (el.classList.contains('clicked')) return;
             el.classList.add('clicked');
-
             score += selectedItem.val;
             document.getElementById('score-display').innerText = `💰 分數: ${score}`;
-
             if (navigator.vibrate) navigator.vibrate(selectedItem.val > 0 ? 50 : 200);
-
             showEffect(e.clientX, e.clientY, selectedItem.val);
             el.style.opacity = '0';
             setTimeout(() => el.remove(), 100);
@@ -337,7 +335,7 @@
             el.onpointerdown = (e) => {
                 originalHandler(e);
                 document.body.style.backgroundColor = '#500';
-                setTimeout(()=> { document.body.style.backgroundColor = ''; }, 100);
+                setTimeout(()=> { if(isPlaying) document.body.style.backgroundColor = '#111'; }, 100);
             }
         }
 
@@ -359,19 +357,13 @@
         isPlaying = false;
         clearInterval(gameInterval);
         clearInterval(spawnInterval);
-        
         document.body.classList.remove('game-running');
         document.getElementById('final-score').innerText = score;
-
         let msg = horseBlessings[0].text;
         for(let i = horseBlessings.length - 1; i >= 0; i--) {
-            if(score >= horseBlessings[i].min) {
-                msg = horseBlessings[i].text;
-                break;
-            }
+            if(score >= horseBlessings[i].min) { msg = horseBlessings[i].text; break; }
         }
         document.getElementById('blessing-content').innerText = msg;
-
         showScreen('input-screen');
     }
 
@@ -379,64 +371,36 @@
         const name = document.getElementById('username').value.trim();
         if (!name) { alert("請輸入暱稱！"); return; }
         if (/[<>]/.test(name)) { alert("暱稱不能包含特殊符號"); return; }
-        if (SCRIPT_URL.includes("你的_GOOGLE")) { alert("請先設定 Google Script 網址！"); return; }
-
         const statusBtn = document.getElementById('submit-status');
         const submitBtn = document.querySelector('#input-screen .btn');
-        
         statusBtn.innerText = "資料上傳中...";
         submitBtn.disabled = true;
-        
-        const url = `${SCRIPT_URL}?action=save&name=${encodeURIComponent(name)}&score=${score}`;
-
-        fetch(url)
+        fetch(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(name)}&score=${score}`)
             .then(res => res.json())
-            .then(data => {
-                if(data.result === 'success') {
-                    showLeaderboard();
-                } else {
-                    alert("上傳失敗，請稍後再試");
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                alert("連線錯誤");
-            })
-            .finally(() => {
-                statusBtn.innerText = "";
-                submitBtn.disabled = false;
-            });
+            .then(data => { if(data.result === 'success') showLeaderboard(); else alert("上傳失敗"); })
+            .catch(err => alert("連線錯誤"))
+            .finally(() => { statusBtn.innerText = ""; submitBtn.disabled = false; });
     }
 
     function showLeaderboard() {
-        tryPlayMusic();
         showScreen('leaderboard-screen');
         const contentDiv = document.getElementById('rank-content');
-        contentDiv.innerHTML = '<div style="padding:20px; text-align:center;">正在抓取最新排名...</div>';
-
-        if (SCRIPT_URL.includes("你的_GOOGLE")) { 
-            contentDiv.innerHTML = '<div style="padding:20px;">請先設定程式碼中的 SCRIPT_URL</div>'; 
-            return; 
-        }
-
+        contentDiv.innerHTML = '<div style="padding:20px; text-align:center; color: white;">正在抓取最新排名...</div>';
         fetch(`${SCRIPT_URL}?action=read`)
             .then(res => res.json())
             .then(data => {
                 contentDiv.innerHTML = '';
                 if (data.length === 0) {
-                    contentDiv.innerHTML = '<div style="padding:10px;">目前還沒有人挑戰，快來搶第一！</div>';
+                    contentDiv.innerHTML = '<div style="padding:10px; color: white;">目前還沒有人挑戰！</div>';
                     return;
                 }
-                
                 data.forEach((user, index) => {
                     const div = document.createElement('div');
                     div.className = 'rank-item';
-                    
                     let rankDisplay = index + 1;
                     if(index === 0) rankDisplay = '🥇';
-                    if(index === 1) rankDisplay = '🥈';
-                    if(index === 2) rankDisplay = '🥉';
-
+                    else if(index === 1) rankDisplay = '🥈';
+                    else if(index === 2) rankDisplay = '🥉';
                     div.innerHTML = `
                         <div class="rank-num">${rankDisplay}</div>
                         <div class="rank-name">${user.name}</div>
@@ -445,15 +409,12 @@
                     contentDiv.appendChild(div);
                 });
             })
-            .catch(err => {
-                contentDiv.innerHTML = '無法載入排行榜，請檢查網路';
-            });
+            .catch(err => { contentDiv.innerHTML = '<div style="color:white;">無法載入排行榜</div>'; });
     }
 
     function returnToStart() {
         document.body.classList.remove('game-running');
-        document.querySelectorAll('.item').forEach(e => e.remove());
-        document.querySelectorAll('.pop').forEach(e => e.remove());
+        document.querySelectorAll('.item, .pop').forEach(e => e.remove());
         showScreen('start-screen');
     }
 

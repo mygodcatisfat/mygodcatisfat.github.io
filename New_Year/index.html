@@ -1,1 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🐴 金馬奔騰接紅包 🐴</title>
+    <style>
+        body {
+            margin: 0; padding: 0;
+            background: linear-gradient(135deg, #FF512F, #DD2476);
+            font-family: "Microsoft JhengHei", "Heiti TC", sans-serif;
+            overflow: hidden; 
+            touch-action: none;
+            user-select: none;
+            color: #fff;
+            transition: background 0.5s ease;
+        }
+        body.game-running {
+            background: #111 !important;
+        }
+        #game-container { position: relative; width: 100vw; height: 100vh; }
+        .ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; padding: 15px;
+            box-sizing: border-box; display: flex; justify-content: space-between;
+            z-index: 50;
+            font-size: 1.2rem; font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            pointer-events: none;
+        }
+        .ui-layer > * { pointer-events: auto; }
+        #music-btn {
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid #FFD700;
+            color: #FFD700;
+            border-radius: 50%;
+            width: 40px; height: 40px;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        #music-btn:active { transform: scale(0.9); }
+        .overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 20; text-align: center; padding: 20px; box-sizing: border-box;
+            transition: opacity 0.3s;
+        }
+        .hidden { display: none !important; opacity: 0; }
+        h1 { 
+            color: #FFD700; margin: 0 0 15px 0; 
+            text-shadow: 0 0 15px #ff0000; 
+            font-size: 2.2rem; line-height: 1.2;
+        }
+        p { margin: 10px 0; font-size: 1.1rem; color: #eee; }
+        .btn {
+            background: linear-gradient(to bottom, #FFD700, #ff8c00);
+            border: none; padding: 15px 40px; font-size: 1.3rem;
+            border-radius: 50px; color: #8E0E00; font-weight: bold;
+            cursor: pointer; margin: 10px; min-width: 180px;
+            box-shadow: 0 4px 15px rgba(255, 140, 0, 0.5);
+            touch-action: manipulation;
+        }
+        .btn:active { transform: scale(0.95); }
+        .btn-secondary { background: #444; color: #fff; box-shadow: none; border: 1px solid #666; }
+        .instruction-box {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px; padding: 15px; margin: 15px 0;
+            width: 90%; max-width: 350px; border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+        .rule-row {
+            display: flex; justify-content: space-between; align-items: center;
+            margin: 8px 0; font-size: 1.1rem; border-bottom: 1px dashed rgba(255,255,255,0.2);
+            padding-bottom: 5px;
+        }
+        .rule-row:last-child { border-bottom: none; }
+        .rule-icon { font-size: 1.5rem; width: 40px; }
+        .rule-score { color: #FFD700; font-weight: bold; }
+        .rule-desc { flex-grow: 1; text-align: left; padding-left: 10px; font-size: 0.9rem;}
+        .item { 
+            position: absolute; font-size: 3.5rem; 
+            animation: fall linear forwards; z-index: 5; 
+            cursor: pointer; -webkit-tap-highlight-color: transparent;
+        }
+        @media (max-width: 600px) { .item { font-size: 3rem; } h1 { font-size: 1.8rem; } }
+        @keyframes fall { to { transform: translateY(110vh) rotate(360deg); } }
+        .pop { 
+            position: absolute; font-size: 1.8rem; 
+            color: #FFD700; font-weight: bold; text-shadow: 1px 1px 2px #000;
+            animation: popUp 0.6s ease-out forwards; z-index: 15; pointer-events: none;
+        }
+        @keyframes popUp { 
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: translateY(-80px) scale(1.5); opacity: 0; } 
+        }
+        input {
+            padding: 12px; font-size: 1.2rem; border-radius: 8px; border: none;
+            margin: 10px 0; width: 80%; max-width: 250px; text-align: center;
+            background: rgba(255,255,255,0.9);
+        }
+        #blessing-box {
+            background: #fff; color: #d31027; padding: 15px;
+            border-radius: 15px; margin: 15px 0; 
+            border: 4px solid #FFD700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+            max-width: 85%;
+            position: relative;
+        }
+        .blessing-title {
+            display: block; font-size: 1.5rem; color: #d31027; margin-bottom: 8px;
+            border-bottom: 2px dashed #ffcc00; padding-bottom: 5px; font-weight: 900;
+        }
+        .blessing-content { font-size: 1.3rem; color: #333; font-weight: bold; }
+        #leaderboard-list {
+            width: 95%; max-width: 500px; height: 50vh; overflow-y: auto;
+            background: rgba(0,0,0,0.5); border-radius: 10px; border: 1px solid #FFD700;
+            margin-bottom: 15px;
+        }
+        .rank-header {
+            display: grid; grid-template-columns: 50px 1fr 80px; padding: 10px;
+            background-color: #333; color: #FFD700; font-weight: bold;
+            border-bottom: 1px solid #FFD700; position: sticky; top: 0; z-index: 2;
+        }
+        .rank-item {
+            display: grid; grid-template-columns: 50px 1fr 80px; padding: 12px 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1); align-items: center; text-align: left;
+        }
+        .rank-item:nth-child(even) { background: rgba(255,255,255,0.05); }
+        .rank-num { text-align: center; font-weight: bold; }
+        .rank-name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding-right: 10px;}
+        .rank-score { text-align: right; color: #FFD700; font-family: monospace; font-size: 1.1em;}
+        .rank-item:nth-child(2) .rank-num { color: #FFD700; text-shadow: 0 0 5px gold; font-size: 1.2em; } 
+        .rank-item:nth-child(3) .rank-num { color: #C0C0C0; text-shadow: 0 0 5px silver; font-size: 1.2em;} 
+        .rank-item:nth-child(4) .rank-num { color: #CD7F32; text-shadow: 0 0 5px orange; font-size: 1.2em;}
+    </style>
+</head>
+<body>
 
+<audio id="bgm" loop>
+    <source src="https://mygodcatisfat.github.io/New_Year/new-year-song.mp3" type="audio/mpeg">
+    你的瀏覽器不支援音樂播放。
+</audio>
+
+<div id="game-container">
+    <div class="ui-layer">
+        <div style="display:flex; gap:10px;">
+            <span id="score-display">💰 分數: 0</span>
+            <span id="time-display">⏳ 30s</span>
+        </div>
+        <div id="music-btn" onclick="toggleMusic()">🔇</div>
+    </div>
+
+    <div id="start-screen" class="overlay">
+        <h1>🐴 金馬奔騰接紅包</h1>
+        <p>準備好你的手指，一起搶好運！</p>
+        
+        <div class="instruction-box">
+            <div class="rule-row"><span class="rule-icon">🧧</span><span class="rule-desc">大紅包</span><span class="rule-score">+10</span></div>
+            <div class="rule-row"><span class="rule-icon">🥕</span><span class="rule-desc">紅蘿蔔 (馬兒愛吃)</span><span class="rule-score">+20</span></div>
+            <div class="rule-row"><span class="rule-icon">🐴</span><span class="rule-desc">金馬 (稀有！)</span><span class="rule-score">+50</span></div>
+            <div class="rule-row"><span class="rule-icon">🧨</span><span class="rule-desc">鞭炮 (小心！)</span><span class="rule-score" style="color:#ff4d4d;">-20</span></div>
+        </div>
+
+        <button class="btn" onclick="startGame()">🚀 開始遊戲</button>
+        <button class="btn btn-secondary" onclick="showLeaderboard()">🏆 查看所有排名</button>
+    </div>
+
+    <div id="input-screen" class="overlay hidden">
+        <h1>⏰ 時間到！</h1>
+        <p>你的得分</p>
+        <div style="font-size: 3rem; color: #FFD700; font-weight: bold; margin: 5px 0;" id="final-score">0</div>
+        
+        <div id="blessing-box">
+            <span class="blessing-title">品喬祝福您</span>
+            <span id="blessing-content" class="blessing-content">載入中...</span>
+        </div>
+
+        <p style="margin-top:20px; font-size:0.9rem;">輸入暱稱上傳排行榜：</p>
+        <input type="text" id="username" placeholder="例：我是帥哥" maxlength="8">
+        <button class="btn" onclick="submitScore()">送出成績</button>
+        <button class="btn btn-secondary" onclick="returnToStart()">返回首頁</button>
+        <p id="submit-status" style="color:#aaa; font-size:0.8rem; height:1rem;"></p>
+    </div>
+
+    <div id="leaderboard-screen" class="overlay hidden">
+        <h2>🏆 風雲榜 🏆</h2>
+        <div id="leaderboard-list">
+            <div class="rank-header">
+                <span>#</span><span>暱稱</span><span>分數</span>
+            </div>
+            <div id="rank-content"></div>
+        </div>
+        <button class="btn" onclick="returnToStart()">返回首頁</button>
+    </div>
+</div>
+
+<script>
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx4_K6xu2-KK3rEXaIy4qCLYWbLAqQkXA7SmMROErLi5txdcmZeSTfjZrzk-X068vuDRw/exec'; 
+
+    let score = 0;
+    let timeLeft = 30;
+    let gameInterval, spawnInterval;
+    let isPlaying = false;
+    let isMusicOn = false;
+
+    const bgm = document.getElementById('bgm');
+    const musicBtn = document.getElementById('music-btn');
+
+    const items = [
+        { symbol: '🧧', val: 10, prob: 0.55 },
+        { symbol: '🥕', val: 20, prob: 0.30 },
+        { symbol: '🐴', val: 50, prob: 0.05 },
+        { symbol: '🧨', val: -20, prob: 0.10 }
+    ];
+
+    const horseBlessings = [
+        { min: 0, text: "馬年平安！健康就是最大的財富！" },
+        { min: 100, text: "一馬當先！今年運勢跑第一！" },
+        { min: 200, text: "龍馬精神！活力滿滿賺大錢！" },
+        { min: 300, text: "馬到成功！心想事成萬事順！" },
+        { min: 450, text: "萬馬奔騰！氣勢如虹，無人能擋！" }
+    ];
+
+    function toggleMusic() {
+        if (bgm.paused) {
+            playBgm();
+        } else {
+            pauseBgm();
+        }
+    }
+
+    function playBgm() {
+        bgm.play().then(() => {
+            isMusicOn = true;
+            musicBtn.innerText = "🔊"; 
+            musicBtn.style.borderColor = "#00ff00";
+        }).catch(err => {
+            console.log("Autoplay blocked:", err);
+        });
+    }
+
+    function pauseBgm() {
+        bgm.pause();
+        isMusicOn = false;
+        musicBtn.innerText = "🔇"; 
+        musicBtn.style.borderColor = "#FFD700";
+    }
+
+    function tryPlayMusic() {
+        if (!isMusicOn && bgm.paused) {
+            playBgm();
+        }
+    }
+
+    function startGame() {
+        tryPlayMusic();
+
+        score = 0; timeLeft = 30; isPlaying = true;
+        
+        document.body.classList.add('game-running');
+        document.getElementById('score-display').innerText = `💰 分數: ${score}`;
+        document.getElementById('time-display').innerText = `⏳ ${timeLeft}s`;
+        
+        hideAllScreens();
+        
+        document.querySelectorAll('.item').forEach(e => e.remove());
+        document.querySelectorAll('.pop').forEach(e => e.remove());
+
+        gameInterval = setInterval(() => {
+            timeLeft--;
+            document.getElementById('time-display').innerText = `⏳ ${timeLeft}s`;
+            if (timeLeft <= 0) endGame();
+        }, 1000);
+
+        spawnInterval = setInterval(spawnItem, 350);
+    }
+
+    function spawnItem() {
+        if (!isPlaying) return;
+        
+        const r = Math.random();
+        let currentProb = 0;
+        let selectedItem = items[0];
+        for (let item of items) {
+            currentProb += item.prob;
+            if (r < currentProb) { selectedItem = item; break; }
+        }
+
+        const el = document.createElement('div');
+        el.classList.add('item');
+        el.innerText = selectedItem.symbol;
+        el.style.left = (Math.random() * 80 + 5) + '%';
+        el.style.animationDuration = (Math.random() * 1.5 + 2) + 's';
+
+        el.onpointerdown = (e) => {
+            e.preventDefault();
+            if (el.classList.contains('clicked')) return;
+            el.classList.add('clicked');
+
+            score += selectedItem.val;
+            document.getElementById('score-display').innerText = `💰 分數: ${score}`;
+
+            if (navigator.vibrate) navigator.vibrate(selectedItem.val > 0 ? 50 : 200);
+
+            showEffect(e.clientX, e.clientY, selectedItem.val);
+            el.style.opacity = '0';
+            setTimeout(() => el.remove(), 100);
+        };
+
+        if (selectedItem.symbol === '🧨') {
+            const originalHandler = el.onpointerdown;
+            el.onpointerdown = (e) => {
+                originalHandler(e);
+                document.body.style.backgroundColor = '#500';
+                setTimeout(()=> {
+                     document.body.style.backgroundColor = ''; 
+                }, 100);
+            }
+        }
+
+        document.getElementById('game-container').appendChild(el);
+        el.addEventListener('animationend', () => el.remove());
+    }
+
+    function showEffect(x, y, val) {
+        const div = document.createElement('div');
+        div.classList.add('pop');
+        div.innerText = (val > 0 ? '+' : '') + val;
+        div.style.color = val > 0 ? '#FFD700' : '#ff4d4d';
+        div.style.left = x + 'px'; div.style.top = y + 'px';
+        document.getElementById('game-container').appendChild(div);
+        setTimeout(() => div.remove(), 600);
+    }
+
+    function endGame() {
+        isPlaying = false;
+        clearInterval(gameInterval);
+        clearInterval(spawnInterval);
+        
+        document.body.classList.remove('game-running');
+        document.getElementById('final-score').innerText = score;
+
+        let msg = horseBlessings[0].text;
+        for(let i = horseBlessings.length - 1; i >= 0; i--) {
+            if(score >= horseBlessings[i].min) {
+                msg = horseBlessings[i].text;
+                break;
+            }
+        }
+        document.getElementById('blessing-content').innerText = msg;
+
+        showScreen('input-screen');
+    }
+
+    function submitScore() {
+        const name = document.getElementById('username').value.trim();
+        if (!name) { alert("請輸入暱稱！"); return; }
+        if (/[<>]/.test(name)) { alert("暱稱不能包含特殊符號"); return; }
+        if (SCRIPT_URL.includes("你的_GOOGLE")) { alert("請先設定 Google Script 網址！"); return; }
+
+        const statusBtn = document.getElementById('submit-status');
+        const submitBtn = document.querySelector('#input-screen .btn');
+        
+        statusBtn.innerText = "資料上傳中...";
+        submitBtn.disabled = true;
+        
+        const url = `${SCRIPT_URL}?action=save&name=${encodeURIComponent(name)}&score=${score}`;
+
+        fetch(url)
+            .then(res => res.json())
+            .then(data => {
+                if(data.result === 'success') {
+                    showLeaderboard();
+                } else {
+                    alert("上傳失敗，請稍後再試");
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert("連線錯誤");
+            })
+            .finally(() => {
+                statusBtn.innerText = "";
+                submitBtn.disabled = false;
+            });
+    }
+
+    function showLeaderboard() {
+        tryPlayMusic();
+        
+        showScreen('leaderboard-screen');
+        const contentDiv = document.getElementById('rank-content');
+        contentDiv.innerHTML = '<div style="padding:20px; text-align:center;">正在抓取最新排名...</div>';
+
+        if (SCRIPT_URL.includes("你的_GOOGLE")) { 
+            contentDiv.innerHTML = '<div style="padding:20px;">請先設定程式碼中的 SCRIPT_URL</div>'; 
+            return; 
+        }
+
+        fetch(`${SCRIPT_URL}?action=read`)
+            .then(res => res.json())
+            .then(data => {
+                contentDiv.innerHTML = '';
+                if (data.length === 0) {
+                    contentDiv.innerHTML = '<div style="padding:10px;">目前還沒有人挑戰，快來搶第一！</div>';
+                    return;
+                }
+                
+                data.forEach((user, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'rank-item';
+                    
+                    let rankDisplay = index + 1;
+                    if(index === 0) rankDisplay = '🥇';
+                    if(index === 1) rankDisplay = '🥈';
+                    if(index === 2) rankDisplay = '🥉';
+
+                    div.innerHTML = `
+                        <div class="rank-num">${rankDisplay}</div>
+                        <div class="rank-name">${user.name}</div>
+                        <div class="rank-score">${user.score}</div>
+                    `;
+                    contentDiv.appendChild(div);
+                });
+            })
+            .catch(err => {
+                contentDiv.innerHTML = '無法載入排行榜，請檢查網路';
+            });
+    }
+
+    function returnToStart() {
+        document.body.classList.remove('game-running');
+        document.querySelectorAll('.item').forEach(e => e.remove());
+        document.querySelectorAll('.pop').forEach(e => e.remove());
+        showScreen('start-screen');
+    }
+
+    function showScreen(id) {
+        hideAllScreens();
+        const el = document.getElementById(id);
+        el.classList.remove('hidden');
+        setTimeout(() => el.style.opacity = '1', 10);
+    }
+
+    function hideAllScreens() {
+        document.querySelectorAll('.overlay').forEach(el => {
+            el.classList.add('hidden');
+            el.style.opacity = '0';
+        });
+    }
+</script>
+</body>
+</html>

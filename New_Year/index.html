@@ -5,41 +5,52 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🐴 品喬邀您金馬奔騰接紅包 🐴</title>
     <style>
-        body {
+        html, body {
             margin: 0; padding: 0;
+            width: 100%; height: 100%;
+            overflow: hidden;
+            touch-action: none; 
+            
+            -webkit-user-select: none; 
+            user-select: none;
+            -webkit-touch-callout: none; 
+        }
+
+        body {
             background: linear-gradient(135deg, #FF512F, #DD2476);
             font-family: "Microsoft JhengHei", "Heiti TC", sans-serif;
-            overflow: hidden; 
-            touch-action: none;
-            user-select: none;
-            color: #fff;
             transition: background 0.5s ease;
         }
+
         body.game-running {
             background: #111 !important;
         }
+
         #game-container { position: relative; width: 100vw; height: 100vh; }
+
         .ui-layer {
             position: absolute; top: 0; left: 0; width: 100%; padding: 15px;
             box-sizing: border-box; display: flex; justify-content: space-between;
-            z-index: 50;
+            z-index: 50; 
             font-size: 1.2rem; font-weight: bold;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-            pointer-events: none;
+            pointer-events: none; 
         }
         .ui-layer > * { pointer-events: auto; }
+
+        #score-display, #time-display {
+            color: #fff; 
+        }
+
         #music-btn {
             background: rgba(0, 0, 0, 0.5);
-            border: 2px solid #FFD700;
-            color: #FFD700;
-            border-radius: 50%;
-            width: 40px; height: 40px;
+            border: 2px solid #FFD700; color: #FFD700;
+            border-radius: 50%; width: 40px; height: 40px;
             display: flex; justify-content: center; align-items: center;
-            font-size: 1.2rem;
-            cursor: pointer;
-            transition: transform 0.2s;
+            font-size: 1.2rem; cursor: pointer; transition: transform 0.2s;
         }
         #music-btn:active { transform: scale(0.9); }
+
         .overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.85);
@@ -48,12 +59,14 @@
             transition: opacity 0.3s;
         }
         .hidden { display: none !important; opacity: 0; }
+
         h1 { 
             color: #FFD700; margin: 0 0 15px 0; 
             text-shadow: 0 0 15px #ff0000; 
             font-size: 2.2rem; line-height: 1.2;
         }
         p { margin: 10px 0; font-size: 1.1rem; color: #eee; }
+
         .btn {
             background: linear-gradient(to bottom, #FFD700, #ff8c00);
             border: none; padding: 15px 40px; font-size: 1.3rem;
@@ -64,6 +77,7 @@
         }
         .btn:active { transform: scale(0.95); }
         .btn-secondary { background: #444; color: #fff; box-shadow: none; border: 1px solid #666; }
+
         .instruction-box {
             background: rgba(255, 255, 255, 0.1);
             border-radius: 15px; padding: 15px; margin: 15px 0;
@@ -77,54 +91,53 @@
         .rule-row:last-child { border-bottom: none; }
         .rule-icon { font-size: 1.5rem; width: 40px; }
         .rule-score { color: #FFD700; font-weight: bold; }
-        .rule-desc { flex-grow: 1; text-align: left; padding-left: 10px; font-size: 0.9rem;}
+        .rule-desc { flex-grow: 1; text-align: left; padding-left: 10px; font-size: 0.9rem; color: #fff;}
+
         .item { 
-            position: absolute; font-size: 3.5rem; 
-            padding: 25px;
-            margin: -25px;
+            position: absolute; 
+            font-size: 3.5rem; 
+            padding: 25px; 
+            margin: -25px; 
             border-radius: 50%;
-            animation: fall linear forwards; z-index: 5; 
-            cursor: pointer; -webkit-tap-highlight-color: transparent;
-            touch-action: none; 
-            user-select: none;
+            animation: fall linear forwards; 
+            z-index: 5; 
+            cursor: pointer; 
+            
+            touch-action: none;
+            -webkit-tap-highlight-color: transparent;
         }
-        .item:active {
-            transform: scale(0.9);
-            filter: brightness(1.2);
-        }
+        .item:active { transform: scale(0.9); filter: brightness(1.2); }
+
         @media (max-width: 600px) { .item { font-size: 3rem; } h1 { font-size: 1.8rem; } }
         @keyframes fall { to { transform: translateY(110vh) rotate(360deg); } }
+        
         .pop { 
             position: absolute; font-size: 1.8rem; 
             color: #FFD700; font-weight: bold; text-shadow: 1px 1px 2px #000;
             animation: popUp 0.6s ease-out forwards; z-index: 15; pointer-events: none;
         }
-        @keyframes popUp { 
-            0% { transform: scale(1); opacity: 1; }
-            100% { transform: translateY(-80px) scale(1.5); opacity: 0; } 
-        }
+        @keyframes popUp { 0% { transform: scale(1); opacity: 1; } 100% { transform: translateY(-80px) scale(1.5); opacity: 0; } }
+
         input {
             padding: 12px; font-size: 1.2rem; border-radius: 8px; border: none;
             margin: 10px 0; width: 80%; max-width: 250px; text-align: center;
             background: rgba(255,255,255,0.9);
         }
+
         #blessing-box {
             background: #fff; color: #d31027; padding: 15px;
-            border-radius: 15px; margin: 15px 0; 
-            border: 4px solid #FFD700;
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
-            max-width: 85%;
-            position: relative;
+            border-radius: 15px; margin: 15px 0; border: 4px solid #FFD700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.6); max-width: 85%; position: relative;
         }
         .blessing-title {
             display: block; font-size: 1.5rem; color: #d31027; margin-bottom: 8px;
             border-bottom: 2px dashed #ffcc00; padding-bottom: 5px; font-weight: 900;
         }
         .blessing-content { font-size: 1.3rem; color: #333; font-weight: bold; }
+
         #leaderboard-list {
             width: 95%; max-width: 500px; height: 50vh; overflow-y: auto;
-            background: rgba(0,0,0,0.5); border-radius: 10px; border: 1px solid #FFD700;
-            margin-bottom: 15px;
+            background: rgba(0,0,0,0.5); border-radius: 10px; border: 1px solid #FFD700; margin-bottom: 15px;
         }
         .rank-header {
             display: grid; grid-template-columns: 50px 1fr 80px; padding: 10px;
@@ -148,7 +161,6 @@
 
 <audio id="bgm" loop>
     <source src="https://mygodcatisfat.github.io/New_Year/new-year-song.mp3" type="audio/mpeg">
-    你的瀏覽器不支援音樂播放。
 </audio>
 
 <div id="game-container">
@@ -161,16 +173,14 @@
     </div>
 
     <div id="start-screen" class="overlay">
-        <h1>🐴 金馬奔騰接紅包</h1>
+        <h1>🐴 品喬邀您金馬奔騰接紅包 🐴</h1>
         <p>準備好你的手指，一起搶好運！</p>
-        
         <div class="instruction-box">
             <div class="rule-row"><span class="rule-icon">🧧</span><span class="rule-desc">大紅包</span><span class="rule-score">+10</span></div>
             <div class="rule-row"><span class="rule-icon">🥕</span><span class="rule-desc">紅蘿蔔 (馬兒愛吃)</span><span class="rule-score">+20</span></div>
             <div class="rule-row"><span class="rule-icon">🐴</span><span class="rule-desc">金馬 (稀有！)</span><span class="rule-score">+50</span></div>
             <div class="rule-row"><span class="rule-icon">🧨</span><span class="rule-desc">鞭炮 (小心！)</span><span class="rule-score" style="color:#ff4d4d;">-20</span></div>
         </div>
-
         <button class="btn" onclick="startGame()">🚀 開始遊戲</button>
         <button class="btn btn-secondary" onclick="showLeaderboard()">🏆 查看所有排名</button>
     </div>
@@ -179,39 +189,54 @@
         <h1>⏰ 時間到！</h1>
         <p>你的得分</p>
         <div style="font-size: 3rem; color: #FFD700; font-weight: bold; margin: 5px 0;" id="final-score">0</div>
-        
         <div id="blessing-box">
             <span class="blessing-title">品喬祝福您</span>
             <span id="blessing-content" class="blessing-content">載入中...</span>
         </div>
-
         <p style="margin-top:20px; font-size:0.9rem;">輸入暱稱上傳排行榜：</p>
-        <input type="text" id="username" placeholder="例：我是帥哥" maxlength="8">
-        <button class="btn" onclick="submitScore()">送出成績</button>
-        <button class="btn btn-secondary" onclick="returnToStart()">返回首頁</button>
+        <input type="text" id="username" placeholder="例：帥氣表哥" maxlength="8">
+        <button class="btn" onclick="submitScore()">📤 送出成績</button>
+        <button class="btn btn-secondary" onclick="returnToStart()">🏠 回首頁</button>
         <p id="submit-status" style="color:#aaa; font-size:0.8rem; height:1rem;"></p>
     </div>
 
     <div id="leaderboard-screen" class="overlay hidden">
         <h2>🏆 風雲榜 🏆</h2>
         <div id="leaderboard-list">
-            <div class="rank-header">
-                <span>#</span><span>暱稱</span><span>分數</span>
-            </div>
+            <div class="rank-header"><span>#</span><span>暱稱</span><span>分數</span></div>
             <div id="rank-content"></div>
         </div>
-        <button class="btn" onclick="returnToStart()">返回首頁</button>
+        <button class="btn" onclick="returnToStart()">🔙 返回首頁</button>
     </div>
 </div>
 
 <script>
+    document.addEventListener('touchstart', function(event) {
+        if (event.touches.length > 1) {
+            event.preventDefault(); 
+        }
+    }, { passive: false });
+
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function(event) {
+        const now = (new Date()).getTime();
+        if (now - lastTouchEnd <= 200) {
+            event.preventDefault();
+        }
+        lastTouchEnd = now;
+    }, { passive: false });
+    
+    document.addEventListener('gesturestart', function(event) {
+        event.preventDefault();
+    });
+
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx4_K6xu2-KK3rEXaIy4qCLYWbLAqQkXA7SmMROErLi5txdcmZeSTfjZrzk-X068vuDRw/exec'; 
 
     let score = 0;
     let timeLeft = 30;
     let gameInterval, spawnInterval;
     let isPlaying = false;
-    let isMusicOn = false;
+    let isMusicOn = false; 
 
     const bgm = document.getElementById('bgm');
     const musicBtn = document.getElementById('music-btn');
@@ -232,39 +257,28 @@
     ];
 
     function toggleMusic() {
-        if (bgm.paused) {
-            playBgm();
-        } else {
-            pauseBgm();
-        }
+        if (bgm.paused) { playBgm(); } else { pauseBgm(); }
     }
 
     function playBgm() {
         bgm.play().then(() => {
             isMusicOn = true;
-            musicBtn.innerText = "🔊"; 
-            musicBtn.style.borderColor = "#00ff00";
-        }).catch(err => {
-            console.log("Autoplay blocked:", err);
-        });
+            musicBtn.innerText = "🔊"; musicBtn.style.borderColor = "#00ff00";
+        }).catch(err => { console.log("Autoplay blocked:", err); });
     }
 
     function pauseBgm() {
         bgm.pause();
         isMusicOn = false;
-        musicBtn.innerText = "🔇"; 
-        musicBtn.style.borderColor = "#FFD700";
+        musicBtn.innerText = "🔇"; musicBtn.style.borderColor = "#FFD700";
     }
 
     function tryPlayMusic() {
-        if (!isMusicOn && bgm.paused) {
-            playBgm();
-        }
+        if (!isMusicOn && bgm.paused) { playBgm(); }
     }
 
     function startGame() {
         tryPlayMusic();
-
         score = 0; timeLeft = 30; isPlaying = true;
         
         document.body.classList.add('game-running');
@@ -301,9 +315,10 @@
         el.innerText = selectedItem.symbol;
         el.style.left = (Math.random() * 70 + 10) + '%';
         el.style.animationDuration = (Math.random() * 1.5 + 2) + 's';
-
         el.onpointerdown = (e) => {
             e.preventDefault();
+            e.stopPropagation(); 
+
             if (el.classList.contains('clicked')) return;
             el.classList.add('clicked');
 
@@ -322,9 +337,7 @@
             el.onpointerdown = (e) => {
                 originalHandler(e);
                 document.body.style.backgroundColor = '#500';
-                setTimeout(()=> {
-                     document.body.style.backgroundColor = ''; 
-                }, 100);
+                setTimeout(()=> { document.body.style.backgroundColor = ''; }, 100);
             }
         }
 
@@ -397,7 +410,6 @@
 
     function showLeaderboard() {
         tryPlayMusic();
-        
         showScreen('leaderboard-screen');
         const contentDiv = document.getElementById('rank-content');
         contentDiv.innerHTML = '<div style="padding:20px; text-align:center;">正在抓取最新排名...</div>';

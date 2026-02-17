@@ -16,7 +16,7 @@
         }
 
         body {
-            background: linear-gradient(135deg, #FF512F, #DD2476);/*-*/
+            background: linear-gradient(135deg, #FF512F, #DD2476);/*=-*/
             font-family: "Microsoft JhengHei", "Heiti TC", sans-serif;
             transition: background 0.5s ease;
         }
@@ -236,6 +236,7 @@
     }, { passive: false });
 
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx4_K6xu2-KK3rEXaIy4qCLYWbLAqQkXA7SmMROErLi5txdcmZeSTfjZrzk-X068vuDRw/exec'; 
+	const SECRET_KEY = "HorseYear2026_PinQiao_Secret888";
  
     let score = 0;
     let timeLeft = 30;
@@ -260,6 +261,17 @@
         { min: 750, text: "馬到成功！心想事成萬事順！" },
         { min: 1000, text: "萬馬奔騰！氣勢如虹，無人能擋！" }
     ];
+	
+	function simpleHash(str) {
+        let hash = 0;
+        if (str.length == 0) return hash;
+        for (let i = 0; i < str.length; i++) {
+            let char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; 
+        }
+        return Math.abs(hash).toString(16);
+    }
 
     function toggleMusic() {
         if (bgm.paused) { playBgm(); } else { pauseBgm(); }
@@ -375,9 +387,18 @@
         const submitBtn = document.querySelector('#input-screen .btn');
         statusBtn.innerText = "資料上傳中...";
         submitBtn.disabled = true;
-        fetch(`${SCRIPT_URL}?action=save&name=${encodeURIComponent(name)}&score=${score}`)
+		
+		const token = simpleHash(name + score + SECRET_KEY);
+        const url = `${SCRIPT_URL}?action=save&name=${encodeURIComponent(name)}&score=${score}&token=${token}`;
+        fetch(url)
             .then(res => res.json())
-            .then(data => { if(data.result === 'success') showLeaderboard(); else alert("上傳失敗"); })
+            .then(data => {
+                if(data.result === 'success') {
+                    showLeaderboard();
+                } else {
+                    alert("上傳失敗：" + (data.error || "未知錯誤"));
+                }
+            })
             .catch(err => alert("連線錯誤"))
             .finally(() => { statusBtn.innerText = ""; submitBtn.disabled = false; });
     }
@@ -436,18 +457,15 @@
         playBgm();
     });
 
-    // 2. 備案：如果瀏覽器阻擋自動播放，設定「點擊任意處」立即觸發
     function unlockAudio() {
         if (!isMusicOn) {
             playBgm();
         }
-        // 成功觸發後移除監聽，避免重複執行
         document.removeEventListener('click', unlockAudio);
         document.removeEventListener('touchstart', unlockAudio);
         document.removeEventListener('keydown', unlockAudio);
     }
 
-    // 監聽各種互動事件來解鎖音效
     document.addEventListener('click', unlockAudio);
     document.addEventListener('touchstart', unlockAudio);
     document.addEventListener('keydown', unlockAudio);

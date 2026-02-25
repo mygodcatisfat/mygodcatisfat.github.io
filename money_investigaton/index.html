@@ -1,0 +1,2240 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>金融帳戶資金流向分析工具</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <style>
+        body { 
+            background-color: #f8f9fa; 
+            padding: 20px; 
+            font-size: 0.85rem; 
+        }
+
+        .container {
+            max-width: 1600px !important;
+        }
+
+        #processingContainer {
+            width: 100%;
+        }
+        
+        .header-container {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        h2 { font-size: 1.5rem; margin-bottom: 0; }
+        h4 { font-size: 1.2rem; }
+        
+        .card { margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .step-container { display: none; }
+        
+        .table-responsive {
+            max-height: 600px;
+            overflow-y: auto;
+            overflow-x: auto; 
+        }
+        
+        #previewTable th, #previewTable td,
+        #resTableAccount th, #resTableAccount td {
+            white-space: nowrap; 
+            font-size: 0.8rem;
+        }
+
+        #previewTable th {
+            cursor: grab;
+            user-select: none;
+            position: sticky; 
+            top: 0; 
+            background: #e9ecef;
+            z-index: 10;
+        }
+        #previewTable th:active {
+            cursor: grabbing;
+        }
+
+        #resTableAccount thead th {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background-color: #e9ecef; 
+            box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .form-control, .form-select, .btn { font-size: 0.85rem; }
+
+        .nav-tabs .nav-link {
+            cursor: pointer;
+            color: #495057;
+            font-size: 0.85rem;
+            padding: 0.5rem 1rem;
+        }
+        .nav-tabs .nav-link.active {
+            font-weight: bold;
+            color: #0d6efd;
+        }
+
+        .drag-over-input {
+            border: 2px dashed #0d6efd !important;
+            background-color: #e9ecef;
+        }
+
+        #step1 {
+            transition: all 0.3s ease;
+            border: 2px dashed transparent;
+        }
+        #step1.drag-active {
+            border-color: #0d6efd;
+            background-color: #e9f2ff;
+        }
+
+        .bg-withdraw { background-color: rgba(255, 193, 7, 0.4) !important; }
+        .bg-deposit { background-color: rgba(25, 135, 84, 0.3) !important; }
+        .bg-account { background-color: rgba(111, 66, 193, 0.3) !important; }
+		.bg-date { background-color: rgba(13, 202, 240, 0.3) !important; }
+        .bg-time { background-color: rgba(220, 53, 69, 0.25) !important; }
+        .bg-self-account { background-color: rgba(253, 126, 20, 0.3) !important; }
+
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+        }
+        .sortable:hover {
+            background-color: #f1f1f1;
+        }
+        
+        .btn-circle {
+            width: 24px;
+            height: 24px;
+            padding: 0;
+            border-radius: 50%;
+            text-align: center;
+            font-size: 14px;
+            line-height: 22px; 
+            font-weight: bold;
+            background-color: #0d6efd;
+            color: white;
+            border: none;
+            display: inline-block;
+            margin-right: 8px;
+            transition: transform 0.2s;
+        }
+        .btn-circle.collapsed {
+            background-color: #6c757d;
+        }
+
+        .detail-row {
+            display: none;
+            background-color: #f8f9fa;
+        }
+        .detail-row.show {
+            display: table-row;
+        }
+        
+        .detail-table th, .detail-table td {
+            font-size: 0.75rem;
+            white-space: nowrap;
+        }
+        
+        .detail-table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 10; 
+            background-color: #e2e3e5; 
+            box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1); 
+        }
+
+        .detail-table th:last-child, 
+        .detail-table td:last-child {
+            padding-right: 20px; 
+        }
+
+        .main-row {
+            cursor: pointer;
+        }
+        .main-row:hover {
+            background-color: #e9ecef !important;
+        }
+
+        .stat-card {
+            background-color: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 12px;
+            padding: 15px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            height: 100%;
+        }
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-color: #0d6efd;
+        }
+        .stat-title {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #212529;
+        }
+        .stat-account {
+            font-size: 0.85rem;
+            color: #0d6efd;
+            word-break: break-all;
+        }
+
+        .checkbox-container {
+            background-color: #f1f3f5;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .file-btn {
+            position: relative;
+            padding-right: 30px;
+            text-align: left;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .file-btn .badge {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            font-size: 0.6rem;
+        }
+        .file-btn.active {
+            background-color: #0d6efd;
+            color: white;
+            border-color: #0d6efd;
+        }
+        .file-btn-delete {
+            position: absolute;
+            top: -7px;
+            right: -7px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #ef4444;
+            border: 2px solid #fff;
+            color: white;
+            font-size: 10px;
+            line-height: 14px;
+            text-align: center;
+            cursor: pointer;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            flex-shrink: 0;
+        }
+        .file-btn-delete:hover {
+            background: #dc2626;
+            transform: scale(1.15);
+        }
+        .file-btn-wrapper {
+            position: relative;
+            display: inline-flex;
+        }
+
+        #step5 { display: none; }
+
+        #graphCanvas {
+            width: 100%;
+            background: #0f1117;
+            border-radius: 10px;
+            cursor: grab;
+            display: block;
+        }
+        #graphCanvas:active { cursor: grabbing; }
+
+        .graph-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+        .graph-legend {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            font-size: 0.8rem;
+            background: rgba(255,255,255,0.05);
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+        }
+        .legend-item { display: flex; align-items: center; gap: 5px; }
+        .legend-line {
+            width: 28px;
+            height: 3px;
+            border-radius: 2px;
+        }
+        .legend-circle {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+        }
+
+        .graph-tooltip {
+            position: fixed;
+            background: rgba(15,17,23,0.92);
+            color: #e0e0e0;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 8px 13px;
+            font-size: 0.78rem;
+            pointer-events: none;
+            z-index: 9999;
+            display: none;
+            max-width: 260px;
+            line-height: 1.6;
+            backdrop-filter: blur(4px);
+        }
+        .graph-tooltip strong { color: #fff; font-size: 0.82rem; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-container text-center mb-4">
+        <h2 class="d-inline-block">金融帳戶資金流向分析工具</h2>
+        <button class="btn btn-outline-info btn-sm ms-3" data-bs-toggle="modal" data-bs-target="#helpModal">
+            <i class="bi bi-question-circle"></i> 使用說明
+        </button>
+    </div>
+    
+    <div class="card p-3" id="step1">
+        <h4>1. 匯入資料</h4>
+        <p class="text-primary small mb-2"><i class="bi bi-info-circle"></i> 支援多檔同時匯入。點擊按鈕或拖曳 .xls/.xlsx 檔案至此。</p>
+        <input type="file" class="form-control" id="fileInput" accept=".xlsx, .xls" multiple onclick="this.value=null">
+        
+        <div id="fileListContainer" class="mt-3" style="display: none;">
+            <label class="form-label fw-bold text-muted small">已匯入檔案 (點擊切換)：</label>
+            <div class="d-flex flex-wrap gap-2" id="fileListButtons"></div>
+        </div>
+    </div>
+
+    <div id="processingContainer">
+        <div class="card p-3 step-container" id="step2">
+            <h4>2. 選擇工作表 <span id="currentFileNameDisp" class="badge bg-secondary ms-2"></span></h4>
+            <p class="text-primary small mb-2"><i class="bi bi-info-circle"></i> 提示：可按住上方表格欄位，直接拖曳至下方設定框</p>
+            
+            <ul class="nav nav-tabs mb-3" id="sheetTabs"></ul>
+            
+            <div class="table-responsive mb-3">
+                <table class="table table-bordered table-sm" id="previewTable"></table>
+            </div>
+        </div>
+
+        <div class="card p-3 step-container" id="step3">
+			<h4>3. 欄位對應設定</h4>
+			<p class="text-primary small mb-3"><i class="bi bi-info-circle"></i> 請設定對應欄位 (系統會自動判斷，您也可以手動修改或從上方拖曳欄位)</p>
+			
+			<div class="row g-3">
+				<div class="col-md-6 col-lg-3">
+					<label class="form-label">支出/提款金額 <span class="text-danger">*</span></label>
+					<select class="form-select column-select" id="colWithdraw" data-color="bg-withdraw"></select>
+				</div>
+				<div class="col-md-6 col-lg-3">
+					<label class="form-label">存入/存款金額 <span class="text-danger">*</span></label>
+					<select class="form-select column-select" id="colDeposit" data-color="bg-deposit"></select>
+				</div>
+				<div class="col-md-6 col-lg-3">
+					<label class="form-label">轉出入行庫代碼及帳號</label>
+					<select class="form-select column-select" id="colAccount" data-color="bg-account"></select>
+				</div>
+				<div class="col-md-6 col-lg-3">
+					<label class="form-label">本帳號</label>
+					<select class="form-select column-select" id="colSelfAccount" data-color="bg-self-account"></select>
+				</div>
+				<div class="col-md-6 col-lg-3">
+					<label class="form-label">交易日期</label>
+					<select class="form-select column-select" id="colDate" data-color="bg-date"></select>
+				</div>
+				<div class="col-md-6 col-lg-3">
+					<label class="form-label">交易時間</label>
+					<select class="form-select column-select" id="colTime" data-color="bg-time"></select>
+				</div>
+			</div>
+		</div>
+
+        <div class="card p-3 step-container" id="step4">
+            <h4 class="mb-3">分析結果</h4>
+            
+            <div class="row g-3 mb-4" id="summaryCards"></div>
+
+            <div class="mb-2">
+                <strong><i class="bi bi-layout-three-columns"></i> 詳細明細顯示欄位</strong>
+            </div>
+            <div class="checkbox-container d-flex flex-wrap gap-3 align-items-center" id="columnCheckboxes"></div>
+
+            <div class="mb-3">
+                <div class="d-flex gap-2 mb-2">
+                    <div class="input-group flex-grow-1">
+                        <input type="text" class="form-control" id="searchAccount" placeholder="搜尋帳號..." onkeyup="filterTable('resTableAccount', this.value)">
+                        <button class="btn btn-outline-secondary" type="button" onclick="clearSearch()">清除</button>
+                    </div>
+                    <button class="btn btn-success text-nowrap" onclick="exportToExcel()">
+                        <i class="bi bi-file-earmark-excel"></i> 匯出目前檔案結果
+                    </button>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-sm" id="resTableAccount">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">明細</th>
+                                <th>序號</th>
+                                <th class="sortable" onclick="toggleSort('account')">帳號 <span id="sort-icon-account"></span></th>
+                                <th class="sortable" onclick="toggleSort('inCount')">轉入次數 (進) <span id="sort-icon-inCount"></span></th>
+                                <th class="sortable" onclick="toggleSort('inTotal')">轉入總額 <span id="sort-icon-inTotal"></span></th>
+                                <th class="sortable" onclick="toggleSort('outCount')">轉出次數 (出) <span id="sort-icon-outCount"></span></th>
+                                <th class="sortable" onclick="toggleSort('outTotal')">轉出總額 <span id="sort-icon-outTotal"></span></th>
+                                <th class="sortable" onclick="toggleSort('net')">淨流量 <span id="sort-icon-net"></span></th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 資金網脈關聯圖 -->
+        <div class="card p-3" id="step5">
+            <h4 class="mb-3"><i class="bi bi-diagram-3"></i> 資金網脈關聯圖</h4>
+
+            <!-- 檔案選擇區 -->
+            <div class="mb-3">
+                <label class="form-label fw-bold small text-muted">顯示檔案 (可多選)：</label>
+                <div class="d-flex flex-wrap gap-2 p-2 rounded" id="graphFileCheckboxes" style="background:#f1f3f5;border:1px solid #dee2e6;min-height:36px;"></div>
+            </div>
+
+            <!-- 工具列 Row 1 -->
+            <div class="graph-toolbar mb-2">
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-primary" id="btnStar" onclick="setGraphMode('star')">
+                        <i class="bi bi-star"></i> 星狀模式
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="btnHier" onclick="setGraphMode('hierarchy')">
+                        <i class="bi bi-diagram-2"></i> 階層模式
+                    </button>
+                </div>
+
+                <button class="btn btn-sm btn-outline-secondary" onclick="resetGraphView()">
+                    <i class="bi bi-arrows-fullscreen"></i> 重置視角
+                </button>
+
+                <!-- 背景色切換 -->
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-dark active" id="btnBgDark" onclick="setGraphBg('dark')" title="深色背景">
+                        <i class="bi bi-moon-fill"></i> 深色
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="btnBgLight" onclick="setGraphBg('light')" title="米白背景">
+                        <i class="bi bi-sun-fill"></i> 米白
+                    </button>
+                </div>
+
+                <!-- 只顯示標註 -->
+                <div class="form-check form-switch d-flex align-items-center gap-2 mb-0 ms-1">
+                    <input class="form-check-input" type="checkbox" id="cbOnlyMarked" onchange="toggleOnlyMarked()" style="cursor:pointer;">
+                    <label class="form-check-label small" for="cbOnlyMarked" style="cursor:pointer;">只顯示標註節點</label>
+                </div>
+
+                <span class="text-muted small ms-auto">滑鼠滾輪縮放 · 拖曳移動畫布</span>
+            </div>
+
+            <!-- 工具列 Row 2：搜尋 + 圖例 -->
+            <div class="d-flex flex-wrap align-items-center gap-3 mb-2">
+                <div class="input-group input-group-sm" style="max-width:260px;">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control" id="graphSearch" placeholder="查詢帳號 (模糊搜尋)..." oninput="onGraphSearch(this.value)">
+                    <button class="btn btn-outline-secondary" type="button" onclick="clearGraphSearch()">✕</button>
+                </div>
+
+                <div class="graph-legend" id="graphLegend">
+                    <div class="legend-item">
+                        <div class="legend-circle" style="background:#3b82f6;border:2px solid #93c5fd;"></div>
+                        <span>本帳號</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-circle" style="background:#334155;border:2px solid #94a3b8;"></div>
+                        <span>關聯帳號</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-circle" style="background:#ef4444;border:2px solid #fca5a5;"></div>
+                        <span>標註</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-circle" style="background:transparent;border:2.5px solid #facc15;box-shadow:0 0 4px #facc15;"></div>
+                        <span>搜尋結果</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-line" style="background:#22c55e;"></div>
+                        <span>轉入</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-line" style="background:#f97316;"></div>
+                        <span>轉出</span>
+                    </div>
+                </div>
+            </div>
+
+            <canvas id="graphCanvas"></canvas>
+            <div class="graph-tooltip" id="graphTooltip"></div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title" id="helpModalLabel"><i class="bi bi-book"></i> 系統功能使用說明</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <strong>1. 資料匯入：</strong>
+                        支援點擊按鈕或直接拖曳 <code>.xls</code> / <code>.xlsx</code> 檔案至匯入區。
+                        <strong>點擊按鈕可累加匯入，不會覆蓋既有檔案（同名檔案會略過）。</strong>
+                        已匯入的檔案可透過右上角的紅色叉叉按鈕個別刪除。
+                    </li>
+                    <li class="list-group-item">
+                        <strong>2. 檔案切換：</strong>
+                        匯入後，Step 1 下方會出現檔案列表，點擊即可切換不同檔案進行設定與分析。
+                        Step 2、3、4 的狀態會依據所選檔案自動儲存與還原。
+                    </li>
+                    <li class="list-group-item">
+                        <strong>3. 預覽與選擇工作表：</strong>
+                        系統自動讀取所有工作表，點擊頁籤可切換；資料預覽顯示前 5 筆，表頭凍結方便對照。
+                    </li>
+                    <li class="list-group-item">
+                        <strong>4. 欄位對應設定：</strong>
+                        <ul>
+                            <li>系統自動偵測「支出」、「存入」、「帳號」、「本帳號」、「日期」、「時間」等關鍵欄位。</li>
+                            <li>支援直接從預覽表頭 <strong>拖曳</strong> 欄位名稱至設定框，或手動下拉選擇。</li>
+                            <li>各欄位以不同顏色高亮，即時連動預覽表底色。</li>
+                            <li><strong>本帳號</strong>欄位為關聯圖的主節點依據，請務必設定。</li>
+                        </ul>
+                    </li>
+                    <li class="list-group-item">
+                        <strong>5. 分析結果：</strong>
+                        <ul>
+                            <li>自動計算每個關聯帳號的轉入/轉出次數、總金額與淨流量。</li>
+                            <li>提供四大關鍵指標卡片（最高次數/金額），點擊可快速篩選帳號。</li>
+                            <li>支援帳號模糊搜尋，明細欄位可勾選顯示/隱藏，可展開查看每筆交易明細。</li>
+                            <li>可將目前分析彙總結果匯出為 Excel 檔。</li>
+                        </ul>
+                    </li>
+                    <li class="list-group-item">
+                        <strong>6. 資金網脈關聯圖：</strong>
+                        <ul>
+                            <li><strong>多檔合併：</strong>勾選上方檔案 checkbox 可將多個檔案的資金網脈合併顯示在同一張圖；切換勾選不會改變目前視角。</li>
+                            <li><strong>佈局模式：</strong>星狀模式以本帳號為中心，子節點自動分多圈排列不重疊，各聚落保持安全距離；階層模式則主節點在上、關聯帳號在下。</li>
+                            <li><strong>連線：</strong>綠色為轉入、橙色為轉出，連線粗細依金額比例縮放；雙向往來時分開畫兩條線。</li>
+                            <li><strong>背景：</strong>可切換深色或米白背景。</li>
+                            <li><strong>搜尋：</strong>輸入關鍵字即時模糊搜尋，符合的節點外圍會顯示亮黃色外框，清除後恢復。</li>
+                            <li><strong>標註：</strong>點擊節點可標註（變紅色）或取消標註；已標註節點右上角有紅色徽章。</li>
+                            <li><strong>只顯示標註：</strong>開啟後畫面僅保留已標註節點及其連線。</li>
+                            <li><strong>操作：</strong>滑鼠滾輪縮放、拖曳畫布移動視角、拖曳單一節點調整位置、重置視角自動置中。</li>
+                            <li><strong>Tooltip：</strong>懸停節點顯示帳號資訊、轉入/轉出金額與淨流量。</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function escapeHtml(text) {
+        if (text === null || text === undefined) return "";
+        return String(text)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    // --- 多檔管理核心變數 ---
+    let filesStore = []; // 存放所有檔案的狀態物件
+    let currentFileIdx = -1; // 當前操作的檔案索引
+    
+    // --- 當前檔案的暫存變數 (保持與原程式碼相容的變數名) ---
+    let workbook = null;
+    let jsonData = null;
+    let headers = [];
+    let globalAccountStats = []; 
+    let currentSort = { key: null, dir: 'none' };
+    let detailSortState = {};
+    let rawTransactions = {}; 
+    let expandedRows = new Set();
+
+    const dropZone = document.getElementById('step1');
+    const fileInput = document.getElementById('fileInput');
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight(e) {
+        dropZone.classList.add('drag-active');
+    }
+
+    function unhighlight(e) {
+        dropZone.classList.remove('drag-active');
+    }
+
+    dropZone.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if(files.length > 0) {
+            handleFiles(files);
+        }
+    }
+
+    fileInput.addEventListener('change', function(e) {
+        if(this.files.length > 0) {
+            handleFiles(this.files, true); // 追加模式
+        }
+    });
+
+    async function handleFiles(files, append = false) {
+        if (!append) {
+            clearAllData();
+        }
+
+        const existingNames = new Set(filesStore.map(f => f.fileName));
+
+        const filePromises = Array.from(files).map(file => {
+            // 跳過已存在的同名檔案
+            if (existingNames.has(file.name)) {
+                console.log(`略過重複檔案: ${file.name}`);
+                return Promise.resolve(null);
+            }
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const data = new Uint8Array(e.target.result);
+                    try {
+                        const wb = XLSX.read(data, {type: 'array'});
+                        resolve({
+                            fileName: file.name,
+                            workbook: wb,
+                            selectedSheet: wb.SheetNames[0],
+                            colWithdraw: "",
+                            colDeposit: "",
+                            colAccount: "",
+                            colSelfAccount: "",
+                            colDate: "",
+                            colTime: "",
+                            jsonData: [],
+                            headers: [],
+                            globalAccountStats: [],
+                            rawTransactions: {},
+                            expandedRows: new Set(),
+                            detailSortState: {},
+                            currentSort: { key: null, dir: 'none' },
+                            isAnalyzed: false
+                        });
+                    } catch (error) {
+                        console.error(file.name + " 讀取失敗", error);
+                        resolve(null); 
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            });
+        });
+
+        const loadedFiles = await Promise.all(filePromises);
+        const validFiles = loadedFiles.filter(f => f !== null);
+
+        if (validFiles.length === 0 && !append) {
+            alert("無有效檔案可讀取");
+            return;
+        }
+
+        if (append) {
+            filesStore = [...filesStore, ...validFiles];
+        } else {
+            filesStore = validFiles;
+        }
+
+        if (filesStore.length === 0) {
+            alert("無有效檔案可讀取");
+            return;
+        }
+
+        renderFileList();
+        document.getElementById('fileListContainer').style.display = 'block';
+
+        // 若是追加，切換到第一個新增的檔案；否則從第 0 個開始
+        if (append && validFiles.length > 0) {
+            const newIdx = filesStore.length - validFiles.length;
+            setActiveFile(newIdx);
+        } else if (!append) {
+            setActiveFile(0);
+        }
+    }
+
+    function clearAllData() {
+        filesStore = [];
+        currentFileIdx = -1;
+        document.getElementById('fileListButtons').innerHTML = '';
+        document.getElementById('fileListContainer').style.display = 'none';
+        clearInterface();
+    }
+
+    function clearInterface() {
+        document.getElementById('sheetTabs').innerHTML = '';
+        document.getElementById('previewTable').innerHTML = '';
+        document.querySelector('#resTableAccount tbody').innerHTML = '';
+        document.getElementById('summaryCards').innerHTML = '';
+        document.getElementById('columnCheckboxes').innerHTML = '';
+        
+        document.getElementById('step2').style.display = 'none';
+        document.getElementById('step3').style.display = 'none';
+        document.getElementById('step4').style.display = 'none';
+        
+        document.querySelectorAll('.column-select').forEach(select => {
+            select.innerHTML = '';
+            select.className = 'form-select column-select';
+            select.classList.remove('bg-withdraw', 'bg-deposit', 'bg-account', 'bg-self-account');
+        });
+        resetSortIcons();
+    }
+
+    function renderFileList() {
+        const container = document.getElementById('fileListButtons');
+        container.innerHTML = '';
+        filesStore.forEach((fileData, idx) => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'file-btn-wrapper';
+
+            const btn = document.createElement('button');
+            btn.className = `btn btn-outline-primary btn-sm file-btn ${idx === currentFileIdx ? 'active' : ''}`;
+            btn.innerHTML = `<i class="bi bi-file-earmark-spreadsheet"></i> ${escapeHtml(fileData.fileName)}`;
+            btn.onclick = () => setActiveFile(idx);
+
+            const delBtn = document.createElement('div');
+            delBtn.className = 'file-btn-delete';
+            delBtn.title = '刪除此檔案';
+            delBtn.innerHTML = '✕';
+            delBtn.onclick = (e) => {
+                e.stopPropagation();
+                deleteFile(idx);
+            };
+
+            wrapper.appendChild(btn);
+            wrapper.appendChild(delBtn);
+            container.appendChild(wrapper);
+        });
+    }
+
+    function deleteFile(idx) {
+        // 從 graphSelectedFiles 移除
+        graphSelectedFiles.delete(idx);
+        // 重新映射 graphSelectedFiles（因為 idx 會位移）
+        const newSelected = new Set();
+        graphSelectedFiles.forEach(i => {
+            if (i < idx) newSelected.add(i);
+            else if (i > idx) newSelected.add(i - 1);
+        });
+        graphSelectedFiles = newSelected;
+
+        filesStore.splice(idx, 1);
+
+        if (filesStore.length === 0) {
+            clearAllData();
+            return;
+        }
+
+        // 調整 currentFileIdx
+        if (currentFileIdx >= filesStore.length) {
+            currentFileIdx = filesStore.length - 1;
+        } else if (currentFileIdx === idx) {
+            currentFileIdx = Math.max(0, idx - 1);
+        }
+
+        renderFileList();
+        renderGraphFileCheckboxes();
+
+        // 切換到有效的檔案
+        if (filesStore.length > 0) {
+            setActiveFile(currentFileIdx === -1 ? 0 : currentFileIdx);
+        }
+    }
+
+    function setActiveFile(index) {
+        // 儲存目前檔案狀態（若有）
+        if (currentFileIdx !== -1 && filesStore[currentFileIdx]) {
+            saveCurrentFileState();
+        }
+
+        // 先用 renderFileList 更新按鈕狀態
+        currentFileIdx = index;
+        renderFileList();
+
+        // 找到 active 按鈕顯示 loading
+        const activeBtn = document.querySelectorAll('.file-btn')[index];
+        if (activeBtn) {
+            activeBtn.innerHTML = `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 讀取中...`;
+        }
+
+        setTimeout(() => {
+            try {
+                // 恢復按鈕文字
+                renderFileList();
+
+                if (!filesStore[index]) return;
+                const fileData = filesStore[index];
+
+                document.getElementById('currentFileNameDisp').textContent = fileData.fileName;
+
+                workbook = fileData.workbook;
+                jsonData = fileData.jsonData;
+                headers = fileData.headers;
+                globalAccountStats = fileData.globalAccountStats;
+                rawTransactions = fileData.rawTransactions;
+                expandedRows = fileData.expandedRows;
+                detailSortState = fileData.detailSortState;
+                currentSort = fileData.currentSort;
+
+                renderSheetTabs(fileData);
+                loadSheetData(fileData.selectedSheet);
+
+                document.getElementById('step2').style.display = 'block';
+                document.getElementById('step3').style.display = 'block';
+
+            } catch (e) {
+                console.error("切換檔案錯誤:", e);
+                alert("切換檔案時發生錯誤");
+            }
+        }, 50);
+    }
+
+    function saveCurrentFileState() {
+        const fileData = filesStore[currentFileIdx];
+        fileData.colWithdraw = document.getElementById('colWithdraw').value;
+        fileData.colDeposit = document.getElementById('colDeposit').value;
+        fileData.colAccount = document.getElementById('colAccount').value;
+        fileData.colSelfAccount = document.getElementById('colSelfAccount').value; // 新增
+        fileData.colDate = document.getElementById('colDate').value;
+        fileData.colTime = document.getElementById('colTime').value;
+        fileData.currentSort = currentSort;
+    }
+
+    function renderSheetTabs(fileData) {
+        const sheetTabs = document.getElementById('sheetTabs');
+        sheetTabs.innerHTML = '';
+        
+        fileData.workbook.SheetNames.forEach(name => {
+            const li = document.createElement('li');
+            li.className = 'nav-item';
+            
+            const btn = document.createElement('button');
+            btn.className = `nav-link ${name === fileData.selectedSheet ? 'active' : ''}`;
+            btn.type = 'button';
+            btn.textContent = name; 
+            
+            btn.onclick = function() {
+                document.querySelectorAll('#sheetTabs .nav-link').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                filesStore[currentFileIdx].selectedSheet = name;
+                filesStore[currentFileIdx].isAnalyzed = false;
+                filesStore[currentFileIdx].colWithdraw = "";
+                filesStore[currentFileIdx].colDeposit = "";
+                filesStore[currentFileIdx].colAccount = "";
+                filesStore[currentFileIdx].colSelfAccount = ""; // 新增
+                
+                loadSheetData(name);
+            };
+            
+            li.appendChild(btn);
+            sheetTabs.appendChild(li);
+        });
+    }
+
+    function loadSheetData(sheetName) {
+        const worksheet = workbook.Sheets[sheetName];
+        jsonData = XLSX.utils.sheet_to_json(worksheet, {defval: ""});
+        filesStore[currentFileIdx].jsonData = jsonData;
+        
+        if (jsonData.length === 0) {
+            document.getElementById('previewTable').innerHTML = '<div class="text-muted p-2">無資料</div>';
+            document.getElementById('step3').style.display = 'none';
+            document.getElementById('step4').style.display = 'none';
+            return;
+        }
+
+        headers = Object.keys(jsonData[0]);
+        filesStore[currentFileIdx].headers = headers;
+        
+        let tableHtml = '<thead class="table-light"><tr>';
+        headers.forEach(h => {
+            tableHtml += `<th draggable="true" ondragstart="drag(event)">${escapeHtml(h)}</th>`;
+        });
+        tableHtml += '</tr></thead><tbody>';
+        
+        jsonData.slice(0, 5).forEach(row => {
+            tableHtml += '<tr>';
+            headers.forEach(h => tableHtml += `<td>${escapeHtml(row[h])}</td>`);
+            tableHtml += '</tr>';
+        });
+        tableHtml += '</tbody>';
+        document.getElementById('previewTable').innerHTML = tableHtml;
+
+        updateStep3Options();
+    }
+
+    function updateStep3Options() {
+        const fileData = filesStore[currentFileIdx];
+        const selects = document.querySelectorAll('.column-select');
+        
+        selects.forEach(select => {
+            select.innerHTML = '<option value="">(不選擇/無此欄)</option>';
+            headers.forEach(h => {
+                const option = document.createElement('option');
+                option.text = h; 
+                option.value = h; 
+                select.add(option);
+            });
+        });
+
+        const colIds = ['colWithdraw', 'colDeposit', 'colAccount', 'colSelfAccount', 'colDate', 'colTime']; // 加入新ID
+        
+        colIds.forEach(id => {
+            const savedVal = fileData[id];
+            const select = document.getElementById(id);
+            
+            if (savedVal && headers.includes(savedVal)) {
+                select.value = savedVal;
+            } else {
+                select.value = "";
+                if (id === 'colWithdraw') autoSelect('colWithdraw', ['支出', '借方', '提款', '出金', 'Withdraw']);
+                if (id === 'colDeposit') autoSelect('colDeposit', ['存入', '貸方', '存款', '入金', 'Deposit']);
+                if (id === 'colAccount') autoSelect('colAccount', ['轉出入行庫代碼及帳號'], true);
+                if (id === 'colSelfAccount') autoSelect('colSelfAccount', ['帳號'], true); // 新增：精確匹配「帳號」
+                if (id === 'colDate') autoSelect('colDate', ['交易日期', '日期', 'Date'], true); 
+                if (id === 'colTime') autoSelect('colTime', ['交易時間', '時間', 'Time'], true);
+            }
+        });
+
+        initStep3Events();
+        updateColors();
+        
+        if (document.getElementById('colWithdraw').value || document.getElementById('colDeposit').value) {
+            analyzeData();
+        } else {
+            document.getElementById('step4').style.display = 'none';
+        }
+    }
+
+    function autoSelect(elementId, keywords, strict = false) {
+        const select = document.getElementById(elementId);
+        if(select.value) return;
+
+        for (let i = 0; i < select.options.length; i++) {
+            const text = select.options[i].text;
+            let match = false;
+            if (strict) {
+                match = keywords.some(k => text.trim() === k.trim());
+            } else {
+                match = keywords.some(k => text.includes(k));
+            }
+
+            if (match) {
+                select.selectedIndex = i;
+                break;
+            }
+        }
+    }
+
+    function initStep3Events() {
+        const selects = document.querySelectorAll('.column-select');
+        
+        selects.forEach(select => {
+            select.onchange = function() {
+                saveCurrentFileState();
+                updateColors();
+                analyzeData();
+            };
+
+            select.addEventListener('dragover', allowDrop);
+            select.addEventListener('dragleave', removeDragStyle);
+            select.addEventListener('drop', drop);
+        });
+    }
+
+    function drag(ev) {
+        ev.dataTransfer.setData("text", ev.target.innerText);
+    }
+
+    function allowDrop(ev) {
+        ev.preventDefault();
+        ev.target.classList.add('drag-over-input');
+    }
+
+    function removeDragStyle(ev) {
+        ev.target.classList.remove('drag-over-input');
+    }
+
+    function drop(ev) {
+        ev.preventDefault();
+        ev.target.classList.remove('drag-over-input');
+        const colName = ev.dataTransfer.getData("text");
+        
+        if (ev.target.tagName === 'SELECT') {
+            let found = false;
+            for(let opt of ev.target.options) {
+                if(opt.value === colName) {
+                    ev.target.value = colName;
+                    found = true;
+                    break;
+                }
+            }
+            if(found) {
+                saveCurrentFileState();
+                updateColors();
+                analyzeData();
+            }
+        }
+    }
+
+    function updateColors() {
+        const table = document.getElementById('previewTable');
+        const ths = table.querySelectorAll('th');
+        const trs = table.querySelectorAll('tbody tr');
+        
+        ths.forEach(th => th.className = ''); 
+        trs.forEach(tr => {
+            Array.from(tr.children).forEach(td => td.style.backgroundColor = '');
+        });
+
+        const selects = document.querySelectorAll('.column-select');
+        selects.forEach(select => {
+            const colorClass = select.getAttribute('data-color');
+            const selectedCol = select.value;
+            
+            select.classList.remove('bg-withdraw', 'bg-deposit', 'bg-account', 'bg-self-account', 'bg-date', 'bg-time');
+
+            if (selectedCol) {
+                select.classList.add(colorClass);
+
+                const colIndex = headers.indexOf(selectedCol);
+                if (colIndex !== -1) {
+                    const targetTh = table.querySelector(`thead th:nth-child(${colIndex + 1})`);
+                    if(targetTh) targetTh.classList.add(colorClass);
+
+                    trs.forEach(tr => {
+                        const targetTd = tr.querySelector(`td:nth-child(${colIndex + 1})`);
+                        if(targetTd) targetTd.style.backgroundColor = getComputedStyle(document.querySelector('.'+colorClass)).backgroundColor;
+                    });
+                }
+            }
+        });
+    }
+
+    // --- 分析主邏輯 ---
+    function analyzeData() {
+        const colWithdraw = document.getElementById('colWithdraw').value;
+        const colDeposit = document.getElementById('colDeposit').value;
+        const colAccount = document.getElementById('colAccount').value;
+
+        if (!colWithdraw && !colDeposit) {
+            document.getElementById('step4').style.display = 'none';
+            return;
+        }
+
+        let accountStatsObj = {}; 
+        let newRawTransactions = {}; 
+        let newExpandedRows = new Set();
+        let newDetailSortState = {};
+
+        jsonData.forEach(row => {
+            let withdrawAmt = 0;
+            let depositAmt = 0;
+
+            if (colWithdraw && row[colWithdraw]) {
+                withdrawAmt = parseFloat(String(row[colWithdraw]).replace(/,/g, '')) || 0;
+            }
+            if (colDeposit && row[colDeposit]) {
+                depositAmt = parseFloat(String(row[colDeposit]).replace(/,/g, '')) || 0;
+            }
+
+            withdrawAmt = Math.abs(withdrawAmt); 
+
+            let targetAcc = colAccount ? String(row[colAccount] || "").trim() : "";
+
+            if (targetAcc && targetAcc !== "0") {
+                if (!accountStatsObj[targetAcc]) {
+                    accountStatsObj[targetAcc] = { 
+                        account: targetAcc,
+                        inCount: 0, inTotal: 0, 
+                        outCount: 0, outTotal: 0, 
+                        net: 0
+                    };
+                    newRawTransactions[targetAcc] = [];
+                }
+                
+                if (depositAmt > 0) {
+                    accountStatsObj[targetAcc].inCount++;
+                    accountStatsObj[targetAcc].inTotal += depositAmt;
+                }
+                if (withdrawAmt > 0) {
+                    accountStatsObj[targetAcc].outCount++;
+                    accountStatsObj[targetAcc].outTotal += withdrawAmt;
+                }
+                if(depositAmt > 0 || withdrawAmt > 0){
+                    newRawTransactions[targetAcc].push(row);
+                }
+            }
+        });
+
+        globalAccountStats = Object.values(accountStatsObj).map(data => {
+            data.net = data.inTotal - data.outTotal;
+            return data;
+        });
+        rawTransactions = newRawTransactions;
+        expandedRows = newExpandedRows;
+        detailSortState = newDetailSortState;
+        
+        filesStore[currentFileIdx].globalAccountStats = globalAccountStats;
+        filesStore[currentFileIdx].rawTransactions = rawTransactions;
+        filesStore[currentFileIdx].expandedRows = expandedRows;
+        filesStore[currentFileIdx].detailSortState = detailSortState;
+
+        currentSort = { key: null, dir: 'none' };
+        resetSortIcons();
+        globalAccountStats.sort((a, b) => (b.inCount + b.outCount) - (a.inCount + a.outCount));
+
+        renderSummaryCards(globalAccountStats);
+        renderColumnCheckboxes();
+        renderResults();
+        document.getElementById('step4').style.display = 'block';
+        renderGraph();
+    }
+
+    function renderSummaryCards(stats) {
+        if (stats.length === 0) {
+            document.getElementById('summaryCards').innerHTML = '';
+            return;
+        }
+
+        let maxInCount = { val: -1, acc: '無' };
+        let maxOutCount = { val: -1, acc: '無' };
+        let maxInTotal = { val: -1, acc: '無' };
+        let maxOutTotal = { val: -1, acc: '無' };
+
+        stats.forEach(s => {
+            if (s.inCount > maxInCount.val) maxInCount = { val: s.inCount, acc: s.account };
+            if (s.outCount > maxOutCount.val) maxOutCount = { val: s.outCount, acc: s.account };
+            if (s.inTotal > maxInTotal.val) maxInTotal = { val: s.inTotal, acc: s.account };
+            if (s.outTotal > maxOutTotal.val) maxOutTotal = { val: s.outTotal, acc: s.account };
+        });
+
+        const cards = [
+            { title: "最高轉入次數", val: maxInCount.val, acc: maxInCount.acc, color: "text-success" },
+            { title: "最高轉出次數", val: maxOutCount.val, acc: maxOutCount.acc, color: "text-danger" },
+            { title: "最高轉入總額", val: formatMoney(maxInTotal.val), acc: maxInTotal.acc, color: "text-success" },
+            { title: "最高轉出總額", val: formatMoney(maxOutTotal.val), acc: maxOutTotal.acc, color: "text-danger" }
+        ];
+
+        let html = '';
+        cards.forEach(c => {
+            html += `
+                <div class="col-md-6 col-lg-3">
+                    <div class="stat-card" onclick="applySearch('${escapeHtml(c.acc).replace(/'/g, "\\'")}')">
+                        <div class="stat-title">${escapeHtml(c.title)}</div>
+                        <div class="stat-value ${escapeHtml(c.color)}">${escapeHtml(c.val)}</div>
+                        <div class="stat-account mt-1">帳號: ${escapeHtml(c.acc)}</div>
+                    </div>
+                </div>
+            `;
+        });
+        document.getElementById('summaryCards').innerHTML = html;
+    }
+
+    function clearSearch() {
+        const input = document.getElementById('searchAccount');
+        input.value = '';
+        filterTable('resTableAccount', '');
+    }
+
+    function applySearch(account) {
+        expandedRows.forEach(accName => {
+            const index = globalAccountStats.findIndex(s => s.account === accName);
+            if (index !== -1) {
+                const detailRow = document.getElementById(`detail-${index}`);
+                const btn = document.getElementById(`btn-${index}`);
+                if (detailRow) detailRow.classList.remove('show');
+                if (btn) {
+                    btn.textContent = '+';
+                    btn.classList.remove('collapsed');
+                }
+            }
+        });
+        expandedRows.clear();
+
+        const input = document.getElementById('searchAccount');
+        input.value = account;
+        filterTable('resTableAccount', account);
+        document.getElementById('resTableAccount').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function exportToExcel() {
+        if (!globalAccountStats || globalAccountStats.length === 0) {
+            alert("無資料可匯出");
+            return;
+        }
+
+        const dataToExport = globalAccountStats.map(item => ({
+            "帳號": item.account,
+            "轉入次數 (進)": item.inCount,
+            "轉入總額": item.inTotal,
+            "轉出次數 (出)": item.outCount,
+            "轉出總額": item.outTotal,
+            "淨流量": item.net
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(dataToExport);
+        const wb = XLSX.utils.book_new();
+        const currentFileName = filesStore[currentFileIdx].fileName;
+        XLSX.utils.book_append_sheet(wb, ws, "分析結果");
+        
+        const timestamp = new Date().toISOString().slice(0,10).replace(/-/g,"");
+        XLSX.writeFile(wb, `${currentFileName}_分析結果_${timestamp}.xlsx`);
+    }
+
+    function renderColumnCheckboxes() {
+        const container = document.getElementById('columnCheckboxes');
+        
+        let html = `
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="cb-all" checked onchange="toggleAllColumns()">
+                <label class="form-check-label fw-bold" for="cb-all">全選</label>
+            </div>
+            <div class="vr mx-2"></div>
+        `;
+
+        headers.forEach(h => {
+            html += `
+                <div class="form-check">
+                    <input class="form-check-input column-toggle" type="checkbox" value="${escapeHtml(h)}" id="cb-${escapeHtml(h)}" checked onchange="checkSelectAllStatus(); updateDetailColumns()">
+                    <label class="form-check-label" for="cb-${escapeHtml(h)}">
+                        ${escapeHtml(h)}
+                    </label>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    }
+
+    function toggleAllColumns() {
+        const selectAllCb = document.getElementById('cb-all');
+        const isChecked = selectAllCb.checked;
+        const toggles = document.querySelectorAll('.column-toggle');
+        toggles.forEach(cb => {
+            cb.checked = isChecked;
+        });
+        updateDetailColumns();
+    }
+
+    function checkSelectAllStatus() {
+        const toggles = document.querySelectorAll('.column-toggle');
+        const checkedToggles = document.querySelectorAll('.column-toggle:checked');
+        const selectAllCb = document.getElementById('cb-all');
+
+        if (checkedToggles.length === toggles.length) {
+            selectAllCb.checked = true;
+        } else {
+            selectAllCb.checked = false;
+        }
+    }
+    
+    function updateDetailColumns() {
+        renderResults();
+    }
+    
+    function getCheckedHeaders() {
+        const checkboxes = document.querySelectorAll('.column-toggle:checked');
+        return Array.from(checkboxes).map(cb => cb.value);
+    }
+
+    // --- 主表排序功能 ---
+    function toggleSort(key) {
+        if (currentSort.key !== key) {
+            currentSort.key = key;
+            currentSort.dir = 'asc';
+        } else {
+            if (currentSort.dir === 'none') currentSort.dir = 'asc';
+            else if (currentSort.dir === 'asc') currentSort.dir = 'desc';
+            else if (currentSort.dir === 'desc') currentSort.dir = 'none';
+        }
+        
+        filesStore[currentFileIdx].currentSort = currentSort;
+
+        updateSortIcons(key, currentSort.dir);
+        sortData();
+        renderResults();
+    }
+
+    function sortData() {
+        if (currentSort.dir === 'none') {
+            globalAccountStats.sort((a, b) => (b.inCount + b.outCount) - (a.inCount + a.outCount));
+            return;
+        }
+
+        globalAccountStats.sort((a, b) => {
+            let valA = a[currentSort.key];
+            let valB = b[currentSort.key];
+
+            if (typeof valA === 'string') valA = valA.toUpperCase();
+            if (typeof valB === 'string') valB = valB.toUpperCase();
+
+            if (valA < valB) return currentSort.dir === 'asc' ? -1 : 1;
+            if (valA > valB) return currentSort.dir === 'asc' ? 1 : -1;
+            return 0;
+        });
+    }
+
+    function updateSortIcons(activeKey, dir) {
+        resetSortIcons();
+        if (dir !== 'none') {
+            const iconSpan = document.getElementById(`sort-icon-${activeKey}`);
+            if (iconSpan) {
+                iconSpan.textContent = dir === 'asc' ? '↑' : '↓';
+                iconSpan.style.color = 'red';
+            }
+        }
+    }
+
+    function resetSortIcons() {
+        const icons = document.querySelectorAll('[id^="sort-icon-"]');
+        icons.forEach(icon => {
+            icon.textContent = '';
+            icon.style.color = '';
+        });
+    }
+
+    // --- 明細表排序功能 ---
+    function toggleDetailSort(accountIndex, colKey) {
+        const account = globalAccountStats[accountIndex].account;
+        
+        if (!detailSortState[account]) {
+            detailSortState[account] = { key: null, dir: 'none' };
+        }
+        
+        let state = detailSortState[account];
+        
+        if (state.key !== colKey) {
+            state.key = colKey;
+            state.dir = 'asc';
+        } else {
+            if (state.dir === 'none') state.dir = 'asc';
+            else if (state.dir === 'asc') state.dir = 'desc';
+            else if (state.dir === 'desc') state.dir = 'none';
+        }
+
+        sortDetailData(account);
+        expandedRows.add(account); 
+        renderResults();
+    }
+
+    function sortDetailData(account) {
+        const state = detailSortState[account];
+        if (!state || state.dir === 'none') {
+            return; 
+        }
+
+        rawTransactions[account].sort((a, b) => {
+            let valA = a[state.key];
+            let valB = b[state.key];
+
+            let numA = parseFloat(String(valA).replace(/,/g, ''));
+            let numB = parseFloat(String(valB).replace(/,/g, ''));
+
+            if (!isNaN(numA) && !isNaN(numB)) {
+                valA = numA;
+                valB = numB;
+            } else {
+                if (typeof valA === 'string') valA = valA.toUpperCase();
+                if (typeof valB === 'string') valB = valB.toUpperCase();
+            }
+
+            if (valA < valB) return state.dir === 'asc' ? -1 : 1;
+            if (valA > valB) return state.dir === 'asc' ? 1 : -1;
+            return 0;
+        });
+    }
+
+    function renderResults() {
+        const accTbody = document.querySelector('#resTableAccount tbody');
+        accTbody.innerHTML = '';
+        
+        globalAccountStats.forEach((data, index) => {
+            const account = data.account;
+            const isExpanded = expandedRows.has(account); 
+            
+            let rowHtml = `
+                <tr class="main-row" onclick="toggleDetails(${index}, '${escapeHtml(account).replace(/'/g, "\\'")}')">
+                    <td class="text-center">
+                        <button class="btn-circle ${isExpanded ? 'collapsed' : ''}" id="btn-${index}">${isExpanded ? '-' : '+'}</button>
+                    </td>
+                    <td>${index + 1}</td>
+                    <td>${escapeHtml(data.account)}</td>
+                    <td>${escapeHtml(data.inCount)}</td>
+                    <td class="text-success">${escapeHtml(formatMoney(data.inTotal))}</td>
+                    <td>${escapeHtml(data.outCount)}</td>
+                    <td class="text-danger">${escapeHtml(formatMoney(data.outTotal))}</td>
+                    <td class="${data.net >=0 ? 'text-success':'text-danger'} fw-bold">${escapeHtml(formatMoney(data.net))}</td>
+                </tr>
+                <tr id="detail-tr-${index}" class="detail-row ${isExpanded ? 'show' : ''}">
+                    <td colspan="8" id="detail-container-${index}" class="p-0">
+                        </td>
+                </tr>
+            `;
+            accTbody.innerHTML += rowHtml;
+
+            if (isExpanded) {
+                renderDetailContent(index, account);
+            }
+        });
+
+        const currentSearch = document.getElementById('searchAccount').value;
+        if(currentSearch) {
+            filterTable('resTableAccount', currentSearch);
+        }
+    }
+
+    function renderDetailContent(index, account) {
+        const container = document.getElementById(`detail-container-${index}`);
+        
+        if (!container || container.innerHTML.trim() !== "") return; 
+
+        const displayHeaders = getCheckedHeaders();
+        const txList = rawTransactions[account] || [];
+        const sortState = detailSortState[account] || { key: null, dir: 'none' };
+        const colWithdraw = document.getElementById('colWithdraw').value;
+        const colDeposit = document.getElementById('colDeposit').value;
+
+        const headerRowHtml = `<th>序號</th>` + displayHeaders.map(h => {
+            let icon = '';
+            if(sortState.key === h && sortState.dir !== 'none') {
+                icon = sortState.dir === 'asc' ? '<span style="color:red">↑</span>' : '<span style="color:red">↓</span>';
+            }
+            return `<th class="sortable" onclick="toggleDetailSort(${index}, '${escapeHtml(h)}')">${escapeHtml(h)} ${icon}</th>`;
+        }).join('');
+
+        let detailRows = '';
+        txList.forEach((row, txIndex) => {
+            let isDeposit = false;
+            let isWithdraw = false;
+            let rowClass = "";
+
+            let dAmt = 0; 
+            if(colDeposit && row[colDeposit]) dAmt = parseFloat(String(row[colDeposit]).replace(/,/g, '')) || 0;
+            
+            let wAmt = 0;
+            if(colWithdraw && row[colWithdraw]) wAmt = Math.abs(parseFloat(String(row[colWithdraw]).replace(/,/g, '')) || 0);
+
+            if(dAmt > 0) isDeposit = true;
+            if(wAmt > 0) isWithdraw = true;
+
+            if(isDeposit && !isWithdraw) rowClass = "table-success"; 
+            else if(isWithdraw && !isDeposit) rowClass = "table-warning"; 
+            
+            let tds = `<td>${txIndex + 1}</td>` + displayHeaders.map(h => `<td>${escapeHtml(row[h] !== undefined ? row[h] : '')}</td>`).join('');
+            detailRows += `<tr class="${rowClass}">${tds}</tr>`;
+        });
+
+        container.innerHTML = `
+            <div class="p-3">
+                <strong>${escapeHtml(account)} - 交易明細 (${txList.length} 筆)</strong>
+                <div class="table-responsive mt-2" style="max-height: 300px;">
+                    <table class="table table-bordered detail-table mb-0">
+                        <thead><tr>${headerRowHtml}</tr></thead>
+                        <tbody>${detailRows}</tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+
+    window.toggleDetails = function(index, account) {
+        const detailRow = document.getElementById(`detail-tr-${index}`);
+        const btn = document.getElementById(`btn-${index}`);
+        
+        if (!detailRow) {
+            console.error(`Error: Cannot find element with ID 'detail-tr-${index}'`);
+            return;
+        }
+        if (!btn) {
+            console.error(`Error: Cannot find element with ID 'btn-${index}'`);
+            return;
+        }
+
+        if (detailRow.classList.contains('show')) {
+            detailRow.classList.remove('show');
+            btn.textContent = '+';
+            btn.classList.remove('collapsed');
+            expandedRows.delete(account); 
+        } else {
+            renderDetailContent(index, account);
+            
+            detailRow.classList.add('show');
+            btn.textContent = '-';
+            btn.classList.add('collapsed');
+            expandedRows.add(account); 
+        }
+    }
+
+    function formatMoney(num) {
+        if (typeof num === 'string') return num; 
+        return num.toLocaleString('zh-TW', { style: 'currency', currency: 'TWD', minimumFractionDigits: 0 });
+    }
+
+    function filterTable(tableId, query) {
+        const filter = query.toUpperCase();
+        const table = document.getElementById(tableId);
+        const trs = table.getElementsByClassName("main-row");
+        
+        for (let i = 0; i < trs.length; i++) {
+            const tr = trs[i];
+            const detailRowId = tr.getAttribute("onclick").match(/\d+/)[0]; 
+            const detailRow = document.getElementById(`detail-${detailRowId}`);
+            
+            const tdAcc = tr.getElementsByTagName("td")[2];
+            if (tdAcc) {
+                const txtValue = tdAcc.textContent || tdAcc.innerText;
+                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                    tr.style.display = "";
+                } else {
+                    tr.style.display = "none";
+                    if(detailRow) detailRow.classList.remove('show');
+                }
+            }       
+        }
+    }
+
+    // =====================================================
+    // 資金網脈關聯圖
+    // =====================================================
+    let graphMode      = 'star';   // 'star' | 'hierarchy'
+    let graphBg        = 'dark';   // 'dark' | 'light'
+    let graphNodes     = [];
+    let graphEdges     = [];
+    let graphTransform = { x: 0, y: 0, scale: 1 };
+    let graphDragging  = false;
+    let graphDragStart = { x: 0, y: 0 };
+    let graphHoveredNode  = null;
+    let nodeDragging      = null;
+    let nodeDragOffset    = { x: 0, y: 0 };
+    let markedNodes       = new Set();   // 標註 node ids
+    let highlightNodes    = new Set();   // 搜尋結果 node ids
+    let onlyMarkedMode    = false;       // 只顯示標註
+    // 每個 node 儲存來源 fileIdx，供多檔合併使用
+    // graphAllData: 彙整所有勾選檔案的 edges/nodes 原始資料
+    let graphSelectedFiles = new Set();  // 勾選的 fileIdx
+    let graphRebuildPreserveView = false; // 切換檔案勾選時保留視角旗標
+
+    const COLOR_IN   = '#22c55e';
+    const COLOR_OUT  = '#f97316';
+    const COLOR_BOTH = '#a78bfa';
+    const NODE_MAIN_FILL   = '#1d4ed8';
+    const NODE_MAIN_STROKE = '#93c5fd';
+    const NODE_SUB_FILL    = '#1e293b';
+    const NODE_SUB_STROKE  = '#64748b';
+    const NODE_MARK_FILL   = '#ef4444';
+    const NODE_MARK_STROKE = '#fca5a5';
+    const NODE_HL_FILL     = '#ca8a04';
+    const NODE_HL_STROKE   = '#fef08a';
+
+    function getBgColor()    { return graphBg === 'dark' ? '#0f1117' : '#f5f0e8'; }
+    function getLabelBg()    { return graphBg === 'dark' ? 'rgba(15,17,23,0.72)' : 'rgba(245,240,232,0.82)'; }
+    function getLabelColor() { return graphBg === 'dark' ? '#e0f2fe' : '#1e293b'; }
+    function getSubLabelColor() { return graphBg === 'dark' ? '#cbd5e1' : '#334155'; }
+
+    // --- 背景切換 ---
+    function setGraphBg(mode) {
+        graphBg = mode;
+        document.getElementById('btnBgDark').className  = mode === 'dark'  ? 'btn btn-sm btn-dark active'            : 'btn btn-sm btn-outline-secondary';
+        document.getElementById('btnBgLight').className = mode === 'light' ? 'btn btn-sm btn-secondary active'       : 'btn btn-sm btn-outline-secondary';
+        // 更新圖例背景
+        const legend = document.getElementById('graphLegend');
+        legend.style.background = mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)';
+        drawGraph();
+    }
+
+    // --- 模式切換 ---
+    function setGraphMode(mode) {
+        graphMode = mode;
+        document.getElementById('btnStar').className = mode === 'star'      ? 'btn btn-sm btn-primary'         : 'btn btn-sm btn-outline-primary';
+        document.getElementById('btnHier').className = mode === 'hierarchy' ? 'btn btn-sm btn-primary'         : 'btn btn-sm btn-outline-primary';
+        layoutGraph();
+        drawGraph();
+    }
+
+    function resetGraphView() {
+        const canvas = document.getElementById('graphCanvas');
+        if (graphNodes.length === 0) return;
+
+        // 節點座標是以 (0,0) 為原點的局部座標
+        // graphTransform.x/y 是 canvas 中的平移量
+        const xs = graphNodes.map(n => n.x);
+        const ys = graphNodes.map(n => n.y);
+        const minX = Math.min(...xs) - 40;  // 節點半徑+邊距
+        const maxX = Math.max(...xs) + 40;
+        const minY = Math.min(...ys) - 40;
+        const maxY = Math.max(...ys) + 40;
+        const contentW = maxX - minX || 1;
+        const contentH = maxY - minY || 1;
+
+        // 計算適合的縮放比例
+        const scaleX = canvas.width  / contentW;
+        const scaleY = canvas.height / contentH;
+        const scale  = Math.min(scaleX, scaleY, 1.2);
+
+        // 內容中心點（局部座標）
+        const contentCx = (minX + maxX) / 2;
+        const contentCy = (minY + maxY) / 2;
+
+        // transform 讓內容中心對齊 canvas 中心
+        graphTransform = {
+            x: canvas.width  / 2 - contentCx * scale,
+            y: canvas.height / 2 - contentCy * scale,
+            scale
+        };
+        drawGraph();
+    }
+
+    // --- 只顯示標註切換 ---
+    function toggleOnlyMarked() {
+        onlyMarkedMode = document.getElementById('cbOnlyMarked').checked;
+        drawGraph();
+    }
+
+    // --- 搜尋帳號 ---
+    function onGraphSearch(val) {
+        highlightNodes.clear();
+        const q = val.trim().toLowerCase();
+        if (q) {
+            graphNodes.forEach(n => {
+                if (n.id.toLowerCase().includes(q)) highlightNodes.add(n.id);
+            });
+        }
+        drawGraph();
+    }
+
+    function clearGraphSearch() {
+        document.getElementById('graphSearch').value = '';
+        highlightNodes.clear();
+        drawGraph();
+    }
+
+    // --- 標註 node ---
+    function toggleMarkNode(nodeId) {
+        if (markedNodes.has(nodeId)) markedNodes.delete(nodeId);
+        else markedNodes.add(nodeId);
+        drawGraph();
+    }
+
+    // --- 渲染檔案 checkbox ---
+    function renderGraphFileCheckboxes() {
+        const container = document.getElementById('graphFileCheckboxes');
+        container.innerHTML = '';
+        if (filesStore.length === 0) return;
+
+        filesStore.forEach((fd, idx) => {
+            const id = `gcb-${idx}`;
+            const wrapper = document.createElement('div');
+            wrapper.className = 'form-check mb-0';
+
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.className = 'form-check-input';
+            cb.id = id;
+            cb.checked = graphSelectedFiles.has(idx);
+            cb.onchange = () => {
+                if (cb.checked) graphSelectedFiles.add(idx);
+                else graphSelectedFiles.delete(idx);
+                graphRebuildPreserveView = true; // 切換檔案勾選，保留現有視角
+                rebuildGraphFromSelected();
+            };
+
+            const lbl = document.createElement('label');
+            lbl.className = 'form-check-label small';
+            lbl.htmlFor = id;
+            lbl.textContent = fd.fileName;
+
+            wrapper.appendChild(cb);
+            wrapper.appendChild(lbl);
+            container.appendChild(wrapper);
+        });
+    }
+
+    // --- 從所有已勾選的檔案重新建立 graph data ---
+    function rebuildGraphFromSelected() {
+        const allNodes = {};
+        const edgeMap  = {};
+
+        graphSelectedFiles.forEach(idx => {
+            const fd = filesStore[idx];
+            if (!fd || !fd.jsonData || fd.jsonData.length === 0) return;
+
+            const colSelfAccount = fd.colSelfAccount || '';
+            const colAccount     = fd.colAccount     || '';
+            const colDeposit     = fd.colDeposit     || '';
+            const colWithdraw    = fd.colWithdraw    || '';
+
+            if (!colAccount) return;
+
+            let mainAccSet = new Set();
+            if (colSelfAccount) {
+                fd.jsonData.forEach(row => {
+                    const v = String(row[colSelfAccount] || '').trim();
+                    if (v && v !== '0') mainAccSet.add(v);
+                });
+            }
+            if (mainAccSet.size === 0) return;
+
+            fd.jsonData.forEach(row => {
+                const selfAcc    = colSelfAccount ? String(row[colSelfAccount] || '').trim() : '';
+                const counterAcc = String(row[colAccount] || '').trim();
+                if (!selfAcc || !counterAcc || counterAcc === '0') return;
+                if (!mainAccSet.has(selfAcc)) return;
+
+                const depositAmt  = colDeposit  ? (parseFloat(String(row[colDeposit]  || '0').replace(/,/g, '')) || 0) : 0;
+                const withdrawAmt = colWithdraw ? Math.abs(parseFloat(String(row[colWithdraw] || '0').replace(/,/g, '')) || 0) : 0;
+                if (depositAmt === 0 && withdrawAmt === 0) return;
+
+                const key = selfAcc + '|||' + counterAcc;
+                if (!edgeMap[key]) edgeMap[key] = { main: selfAcc, counter: counterAcc, inTotal: 0, outTotal: 0 };
+                edgeMap[key].inTotal  += depositAmt;
+                edgeMap[key].outTotal += withdrawAmt;
+
+                if (!allNodes[selfAcc])    allNodes[selfAcc]    = { id: selfAcc,    isMain: true  };
+                if (!allNodes[counterAcc]) allNodes[counterAcc] = { id: counterAcc, isMain: false };
+                // 若 counterAcc 也出現在某檔的 mainAccSet 則升級為 main
+                if (mainAccSet.has(counterAcc)) allNodes[counterAcc].isMain = true;
+            });
+        });
+
+        graphEdges = [];
+        Object.values(edgeMap).forEach(e => {
+            const total = e.inTotal + e.outTotal;
+            if (total === 0) return;
+            let type = 'both';
+            if (e.inTotal > 0 && e.outTotal === 0)  type = 'in';
+            if (e.outTotal > 0 && e.inTotal === 0)  type = 'out';
+            graphEdges.push({ from: e.main, to: e.counter, type, inTotal: e.inTotal, outTotal: e.outTotal, total });
+        });
+
+        const maxFlow = Math.max(...graphEdges.map(e => e.total), 1);
+        graphEdges.forEach(e => { e.widthRatio = e.total / maxFlow; });
+
+        graphNodes = Object.values(allNodes);
+
+        // 清除搜尋 / 保留標註（僅保留仍存在的 nodes）
+        highlightNodes.clear();
+        const existIds = new Set(graphNodes.map(n => n.id));
+        for (const id of [...markedNodes]) { if (!existIds.has(id)) markedNodes.delete(id); }
+
+        const canvas = document.getElementById('graphCanvas');
+        // 每次重建都重新設定 canvas 繪圖解析度，確保與實際顯示一致
+        canvas.width  = canvas.offsetWidth || 900;
+        canvas.height = 800;
+        // 只有第一次或完全重建時重置視角；切換檔案勾選時保留現有視角
+        if (!graphRebuildPreserveView) {
+            // 初始化為 canvas 中心（layout 座標原點映射到畫面中心）
+            graphTransform = { x: canvas.width / 2, y: canvas.height / 2, scale: 1 };
+        }
+
+        const step5 = document.getElementById('step5');
+        if (graphNodes.length === 0) {
+            step5.style.display = 'none';
+        } else {
+            step5.style.display = 'block';
+            layoutGraph();
+            if (!graphRebuildPreserveView) {
+                // 新建時自動置中
+                resetGraphView();
+            } else {
+                drawGraph();
+            }
+        }
+        graphRebuildPreserveView = false; // 重置旗標
+    }
+
+    // --- 主入口：renderGraph (從 analyzeData 呼叫，針對當前檔案) ---
+    function renderGraph() {
+        const step5 = document.getElementById('step5');
+
+        // 更新 filesStore 目前檔案的欄位設定（應已由 saveCurrentFileState 完成，但防呆再存一次）
+        if (currentFileIdx !== -1 && filesStore[currentFileIdx]) {
+            filesStore[currentFileIdx].colSelfAccount = document.getElementById('colSelfAccount').value;
+            filesStore[currentFileIdx].colAccount     = document.getElementById('colAccount').value;
+            filesStore[currentFileIdx].colDeposit     = document.getElementById('colDeposit').value;
+            filesStore[currentFileIdx].colWithdraw    = document.getElementById('colWithdraw').value;
+        }
+
+        // 自動勾選當前檔案
+        if (currentFileIdx !== -1) graphSelectedFiles.add(currentFileIdx);
+
+        renderGraphFileCheckboxes();
+
+        // 確保 canvas 已初始化事件（事件只綁定一次）
+        const canvas = document.getElementById('graphCanvas');
+        canvas.width  = canvas.offsetWidth || 900;
+        canvas.height = 800;
+        if (!canvas._graphEventsAttached) {
+            setupGraphEvents(canvas);
+            canvas._graphEventsAttached = true;
+        }
+
+        graphRebuildPreserveView = false; // 全新分析，重置視角
+        rebuildGraphFromSelected();
+    }
+
+    // 所有節點座標以 (0,0) 為原點，由 graphTransform 負責將內容定位至畫面
+    function layoutGraph() {
+        const mainNodes = graphNodes.filter(n => n.isMain);
+        const subNodes  = graphNodes.filter(n => !n.isMain);
+
+        if (graphMode === 'star') {
+
+            const NODE_SLOT = 54;
+            const BASE_R    = 100;
+            const RING_INC  = NODE_SLOT;
+
+            // 各聚落局部佈局（主節點在 0,0）
+            const mainEdgeMap = {};
+            graphEdges.forEach(e => {
+                if (!mainEdgeMap[e.from]) mainEdgeMap[e.from] = [];
+                if (!mainEdgeMap[e.from].includes(e.to)) mainEdgeMap[e.from].push(e.to);
+            });
+
+            const clusters = mainNodes.map(mn => {
+                const childIds = mainEdgeMap[mn.id] || [];
+                const localPos = [{ id: mn.id, lx: 0, ly: 0 }];
+
+                let maxRing = 0;
+                if (childIds.length > 0) {
+                    let placed = 0, ringIdx = 0;
+                    while (placed < childIds.length) {
+                        const r        = BASE_R + ringIdx * RING_INC;
+                        const capacity = Math.max(1, Math.floor((2 * Math.PI * r) / NODE_SLOT));
+                        const inRing   = Math.min(capacity, childIds.length - placed);
+                        for (let i = 0; i < inRing; i++) {
+                            const angle = (2 * Math.PI * i / inRing) - Math.PI / 2;
+                            localPos.push({ id: childIds[placed], lx: r * Math.cos(angle), ly: r * Math.sin(angle) });
+                            placed++;
+                        }
+                        maxRing = r;
+                        ringIdx++;
+                    }
+                }
+                const clusterRadius = maxRing + 32;
+                return { mainNode: mn, childIds, localPos, clusterRadius };
+            });
+
+            // 計算聚落圓心（以 0,0 為整體中心）
+            const CLUSTER_GAP = 60;
+            let clusterCenters;
+
+            if (clusters.length === 1) {
+                clusterCenters = [{ x: 0, y: 0 }];
+            } else {
+                const n = clusters.length;
+                let arrangeR = 0;
+                for (let i = 0; i < n; i++) {
+                    const j = (i + 1) % n;
+                    const minDist = clusters[i].clusterRadius + clusters[j].clusterRadius + CLUSTER_GAP;
+                    const needed  = minDist / (2 * Math.sin(Math.PI / n));
+                    if (needed > arrangeR) arrangeR = needed;
+                }
+                arrangeR = Math.max(arrangeR, 160);
+
+                clusterCenters = clusters.map((_, ci) => {
+                    const angle = (2 * Math.PI * ci / n) - Math.PI / 2;
+                    return { x: arrangeR * Math.cos(angle), y: arrangeR * Math.sin(angle) };
+                });
+            }
+
+            // 局部 → 世界座標
+            clusters.forEach((cl, ci) => {
+                const center = clusterCenters[ci];
+                cl.localPos.forEach(p => {
+                    const node = graphNodes.find(n => n.id === p.id);
+                    if (node) { node.x = center.x + p.lx; node.y = center.y + p.ly; }
+                });
+            });
+
+            // 孤立子節點
+            const connectedIds = new Set(graphEdges.flatMap(e => [e.from, e.to]));
+            subNodes.filter(n => !connectedIds.has(n.id)).forEach((n, i) => {
+                const r = 300 + i * NODE_SLOT;
+                n.x = r * Math.cos(2 * Math.PI * i / Math.max(1, subNodes.length));
+                n.y = r * Math.sin(2 * Math.PI * i / Math.max(1, subNodes.length));
+            });
+
+        } else {
+            // 階層模式（同樣以 0,0 為中心）
+            const xSpacing = 160;
+            const totalW   = (mainNodes.length - 1) * xSpacing;
+            mainNodes.forEach((n, i) => {
+                n.x = -totalW / 2 + i * xSpacing;
+                n.y = -200;
+            });
+            const cols = Math.ceil(Math.sqrt(subNodes.length * 1.5)) || 1;
+            const colW  = Math.max(120, 800 / cols);
+            subNodes.forEach((n, i) => {
+                const col = i % cols;
+                const row = Math.floor(i / cols);
+                n.x = -colW * (cols - 1) / 2 + col * colW;
+                n.y = 100 + row * 90;
+            });
+        }
+    }
+
+    function drawGraph() {
+        const canvas = document.getElementById('graphCanvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const { x: tx, y: ty, scale } = graphTransform;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = getBgColor();
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.save();
+        ctx.translate(tx, ty);
+        ctx.scale(scale, scale);
+
+        // 決定要顯示的 nodes/edges
+        let visibleNodeIds;
+        if (onlyMarkedMode && markedNodes.size > 0) {
+            // 只顯示被標註的節點，不加入任何相鄰節點
+            visibleNodeIds = new Set(markedNodes);
+        } else {
+            visibleNodeIds = new Set(graphNodes.map(n => n.id));
+        }
+
+        const visibleEdges = graphEdges.filter(e => visibleNodeIds.has(e.from) && visibleNodeIds.has(e.to));
+        const visibleNodes = graphNodes.filter(n => visibleNodeIds.has(n.id));
+
+        // 繪製邊
+        visibleEdges.forEach(edge => {
+            const fromNode = graphNodes.find(n => n.id === edge.from);
+            const toNode   = graphNodes.find(n => n.id === edge.to);
+            if (!fromNode || !toNode) return;
+
+            const minW = 1.5, maxW = 14;
+            const lineW = minW + edge.widthRatio * (maxW - minW);
+
+            if (edge.type === 'both') {
+                const dx = toNode.x - fromNode.x;
+                const dy = toNode.y - fromNode.y;
+                const len = Math.sqrt(dx * dx + dy * dy) || 1;
+                const nx = -dy / len * 4, ny = dx / len * 4;
+                const wIn  = (minW + (edge.inTotal  / edge.total) * (maxW - minW)) * 0.7;
+                const wOut = (minW + (edge.outTotal / edge.total) * (maxW - minW)) * 0.7;
+                drawArrowLine(ctx, fromNode.x + nx, fromNode.y + ny, toNode.x + nx, toNode.y + ny, COLOR_IN,  wIn);
+                drawArrowLine(ctx, fromNode.x - nx, fromNode.y - ny, toNode.x - nx, toNode.y - ny, COLOR_OUT, wOut);
+            } else {
+                const color = edge.type === 'in' ? COLOR_IN : COLOR_OUT;
+                const [sx, sy, ex, ey] = edge.type === 'in'
+                    ? [toNode.x, toNode.y, fromNode.x, fromNode.y]
+                    : [fromNode.x, fromNode.y, toNode.x, toNode.y];
+                drawArrowLine(ctx, sx, sy, ex, ey, color, lineW);
+            }
+        });
+
+        // 繪製節點
+        visibleNodes.forEach(node => {
+            const isHovered     = graphHoveredNode && graphHoveredNode.id === node.id;
+            const isMarked      = markedNodes.has(node.id);
+            const isHighlighted = highlightNodes.has(node.id);
+            const r = node.isMain ? 28 : 20;
+
+            // 決定節點填色（搜尋高亮不再改變填色，只加外框）
+            let fill, stroke;
+            if (isMarked) {
+                fill   = NODE_MARK_FILL;
+                stroke = NODE_MARK_STROKE;
+            } else {
+                fill   = node.isMain ? NODE_MAIN_FILL   : NODE_SUB_FILL;
+                stroke = node.isMain ? NODE_MAIN_STROKE : NODE_SUB_STROKE;
+            }
+
+            // 光暈（主節點 / hover / 標註）
+            if (node.isMain || isHovered || isMarked) {
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, r + 6, 0, 2 * Math.PI);
+                const glowColor = isMarked ? 'rgba(239,68,68,0.35)'
+                                : node.isMain ? 'rgba(59,130,246,0.35)'
+                                : 'rgba(148,163,184,0.25)';
+                const glow = ctx.createRadialGradient(node.x, node.y, r - 2, node.x, node.y, r + 8);
+                glow.addColorStop(0, glowColor);
+                glow.addColorStop(1, 'transparent');
+                ctx.fillStyle = glow;
+                ctx.fill();
+            }
+
+            // 搜尋高亮：在節點外圍畫 2px 黃色環（畫在填色之前，作為底圈）
+            if (isHighlighted) {
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, r + 4, 0, 2 * Math.PI);
+                ctx.strokeStyle = '#facc15';  // 亮黃色
+                ctx.lineWidth   = 2.5;
+                ctx.shadowColor = '#facc15';
+                ctx.shadowBlur  = 6;
+                ctx.stroke();
+                ctx.shadowBlur  = 0;
+            }
+
+            // 節點主體
+            ctx.beginPath();
+            ctx.arc(node.x, node.y, r, 0, 2 * Math.PI);
+            let hoverFill = fill;
+            if (isHovered) {
+                hoverFill = isMarked ? '#dc2626' : (node.isMain ? '#2563eb' : '#334155');
+            }
+            ctx.fillStyle   = hoverFill;
+            ctx.strokeStyle = stroke;
+            ctx.lineWidth   = (node.isMain || isMarked) ? 2.5 : 1.5;
+            ctx.fill();
+            ctx.stroke();
+
+            // 圖示
+            let iconColor = node.isMain ? '#bfdbfe' : '#94a3b8';
+            if (isMarked) iconColor = '#fecaca';
+            ctx.fillStyle    = iconColor;
+            ctx.font         = `${node.isMain ? 14 : 11}px Arial`;
+            ctx.textAlign    = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(node.isMain ? '★' : (isMarked ? '!' : '●'), node.x, node.y);
+
+            // 標籤
+            const label = node.id.length > 18 ? node.id.slice(-12) : node.id;
+            ctx.font         = node.isMain ? 'bold 11px Arial' : '10px Arial';
+            ctx.textAlign    = 'center';
+            ctx.textBaseline = 'top';
+
+            const tw = ctx.measureText(label).width + 8;
+            ctx.fillStyle = getLabelBg();
+            ctx.fillRect(node.x - tw / 2, node.y + r + 2, tw, 14);
+            ctx.fillStyle = node.isMain ? getLabelColor() : getSubLabelColor();
+            ctx.fillText(label, node.x, node.y + r + 4);
+
+            if (isMarked) {
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath();
+                ctx.arc(node.x + r * 0.7, node.y - r * 0.7, 6, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 8px Arial';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('★', node.x + r * 0.7, node.y - r * 0.7);
+            }
+        });
+
+        ctx.restore();
+    }
+
+    function drawArrowLine(ctx, x1, y1, x2, y2, color, lineW) {
+        const dx = x2 - x1, dy = y2 - y1;
+        const len = Math.sqrt(dx * dx + dy * dy);
+        if (len < 1) return;
+        const arrowSize = Math.min(lineW * 2.5 + 4, 18);
+        const nodeR = 22;
+        const ex = x2 - (dx / len) * nodeR;
+        const ey = y2 - (dy / len) * nodeR;
+        const sx = x1 + (dx / len) * nodeR;
+        const sy = y1 + (dy / len) * nodeR;
+
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo(ex, ey);
+        ctx.strokeStyle = color + 'cc';
+        ctx.lineWidth   = lineW;
+        ctx.lineCap     = 'round';
+        ctx.shadowColor = color;
+        ctx.shadowBlur  = lineW * 1.5;
+        ctx.stroke();
+        ctx.shadowBlur  = 0;
+
+        const angle = Math.atan2(dy, dx);
+        ctx.beginPath();
+        ctx.moveTo(ex, ey);
+        ctx.lineTo(ex - arrowSize * Math.cos(angle - Math.PI / 6), ey - arrowSize * Math.sin(angle - Math.PI / 6));
+        ctx.lineTo(ex - arrowSize * Math.cos(angle + Math.PI / 6), ey - arrowSize * Math.sin(angle + Math.PI / 6));
+        ctx.closePath();
+        ctx.fillStyle = color;
+        ctx.fill();
+    }
+
+    function getNodeAt(canvasX, canvasY) {
+        const { x: tx, y: ty, scale } = graphTransform;
+        const wx = (canvasX - tx) / scale;
+        const wy = (canvasY - ty) / scale;
+        for (let i = graphNodes.length - 1; i >= 0; i--) {
+            const n = graphNodes[i];
+            const r = n.isMain ? 28 : 20;
+            if ((wx - n.x) ** 2 + (wy - n.y) ** 2 <= r * r) return n;
+        }
+        return null;
+    }
+
+    function getCanvasPos(c, e) {
+        const rect = c.getBoundingClientRect();
+        const scaleX = c.width  / rect.width;
+        const scaleY = c.height / rect.height;
+        return {
+            x: (e.clientX - rect.left) * scaleX,
+            y: (e.clientY - rect.top)  * scaleY
+        };
+    }
+
+    function setupGraphEvents(canvas) {
+        const c       = canvas;
+        const tooltip = document.getElementById('graphTooltip');
+        let mouseDownNode   = null;
+        let mouseDownPos    = { x: 0, y: 0 };
+        let mouseMoved      = false;
+
+        c.addEventListener('wheel', e => {
+            e.preventDefault();
+            const pos = getCanvasPos(c, e);
+            const delta = e.deltaY > 0 ? 0.85 : 1.18;
+            const ns = Math.min(Math.max(graphTransform.scale * delta, 0.15), 6);
+            graphTransform.x = pos.x + (graphTransform.x - pos.x) * (ns / graphTransform.scale);
+            graphTransform.y = pos.y + (graphTransform.y - pos.y) * (ns / graphTransform.scale);
+            graphTransform.scale = ns;
+            drawGraph();
+        }, { passive: false });
+
+        c.addEventListener('mousedown', e => {
+            const pos = getCanvasPos(c, e);
+            const hit = getNodeAt(pos.x, pos.y);
+            mouseDownNode = hit;
+            mouseDownPos  = { x: e.clientX, y: e.clientY };
+            mouseMoved    = false;
+            if (hit) {
+                nodeDragging   = hit;
+                const wx = (pos.x - graphTransform.x) / graphTransform.scale;
+                const wy = (pos.y - graphTransform.y) / graphTransform.scale;
+                nodeDragOffset = { x: wx - hit.x, y: wy - hit.y };
+            } else {
+                graphDragging  = true;
+                graphDragStart = { x: pos.x - graphTransform.x, y: pos.y - graphTransform.y };
+            }
+        });
+
+        c.addEventListener('mousemove', e => {
+            const pos = getCanvasPos(c, e);
+
+            if (Math.abs(e.clientX - mouseDownPos.x) > 4 || Math.abs(e.clientY - mouseDownPos.y) > 4) mouseMoved = true;
+
+            if (nodeDragging && mouseMoved) {
+                const wx = (pos.x - graphTransform.x) / graphTransform.scale;
+                const wy = (pos.y - graphTransform.y) / graphTransform.scale;
+                nodeDragging.x = wx - nodeDragOffset.x;
+                nodeDragging.y = wy - nodeDragOffset.y;
+                drawGraph();
+                return;
+            }
+            if (graphDragging) {
+                graphTransform.x = pos.x - graphDragStart.x;
+                graphTransform.y = pos.y - graphDragStart.y;
+                drawGraph();
+                return;
+            }
+
+            const hit = getNodeAt(pos.x, pos.y);
+            if (hit !== graphHoveredNode) { graphHoveredNode = hit; drawGraph(); }
+
+            if (hit) {
+                c.style.cursor = 'pointer';
+                const isMarked = markedNodes.has(hit.id);
+                let tipHtml = `<strong>${hit.id}</strong><br>`;
+                if (hit.isMain) tipHtml += `<span style="color:#93c5fd">▶ 本帳號 (主節點)</span><br>`;
+                if (isMarked)   tipHtml += `<span style="color:#fca5a5">★ 已標註</span><br>`;
+                let foundStat = null;
+                filesStore.forEach(fd => {
+                    if (!foundStat) foundStat = (fd.globalAccountStats || []).find(s => s.account === hit.id);
+                });
+                if (!foundStat) foundStat = globalAccountStats.find(s => s.account === hit.id);
+                if (foundStat) {
+                    tipHtml += `<span style="color:#22c55e">▲ 轉入: ${formatMoney(foundStat.inTotal)} (${foundStat.inCount}筆)</span><br>`;
+                    tipHtml += `<span style="color:#f97316">▼ 轉出: ${formatMoney(foundStat.outTotal)} (${foundStat.outCount}筆)</span><br>`;
+                    tipHtml += `<span style="color:${foundStat.net>=0?'#22c55e':'#f97316'}">淨流量: ${formatMoney(foundStat.net)}</span><br>`;
+                }
+                tipHtml += `<span style="color:#94a3b8;font-size:0.75rem">點擊：${isMarked ? '取消標註' : '標註此節點'}</span>`;
+                tooltip.innerHTML = tipHtml;
+                tooltip.style.display = 'block';
+                tooltip.style.left = (e.clientX + 14) + 'px';
+                tooltip.style.top  = (e.clientY - 10) + 'px';
+            } else {
+                c.style.cursor = 'grab';
+                tooltip.style.display = 'none';
+            }
+        });
+
+        c.addEventListener('mouseup', e => {
+            const wasDragging = mouseMoved;
+            graphDragging = false;
+            nodeDragging  = null;
+            if (!wasDragging && mouseDownNode) {
+                toggleMarkNode(mouseDownNode.id);
+            }
+            mouseDownNode = null;
+        });
+
+        c.addEventListener('mouseleave', () => {
+            graphDragging = false;
+            nodeDragging  = null;
+            tooltip.style.display = 'none';
+            graphHoveredNode = null;
+            drawGraph();
+        });
+
+        drawGraph();
+    }
+</script>
+</body>
+</html>

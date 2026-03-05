@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>專業圖檔轉 PDF 產生器</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --container-bg: #ffffff;
+            --text-color: #333333;
+            --text-muted: #7f8c8d;
+            --border-color: #e9ecef;
+            --dropzone-bg: #fafbfc;
+            --dropzone-border: #bdc3c7;
+            --item-bg: #fdfdfd;
+            --primary: #3498db;
+            --success: #27ae60;
+            --success-hover: #2ecc71;
+            --danger: #e74c3c;
+            --danger-hover: #c0392b;
+            --preview-bg: #525659;
+        }
+
+        /* 深色模式支援 */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #1a1a1a;
+                --container-bg: #2d2d2d;
+                --text-color: #f1f1f1;
+                --text-muted: #aaa;
+                --border-color: #444;
+                --dropzone-bg: #333;
+                --dropzone-border: #666;
+                --item-bg: #3a3a3a;
+                --preview-bg: #323639;
+            }
+        }
+
+        /* 鎖定全域卷軸，改為滿版左右佈局 */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            height: 100vh;
+            box-sizing: border-box;
+            display: flex;
+            gap: 20px;
+            overflow: hidden;
+            transition: background-color 0.3s;
+        }
+
+        /* 左側：操作面板 */
+        .left-panel {
+            width: 450px;
+            flex-shrink: 0;
+            background: var(--container-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .panel-header h1 { font-size: 20px; margin: 0; }
+        .info-btn { background: var(--primary); color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px; }
+        .info-btn:hover { opacity: 0.9; }
+
+        .panel-content {
+            padding: 20px;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        /* 拖曳上傳區塊 */
+        #dropZone {
+            border: 2px dashed var(--dropzone-border);
+            border-radius: 8px;
+            padding: 30px 15px;
+            background-color: var(--dropzone-bg);
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+        #dropZone.dragover { border-color: var(--primary); background-color: rgba(52, 152, 219, 0.1); }
+        #dropZone p { margin: 0; font-size: 15px; pointer-events: none; }
+        #imageInput { display: none; }
+
+        /* 設定面板 */
+        .settings-panel {
+            background: var(--dropzone-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+        .setting-row {
+            display: flex;
+            gap: 15px;
+        }
+        .setting-row .setting-item {
+            flex: 1;
+        }
+        .setting-item { display: flex; flex-direction: column; }
+        .setting-item label { display: flex; justify-content: space-between; font-size: 13px; font-weight: bold; margin-bottom: 8px; }
+        .setting-item input[type="range"] { width: 100%; cursor: pointer; }
+        .setting-item select, .setting-item input[type="text"] {
+            padding: 8px; border: 1px solid var(--dropzone-border);
+            border-radius: 6px; font-size: 13px;
+            background-color: var(--container-bg); color: var(--text-color);
+        }
+
+        /* 預覽清單 */
+        .list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .list-header span { font-size: 13px; font-weight: bold; color: var(--text-muted); }
+        .clear-btn { background: transparent; border: 1px solid var(--danger); color: var(--danger); padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .clear-btn:hover { background: var(--danger); color: white; }
+
+        #previewList { list-style: none; padding: 0; margin: 0; }
+        #previewList li {
+            display: flex; align-items: center; background: var(--item-bg);
+            border: 1px solid var(--border-color); padding: 10px;
+            margin-bottom: 8px; border-radius: 6px; cursor: grab;
+        }
+        #previewList li:active { cursor: grabbing; }
+        #previewList li.drag-over { border-top: 2px solid var(--primary); }
+        .thumb { width: 40px; height: 40px; object-fit: contain; background: #eee; border-radius: 4px; margin-right: 10px; border: 1px solid var(--border-color); }
+        .filename { flex-grow: 1; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: 10px; }
+        
+        /* 操作按鈕 (旋轉與刪除) */
+        .action-btns { display: flex; gap: 8px; }
+        .action-btns button { 
+            width: 32px; 
+            height: 32px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-size: 18px; 
+            color: white; 
+            padding: 0;
+            line-height: 1; 
+            font-family: Arial, sans-serif; 
+        }
+        .rotate-btn { background: var(--primary); }
+        .rotate-btn:hover { filter: brightness(1.1); }
+        .remove-btn { background: var(--danger); }
+        .remove-btn:hover { background: var(--danger-hover); }
+
+        .panel-footer { padding: 20px; border-top: 1px solid var(--border-color); }
+        .progress-container { width: 100%; background-color: var(--border-color); border-radius: 6px; overflow: hidden; margin-bottom: 10px; display: none; }
+        .progress-bar { height: 6px; background-color: var(--primary); width: 0%; transition: width 0.3s ease; }
+        #convertBtn { background-color: var(--success); color: white; border: none; padding: 14px; font-size: 16px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; transition: background-color 0.3s; }
+        #convertBtn:hover { background-color: var(--success-hover); }
+        #convertBtn:disabled { background-color: var(--text-muted); cursor: not-allowed; }
+        #status { margin-top: 10px; font-size: 13px; color: var(--text-muted); text-align: center; }
+
+        /* 右側：即時預覽區 */
+        .right-panel {
+            flex-grow: 1;
+            background: var(--preview-bg);
+            border-radius: 12px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .preview-container {
+            flex-grow: 1;
+            overflow: auto;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+        .pages-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+            transform-origin: top center;
+            transition: transform 0.1s ease-out;
+        }
+        .preview-page {
+            background: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            position: relative;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .preview-page img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .page-badge {
+            position: absolute;
+            top: -30px;
+            left: 0;
+            color: #ccc;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .zoom-indicator {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            pointer-events: none;
+            backdrop-filter: blur(4px);
+            z-index: 10;
+        }
+        .empty-preview {
+            margin-top: 30vh;
+            color: #aaa;
+            font-size: 18px;
+            text-align: center;
+        }
+
+        /* 模態框 (系統說明) */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 100;
+        }
+        .modal-content {
+            background: var(--container-bg); padding: 30px; border-radius: 10px; width: 500px; max-width: 90%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); color: var(--text-color);
+        }
+        .modal-content h2 { margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+        .modal-content ul { padding-left: 20px; line-height: 1.6; font-size: 14px; }
+        .modal-close { display: block; width: 100%; padding: 10px; margin-top: 20px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; }
+    </style>
+</head>
+<body>
+
+    <div class="left-panel">
+        <div class="panel-header">
+            <h1>圖檔轉 PDF 產生器</h1>
+            <button class="info-btn" onclick="toggleModal(true)">系統說明</button>
+        </div>
+        
+        <div class="panel-content">
+            <div id="dropZone" onclick="document.getElementById('imageInput').click()">
+                <p>點擊選擇圖片，或將多張圖片拖曳至此處</p>
+            </div>
+            <input type="file" id="imageInput" multiple accept=".jpg, .jpeg, .png, .bmp, .webp, .gif, .tiff">
+
+            <div class="settings-panel">
+                <div class="setting-row">
+                    <div class="setting-item">
+                        <label for="pageSizeSelect">PDF 頁面尺寸</label>
+                        <select id="pageSizeSelect">
+                            <option value="a4">標準 A4</option>
+                            <option value="letter">信紙 Letter</option>
+                            <option value="fit">適應圖片尺寸 (無白邊)</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <label for="orientationSelect">紙張方向</label>
+                        <select id="orientationSelect">
+                            <option value="auto">自動判斷</option>
+                            <option value="p">強制直式</option>
+                            <option value="l">強制橫式</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <label for="marginInput">
+                        <span>頁面邊距 (白邊)</span><span id="marginValue">0 mm</span>
+                    </label>
+                    <input type="range" id="marginInput" min="0" max="50" value="0" step="1">
+                </div>
+                <div class="setting-item">
+                    <label for="qualityInput">
+                        <span>圖片壓縮畫質</span><span id="qualityValue">95%</span>
+                    </label>
+                    <input type="range" id="qualityInput" min="10" max="100" value="95" step="5">
+                </div>
+                <div class="setting-item">
+                    <label for="filenameInput">輸出 PDF 檔案名稱</label>
+                    <input type="text" id="filenameInput" value="Converted_Document" placeholder="請輸入檔案名稱">
+                </div>
+            </div>
+
+            <div class="list-header">
+                <span id="listCount">已加入 0 張圖片</span>
+                <button class="clear-btn" onclick="clearAll()">🗑️ 清空全部</button>
+            </div>
+            <ul id="previewList"></ul>
+        </div>
+
+        <div class="panel-footer">
+            <div class="progress-container" id="progressContainer"><div class="progress-bar" id="progressBar"></div></div>
+            <button id="convertBtn">轉換並下載 PDF</button>
+            <div id="status">等待加入檔案...</div>
+        </div>
+    </div>
+
+    <div class="right-panel">
+        <div class="preview-container" id="previewContainer" title="游標在此處時，可使用 Ctrl + 滑鼠滾輪縮放頁面">
+            <div class="pages-wrapper" id="pagesWrapper">
+                <div class="empty-preview">請由左側加入圖片以預覽 PDF 頁面效果</div>
+            </div>
+        </div>
+        <div class="zoom-indicator" id="zoomLabel">100%</div>
+    </div>
+
+    <div class="modal-overlay" id="infoModal">
+        <div class="modal-content">
+            <h2>系統功能說明</h2>
+            <ul>
+                <li><strong>本地處理護隱私：</strong>所有圖片轉換與 PDF 生成皆在您的瀏覽器內完成，絕不上傳任何資料至伺服器。</li>
+                <li><strong>批次匯入：</strong>點擊上傳區後，可按住 Ctrl 或 Shift 選擇多張圖片，或直接框選多張圖片拖曳進來。</li>
+                <li><strong>即時動態預覽：</strong>右側區域會真實模擬 PDF 產出樣貌。您在左側調整邊距、紙張尺寸或旋轉圖片時，右側會即時渲染變更。</li>
+                <li><strong>縮放預覽區：</strong>將滑鼠移至右側預覽區，按住 <b>[Ctrl] 鍵並滾動滑鼠滾輪</b>，即可放大或縮小頁面預覽比例。</li>
+                <li><strong>圖片排序與旋轉：</strong>在左側清單中，按住圖片項目可上下拖曳排序；點擊清單旁的「↻」按鈕可將該圖片向右旋轉 90 度；點擊「✕」可刪除。</li>
+                <li><strong>智慧紙張方向：</strong>選擇「自動判斷」方向時，系統會依據單張圖片的長寬比例，自動為該頁分配合適的直式或橫式。</li>
+                <li><strong>畫質與檔案瘦身：</strong>調整「圖片壓縮畫質」滑桿，能有效縮小合併數十張相片後的 PDF 檔案體積。</li>
+            </ul>
+            <button class="modal-close" onclick="toggleModal(false)">了解，開始使用</button>
+        </div>
+    </div>
+
+    <script>
+        // --- 介面與事件綁定 ---
+        const dropZone = document.getElementById('dropZone');
+        const imageInput = document.getElementById('imageInput');
+        const previewList = document.getElementById('previewList');
+        const convertBtn = document.getElementById('convertBtn');
+        const statusDiv = document.getElementById('status');
+        const listCount = document.getElementById('listCount');
+        
+        // 預覽與縮放相關
+        const previewContainer = document.getElementById('previewContainer');
+        const pagesWrapper = document.getElementById('pagesWrapper');
+        const zoomLabel = document.getElementById('zoomLabel');
+        let zoomLevel = 1.0;
+
+        // 設定面板元件
+        const pageSizeSelect = document.getElementById('pageSizeSelect');
+        const orientationSelect = document.getElementById('orientationSelect');
+        const marginInput = document.getElementById('marginInput');
+        const qualityInput = document.getElementById('qualityInput');
+        const filenameInput = document.getElementById('filenameInput');
+
+        let filesArray = [];
+        let dragStartIndex = -1;
+
+        // --- 事件監聽：連動顯示與即時渲染 ---
+        marginInput.addEventListener('input', (e) => { 
+            document.getElementById('marginValue').innerText = `${e.target.value} mm`; 
+            renderPreview(); 
+        });
+        qualityInput.addEventListener('input', (e) => { 
+            document.getElementById('qualityValue').innerText = `${e.target.value}%`; 
+        });
+        pageSizeSelect.addEventListener('change', (e) => {
+            const isFit = e.target.value === 'fit';
+            orientationSelect.disabled = isFit;
+            marginInput.disabled = isFit;
+            orientationSelect.style.opacity = isFit ? '0.5' : '1';
+            marginInput.style.opacity = isFit ? '0.5' : '1';
+            renderPreview();
+        });
+        orientationSelect.addEventListener('change', renderPreview);
+
+        // --- 拖曳與選擇檔案 (修復多檔選取問題) ---
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        
+        dropZone.addEventListener('drop', (e) => { 
+            e.preventDefault(); 
+            dropZone.classList.remove('dragover'); 
+            if (e.dataTransfer.files.length > 0) {
+                // 將檔案從 live 物件轉換為靜態陣列，避免被覆蓋
+                const filesToProcess = Array.from(e.dataTransfer.files);
+                handleFiles(filesToProcess);
+            }
+        });
+        
+        imageInput.addEventListener('change', (e) => { 
+            if (e.target.files.length > 0) {
+                // 將檔案從 live 物件轉換為靜態陣列
+                const filesToProcess = Array.from(e.target.files);
+                handleFiles(filesToProcess);
+            }
+            // 等陣列拷貝完成後，再清空 input 以允許重複選取同檔案
+            imageInput.value = ''; 
+        });
+
+        // --- 處理圖片載入與快取 (支援旋轉) ---
+        async function handleFiles(files) {
+            statusDiv.innerText = `正在讀取 ${files.length} 張圖片...`;
+            for (let file of files) {
+                if (!file.type.startsWith('image/') && !file.name.match(/\.(tiff|tif)$/i)) continue;
+                
+                const id = Date.now().toString() + Math.random().toString(36).substring(2, 7);
+                const previewData = await generatePreview(file, 0);
+                
+                filesArray.push({ 
+                    id: id, 
+                    file: file, 
+                    rotation: 0,
+                    previewUrl: previewData.url,
+                    effWidth: previewData.width,
+                    effHeight: previewData.height
+                });
+            }
+            renderList();
+            renderPreview();
+            updateStatus();
+        }
+
+        function generatePreview(file, rotation) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_DIM = 800;
+                        let w = img.width; let h = img.height;
+                        if (w > MAX_DIM || h > MAX_DIM) {
+                            const ratio = Math.min(MAX_DIM/w, MAX_DIM/h);
+                            w *= ratio; h *= ratio;
+                        }
+                        
+                        const isRotated = (rotation % 180 !== 0);
+                        canvas.width = isRotated ? h : w;
+                        canvas.height = isRotated ? w : h;
+                        
+                        const ctx = canvas.getContext('2d');
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        ctx.translate(canvas.width/2, canvas.height/2);
+                        ctx.rotate(rotation * Math.PI / 180);
+                        ctx.drawImage(img, -w/2, -h/2, w, h);
+                        
+                        resolve({
+                            url: canvas.toDataURL('image/jpeg', 0.8),
+                            width: isRotated ? img.height : img.width, 
+                            height: isRotated ? img.width : img.height
+                        });
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // --- 渲染左側清單 ---
+        function renderList() {
+            previewList.innerHTML = '';
+            filesArray.forEach((item, index) => {
+                const li = document.createElement('li');
+                li.draggable = true;
+                li.setAttribute('data-index', index);
+                
+                li.innerHTML = `
+                    <img src="${item.previewUrl}" class="thumb" alt="縮圖">
+                    <span class="filename" title="${item.file.name}">${item.file.name}</span>
+                    <div class="action-btns">
+                        <button class="rotate-btn" onclick="rotateFile('${item.id}', event)" title="向右旋轉">↻</button>
+                        <button class="remove-btn" onclick="removeFile('${item.id}', event)" title="刪除">✕</button>
+                    </div>
+                `;
+
+                li.addEventListener('dragstart', (e) => { dragStartIndex = index; e.dataTransfer.effectAllowed = 'move'; });
+                li.addEventListener('dragover', (e) => { e.preventDefault(); li.classList.add('drag-over'); });
+                li.addEventListener('dragleave', () => li.classList.remove('drag-over'));
+                li.addEventListener('drop', (e) => {
+                    e.preventDefault(); li.classList.remove('drag-over');
+                    if (dragStartIndex !== index) {
+                        const movedItem = filesArray.splice(dragStartIndex, 1)[0];
+                        filesArray.splice(index, 0, movedItem);
+                        renderList();
+                        renderPreview(); 
+                    }
+                });
+                previewList.appendChild(li);
+            });
+        }
+
+        // --- 操作功能：旋轉與刪除 ---
+        window.rotateFile = async function(id, event) {
+            event.stopPropagation();
+            const index = filesArray.findIndex(item => item.id === id);
+            if (index > -1) {
+                const item = filesArray[index];
+                item.rotation = (item.rotation + 90) % 360; 
+                statusDiv.innerText = '處理旋轉中...';
+                
+                const previewData = await generatePreview(item.file, item.rotation);
+                item.previewUrl = previewData.url;
+                item.effWidth = previewData.width;
+                item.effHeight = previewData.height;
+                
+                renderList();
+                renderPreview();
+                updateStatus();
+            }
+        };
+
+        window.removeFile = function(id, event) {
+            event.stopPropagation();
+            filesArray = filesArray.filter(item => item.id !== id);
+            renderList();
+            renderPreview();
+            updateStatus();
+        };
+
+        window.clearAll = function() {
+            filesArray = [];
+            renderList();
+            renderPreview();
+            updateStatus();
+        };
+
+        function updateStatus() {
+            listCount.innerText = `已加入 ${filesArray.length} 張圖片`;
+            statusDiv.innerText = filesArray.length === 0 ? '等待加入檔案...' : '可拖曳排序，或調整右側設定檢視預覽。';
+        }
+
+        // --- 右側即時預覽核心引擎 ---
+        function renderPreview() {
+            pagesWrapper.innerHTML = '';
+            if (filesArray.length === 0) {
+                pagesWrapper.innerHTML = '<div class="empty-preview">請由左側加入圖片以預覽 PDF 頁面效果</div>';
+                return;
+            }
+
+            const pageSize = pageSizeSelect.value;
+            const margin = pageSize === 'fit' ? 0 : parseInt(marginInput.value, 10);
+            const orientationSetting = orientationSelect.value;
+            
+            const SCALE = 3.5; 
+
+            filesArray.forEach((item, index) => {
+                let pageW, pageH;
+                const effW = item.effWidth;
+                const effH = item.effHeight;
+                
+                if (pageSize === 'fit') {
+                    const fitVisualScale = 600 / Math.max(effW, effH); 
+                    pageW = effW * fitVisualScale;
+                    pageH = effH * fitVisualScale;
+                } else {
+                    let isLandscape = orientationSetting === 'l';
+                    if (orientationSetting === 'auto') {
+                        isLandscape = effW > effH;
+                    }
+                    if (pageSize === 'a4') {
+                        pageW = (isLandscape ? 297 : 210) * SCALE;
+                        pageH = (isLandscape ? 210 : 297) * SCALE;
+                    } else if (pageSize === 'letter') {
+                        pageW = (isLandscape ? 279 : 216) * SCALE;
+                        pageH = (isLandscape ? 216 : 279) * SCALE;
+                    }
+                }
+                
+                const marginPx = margin * SCALE;
+                
+                const pageDiv = document.createElement('div');
+                pageDiv.className = 'preview-page';
+                pageDiv.style.width = `${pageW}px`;
+                pageDiv.style.height = `${pageH}px`;
+                pageDiv.style.padding = `${marginPx}px`; 
+                
+                const badge = document.createElement('div');
+                badge.className = 'page-badge';
+                badge.innerText = `第 ${index + 1} 頁`;
+                pageDiv.appendChild(badge);
+                
+                const img = document.createElement('img');
+                img.src = item.previewUrl;
+                
+                pageDiv.appendChild(img);
+                pagesWrapper.appendChild(pageDiv);
+            });
+        }
+
+        // --- Ctrl + 滑鼠滾輪縮放 (Zoom) ---
+        previewContainer.addEventListener('wheel', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault(); 
+                const zoomStep = 0.1;
+                if (e.deltaY < 0) {
+                    zoomLevel = Math.min(zoomLevel + zoomStep, 3.0); 
+                } else {
+                    zoomLevel = Math.max(zoomLevel - zoomStep, 0.2); 
+                }
+                pagesWrapper.style.transform = `scale(${zoomLevel})`;
+                zoomLabel.innerText = `${Math.round(zoomLevel * 100)}%`;
+            }
+        }, { passive: false }); 
+
+
+        // --- PDF 正式轉換核心邏輯 ---
+        convertBtn.addEventListener('click', async () => {
+            if (filesArray.length === 0) return alert('請先加入至少一張圖片！');
+
+            convertBtn.disabled = true;
+            document.getElementById('progressContainer').style.display = 'block';
+            const progressBar = document.getElementById('progressBar');
+            progressBar.style.width = '0%';
+            
+            const pageSize = pageSizeSelect.value;
+            const margin = pageSize === 'fit' ? 0 : parseInt(marginInput.value, 10);
+            const quality = parseInt(qualityInput.value, 10) / 100;
+            const orientationSetting = orientationSelect.value;
+            let filename = filenameInput.value.trim() || 'Converted_Document';
+            if(!filename.toLowerCase().endsWith('.pdf')) filename += '.pdf';
+            
+            try {
+                const { jsPDF } = window.jspdf;
+                let doc;
+                
+                for (let i = 0; i < filesArray.length; i++) {
+                    statusDiv.innerText = `正在處理第 ${i + 1} / ${filesArray.length} 張圖片...`;
+                    
+                    const imgInfo = await processFinalImage(filesArray[i].file, quality, filesArray[i].rotation);
+                    
+                    if (pageSize === 'fit') {
+                        const orient = imgInfo.width > imgInfo.height ? 'l' : 'p';
+                        if (i === 0) doc = new jsPDF({ orientation: orient, unit: 'px', format: [imgInfo.width, imgInfo.height] });
+                        else doc.addPage([imgInfo.width, imgInfo.height], orient);
+                        doc.addImage(imgInfo.data, 'JPEG', 0, 0, imgInfo.width, imgInfo.height);
+                    } else {
+                        let currentOrient = orientationSetting;
+                        if (currentOrient === 'auto') currentOrient = imgInfo.width > imgInfo.height ? 'l' : 'p';
+                        
+                        if (i === 0) doc = new jsPDF({ orientation: currentOrient, format: pageSize });
+                        else doc.addPage(pageSize, currentOrient);
+
+                        const pdfWidth = doc.internal.pageSize.getWidth();
+                        const pdfHeight = doc.internal.pageSize.getHeight();
+                        const usableWidth = pdfWidth - (margin * 2);
+                        const usableHeight = pdfHeight - (margin * 2);
+                        
+                        const ratio = Math.min(usableWidth / imgInfo.width, usableHeight / imgInfo.height);
+                        const finalWidth = imgInfo.width * ratio;
+                        const finalHeight = imgInfo.height * ratio;
+                        
+                        const x = margin + ((usableWidth - finalWidth) / 2);
+                        const y = margin + ((usableHeight - finalHeight) / 2);
+
+                        doc.addImage(imgInfo.data, 'JPEG', x, y, finalWidth, finalHeight);
+                    }
+                    progressBar.style.width = `${((i + 1) / filesArray.length) * 100}%`;
+                }
+
+                statusDiv.innerText = '轉換完成！正在下載...';
+                doc.save(filename);
+                
+            } catch (error) {
+                console.error(error);
+                statusDiv.innerText = '轉換過程中發生錯誤。';
+                alert('處理圖片時發生錯誤。');
+            } finally {
+                convertBtn.disabled = false;
+                setTimeout(() => {
+                    updateStatus();
+                    document.getElementById('progressContainer').style.display = 'none';
+                }, 3000);
+            }
+        });
+
+        // 用於正式產出 PDF 的高解析度處理函式 
+        function processFinalImage(file, quality, rotation) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const isRotated = (rotation % 180 !== 0);
+                        canvas.width = isRotated ? img.height : img.width;
+                        canvas.height = isRotated ? img.width : img.height;
+                        
+                        const ctx = canvas.getContext('2d');
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        
+                        ctx.translate(canvas.width/2, canvas.height/2);
+                        ctx.rotate(rotation * Math.PI / 180);
+                        ctx.drawImage(img, -img.width/2, -img.height/2);
+                        
+                        resolve({
+                            data: canvas.toDataURL('image/jpeg', quality),
+                            width: canvas.width,
+                            height: canvas.height
+                        });
+                    };
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // --- 模態框 (系統說明) 控制 ---
+        window.toggleModal = function(show) {
+            document.getElementById('infoModal').style.display = show ? 'flex' : 'none';
+        };
+    </script>
+</body>
+</html>

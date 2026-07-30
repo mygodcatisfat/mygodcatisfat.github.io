@@ -346,10 +346,13 @@
             background-color: rgba(0, 0, 0, 0.7);
             z-index: 100;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             backdrop-filter: blur(5px);
             -webkit-backdrop-filter: blur(5px);
+            padding: 1rem;
+            box-sizing: border-box;
         }
         .split-overlay-content { position: relative; }
         .overlay-nav-button {
@@ -442,7 +445,7 @@
             transition: opacity 1s;
         }
 
-        #ocrResultText {
+        .ocr-textarea {
             width: 100%;
             height: 16rem;
             padding: 0.75rem;
@@ -458,6 +461,7 @@
             background-color: var(--gray-200);
             border-radius: 9999px;
             height: 0.625rem;
+            margin-top: 5px;
             margin-bottom: 1rem;
         }
         .ocr-progress-bar {
@@ -538,7 +542,146 @@
             background-color: var(--danger-hover);
             transform: scale(1.1);
         }
+
+        /* ==================== 響應式設計 ==================== */
+        @media (max-width: 640px) {
+            body { padding: 1rem; }
+            .tabs-container { overflow-x: auto; flex-wrap: nowrap; }
+            .tab-button { white-space: nowrap; }
+            #splitTextInput .flex.items-center.space-x-4,
+            #ocrTextInput .flex.items-center.space-x-4,
+            #pageNumberInput .flex.items-center.space-x-4 {
+                flex-wrap: wrap;
+                row-gap: 0.5rem;
+            }
+        }
+
+        /* ==================== 觸控裝置：加大點擊區 ==================== */
+        @media (pointer: coarse) {
+            .cut-marker { width: 2.75rem; height: 2.75rem; }
+            .remove-file-btn { width: 2rem; height: 2rem; top: -12px; right: -12px; font-size: 1.4rem; }
+        }
+
+        /* ==================== 拖曳排序視覺回饋 ==================== */
+        .sortable-item.dragging { opacity: 0.4; }
+        .sortable-item.drag-over-top { border-top: 3px solid var(--primary); }
+        .sortable-item.drag-over-bottom { border-bottom: 3px solid var(--primary); }
+
+        /* ==================== 分頁切換時避免版面跳動 ==================== */
+        .tool-section { min-height: 220px; }
+
+        /* ==================== 深色模式（由 data-theme 屬性控制，見頁尾切換開關） ==================== */
+        :root[data-theme="dark"] {
+            --gray-50: #1f2937;
+            --gray-100: #111827;
+            --gray-200: #374151;
+            --gray-300: #4b5563;
+            --gray-400: #6b7280;
+            --gray-500: #9ca3af;
+            --gray-600: #d1d5db;
+            --gray-700: #e5e7eb;
+            --gray-800: #f3f4f6;
+            --gray-900: #f9fafb;
+        }
+        [data-theme="dark"] .card,
+        [data-theme="dark"] .overlay-bg,
+        [data-theme="dark"] .tooltip-card,
+        [data-theme="dark"] .sortable-item,
+        [data-theme="dark"] .punc-btn {
+            background-color: #1f2937;
+        }
+        [data-theme="dark"] .sortable-item:hover,
+        [data-theme="dark"] .punc-btn:hover { background-color: #263244; }
+        [data-theme="dark"] .cut-marker { background-color: #1f2937; }
+        [data-theme="dark"] #copyNotification { background-color: #030712; color: #f9fafb; }
+
+        /* ==================== 深色/淺色模式切換開關 ==================== */
+        .theme-switch {
+            position: fixed;
+            left: 16px;
+            top: 10px;
+            z-index: 300;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+        }
+        .theme-switch-track {
+            display: flex;
+            align-items: center;
+            width: 52px;
+            height: 28px;
+            background-color: var(--gray-300);
+            border-radius: 9999px;
+            padding: 2px;
+            transition: background-color 0.2s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        .theme-switch-thumb {
+            width: 24px;
+            height: 24px;
+            background-color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            transition: transform 0.25s ease;
+            transform: translateX(0);
+        }
+        [data-theme="dark"] .theme-switch-track { background-color: var(--primary); }
+        [data-theme="dark"] .theme-switch-thumb { transform: translateX(24px); }
+
+        /* ==================== 鍵盤焦點樣式 (無障礙) ==================== */
+        .cut-marker:focus-visible,
+        .thumb-wrapper:focus-visible,
+        .sortable-item:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
+        .inline-error {
+            color: var(--danger);
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        /* ==================== 文字辨識框選功能 ==================== */
+        .checkbox-group { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; user-select: none; font-weight: 500; }
+        .checkbox-group input[type="checkbox"] { cursor: pointer; width: 18px; height: 18px; accent-color: var(--primary); }
+
+        .bbox-warning-msg {
+            color: #b91c1c; font-size: 0.875rem; font-weight: 500; padding: 0.6rem 0.85rem; margin-top: 0.5rem;
+            background-color: #fee2e2; border-radius: 0.375rem; border-left: 3px solid var(--danger);
+        }
+        [data-theme="dark"] .bbox-warning-msg { background-color: #7f1d1d; color: #fecaca; border-left-color: #ef4444; }
+
+        .thumb-wrapper.has-bbox-data { border: 2px solid var(--success); box-shadow: 0 0 0 1px var(--success); border-radius: var(--radius-md); }
+
+        .preview-img-wrapper { position: relative; display: inline-block; line-height: 0; max-width: 90vw; max-height: 78vh; }
+        #bboxOverlayCanvas { position: absolute; top: 0; left: 0; cursor: crosshair; border-radius: var(--radius-lg); touch-action: none; }
+        #bboxOverlayCanvas.hidden { display: none; }
+
+        .bbox-control-panel {
+            width: 100%; max-width: 90vw; margin-top: 1rem; padding: 0.75rem 1rem;
+            background-color: rgba(255,255,255,0.95); border-radius: var(--radius-lg); box-sizing: border-box;
+        }
+        [data-theme="dark"] .bbox-control-panel { background-color: rgba(31,41,55,0.95); color: var(--gray-800); }
+        .bbox-hint { font-size: 0.85rem; color: var(--gray-600); margin-bottom: 0.5rem; }
+        .bbox-toolbar { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .legend-dot { display: inline-block; width: 0.8rem; height: 0.8rem; border-radius: 2px; margin-right: 0.3rem; vertical-align: middle; }
+        .btn-sm { padding: 0.375rem 0.75rem; font-size: 0.875rem; box-shadow: none; }
     </style>
+    <script>
+        // 在畫面繪製前就套用主題，避免深色模式使用者看到淺色閃爍
+        (function () {
+            try {
+                var saved = localStorage.getItem('pdfToolTheme');
+                var theme = saved || ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+                document.documentElement.setAttribute('data-theme', theme);
+            } catch (e) {}
+        })();
+    </script>
 </head>
 <body>
     <div class="container">
@@ -559,6 +702,7 @@
                 <button id="tabPageNumber" class="tab-button">編頁碼</button>
                 <button id="tabRotate" class="tab-button">旋轉</button>
                 <button id="tabOcr" class="tab-button">文字辨識(前端)</button>
+                <button id="tabOcrGemini" class="tab-button">文字辨識(Gemini)</button>
             </div>
 
             <div id="sectionSplit" class="tool-section">
@@ -576,6 +720,7 @@
                         <input type="number" id="splitEndPage" placeholder="頁碼" class="form-input w-24">
                         <label class="font-medium text-gray-700">頁</label>
                     </div>
+                    <p id="splitInlineError" class="inline-error hidden" role="alert"></p>
                 </div>
 
                 <div id="splitImageSelection" class="mb-6">
@@ -598,7 +743,7 @@
                 <div class="mb-6">
                     <h3 class="section-title mb-4">檔案清單</h3>
                     <ul id="mergeFileList" class="bg-gray-50 p-4 rounded-lg border border-gray-200 min-h-[100px] space-y-2" style="background-color: var(--gray-50); border-radius: var(--radius-lg); border: 1px solid var(--gray-200); min-height: 100px; padding: 1rem;">
-                        <li class="text-gray-400 text-center py-4">請匯入 PDF 檔案以進行合成</li>
+                        <li class="text-gray-500 text-center py-4">請匯入 PDF 檔案以進行合成</li>
                     </ul>
                 </div>
                 <div class="flex justify-end space-x-4 mt-6">
@@ -640,6 +785,7 @@
                             <option value="alternate">交叉</option>
                         </select>
                     </div>
+                    <p id="pageNumberInlineError" class="inline-error hidden" role="alert"></p>
                 </div>
                 <div class="flex justify-end mt-8">
                     <button id="pageNumberNext" class="btn btn-blue btn-lg" disabled>下一步</button>
@@ -682,15 +828,25 @@
                         <input type="number" id="ocrEndPage" placeholder="頁碼" class="form-input w-24">
                         <label class="font-medium text-gray-700">頁</label>
                     </div>
+                    <p id="ocrInlineError" class="inline-error hidden" role="alert"></p>
                 </div>
                 <div id="ocrImageSelection" class="mb-6">
                     <div id="ocrThumbnails" class="thumb-container" style="background-color: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); min-height: 100px;">
                     </div>
                 </div>
+                <div class="mb-6">
+                    <label class="checkbox-group">
+                        <input type="checkbox" id="enableBboxMode">
+                        <span>啟用框選功能（辨識後可在預覽圖上框選 / 刷選要保留的文字區塊）</span>
+                    </label>
+                    <p id="bboxWarning" class="bbox-warning-msg hidden">
+                        ⚠️ 啟用後，系統會額外保留每頁完整的文字座標與高解析度頁面影像於瀏覽器記憶體中；頁數較多或裝置效能較弱時，會明顯增加記憶體占用，並可能拖慢辨識與畫面反應速度。請視您的檔案頁數與裝置效能自行評估是否啟用。
+                    </p>
+                </div>
                 <div id="ocrAction" class="flex justify-start space-x-4 mt-8">
                      <button id="ocrStartBtn" class="btn btn-blue" disabled>開始辨識</button>
                 </div>
-                <div id="ocrStatus" class="my-4 text-gray-600 hidden">
+                <div id="ocrStatus" class="my-4 text-gray-600 hidden" role="status" aria-live="polite">
                 </div>
                 <div id="ocrProgressContainer" class="ocr-progress-container hidden">
                     <div id="ocrProgressBar" class="ocr-progress-bar" style="width: 0%"></div>
@@ -707,21 +863,78 @@
                 </div>
                 <div id="ocrResultAreaWrapper" class="mb-6">
                     <label class="font-medium text-gray-700 mb-2 block">辨識結果：</label>
-                    <textarea id="ocrResultText" readonly placeholder="辨識結果將顯示於此..."></textarea>
+                    <textarea id="ocrResultText" class="ocr-textarea" readonly placeholder="辨識結果將顯示於此..."></textarea>
                     <div class="flex justify-end mt-2">
                         <button id="copyOcrTextBtn" class="btn btn-green text-sm" disabled>複製文字</button>
                     </div>
                 </div>
             </div>
 
-            <div id="messageBox" class="overlay hidden">
+            <div id="sectionOcrGemini" class="tool-section hidden">
+                <div class="section-header">
+                    <h2 class="section-title">文字辨識功能 (Gemini)</h2>
+                    <button class="btn-text-yellow info-tooltip-icon ml-auto" data-tooltip="ocrGemini">功能說明</button>
+                    <button id="clearOcrGemini" class="btn-text-red">清除資料</button>
+                </div>
+
+                <div id="geminiApiKeySection" class="mb-6 space-y-2">
+                    <div class="flex items-center space-x-2" style="flex-wrap: wrap;">
+                        <label class="font-medium text-gray-700" for="geminiApiKeyInput">Gemini API Key：</label>
+                        <input type="password" id="geminiApiKeyInput" class="form-input" style="flex: 1; min-width: 200px;" placeholder="請輸入您的 Google Gemini API Key" autocomplete="off">
+                        <button id="geminiVerifyKeyBtn" class="btn btn-blue">驗證</button>
+                    </div>
+                    <p id="geminiKeyStatus" class="text-sm text-gray-500" role="status" aria-live="polite"></p>
+                </div>
+
+                <div id="ocrGeminiTextInput" class="mb-6 space-y-4">
+                    <div class="flex items-center space-x-4">
+                        <label class="font-medium text-gray-700">從第</label>
+                        <input type="number" id="ocrGeminiStartPage" placeholder="頁碼" class="form-input w-24">
+                        <label class="font-medium text-gray-700">頁辨識到第</label>
+                        <input type="number" id="ocrGeminiEndPage" placeholder="頁碼" class="form-input w-24">
+                        <label class="font-medium text-gray-700">頁</label>
+                    </div>
+                    <p id="ocrGeminiInlineError" class="inline-error hidden" role="alert"></p>
+                </div>
+                <div id="ocrGeminiImageSelection" class="mb-6">
+                    <div id="ocrGeminiThumbnails" class="thumb-container" style="background-color: var(--gray-50); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); min-height: 100px;">
+                    </div>
+                </div>
+                <div id="ocrGeminiAction" class="flex justify-start space-x-4 mt-8">
+                     <button id="ocrGeminiStartBtn" class="btn btn-blue" disabled>開始辨識</button>
+                </div>
+                <div id="ocrGeminiStatus" class="my-4 text-gray-600 hidden" role="status" aria-live="polite">
+                </div>
+                <div id="ocrGeminiProgressContainer" class="ocr-progress-container hidden">
+                    <div id="ocrGeminiProgressBar" class="ocr-progress-bar" style="width: 0%"></div>
+                </div>
+                <div id="ocrGeminiResultTools" class="my-4 space-y-2 hidden">
+                    <fieldset class="fieldset-border">
+                        <legend>標點符號改為全型</legend>
+                        <div class="flex space-x-2">
+                            <button id="btnGeminiPuncColon" class="punc-btn" data-type="colon">冒號 ( : )</button>
+                            <button id="btnGeminiPuncComma" class="punc-btn" data-type="comma">逗號 ( , )</button>
+                            <button id="btnGeminiPuncParen" class="punc-btn" data-type="paren">括號 ( )</button>
+                        </div>
+                    </fieldset>
+                </div>
+                <div id="ocrGeminiResultAreaWrapper" class="mb-6">
+                    <label class="font-medium text-gray-700 mb-2 block">辨識結果：</label>
+                    <textarea id="ocrGeminiResultText" class="ocr-textarea" readonly placeholder="辨識結果將顯示於此..."></textarea>
+                    <div class="flex justify-end mt-2">
+                        <button id="copyOcrGeminiTextBtn" class="btn btn-green text-sm" disabled>複製文字</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="messageBox" class="overlay hidden" role="alertdialog" aria-modal="true" aria-labelledby="messageText">
                 <div class="overlay-bg">
                     <p id="messageText" class="text-lg font-medium mb-4"></p>
                     <button id="messageOk" class="btn btn-blue">確定</button>
                 </div>
             </div>
 
-            <div id="splitSelectionBox" class="overlay hidden">
+            <div id="splitSelectionBox" class="overlay hidden" role="dialog" aria-modal="true">
                 <div class="overlay-bg">
                     <p class="text-lg font-medium mb-4">已選擇超過兩個裁切點，請選擇操作：</p>
                     <div class="flex flex-col space-y-2">
@@ -731,8 +944,8 @@
                     </div>
                 </div>
             </div>
-            
-            <div id="tooltipModal" class="overlay hidden">
+
+            <div id="tooltipModal" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="tooltipTitle">
                 <div class="tooltip-card">
                     <h3 id="tooltipTitle" class="tooltip-title"></h3>
                     <div id="tooltipContentArea" class="prose text-gray-800">
@@ -750,8 +963,24 @@
             <div id="fullScreenPreview" class="split-overlay hidden">
                 <div class="split-overlay-content">
                     <button id="previewPrev" class="overlay-nav-button left">❮</button>
-                    <img id="previewImage" src="" alt="PDF Preview">
+                    <div class="preview-img-wrapper">
+                        <img id="previewImage" src="" alt="PDF Preview">
+                        <canvas id="bboxOverlayCanvas" class="hidden"></canvas>
+                    </div>
                     <button id="previewNext" class="overlay-nav-button right">❯</button>
+                </div>
+                <div id="bboxControlPanel" class="bbox-control-panel hidden">
+                    <p id="bboxPageHint" class="bbox-hint"></p>
+                    <div class="bbox-toolbar">
+                        <button id="bboxSelectAll" class="btn btn-green btn-sm">全選</button>
+                        <button id="bboxDeselectAll" class="btn btn-gray btn-sm">全不選</button>
+                        <button id="bboxInvert" class="btn btn-blue btn-sm">反轉選擇</button>
+                    </div>
+                    <p class="bbox-hint mt-2">
+                        <span class="legend-dot" style="background-color:rgba(34,197,94,0.5); border:1px solid #16a34a;"></span>保留
+                        &nbsp;&nbsp;<span class="legend-dot" style="background-color:rgba(156,163,175,0.35); border:1px solid #6b7280;"></span>排除
+                        &nbsp;&nbsp;單擊切換單一區塊；按住並拖曳可批次切換路徑上所有區塊。
+                    </p>
                 </div>
             </div>
         </div>
@@ -759,6 +988,12 @@
         <a href="https://mygodcatisfat.github.io" class="back-home-btn" title="回到首頁">
             回到首頁
         </a>
+
+        <button id="themeToggleBtn" class="theme-switch" role="switch" aria-checked="false" aria-label="切換深色模式" title="切換深色/淺色模式">
+            <span class="theme-switch-track">
+                <span id="themeToggleThumb" class="theme-switch-thumb">☀️</span>
+            </span>
+        </button>
     </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js" integrity="sha256-H8KU7v2mAuWRoGwdWvNhyuI3VrWjNPwkIdX5rMzgOOU=" crossorigin=""></script>
@@ -800,6 +1035,11 @@
     const previewImage = document.getElementById('previewImage');
     const previewPrevBtn = document.getElementById('previewPrev');
     const previewNextBtn = document.getElementById('previewNext');
+    const bboxOverlayCanvas = document.getElementById('bboxOverlayCanvas');
+    const bboxControlPanel = document.getElementById('bboxControlPanel');
+    const bboxPageHint = document.getElementById('bboxPageHint');
+    const enableBboxModeCheckbox = document.getElementById('enableBboxMode');
+    const bboxWarningEl = document.getElementById('bboxWarning');
 	let currentRenderId = 0; 
 
     let currentMode = 'split';
@@ -811,11 +1051,28 @@
     let fullScreenPage = 0;
     let rotateRotations = [];
     let selectedRotatePage = -1;
-	let ocrSplitPoints = []; 
+	let ocrSplitPoints = [];
 	let singleLoadedFile = null;
-    let ocrWorker = null; 
-    let originalOcrText = ""; 
-    let puncToggles = { colon: false, comma: false, paren: false }; 
+	const mergePreviewCache = new WeakMap(); // file -> pdfDoc，避免重複展開同檔案時重新解析
+    let ocrWorker = null;
+    let originalOcrText = "";
+    let puncToggles = { colon: false, comma: false, paren: false };
+	// 框選功能狀態
+	let bboxModeEnabled = false;
+	let ocrPageData = {};   // pageNum -> { lines: [{text, bbox, selected}], imageDataUrl, width, height }
+	let ocrPageText = {};   // pageNum -> 純文字（未啟用框選時使用）
+	let processedPages = []; // 依序記錄本次辨識涵蓋的頁碼
+	let previewLines = null; // 全螢幕預覽目前頁面的 line 陣列（有框選資料才存在）
+	let previewNaturalSize = { w: 0, h: 0 };
+	let isBrushing = false;
+	let brushTargetState = null;
+	let brushTouched = new Set();
+	let ocrGeminiSplitPoints = [];
+	let originalOcrGeminiText = "";
+	let puncTogglesGemini = { colon: false, comma: false, paren: false };
+	let geminiApiKey = "";
+	let geminiApiKeyValid = false;
+	const GEMINI_MODEL = 'gemini-3.1-flash-lite'; // 如未來 Google 停用此模型，改這裡即可
 	
 	// 建立 IntersectionObserver 用於延遲載入
 	const thumbnailObserver = new IntersectionObserver((entries, observer) => {
@@ -832,10 +1089,23 @@
 			}
 		});
 	}, {
-		root: null, 
+		root: null,
 		rootMargin: '100px', // 預先載入視窗邊緣外 100px 的內容
 		threshold: 0.01
 	});
+
+	// 讓非原生互動元素（div）可透過鍵盤 Tab / Enter / Space 操作
+	function makeKeyboardActivatable(el, ariaLabel, onActivate) {
+		el.tabIndex = 0;
+		el.setAttribute('role', 'button');
+		if (ariaLabel) el.setAttribute('aria-label', ariaLabel);
+		el.addEventListener('keydown', (e) => {
+			if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+				e.preventDefault();
+				onActivate(e);
+			}
+		});
+	}
 
     const tooltipData = {
         split: {
@@ -890,6 +1160,17 @@
                 <p>辨識完成後，您可以使用<strong class="text-orange-500">「標點符號改為全型」</strong>功能，將半型標點轉換為全型。</p>
                 <p>辨識需要一些時間，請耐心等候。辨識結果將顯示在下方的文字框中。</p>
                 <p><strong class="text-red-500">注意：</strong>辨識複雜排版或低解析度圖片時，準確度可能會下降。</p>
+                <p><strong class="text-green-500">框選功能（新）：</strong>勾選「啟用框選功能」後，辨識完成的頁面縮圖會出現綠色外框，點擊該縮圖即可打開預覽，並在圖片上看到每一行文字的辨識區塊（綠色透明＝保留、灰色透明＝排除）。單擊可切換單一區塊，按住滑鼠拖曳則可一次切換路徑上所有經過的區塊，結果會即時同步回下方文字框。</p>
+                <p><strong class="text-red-500">⚠️ 效能提醒：</strong>此功能會保留每頁的高解析度影像與文字座標於瀏覽器記憶體中，頁數多時請留意效能。</p>
+            `
+        },
+        ocrGemini: {
+            title: '文字辨識功能 (Gemini) 說明',
+            content: `
+                <p>此功能使用<strong class="text-blue-500">Google Gemini API</strong> 進行文字辨識，準確度通常優於前端 OCR，但需要您自行提供 <strong class="text-green-500">Gemini API Key</strong>。</p>
+                <p>請先在上方輸入您的 API Key，並點擊<strong class="text-green-500">「驗證」</strong>；系統確認金鑰可用後，才能開始辨識。</p>
+                <p>API Key 只會保存在您目前的瀏覽器分頁中，並直接從瀏覽器呼叫 Google 的伺服器，<strong class="text-red-500">不會經過本工具的任何伺服器</strong>。重新整理頁面後需要重新輸入。</p>
+                <p>其餘操作（頁碼區間選擇、標點符號改為全型、複製結果）與<strong class="text-orange-500">「文字辨識(前端)」</strong>頁籤相同。</p>
             `
         }
     };
@@ -903,6 +1184,37 @@
     messageOk.addEventListener('click', () => {
         messageBox.classList.add('hidden');
     });
+
+    // 深色/淺色模式切換開關（初始狀態已由 <head> 內的行內腳本設定 data-theme）
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    const themeToggleThumb = document.getElementById('themeToggleThumb');
+
+    function applyThemeUI(theme) {
+        themeToggleBtn.setAttribute('aria-checked', theme === 'dark' ? 'true' : 'false');
+        themeToggleThumb.textContent = theme === 'dark' ? '🌙' : '☀️';
+    }
+    applyThemeUI(document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light');
+
+    themeToggleBtn.addEventListener('click', () => {
+        const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+        const next = current === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        try { localStorage.setItem('pdfToolTheme', next); } catch (e) {}
+        applyThemeUI(next);
+    });
+
+    // 顯示/清除輸入框下方的行內錯誤（比彈窗更不打斷操作流程）
+    function showInlineError(id, message) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (message) {
+            el.textContent = message;
+            el.classList.remove('hidden');
+        } else {
+            el.textContent = '';
+            el.classList.add('hidden');
+        }
+    }
 
     // 顯示提示彈窗
     function showTooltip(mode) {
@@ -951,7 +1263,11 @@
             fileStatus.textContent = '支援 .pdf 格式';
             fileInput.value = '';
 			singleLoadedFile = null;
-			
+			showInlineError('splitInlineError', '');
+			showInlineError('ocrInlineError', '');
+			showInlineError('pageNumberInlineError', '');
+			showInlineError('ocrGeminiInlineError', '');
+
 			if (currentMode === 'merge') {
                 fileInput.multiple = true;
             } else {
@@ -969,11 +1285,20 @@
             } else if (currentMode === 'ocr') {
                 const ocrBtn = document.getElementById('ocrStartBtn');
                 if (ocrBtn) ocrBtn.disabled = loadedPDF === null;
-                
+
                 const ocrThumbs = document.getElementById('ocrThumbnails');
-                if (ocrThumbs) ocrThumbs.innerHTML = ''; 
+                if (ocrThumbs) ocrThumbs.innerHTML = '';
                 ocrSplitPoints = []; // 修改此行
                 document.getElementById('ocrResultTools').classList.add('hidden');
+                ocrPageData = {};
+                ocrPageText = {};
+                processedPages = [];
+            } else if (currentMode === 'ocrgemini') {
+                const geminiThumbs = document.getElementById('ocrGeminiThumbnails');
+                if (geminiThumbs) geminiThumbs.innerHTML = '';
+                ocrGeminiSplitPoints = [];
+                document.getElementById('ocrGeminiResultTools').classList.add('hidden');
+                updateOcrGeminiUI();
             }
         });
     });
@@ -987,7 +1312,7 @@
 		
 		currentRenderId++;
         
-        if (currentMode === 'split' || currentMode === 'pagenumber' || currentMode === 'rotate' || currentMode === 'ocr') {
+        if (currentMode === 'split' || currentMode === 'pagenumber' || currentMode === 'rotate' || currentMode === 'ocr' || currentMode === 'ocrgemini') {
             if (files.length > 1) {
                 showMessage('此功能一次只能處理一個PDF檔案。');
                 fileInput.value = '';
@@ -1018,19 +1343,7 @@
                 `;
 
                 rotateNextBtn = document.getElementById('rotateNext');
-                rotateNextBtn.addEventListener('click', () => {
-                    const actionArea = document.getElementById('rotateNext').parentNode;
-                    actionArea.innerHTML = `
-                        <div class="flex flex-col items-end space-y-4 w-full md:w-auto">
-                            <div class="flex items-center space-x-2">
-                                <label class="font-medium text-gray-700">檔案名稱:</label>
-                                <input type="text" id="rotateFilename" class="form-input" value="旋轉-${formatDate(new Date())}">
-                            </div>
-                            <button id="exportRotate" class="btn btn-green w-full md:w-auto">匯出檔案</button>
-                        </div>
-                    `;
-                    document.getElementById('exportRotate').addEventListener('click', handleRotateExport);
-                });
+                bindRotateNextExport(rotateNextBtn);
 
                 await renderRotateThumbnails(pdfDoc);
                 rotateNextBtn.disabled = false;
@@ -1045,6 +1358,13 @@
 				document.getElementById('ocrResultText').value = '';
                 document.getElementById('ocrStatus').classList.add('hidden');
                 document.getElementById('ocrResultTools').classList.add('hidden');
+            } else if (currentMode === 'ocrgemini') {
+				ocrGeminiSplitPoints = [];
+                await renderOcrGeminiThumbnails(pdfDoc);
+                updateOcrGeminiUI();
+				document.getElementById('ocrGeminiResultText').value = '';
+                document.getElementById('ocrGeminiStatus').classList.add('hidden');
+                document.getElementById('ocrGeminiResultTools').classList.add('hidden');
             }
 
         } else if (currentMode === 'merge') {
@@ -1091,6 +1411,7 @@
 		cutMarkerStart.className = 'cut-marker';
 		cutMarkerStart.dataset.page = 0;
 		cutMarkerStart.addEventListener('click', () => toggleSplitPoint(0));
+		makeKeyboardActivatable(cutMarkerStart, '裁切點：從第一頁開始', () => toggleSplitPoint(0));
 		splitThumbnails.appendChild(cutMarkerStart);
 
 		for (let i = 1; i <= numPages; i++) {
@@ -1150,6 +1471,7 @@
 				cutMarker.className = 'cut-marker';
 				cutMarker.dataset.page = i;
 				cutMarker.addEventListener('click', () => toggleSplitPoint(parseInt(cutMarker.dataset.page)));
+				makeKeyboardActivatable(cutMarker, `裁切點：第 ${i} 頁之後`, () => toggleSplitPoint(i));
 				splitThumbnails.appendChild(cutMarker);
 			}
 		}
@@ -1158,6 +1480,7 @@
 		cutMarkerEnd.className = 'cut-marker';
 		cutMarkerEnd.dataset.page = numPages;
 		cutMarkerEnd.addEventListener('click', () => toggleSplitPoint(numPages));
+		makeKeyboardActivatable(cutMarkerEnd, '裁切點：到最後一頁結束', () => toggleSplitPoint(numPages));
 		splitThumbnails.appendChild(cutMarkerEnd);
 	}
 
@@ -1218,6 +1541,7 @@
     splitEndPage.addEventListener('input', updateSplitPointsFromText);
 
     function updateSplitPointsFromText() {
+        showInlineError('splitInlineError', '');
         if (!loadedPDF) {
             showMessage('請先匯入 PDF 檔案。');
             splitStartPage.value = '';
@@ -1241,7 +1565,7 @@
             return;
         }
         if (start > end) {
-            showMessage('結束頁碼不能小於起始頁碼。');
+            showInlineError('splitInlineError', '結束頁碼不能小於起始頁碼。');
             splitNextBtn.disabled = true;
             return;
         }
@@ -1277,6 +1601,9 @@
         `;
 
         document.getElementById('exportSplit').onclick = async () => {
+            const exportBtn = document.getElementById('exportSplit');
+            exportBtn.disabled = true;
+            exportBtn.textContent = '處理中...';
             try {
                 const fileToUse = singleLoadedFile;
 				if (!fileToUse) {
@@ -1315,6 +1642,9 @@
             } catch (error) {
                 console.error('Error splitting PDF:', error);
                 showMessage('PDF 裁切時發生錯誤。');
+            } finally {
+                exportBtn.disabled = false;
+                exportBtn.textContent = '匯出檔案';
             }
         };
     });
@@ -1348,7 +1678,8 @@
             removeBtn.className = 'remove-file-btn';
             removeBtn.innerHTML = '&times;';
             removeBtn.title = '移除此檔案';
-            
+            removeBtn.setAttribute('aria-label', `移除檔案：${file.name}`);
+
             removeBtn.addEventListener('click', (e) => {
                 e.stopPropagation(); 
                 filesForMerge.splice(index, 1);
@@ -1392,10 +1723,27 @@
             previewContainer.className = 'thumb-container hidden';
             li.appendChild(previewContainer);
 
-            li.addEventListener('dragstart', (e) => { e.dataTransfer.setData('text/plain', index); });
-            li.addEventListener('dragover', (e) => e.preventDefault());
+            li.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', index);
+                li.classList.add('dragging');
+            });
+            li.addEventListener('dragend', () => {
+                li.classList.remove('dragging');
+                document.querySelectorAll('.sortable-item').forEach(item => item.classList.remove('drag-over-top', 'drag-over-bottom'));
+            });
+            li.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                const rect = li.getBoundingClientRect();
+                const isBelowMidpoint = (e.clientY - rect.top) > rect.height / 2;
+                li.classList.toggle('drag-over-top', !isBelowMidpoint);
+                li.classList.toggle('drag-over-bottom', isBelowMidpoint);
+            });
+            li.addEventListener('dragleave', () => {
+                li.classList.remove('drag-over-top', 'drag-over-bottom');
+            });
             li.addEventListener('drop', (e) => {
                  e.preventDefault();
+                 li.classList.remove('drag-over-top', 'drag-over-bottom');
                  const fromIndex = e.dataTransfer.getData('text/plain');
                  const toIndex = index;
                  const fileToMove = filesForMerge.splice(fromIndex, 1)[0];
@@ -1403,8 +1751,7 @@
                  renderMergeFileList();
             });
 
-            li.addEventListener('click', async (event) => {
-                event.stopPropagation();
+            const toggleSelection = () => {
                 const isSelected = li.classList.contains('ring-2');
 
                 document.querySelectorAll('.sortable-item').forEach(item => {
@@ -1414,7 +1761,7 @@
                         container.classList.add('hidden');
                     }
                 });
-                
+
                 if (!isSelected) {
                     li.classList.add('ring-2', 'ring-blue-500');
                     selectedFileIndex = index;
@@ -1425,7 +1772,12 @@
                     selectedFileIndex = -1;
                     deleteFileBtn.disabled = true;
                 }
+            };
+            li.addEventListener('click', (event) => {
+                event.stopPropagation();
+                toggleSelection();
             });
+            makeKeyboardActivatable(li, `檔案 ${index + 1}：${file.name}`, toggleSelection);
             mergeFileList.appendChild(li);
         });
         
@@ -1443,9 +1795,13 @@
 		container.innerHTML = '';
 		
 		try {
-			const arrayBuffer = await file.arrayBuffer();
-			const pdfDoc = await pdfjsLib.getDocument(arrayBuffer).promise;
-			
+			let pdfDoc = mergePreviewCache.get(file);
+			if (!pdfDoc) {
+				const arrayBuffer = await file.arrayBuffer();
+				pdfDoc = await pdfjsLib.getDocument(arrayBuffer).promise;
+				mergePreviewCache.set(file, pdfDoc);
+			}
+
 			// 原本限制 5 頁，現在因為有效能優化，您可以考慮放寬，
 			// 但為了保持介面簡潔，維持 5 頁或適度增加皆可。
 			const maxPreviewPages = 5; 
@@ -1526,48 +1882,6 @@
 		}
 	}
 
-    async function drawPageAsync(page, canvas, targetViewport, renderId) {
-        try {
-            // 如果發現控制台印出 "Render ID is NaN"，請檢查變數宣告
-            if (Number.isNaN(renderId)) {
-                console.warn('Render ID is NaN! 請檢查 let currentRenderId = 0;');
-            }
-
-            const ctx = canvas.getContext('2d');
-
-            // 極速渲染 (模糊版)
-            const lowResScale = targetViewport.scale / 5; 
-            const lowResViewport = page.getViewport({ scale: lowResScale });
-            
-            canvas.width = lowResViewport.width;
-            canvas.height = lowResViewport.height;
-
-            await page.render({ canvasContext: ctx, viewport: lowResViewport }).promise;
-            
-            // 延遲後渲染清晰版
-            setTimeout(async () => {
-                // 檢查：如果 renderId 有值且與當前 ID 不符，才停止
-                // (這裡加上防呆：如果 renderId 是無效的，我們選擇繼續畫，避免永遠模糊)
-                if (renderId !== undefined && !Number.isNaN(renderId) && renderId !== currentRenderId) {
-                    return;
-                }
-
-                // 重設尺寸 (這會清空畫布)
-                canvas.width = targetViewport.width;
-                canvas.height = targetViewport.height;
-                
-                // 渲染清晰圖
-                await page.render({ canvasContext: ctx, viewport: targetViewport }).promise;
-                
-                // 移除模糊濾鏡
-                canvas.classList.add('loaded');
-            }, 50);
-
-        } catch (err) {
-            console.warn('Page render error:', err);
-        }
-    }
-
     // 刪除檔案
     deleteFileBtn.addEventListener('click', () => {
         if (selectedFileIndex !== -1) {
@@ -1590,7 +1904,7 @@
                     <label class="font-medium text-gray-700">檔案名稱:</label>
                     <input type="text" id="mergeFilename" class="form-input" value="合成-${formatDate(new Date())}">
                 </div>
-                <div id="mergeProgress" class="text-sm text-blue-600 font-medium hidden">準備中...</div>
+                <div id="mergeProgress" class="text-sm text-blue-600 font-medium hidden" role="status" aria-live="polite">準備中...</div>
                 <button id="exportMerge" class="btn btn-green w-full md:w-auto">匯出檔案</button>
             </div>
         `;
@@ -1669,20 +1983,24 @@
     });
 
     async function handlePageNumberExport() {
-        if (!loadedPDF || !singleLoadedFile) { 
+        showInlineError('pageNumberInlineError', '');
+        if (!loadedPDF || !singleLoadedFile) {
             showMessage('請先匯入PDF檔案。');
             return;
         }
         const startNumber = parseInt(pageNumberStart.value) || 1;
         const fromPage = parseInt(pageNumberFromPage.value);
         const position = pageNumberPosition.value;
-		const type = pageNumberType.value; 
+		const type = pageNumberType.value;
         const filename = document.getElementById('pageNumberFilename').value;
 
         if (isNaN(fromPage) || fromPage < 1 || fromPage > loadedPDF.numPages) {
-            showMessage('請輸入有效的起始頁碼。');
+            showInlineError('pageNumberInlineError', `請輸入有效的起始頁碼 (1 - ${loadedPDF.numPages})。`);
             return;
         }
+
+        const exportBtn = document.getElementById('exportPageNumber');
+        if (exportBtn) { exportBtn.disabled = true; exportBtn.textContent = '處理中...'; }
 
         try {
             const pdfDoc = await PDFLib.PDFDocument.load(await singleLoadedFile.arrayBuffer());
@@ -1733,10 +2051,29 @@
         } catch (error) {
             console.error('Error adding page numbers:', error);
             showMessage('頁碼編寫時發生錯誤。');
+        } finally {
+            if (exportBtn) { exportBtn.disabled = false; exportBtn.textContent = '匯出檔案'; }
         }
     }
     
     // ==================== 旋轉功能 ====================
+    // 綁定「下一步」按鈕，點擊後顯示檔名輸入與匯出按鈕
+    function bindRotateNextExport(btn) {
+        btn.addEventListener('click', () => {
+            const actionArea = btn.parentNode;
+            actionArea.innerHTML = `
+                <div class="flex flex-col items-end space-y-4 w-full md:w-auto">
+                    <div class="flex items-center space-x-2">
+                        <label class="font-medium text-gray-700">檔案名稱:</label>
+                        <input type="text" id="rotateFilename" class="form-input" value="旋轉-${formatDate(new Date())}">
+                    </div>
+                    <button id="exportRotate" class="btn btn-green w-full md:w-auto">匯出檔案</button>
+                </div>
+            `;
+            document.getElementById('exportRotate').addEventListener('click', handleRotateExport);
+        });
+    }
+
 	async function renderRotateThumbnails(pdfDoc) {
 		rotateThumbnails.innerHTML = '';
 		const numPages = pdfDoc.numPages;
@@ -1786,12 +2123,14 @@
 			rotateThumbnails.appendChild(thumbWrapper);
 
 			// 綁定點擊事件 (選取頁面)
-			thumbWrapper.addEventListener('click', () => {
+			const selectThisPage = () => {
 				document.querySelectorAll('#rotateThumbnails .selected-thumbnail').forEach(t => t.classList.remove('selected-thumbnail'));
 				thumbWrapper.classList.add('selected-thumbnail');
 				selectedRotatePage = i - 1;
 				rotatePageBtn.disabled = false;
-			});
+			};
+			thumbWrapper.addEventListener('click', selectThisPage);
+			makeKeyboardActivatable(thumbWrapper, `選取第 ${i} 頁`, selectThisPage);
 
 			// 加入觀察
 			thumbnailObserver.observe(thumbWrapper);
@@ -1857,19 +2196,7 @@
         }
     });
 
-    rotateNextBtn.addEventListener('click', () => {
-        const actionArea = document.getElementById('rotateNext').parentNode;
-        actionArea.innerHTML = `
-            <div class="flex flex-col items-end space-y-4 w-full md:w-auto">
-                <div class="flex items-center space-x-2">
-                    <label class="font-medium text-gray-700">檔案名稱:</label>
-                    <input type="text" id="rotateFilename" class="form-input" value="旋轉-${formatDate(new Date())}">
-                </div>
-                <button id="exportRotate" class="btn btn-green w-full md:w-auto">匯出檔案</button>
-            </div>
-        `;
-        document.getElementById('exportRotate').addEventListener('click', handleRotateExport);
-    });
+    bindRotateNextExport(rotateNextBtn);
 
     async function handleRotateExport() {
         if (!loadedPDF || !singleLoadedFile) {
@@ -1878,6 +2205,8 @@
         }
 
         const filename = document.getElementById('rotateFilename').value;
+        const exportBtn = document.getElementById('exportRotate');
+        if (exportBtn) { exportBtn.disabled = true; exportBtn.textContent = '處理中...'; }
         try {
             const pdfDoc = await PDFLib.PDFDocument.load(await singleLoadedFile.arrayBuffer());
             const pages = pdfDoc.getPages();
@@ -1897,6 +2226,8 @@
         } catch (error) {
             console.error('Error rotating PDF:', error);
             showMessage('PDF 旋轉時發生錯誤。');
+        } finally {
+            if (exportBtn) { exportBtn.disabled = false; exportBtn.textContent = '匯出檔案'; }
         }
     }
 	
@@ -1911,6 +2242,7 @@
 		cutMarkerStart.className = 'cut-marker';
 		cutMarkerStart.dataset.page = 0;
 		cutMarkerStart.addEventListener('click', () => toggleOcrSplitPoint(0));
+		makeKeyboardActivatable(cutMarkerStart, '裁切點：從第一頁開始', () => toggleOcrSplitPoint(0));
 		ocrThumbnails.appendChild(cutMarkerStart);
 
 		for (let i = 1; i <= numPages; i++) {
@@ -1918,6 +2250,7 @@
 			
 			const thumbWrapper = document.createElement('div');
 			thumbWrapper.className = 'thumb-wrapper';
+			thumbWrapper.dataset.page = i;
 			thumbWrapper.style.minHeight = '150px';
 			thumbWrapper.style.minWidth = '120px';
 			thumbWrapper.style.display = 'flex';
@@ -1960,6 +2293,7 @@
 				cutMarker.className = 'cut-marker';
 				cutMarker.dataset.page = i;
 				cutMarker.addEventListener('click', () => toggleOcrSplitPoint(parseInt(cutMarker.dataset.page)));
+				makeKeyboardActivatable(cutMarker, `裁切點：第 ${i} 頁之後`, () => toggleOcrSplitPoint(i));
 				ocrThumbnails.appendChild(cutMarker);
 			}
 		}
@@ -1968,6 +2302,7 @@
 		cutMarkerEnd.className = 'cut-marker';
 		cutMarkerEnd.dataset.page = numPages;
 		cutMarkerEnd.addEventListener('click', () => toggleOcrSplitPoint(numPages));
+		makeKeyboardActivatable(cutMarkerEnd, '裁切點：到最後一頁結束', () => toggleOcrSplitPoint(numPages));
 		ocrThumbnails.appendChild(cutMarkerEnd);
 		
 		updateOcrUI();
@@ -2036,6 +2371,7 @@
     document.getElementById('ocrEndPage').addEventListener('input', updateOcrSplitPointsFromText);
 
     function updateOcrSplitPointsFromText() {
+        showInlineError('ocrInlineError', '');
         if (!loadedPDF) {
             showMessage('請先匯入 PDF 檔案。');
             document.getElementById('ocrStartPage').value = '';
@@ -2059,7 +2395,7 @@
             return;
         }
         if (start > end) {
-            showMessage('結束頁碼不能小於起始頁碼。');
+            showInlineError('ocrInlineError', '結束頁碼不能小於起始頁碼。');
             document.getElementById('ocrStartBtn').disabled = true;
             return;
         }
@@ -2112,6 +2448,48 @@
         return ocrWorker;
     }
 
+    // 框選功能開關
+    enableBboxModeCheckbox.addEventListener('change', () => {
+        bboxModeEnabled = enableBboxModeCheckbox.checked;
+        bboxWarningEl.classList.toggle('hidden', !bboxModeEnabled);
+    });
+
+    // 將 Tesseract 回傳的巢狀 blocks 結構攤平成 line 陣列（含容錯處理，避免版本差異造成功能整個失效）
+    function extractLinesFromBlocks(blocks) {
+        const lines = [];
+        (blocks || []).forEach(block => {
+            if (Array.isArray(block.paragraphs) && block.paragraphs.length) {
+                block.paragraphs.forEach(para => {
+                    (para.lines || []).forEach(line => {
+                        if (line && line.bbox && typeof line.text === 'string') {
+                            lines.push({ text: line.text.replace(/ /g, '').trimEnd(), bbox: line.bbox, selected: true });
+                        }
+                    });
+                });
+            } else if (block.bbox && typeof block.text === 'string') {
+                // 容錯：若版本沒有 paragraphs/lines 巢狀，退回以 block 本身作為一個可選區塊
+                lines.push({ text: block.text.replace(/ /g, '').trimEnd(), bbox: block.bbox, selected: true });
+            }
+        });
+        return lines;
+    }
+
+    // 依 processedPages 的順序與目前的框選狀態重新組合完整文字
+    function rebuildFullOcrText() {
+        let fullText = '';
+        processedPages.forEach(p => {
+            fullText += `--- 辨識頁碼 ${p} ---\n\n`;
+            if (ocrPageData[p]) {
+                fullText += ocrPageData[p].lines.filter(l => l.selected).map(l => l.text).join('\n') + '\n\n';
+            } else {
+                fullText += (ocrPageText[p] || '') + '\n\n';
+            }
+        });
+        originalOcrText = fullText;
+        applyPunctuationFilters();
+        document.getElementById('copyOcrTextBtn').disabled = originalOcrText.trim().length === 0;
+    }
+
     ocrStartBtn.addEventListener('click', async () => {
         // 驗證頁碼區間
         let startPageNum, endPageNum;
@@ -2130,59 +2508,90 @@
 
         const progressContainer = document.getElementById('ocrProgressContainer');
         const progressBar = document.getElementById('ocrProgressBar');
+        const bboxThisRun = bboxModeEnabled; // 鎖定本次執行是否啟用框選，避免執行中途被更改
 
         ocrStartBtn.disabled = true;
+        enableBboxModeCheckbox.disabled = true;
         ocrResultText.value = '';
         originalOcrText = '';
-        ocrStatus.classList.remove('text-green-500'); 
-        document.getElementById('ocrResultTools').classList.add('hidden'); 
+        ocrPageData = {};
+        ocrPageText = {};
+        processedPages = [];
+        document.querySelectorAll('#ocrThumbnails .thumb-wrapper').forEach(w => w.classList.remove('has-bbox-data'));
+        ocrStatus.classList.remove('text-green-500');
+        document.getElementById('ocrResultTools').classList.add('hidden');
         document.getElementById('copyOcrTextBtn').disabled = true;
 
         puncToggles = { colon: false, comma: false, paren: false };
-        document.querySelectorAll('.punc-btn').forEach(btn => btn.classList.remove('active'));
-
-        let fullText = ""; // 用於儲存所有頁面的文字
+        document.querySelectorAll('#ocrResultTools .punc-btn').forEach(btn => btn.classList.remove('active'));
 
         try {
             // 初始化 Tesseract Worker
             if (!ocrWorker) {
                 ocrWorker = await initializeOcrWorker();
             }
-            
+
             ocrStatus.classList.remove('hidden');
 
             // 迴圈辨識每一頁
             for (let i = startPageNum; i <= endPageNum; i++) {
                 ocrStatus.textContent = `正在渲染第 ${i} / ${endPageNum} 頁...`;
                 ocrStatus.classList.remove('text-green-500');
-                
+
                 const page = await loadedPDF.getPage(i);
-                const scale = 3.0; 
+                const scale = 3.0;
                 const viewport = page.getViewport({ scale: scale });
                 const canvas = document.createElement('canvas');
                 canvas.width = viewport.width;
                 canvas.height = viewport.height;
                 const context = canvas.getContext('2d');
-                
-                await page.render({ canvasContext: context, viewport: viewport }).promise;
-                
-                ocrStatus.textContent = `正在辨識第 ${i} / ${endPageNum} 頁...`;
-                const { data: { text } } = await ocrWorker.recognize(canvas);
 
-                fullText += `--- 辨識頁碼 ${i} ---\n\n`;
-                fullText += text.replace(/ /g, '') + "\n\n";
+                await page.render({ canvasContext: context, viewport: viewport }).promise;
+
+                ocrStatus.textContent = `正在辨識第 ${i} / ${endPageNum} 頁...`;
+
+                if (bboxThisRun) {
+                    let lines = [];
+                    let imageDataUrl = '';
+                    try {
+                        const result = await ocrWorker.recognize(canvas, {}, { text: true, blocks: true });
+                        lines = extractLinesFromBlocks(result.data && result.data.blocks);
+                        imageDataUrl = canvas.toDataURL('image/png');
+                        if (lines.length === 0 && result.data && result.data.text) {
+                            // 容錯：完全取不到座標時，整頁當成單一區塊，至少維持可框選
+                            lines = [{ text: result.data.text.replace(/ /g, '').trim(), bbox: { x0: 0, y0: 0, x1: canvas.width, y1: canvas.height }, selected: true }];
+                        }
+                    } catch (innerErr) {
+                        console.error('bbox recognize error, fallback to text-only:', innerErr);
+                        const fallback = await ocrWorker.recognize(canvas);
+                        ocrPageText[i] = fallback.data.text.replace(/ /g, '');
+                        lines = null;
+                    }
+                    if (lines) {
+                        ocrPageData[i] = { lines: lines, imageDataUrl: imageDataUrl, width: canvas.width, height: canvas.height };
+                        const thumb = document.querySelector(`#ocrThumbnails .thumb-wrapper[data-page="${i}"]`);
+                        if (thumb) thumb.classList.add('has-bbox-data');
+                    }
+                } else {
+                    const { data: { text } } = await ocrWorker.recognize(canvas);
+                    ocrPageText[i] = text.replace(/ /g, '');
+                }
+
+                processedPages.push(i);
+
+                // 釋放 canvas 記憶體，避免長文件累積佔用
+                canvas.width = 0;
+                canvas.height = 0;
             }
 
             // 顯示最終結果
-            originalOcrText = fullText; 
-            applyPunctuationFilters(); 
-            
+            rebuildFullOcrText();
+
             ocrStatus.textContent = '辨識完成。';
-            ocrStatus.classList.add('text-green-500'); 
-            
+            ocrStatus.classList.add('text-green-500');
+
             progressBar.style.width = '100%';
             document.getElementById('ocrResultTools').classList.remove('hidden'); // 顯示標點按鈕
-            document.getElementById('copyOcrTextBtn').disabled = originalOcrText.length === 0;
 
         } catch (error) {
             console.error('OCR Error:', error);
@@ -2193,27 +2602,33 @@
             progressBar.style.width = '0%';
         } finally {
             ocrStartBtn.disabled = false;
+            enableBboxModeCheckbox.disabled = false;
         }
     });
     
-    // 應用過濾器並更新 textarea
-    function applyPunctuationFilters() {
-        let tempText = originalOcrText;
-        
-        if (puncToggles.colon) {
+    // 應用過濾器並更新 textarea（Tesseract 與 Gemini 兩個頁籤共用此邏輯）
+    function applyPunctuationFiltersGeneric(sourceText, toggles, textareaEl) {
+        let tempText = sourceText;
+
+        if (toggles.colon) {
             tempText = tempText.replace(/:/g, '：');
         }
-        if (puncToggles.comma) {
+        if (toggles.comma) {
             tempText = tempText.replace(/,/g, '，');
         }
-        if (puncToggles.paren) {
+        if (toggles.paren) {
             tempText = tempText.replace(/\(/g, '（').replace(/\)/g, '）');
         }
-        
-        ocrResultText.value = tempText;
+
+        textareaEl.value = tempText;
     }
 
-    document.querySelectorAll('.punc-btn').forEach(button => {
+    function applyPunctuationFilters() {
+        applyPunctuationFiltersGeneric(originalOcrText, puncToggles, ocrResultText);
+    }
+
+    // 注意：選取器限定在 #ocrResultTools 範圍內，避免誤觸 Gemini 頁籤的同名按鈕
+    document.querySelectorAll('#ocrResultTools .punc-btn').forEach(button => {
         button.addEventListener('click', () => {
             const type = button.dataset.type;
             if (type in puncToggles) {
@@ -2223,10 +2638,9 @@
             }
         });
     });
-	
-    const copyOcrTextBtn = document.getElementById('copyOcrTextBtn');
-    copyOcrTextBtn.addEventListener('click', () => {
-        const textToCopy = document.getElementById('ocrResultText').value;
+
+    // 複製文字到剪貼簿（Tesseract 與 Gemini 兩個頁籤共用此邏輯）
+    function copyTextToClipboard(textToCopy) {
         if (!textToCopy) {
             showMessage('沒有文字可複製。');
             return;
@@ -2235,7 +2649,7 @@
         navigator.clipboard.writeText(textToCopy).then(() => {
             const notification = document.getElementById('copyNotification');
             notification.style.display = 'block';
-            
+
             setTimeout(() => {
                 notification.style.opacity = '1';
             }, 10);
@@ -2249,11 +2663,378 @@
             setTimeout(() => {
                 notification.style.display = 'none';
             }, 2010); // 1010ms + 1000ms
-            
+
         }).catch(err => {
             console.error('無法複製文字: ', err);
             showMessage('複製文字失敗。');
         });
+    }
+
+    const copyOcrTextBtn = document.getElementById('copyOcrTextBtn');
+    copyOcrTextBtn.addEventListener('click', () => {
+        copyTextToClipboard(document.getElementById('ocrResultText').value);
+    });
+
+    // ==================== 文字辨識 (Gemini) ====================
+    async function renderOcrGeminiThumbnails(pdfDoc) {
+        const ocrGeminiThumbnails = document.getElementById('ocrGeminiThumbnails');
+        ocrGeminiThumbnails.innerHTML = '';
+        const numPages = pdfDoc.numPages;
+        const thisRenderId = currentRenderId;
+
+        const cutMarkerStart = document.createElement('div');
+        cutMarkerStart.className = 'cut-marker';
+        cutMarkerStart.dataset.page = 0;
+        cutMarkerStart.addEventListener('click', () => toggleOcrGeminiSplitPoint(0));
+        makeKeyboardActivatable(cutMarkerStart, '裁切點：從第一頁開始', () => toggleOcrGeminiSplitPoint(0));
+        ocrGeminiThumbnails.appendChild(cutMarkerStart);
+
+        for (let i = 1; i <= numPages; i++) {
+            if (thisRenderId !== currentRenderId) return;
+
+            const thumbWrapper = document.createElement('div');
+            thumbWrapper.className = 'thumb-wrapper';
+            thumbWrapper.style.minHeight = '150px';
+            thumbWrapper.style.minWidth = '120px';
+            thumbWrapper.style.display = 'flex';
+            thumbWrapper.style.flexDirection = 'column';
+            thumbWrapper.style.alignItems = 'center';
+
+            const pageNum = document.createElement('div');
+            pageNum.textContent = i;
+            pageNum.className = 'text-center text-sm font-medium text-gray-600 mt-1';
+
+            thumbWrapper.renderFunction = async () => {
+                if (thisRenderId !== currentRenderId) return;
+                try {
+                    const page = await pdfDoc.getPage(i);
+                    const viewport = page.getViewport({ scale: 0.3 });
+                    const canvas = document.createElement('canvas');
+                    canvas.width = viewport.width;
+                    canvas.height = viewport.height;
+                    const context = canvas.getContext('2d');
+
+                    canvas.addEventListener('click', () => showFullScreenPreview(pdfDoc, i));
+
+                    await page.render({ canvasContext: context, viewport: viewport }).promise;
+
+                    thumbWrapper.prepend(canvas);
+                    thumbWrapper.style.minHeight = '';
+                    thumbWrapper.style.minWidth = '';
+                } catch (e) { console.error(e); }
+            };
+
+            thumbWrapper.appendChild(pageNum);
+            ocrGeminiThumbnails.appendChild(thumbWrapper);
+
+            thumbnailObserver.observe(thumbWrapper);
+
+            if (i < numPages) {
+                const cutMarker = document.createElement('div');
+                cutMarker.className = 'cut-marker';
+                cutMarker.dataset.page = i;
+                cutMarker.addEventListener('click', () => toggleOcrGeminiSplitPoint(parseInt(cutMarker.dataset.page)));
+                makeKeyboardActivatable(cutMarker, `裁切點：第 ${i} 頁之後`, () => toggleOcrGeminiSplitPoint(i));
+                ocrGeminiThumbnails.appendChild(cutMarker);
+            }
+        }
+
+        const cutMarkerEnd = document.createElement('div');
+        cutMarkerEnd.className = 'cut-marker';
+        cutMarkerEnd.dataset.page = numPages;
+        cutMarkerEnd.addEventListener('click', () => toggleOcrGeminiSplitPoint(numPages));
+        makeKeyboardActivatable(cutMarkerEnd, '裁切點：到最後一頁結束', () => toggleOcrGeminiSplitPoint(numPages));
+        ocrGeminiThumbnails.appendChild(cutMarkerEnd);
+
+        updateOcrGeminiUI();
+    }
+
+    function toggleOcrGeminiSplitPoint(page) {
+        const index = ocrGeminiSplitPoints.indexOf(page);
+        if (index > -1) {
+            ocrGeminiSplitPoints.splice(index, 1);
+        } else {
+            if (ocrGeminiSplitPoints.length >= 2) {
+                splitSelectionBox.classList.remove('hidden');
+                document.getElementById('selectFirst').onclick = () => {
+                    ocrGeminiSplitPoints.shift();
+                    ocrGeminiSplitPoints.push(page);
+                    ocrGeminiSplitPoints.sort((a, b) => a - b);
+                    updateOcrGeminiUI();
+                    splitSelectionBox.classList.add('hidden');
+                };
+                document.getElementById('selectLast').onclick = () => {
+                    ocrGeminiSplitPoints.pop();
+                    ocrGeminiSplitPoints.push(page);
+                    ocrGeminiSplitPoints.sort((a, b) => a - b);
+                    updateOcrGeminiUI();
+                    splitSelectionBox.classList.add('hidden');
+                };
+                document.getElementById('selectCancel').onclick = () => {
+                    splitSelectionBox.classList.add('hidden');
+                };
+                return;
+            }
+            ocrGeminiSplitPoints.push(page);
+            ocrGeminiSplitPoints.sort((a, b) => a - b);
+        }
+        updateOcrGeminiUI();
+    }
+
+    function updateOcrGeminiUI() {
+        const startPageEl = document.getElementById('ocrGeminiStartPage');
+        const endPageEl = document.getElementById('ocrGeminiEndPage');
+        const startBtn = document.getElementById('ocrGeminiStartBtn');
+        if (!startPageEl || !endPageEl || !startBtn) return;
+
+        const cutMarkers = document.querySelectorAll('#ocrGeminiThumbnails .cut-marker');
+        cutMarkers.forEach(marker => {
+            const page = parseInt(marker.dataset.page);
+            marker.classList.toggle('active', ocrGeminiSplitPoints.includes(page));
+        });
+
+        if (ocrGeminiSplitPoints.length === 2) {
+            startPageEl.value = ocrGeminiSplitPoints[0] + 1;
+            endPageEl.value = ocrGeminiSplitPoints[1];
+        } else {
+            startPageEl.value = '';
+            endPageEl.value = '';
+        }
+
+        startBtn.disabled = ocrGeminiSplitPoints.length !== 2 || !geminiApiKeyValid;
+    }
+
+    document.getElementById('ocrGeminiStartPage').addEventListener('input', updateOcrGeminiSplitPointsFromText);
+    document.getElementById('ocrGeminiEndPage').addEventListener('input', updateOcrGeminiSplitPointsFromText);
+
+    function updateOcrGeminiSplitPointsFromText() {
+        showInlineError('ocrGeminiInlineError', '');
+        if (!loadedPDF) {
+            showMessage('請先匯入 PDF 檔案。');
+            document.getElementById('ocrGeminiStartPage').value = '';
+            document.getElementById('ocrGeminiEndPage').value = '';
+            ocrGeminiSplitPoints = [];
+            updateOcrGeminiUI();
+            return;
+        }
+
+        const start = parseInt(document.getElementById('ocrGeminiStartPage').value);
+        const end = parseInt(document.getElementById('ocrGeminiEndPage').value);
+        const numPages = loadedPDF.numPages;
+
+        ocrGeminiSplitPoints = [];
+
+        if (isNaN(start) || start < 1 || start > numPages) {
+            updateOcrGeminiUI();
+            return;
+        }
+        if (isNaN(end) || end < 1 || end > numPages) {
+            updateOcrGeminiUI();
+            return;
+        }
+        if (start > end) {
+            showInlineError('ocrGeminiInlineError', '結束頁碼不能小於起始頁碼。');
+            updateOcrGeminiUI();
+            return;
+        }
+
+        ocrGeminiSplitPoints.push(start - 1);
+        ocrGeminiSplitPoints.push(end);
+        updateOcrGeminiUI();
+    }
+
+    // 驗證 Gemini API Key 是否可用（呼叫輕量的 list models 端點，不消耗生成額度）
+    async function verifyGeminiApiKey() {
+        const input = document.getElementById('geminiApiKeyInput');
+        const statusEl = document.getElementById('geminiKeyStatus');
+        const verifyBtn = document.getElementById('geminiVerifyKeyBtn');
+        const key = input.value.trim();
+
+        if (!key) {
+            statusEl.textContent = '請先輸入 API Key。';
+            statusEl.className = 'text-sm text-red-500';
+            return;
+        }
+
+        geminiApiKeyValid = false;
+        updateOcrGeminiUI();
+        verifyBtn.disabled = true;
+        verifyBtn.textContent = '驗證中...';
+        statusEl.textContent = '正在驗證金鑰，請稍候...';
+        statusEl.className = 'text-sm text-gray-500';
+
+        try {
+            const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(key)}`);
+            if (resp.ok) {
+                geminiApiKey = key;
+                geminiApiKeyValid = true;
+                statusEl.textContent = '✅ 金鑰驗證成功，可以開始使用。';
+                statusEl.className = 'text-sm text-green-500';
+            } else {
+                const errData = await resp.json().catch(() => null);
+                const msg = (errData && errData.error && errData.error.message) || `驗證失敗 (HTTP ${resp.status})`;
+                statusEl.textContent = `❌ ${msg}`;
+                statusEl.className = 'text-sm text-red-500';
+            }
+        } catch (error) {
+            console.error('Gemini API key verification error:', error);
+            statusEl.textContent = '❌ 無法連線至 Gemini API，請檢查網路連線。';
+            statusEl.className = 'text-sm text-red-500';
+        } finally {
+            verifyBtn.disabled = false;
+            verifyBtn.textContent = '驗證';
+            updateOcrGeminiUI();
+        }
+    }
+
+    document.getElementById('geminiVerifyKeyBtn').addEventListener('click', verifyGeminiApiKey);
+    document.getElementById('geminiApiKeyInput').addEventListener('input', () => {
+        if (geminiApiKeyValid) {
+            geminiApiKeyValid = false;
+            const statusEl = document.getElementById('geminiKeyStatus');
+            statusEl.textContent = '金鑰已變更，請重新驗證。';
+            statusEl.className = 'text-sm text-gray-500';
+            updateOcrGeminiUI();
+        }
+    });
+
+    // 呼叫 Gemini API 辨識單一頁面圖片中的文字
+    async function recognizeImageWithGemini(base64Data, apiKey) {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
+        const body = {
+            contents: [{
+                parts: [
+                    { text: '請將這張圖片中的所有文字逐字辨識並輸出。圖片內容可能包含繁體中文與英文。只需輸出辨識到的純文字內容，保留原始的斷行，不要加上任何說明、標題或 Markdown 格式。' },
+                    { inline_data: { mime_type: 'image/png', data: base64Data } }
+                ]
+            }]
+        };
+
+        const resp = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+
+        if (!resp.ok) {
+            const errData = await resp.json().catch(() => null);
+            throw new Error((errData && errData.error && errData.error.message) || `Gemini API 錯誤 (HTTP ${resp.status})`);
+        }
+
+        const data = await resp.json();
+        const parts = (data && data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || [];
+        return parts.map(p => p.text || '').join('');
+    }
+
+    const ocrGeminiStartBtn = document.getElementById('ocrGeminiStartBtn');
+    ocrGeminiStartBtn.addEventListener('click', async () => {
+        showInlineError('ocrGeminiInlineError', '');
+
+        const currentKeyInput = document.getElementById('geminiApiKeyInput').value.trim();
+        if (!geminiApiKeyValid || currentKeyInput !== geminiApiKey) {
+            showInlineError('ocrGeminiInlineError', '請先驗證有效的 Gemini API Key。');
+            return;
+        }
+
+        let startPageNum, endPageNum;
+        if (ocrGeminiSplitPoints.length === 2) {
+            startPageNum = ocrGeminiSplitPoints[0] + 1;
+            endPageNum = ocrGeminiSplitPoints[1];
+        } else {
+            startPageNum = parseInt(document.getElementById('ocrGeminiStartPage').value);
+            endPageNum = parseInt(document.getElementById('ocrGeminiEndPage').value);
+        }
+
+        if (!loadedPDF || isNaN(startPageNum) || isNaN(endPageNum) || startPageNum < 1 || endPageNum > loadedPDF.numPages || startPageNum > endPageNum) {
+            showMessage(`請選擇有效的頁碼區間 (1 - ${loadedPDF ? loadedPDF.numPages : '?'})。`);
+            return;
+        }
+
+        const statusEl = document.getElementById('ocrGeminiStatus');
+        const progressContainer = document.getElementById('ocrGeminiProgressContainer');
+        const progressBar = document.getElementById('ocrGeminiProgressBar');
+        const resultText = document.getElementById('ocrGeminiResultText');
+
+        ocrGeminiStartBtn.disabled = true;
+        resultText.value = '';
+        originalOcrGeminiText = '';
+        document.getElementById('ocrGeminiResultTools').classList.add('hidden');
+        document.getElementById('copyOcrGeminiTextBtn').disabled = true;
+
+        puncTogglesGemini = { colon: false, comma: false, paren: false };
+        document.querySelectorAll('#ocrGeminiResultTools .punc-btn').forEach(btn => btn.classList.remove('active'));
+
+        statusEl.classList.remove('hidden');
+        statusEl.classList.remove('text-green-500');
+        progressContainer.classList.remove('hidden');
+        progressBar.style.width = '0%';
+
+        let fullText = '';
+        const totalPages = endPageNum - startPageNum + 1;
+
+        try {
+            for (let i = startPageNum; i <= endPageNum; i++) {
+                statusEl.textContent = `正在渲染第 ${i} / ${endPageNum} 頁...`;
+
+                const page = await loadedPDF.getPage(i);
+                const viewport = page.getViewport({ scale: 2.5 });
+                const canvas = document.createElement('canvas');
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+                const context = canvas.getContext('2d');
+                await page.render({ canvasContext: context, viewport: viewport }).promise;
+
+                statusEl.textContent = `正在透過 Gemini 辨識第 ${i} / ${endPageNum} 頁...`;
+                const dataUrl = canvas.toDataURL('image/png');
+                const base64Data = dataUrl.split(',')[1];
+
+                const text = await recognizeImageWithGemini(base64Data, geminiApiKey);
+
+                fullText += `--- 辨識頁碼 ${i} ---\n\n`;
+                fullText += text.trim() + '\n\n';
+
+                // 釋放 canvas 記憶體，避免長文件累積佔用
+                canvas.width = 0;
+                canvas.height = 0;
+
+                const done = i - startPageNum + 1;
+                progressBar.style.width = `${Math.round((done / totalPages) * 100)}%`;
+            }
+
+            originalOcrGeminiText = fullText;
+            applyPunctuationFiltersGeneric(originalOcrGeminiText, puncTogglesGemini, resultText);
+
+            statusEl.textContent = '辨識完成。';
+            statusEl.classList.add('text-green-500');
+            document.getElementById('ocrGeminiResultTools').classList.remove('hidden');
+            document.getElementById('copyOcrGeminiTextBtn').disabled = originalOcrGeminiText.length === 0;
+
+        } catch (error) {
+            console.error('Gemini OCR Error:', error);
+            showMessage('使用 Gemini 辨識文字時發生錯誤。');
+            statusEl.textContent = `錯誤: ${error.message || '未知錯誤'}`;
+            statusEl.classList.remove('text-green-500');
+            progressContainer.classList.add('hidden');
+            progressBar.style.width = '0%';
+        } finally {
+            updateOcrGeminiUI();
+        }
+    });
+
+    document.querySelectorAll('#ocrGeminiResultTools .punc-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            const type = button.dataset.type;
+            if (type in puncTogglesGemini) {
+                puncTogglesGemini[type] = !puncTogglesGemini[type];
+                button.classList.toggle('active', puncTogglesGemini[type]);
+                applyPunctuationFiltersGeneric(originalOcrGeminiText, puncTogglesGemini, document.getElementById('ocrGeminiResultText'));
+            }
+        });
+    });
+
+    const copyOcrGeminiTextBtn = document.getElementById('copyOcrGeminiTextBtn');
+    copyOcrGeminiTextBtn.addEventListener('click', () => {
+        copyTextToClipboard(document.getElementById('ocrGeminiResultText').value);
     });
 
     document.addEventListener('keydown', (event) => {
@@ -2292,30 +3073,164 @@
     async function showFullScreenPreview(pdfDoc, pageNum) {
         fullScreenPDF = pdfDoc;
         fullScreenPage = pageNum;
-        await renderFullScreenPage();
+        // 先顯示 modal 再渲染，避免在 display:none 狀態下量測影像尺寸導致框選層變成 0x0
         fullScreenPreview.classList.remove('hidden');
+        await renderFullScreenPage();
 
         // 綁定鍵盤事件
         document.addEventListener('keydown', handleFullScreenKeys);
     }
-    
+
     async function renderFullScreenPage() {
         if (!fullScreenPDF) return;
 
-        const page = await fullScreenPDF.getPage(fullScreenPage);
-        const viewport = page.getViewport({ scale: 2 });
-        const canvas = document.createElement('canvas');
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        const context = canvas.getContext('2d');
-        await page.render({ canvasContext: context, viewport: viewport }).promise;
-        previewImage.src = canvas.toDataURL();
+        bboxOverlayCanvas.classList.add('hidden');
+        // 僅在「文字辨識(前端)」頁籤且該頁已用框選模式辨識過時，才顯示可互動的框選層
+        const bboxData = (currentMode === 'ocr') ? ocrPageData[fullScreenPage] : null;
+
+        if (bboxData) {
+            previewLines = bboxData.lines;
+            previewNaturalSize = { w: bboxData.width, h: bboxData.height };
+            previewImage.src = bboxData.imageDataUrl;
+            await new Promise(resolve => {
+                if (previewImage.complete) resolve();
+                else previewImage.onload = resolve;
+            });
+            bboxControlPanel.classList.remove('hidden');
+            bboxPageHint.textContent = `第 ${fullScreenPage} 頁：共 ${bboxData.lines.length} 個文字區塊，單擊切換單一區塊，按住拖曳可批次切換。`;
+            setupOverlayCanvas();
+        } else {
+            previewLines = null;
+            bboxControlPanel.classList.add('hidden');
+            const page = await fullScreenPDF.getPage(fullScreenPage);
+            const viewport = page.getViewport({ scale: 2 });
+            const canvas = document.createElement('canvas');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            const context = canvas.getContext('2d');
+            await page.render({ canvasContext: context, viewport: viewport }).promise;
+            previewImage.src = canvas.toDataURL();
+        }
     }
+
+    function setupOverlayCanvas() {
+        bboxOverlayCanvas.classList.remove('hidden');
+        const w = previewImage.clientWidth;
+        const h = previewImage.clientHeight;
+        bboxOverlayCanvas.width = w;
+        bboxOverlayCanvas.height = h;
+        bboxOverlayCanvas.style.width = w + 'px';
+        bboxOverlayCanvas.style.height = h + 'px';
+        redrawOverlay();
+    }
+
+    function redrawOverlay() {
+        if (!previewLines) return;
+        const ctx = bboxOverlayCanvas.getContext('2d');
+        ctx.clearRect(0, 0, bboxOverlayCanvas.width, bboxOverlayCanvas.height);
+        const scaleX = bboxOverlayCanvas.width / previewNaturalSize.w;
+        const scaleY = bboxOverlayCanvas.height / previewNaturalSize.h;
+
+        previewLines.forEach(line => {
+            const { x0, y0, x1, y1 } = line.bbox;
+            const dx = x0 * scaleX, dy = y0 * scaleY, dw = (x1 - x0) * scaleX, dh = (y1 - y0) * scaleY;
+            if (line.selected) {
+                ctx.fillStyle = 'rgba(34, 197, 94, 0.28)';
+                ctx.strokeStyle = '#16a34a';
+            } else {
+                ctx.fillStyle = 'rgba(156, 163, 175, 0.22)';
+                ctx.strokeStyle = '#6b7280';
+            }
+            ctx.lineWidth = 1.5;
+            ctx.fillRect(dx, dy, dw, dh);
+            ctx.strokeRect(dx, dy, dw, dh);
+        });
+    }
+
+    function hitTestLine(x, y) {
+        if (!previewLines) return -1;
+        const scaleX = bboxOverlayCanvas.width / previewNaturalSize.w;
+        const scaleY = bboxOverlayCanvas.height / previewNaturalSize.h;
+        for (let idx = previewLines.length - 1; idx >= 0; idx--) {
+            const { x0, y0, x1, y1 } = previewLines[idx].bbox;
+            const dx = x0 * scaleX, dy = y0 * scaleY, dw = (x1 - x0) * scaleX, dh = (y1 - y0) * scaleY;
+            if (x >= dx && x <= dx + dw && y >= dy && y <= dy + dh) return idx;
+        }
+        return -1;
+    }
+
+    function getOverlayCoords(e) {
+        const rect = bboxOverlayCanvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+
+    function bboxPointerDown(e) {
+        if (!previewLines) return;
+        e.preventDefault();
+        const { x, y } = getOverlayCoords(e);
+        const idx = hitTestLine(x, y);
+        isBrushing = true;
+        brushTouched.clear();
+        brushTargetState = null;
+        if (idx !== -1) {
+            brushTargetState = !previewLines[idx].selected;
+            previewLines[idx].selected = brushTargetState;
+            brushTouched.add(idx);
+            redrawOverlay();
+        }
+    }
+    function bboxPointerMove(e) {
+        if (!isBrushing || !previewLines) return;
+        e.preventDefault();
+        const { x, y } = getOverlayCoords(e);
+        const idx = hitTestLine(x, y);
+        if (idx !== -1 && !brushTouched.has(idx)) {
+            if (brushTargetState === null) brushTargetState = !previewLines[idx].selected;
+            previewLines[idx].selected = brushTargetState;
+            brushTouched.add(idx);
+            redrawOverlay();
+        }
+    }
+    function bboxPointerUp() {
+        if (!isBrushing) return;
+        isBrushing = false;
+        if (brushTouched.size > 0) rebuildFullOcrText();
+        brushTouched.clear();
+    }
+
+    bboxOverlayCanvas.addEventListener('mousedown', bboxPointerDown);
+    bboxOverlayCanvas.addEventListener('mousemove', bboxPointerMove);
+    window.addEventListener('mouseup', bboxPointerUp);
+    bboxOverlayCanvas.addEventListener('touchstart', bboxPointerDown, { passive: false });
+    bboxOverlayCanvas.addEventListener('touchmove', bboxPointerMove, { passive: false });
+    window.addEventListener('touchend', bboxPointerUp);
+
+    document.getElementById('bboxSelectAll').addEventListener('click', () => {
+        if (!previewLines) return;
+        previewLines.forEach(l => l.selected = true);
+        redrawOverlay();
+        rebuildFullOcrText();
+    });
+    document.getElementById('bboxDeselectAll').addEventListener('click', () => {
+        if (!previewLines) return;
+        previewLines.forEach(l => l.selected = false);
+        redrawOverlay();
+        rebuildFullOcrText();
+    });
+    document.getElementById('bboxInvert').addEventListener('click', () => {
+        if (!previewLines) return;
+        previewLines.forEach(l => l.selected = !l.selected);
+        redrawOverlay();
+        rebuildFullOcrText();
+    });
 
     function closeFullScreenPreview() {
         fullScreenPreview.classList.add('hidden');
         fullScreenPDF = null;
         fullScreenPage = 0;
+        previewLines = null;
         document.removeEventListener('keydown', handleFullScreenKeys);
     }
 
@@ -2388,7 +3303,8 @@
             document.getElementById('splitStartPage').value = '';
             document.getElementById('splitEndPage').value = '';
             splitPoints = [];
-            
+            showInlineError('splitInlineError', '');
+
             // 禁用按鈕
             splitNextBtn.disabled = true;
         });
@@ -2427,7 +3343,8 @@
             document.getElementById('pageNumberFromPage').placeholder = '頁碼'; // 重置 placeholder
             document.getElementById('pageNumberPosition').value = 'left';
             document.getElementById('pageNumberType').value = 'same';
-            
+            showInlineError('pageNumberInlineError', '');
+
             // 禁用按鈕
             pageNumberNextBtn.disabled = true;
         });
@@ -2454,20 +3371,7 @@
             `;
             // 重新抓取 DOM 並綁定事件 (因為被 innerHTML 覆蓋了)
             rotateNextBtn = document.getElementById('rotateNext');
-            // 綁定事件邏輯 (與原本邏輯相同)
-            rotateNextBtn.addEventListener('click', () => {
-                const actionArea = document.getElementById('rotateNext').parentNode;
-                actionArea.innerHTML = `
-                    <div class="flex flex-col items-end space-y-4 w-full md:w-auto">
-                        <div class="flex items-center space-x-2">
-                            <label class="font-medium text-gray-700">檔案名稱:</label>
-                            <input type="text" id="rotateFilename" class="form-input" value="旋轉-${formatDate(new Date())}">
-                        </div>
-                        <button id="exportRotate" class="btn btn-green w-full md:w-auto">匯出檔案</button>
-                    </div>
-                `;
-                document.getElementById('exportRotate').addEventListener('click', handleRotateExport);
-            });
+            bindRotateNextExport(rotateNextBtn);
 
             // 禁用按鈕
             rotatePageBtn.disabled = true;
@@ -2489,7 +3393,8 @@
             document.getElementById('ocrStartPage').value = '';
             document.getElementById('ocrEndPage').value = '';
             ocrSplitPoints = [];
-            
+            showInlineError('ocrInlineError', '');
+
             // 清空結果與隱藏工具列
             const ocrResultText = document.getElementById('ocrResultText');
             if (ocrResultText) ocrResultText.value = '';
@@ -2504,10 +3409,49 @@
 
             // 重置標點符號按鈕
             puncToggles = { colon: false, comma: false, paren: false };
-            document.querySelectorAll('.punc-btn').forEach(btn => btn.classList.remove('active'));
-            
+            document.querySelectorAll('#ocrResultTools .punc-btn').forEach(btn => btn.classList.remove('active'));
+
+            // 重置框選功能狀態
+            ocrPageData = {};
+            ocrPageText = {};
+            processedPages = [];
+            enableBboxModeCheckbox.checked = false;
+            bboxModeEnabled = false;
+            bboxWarningEl.classList.add('hidden');
+
             // 禁用開始按鈕
             document.getElementById('ocrStartBtn').disabled = true;
+        });
+    }
+
+    // 清除 Gemini OCR 資料（保留已驗證的 API Key，只清除檔案與辨識結果）
+    const clearOcrGeminiBtn = document.getElementById('clearOcrGemini');
+    if (clearOcrGeminiBtn) {
+        clearOcrGeminiBtn.addEventListener('click', () => {
+            resetFileStatus();
+
+            document.getElementById('ocrGeminiThumbnails').innerHTML = '';
+
+            document.getElementById('ocrGeminiStartPage').value = '';
+            document.getElementById('ocrGeminiEndPage').value = '';
+            ocrGeminiSplitPoints = [];
+            showInlineError('ocrGeminiInlineError', '');
+
+            const geminiResultText = document.getElementById('ocrGeminiResultText');
+            if (geminiResultText) geminiResultText.value = '';
+            originalOcrGeminiText = '';
+
+            document.getElementById('ocrGeminiStatus').classList.add('hidden');
+            document.getElementById('ocrGeminiStatus').textContent = '';
+            document.getElementById('ocrGeminiResultTools').classList.add('hidden');
+            document.getElementById('copyOcrGeminiTextBtn').disabled = true;
+            document.getElementById('ocrGeminiProgressContainer').classList.add('hidden');
+            document.getElementById('ocrGeminiProgressBar').style.width = '0%';
+
+            puncTogglesGemini = { colon: false, comma: false, paren: false };
+            document.querySelectorAll('#ocrGeminiResultTools .punc-btn').forEach(btn => btn.classList.remove('active'));
+
+            updateOcrGeminiUI();
         });
     }
 </script>

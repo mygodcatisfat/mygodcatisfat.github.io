@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>圖片快速大量裁切工具</title>
+    <style>
+        /* ---------- 主題色彩變數 ---------- */
+        :root {
+            --bg: #f3f4f6;
+            --panel-bg: #ffffff;
+            --panel-shadow: 5px 0 15px -3px rgba(0, 0, 0, 0.1);
+            --text-primary: #1f2937;
+            --text-secondary: #4b5563;
+            --text-muted: #6b7280;
+            --border: #e5e7eb;
+            --border-strong: #d1d5db;
+            --section-bg: #f9fafb;
+            --field-bg: #ffffff;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --canvas-bg: #e5e7eb;
+            --hud-bg: rgba(17, 24, 39, 0.75);
+            --hud-bg-hover: rgba(17, 24, 39, 0.9);
+            --crop-mask: rgba(0, 0, 0, 0.5);
+            --status-info-bg: #eff6ff;
+            --status-info-text: #1e40af;
+            --status-success-bg: #f0fdf4;
+            --status-success-text: #15803d;
+            --status-error-bg: #fef2f2;
+            --status-error-text: #b91c1c;
+            --status-warn-bg: #fffbeb;
+            --status-warn-text: #b45309;
+            --switch-track: #d1d5db;
+            --switch-thumb: #ffffff;
+        }
+        :root[data-theme="dark"] {
+            --bg: #0f172a;
+            --panel-bg: #111827;
+            --panel-shadow: 5px 0 15px -3px rgba(0, 0, 0, 0.4);
+            --text-primary: #f3f4f6;
+            --text-secondary: #cbd5e1;
+            --text-muted: #94a3b8;
+            --border: #1f2937;
+            --border-strong: #374151;
+            --section-bg: #1a2332;
+            --field-bg: #0f172a;
+            --accent: #3b82f6;
+            --accent-hover: #60a5fa;
+            --canvas-bg: #0b1220;
+            --hud-bg: rgba(15, 23, 42, 0.85);
+            --hud-bg-hover: rgba(15, 23, 42, 1);
+            --crop-mask: rgba(0, 0, 0, 0.65);
+            --status-info-bg: #1e2a45;
+            --status-info-text: #93c5fd;
+            --status-success-bg: #142e1f;
+            --status-success-text: #4ade80;
+            --status-error-bg: #3a1a1a;
+            --status-error-text: #fca5a5;
+            --status-warn-bg: #3a2a10;
+            --status-warn-text: #fcd34d;
+            --switch-track: #334155;
+            --switch-thumb: #111827;
+        }
+
+        /* ---------- 基礎 ---------- */
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            font-family: 'Inter', 'Noto Sans TC', system-ui, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            overflow: hidden;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        h1, h2 { margin: 0; }
+
+        /* ---------- 版面：常駐側邊欄 + 畫布 ---------- */
+        #main-container {
+            display: flex;
+            width: 100%;
+            height: 100vh;
+        }
+        #control-panel {
+            flex: 0 0 264px;
+            width: 264px;
+            height: 100%;
+            background-color: var(--panel-bg);
+            padding: 1rem;
+            box-shadow: var(--panel-shadow);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            z-index: 10;
+        }
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            margin-bottom: 0.875rem;
+        }
+        #panel-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.25;
+        }
+
+        @media (max-width: 720px) {
+            #main-container { flex-direction: column; }
+            #control-panel { flex: 0 0 auto; width: 100%; height: auto; max-height: 45vh; }
+            #canvas-container { flex: 1 1 auto; min-height: 0; }
+        }
+
+        /* ---------- 主題切換開關 ---------- */
+        .theme-switch {
+            position: relative;
+            flex-shrink: 0;
+            width: 44px;
+            height: 24px;
+            border-radius: 9999px;
+            border: none;
+            background: var(--switch-track);
+            cursor: pointer;
+            padding: 0;
+            transition: background-color 0.2s;
+        }
+        .theme-switch svg {
+            position: absolute;
+            top: 50%;
+            width: 12px;
+            height: 12px;
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+        .theme-switch .icon-sun { left: 5px; color: #f59e0b; }
+        .theme-switch .icon-moon { right: 5px; color: #a5b4fc; }
+        .theme-switch .thumb {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--switch-thumb);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s, background-color 0.2s;
+        }
+        :root[data-theme="dark"] .theme-switch .thumb { transform: translateX(20px); }
+
+        #canvas-container {
+            flex: 1 1 auto;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0.75rem;
+        }
+        #canvas-wrapper {
+            position: relative;
+            background-color: var(--canvas-bg);
+            border-radius: 0.5rem;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            transition: background-color 0.2s;
+        }
+        canvas { display: block; }
+        #crop-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        #crop-rect {
+            position: absolute;
+            display: none;
+            border: 2px solid var(--accent);
+            box-shadow: 0 0 0 9999px var(--crop-mask);
+        }
+        #crop-size-label {
+            position: absolute;
+            display: none;
+            transform: translateY(-100%);
+            background: #1f2937;
+            color: #fff;
+            font-size: 0.75rem;
+            font-variant-numeric: tabular-nums;
+            padding: 0.125rem 0.5rem;
+            border-radius: 0.375rem;
+            white-space: nowrap;
+            pointer-events: none;
+        }
+
+        /* ---------- 空狀態 / 拖放 ---------- */
+        #empty-state {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            color: var(--text-muted);
+            text-align: center;
+            padding: 2rem;
+            pointer-events: none;
+        }
+        #empty-state svg { width: 56px; height: 56px; color: var(--text-muted); opacity: 0.7; }
+        #empty-state .empty-title { font-size: 1.0625rem; font-weight: 600; color: var(--text-secondary); }
+        #empty-state .empty-sub { font-size: 0.875rem; }
+        #canvas-wrapper.drag-over { outline: 3px dashed var(--accent); outline-offset: -3px; }
+        #canvas-wrapper.drag-over #empty-state { color: var(--accent); }
+        #canvas-wrapper.drag-over #empty-state svg { color: var(--accent); opacity: 1; }
+
+        /* ---------- 畫布右上角資訊列 ---------- */
+        .canvas-hud {
+            position: absolute;
+            top: 0.625rem;
+            right: 0.625rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            z-index: 5;
+        }
+        .canvas-hud-left {
+            position: absolute;
+            top: 0.625rem;
+            left: 0.625rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            z-index: 5;
+        }
+        .hud-chip {
+            background: var(--hud-bg);
+            color: #fff;
+            font-size: 0.75rem;
+            font-variant-numeric: tabular-nums;
+            padding: 0.25rem 0.625rem;
+            border-radius: 9999px;
+            line-height: 1.5;
+        }
+        .mode-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35em;
+        }
+        .mode-chip::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #9ca3af;
+        }
+        .mode-chip.mode-cropping { background: rgba(37, 99, 235, 0.85); }
+        .mode-chip.mode-cropping::before { background: #93c5fd; }
+        .mode-chip.mode-selected { background: rgba(22, 163, 74, 0.85); }
+        .mode-chip.mode-selected::before { background: #bbf7d0; }
+        .hud-btn {
+            background: var(--hud-bg);
+            color: #fff;
+            border: none;
+            font-size: 0.75rem;
+            font-family: inherit;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            cursor: pointer;
+        }
+        .hud-btn:hover:not(:disabled) { background: var(--hud-bg-hover); }
+        .hud-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* ---------- 區塊 ---------- */
+        .step-section {
+            display: flex;
+            flex-direction: column;
+            gap: 0.625rem;
+            margin-bottom: 0.625rem;
+            padding: 0.75rem 0.875rem;
+            border-radius: 0.625rem;
+            background-color: var(--section-bg);
+            border: 1px solid var(--border);
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        .step-section h2 {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: bold;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        .step-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            width: 1.25rem;
+            height: 1.25rem;
+            border-radius: 9999px;
+            background: var(--accent);
+            color: #fff;
+            font-size: 0.6875rem;
+            font-weight: 700;
+        }
+        .step-section.step-done .step-badge { background: #16a34a; }
+        .step-section label, .step-section p { font-size: 0.8125rem; }
+        .hidden { display: none !important; }
+
+        /* ---------- 表單 ---------- */
+        .radio-row { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+        .radio-row label {
+            display: inline-flex;
+            align-items: center;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+        .radio-row input[type="radio"] { accent-color: var(--accent); margin: 0; }
+        .radio-row span { margin-left: 0.5rem; }
+
+        .field {
+            width: 100%;
+            padding: 0.375rem 0.5rem;
+            border: 1px solid var(--border-strong);
+            border-radius: 0.5rem;
+            font-size: 0.8125rem;
+            font-family: inherit;
+            background: var(--field-bg);
+            color: var(--text-primary);
+        }
+        .field:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+        }
+        #name-options { display: flex; flex-direction: column; gap: 0.625rem; }
+
+        .file-label {
+            display: block;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: -0.25rem;
+        }
+        #image-input {
+            width: 100%;
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+            padding: 0.375rem;
+            border: 1px solid var(--border-strong);
+            border-radius: 9999px;
+            cursor: pointer;
+            background: var(--field-bg);
+        }
+        #image-input::file-selector-button {
+            margin-right: 0.75rem;
+            padding: 0.375rem 0.75rem;
+            border: 0;
+            border-radius: 9999px;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            font-family: inherit;
+            background-color: var(--status-info-bg);
+            color: var(--accent-hover);
+            cursor: pointer;
+        }
+        #image-input::file-selector-button:hover { filter: brightness(0.95); }
+
+        .btn-primary {
+            width: 100%;
+            background-color: var(--accent);
+            color: #fff;
+            font-weight: 600;
+            font-family: inherit;
+            font-size: 0.875rem;
+            padding: 0.4375rem 1rem;
+            border: none;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: background-color 0.15s;
+        }
+        .btn-primary:hover:not(:disabled) { background-color: var(--accent-hover); }
+        .btn-primary:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 2px var(--panel-bg), 0 0 0 4px var(--accent);
+        }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .file-meta-row {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 0.5rem;
+        }
+        .current-file-name {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            min-width: 0;
+        }
+        .crop-count {
+            font-size: 0.75rem;
+            color: var(--accent);
+            font-weight: 600;
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+
+        #status-message {
+            font-size: 0.8125rem;
+            padding: 0.5rem 0.625rem;
+            background-color: var(--status-info-bg);
+            color: var(--status-info-text);
+            border-radius: 0.5rem;
+            text-align: center;
+            transition: background-color 0.15s, color 0.15s;
+        }
+        #status-message.status-success { background-color: var(--status-success-bg); color: var(--status-success-text); }
+        #status-message.status-error { background-color: var(--status-error-bg); color: var(--status-error-text); }
+        #status-message.status-warn { background-color: var(--status-warn-bg); color: var(--status-warn-text); }
+
+        .help-details summary {
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            list-style: none;
+        }
+        .help-details summary::-webkit-details-marker { display: none; }
+        .help-details summary::after {
+            content: '▾';
+            margin-left: auto;
+            color: var(--text-muted);
+            transition: transform 0.15s;
+        }
+        .help-details[open] summary::after { transform: rotate(180deg); }
+        .help-text { color: var(--text-secondary); font-size: 0.8125rem; line-height: 1.6; margin-top: 0.625rem; }
+        .k { font-weight: 700; }
+        .k-save { color: #16a34a; }
+        .k-reset { color: #dc2626; }
+        .k-mode { color: #9333ea; }
+        .k-plain { color: var(--text-primary); }
+
+        /* ---------- 回到首頁按鈕 ---------- */
+        .back-home-btn {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 300;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4em;
+            background: var(--hud-bg);
+            color: #fff;
+            text-decoration: none;
+            border-radius: 9999px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+            border: none;
+            outline: none;
+            overflow: hidden;
+            white-space: nowrap;
+            transition: background-color 0.2s, width 0.2s ease, box-shadow 0.2s, transform 0.15s;
+        }
+        .back-home-btn svg { width: 20px; height: 20px; flex-shrink: 0; }
+        .back-home-btn .label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            max-width: 0;
+            opacity: 0;
+            transition: max-width 0.2s ease, opacity 0.15s;
+        }
+        .back-home-btn:hover, .back-home-btn:focus-visible {
+            background: var(--hud-bg-hover);
+            width: 128px;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+        }
+        .back-home-btn:hover .label, .back-home-btn:focus-visible .label {
+            max-width: 80px;
+            opacity: 1;
+            margin-left: 0.1em;
+        }
+        .back-home-btn:active { transform: scale(0.95); }
+    </style>
+</head>
+<body>
+    <div id="main-container">
+        <!-- 左側控制台（常駐顯示） -->
+        <div id="control-panel">
+            <div class="panel-header">
+                <h1 id="panel-title">圖片快速<br>裁切工具</h1>
+                <button id="theme-toggle" class="theme-switch" role="switch" aria-checked="false" aria-label="切換深色／淺色模式" title="切換深色／淺色模式">
+                    <svg class="icon-sun" fill="currentColor" viewBox="0 0 24 24"><path d="M12 4a1 1 0 011 1v1a1 1 0 11-2 0V5a1 1 0 011-1zm0 4a4 4 0 100 8 4 4 0 000-8zm8 4a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1zM6 12a1 1 0 01-1 1H4a1 1 0 110-2h1a1 1 0 011 1zm11.66-6.66a1 1 0 010 1.41l-.71.71a1 1 0 11-1.41-1.41l.71-.71a1 1 0 011.41 0zM6.46 17.54a1 1 0 010 1.41l-.71.71a1 1 0 11-1.41-1.41l.71-.71a1 1 0 011.41 0zM12 18a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zm5.54-1.54a1 1 0 011.41 0l.71.71a1 1 0 11-1.41 1.41l-.71-.71a1 1 0 010-1.41zM5.05 4.93a1 1 0 011.41 0l.71.71A1 1 0 115.76 7.05l-.71-.71a1 1 0 010-1.41z"/></svg>
+                    <svg class="icon-moon" fill="currentColor" viewBox="0 0 24 24"><path d="M20.354 15.354A9 9 0 018.646 3.646a9.003 9.003 0 1011.708 11.708z"/></svg>
+                    <span class="thumb"></span>
+                </button>
+            </div>
+
+            <div class="step-section">
+                <h2><span class="step-badge">1</span>設定儲存命名</h2>
+                <div class="radio-row">
+                    <label>
+                        <input type="radio" name="naming-type" value="time" checked>
+                        <span>時間命名</span>
+                    </label>
+                    <label>
+                        <input type="radio" name="naming-type" value="name">
+                        <span>固定名稱命名</span>
+                    </label>
+                </div>
+                <div id="name-options" class="hidden">
+                    <div class="radio-row">
+                        <label>
+                            <input type="radio" name="name-position" value="prefix" checked>
+                            <span>固定名稱在前</span>
+                        </label>
+                        <label>
+                            <input type="radio" name="name-position" value="suffix">
+                            <span>固定名稱在後</span>
+                        </label>
+                    </div>
+                    <input type="text" id="fixed-name-input" placeholder="請輸入固定名稱" class="field">
+                </div>
+            </div>
+
+            <div class="step-section">
+                <h2><span class="step-badge">2</span>選擇圖片類型</h2>
+                <select id="file-type-select" class="field">
+                    <option value="image/png">PNG (.png)</option>
+                    <option value="image/jpeg">JPG (.jpg)</option>
+                    <option value="image/webp">WebP (.webp)</option>
+                </select>
+            </div>
+
+            <div class="step-section">
+                <h2><span class="step-badge">3</span>匯入圖片</h2>
+                <label for="image-input" class="file-label">或直接拖曳圖片到右側畫布</label>
+                <input type="file" id="image-input" accept="image/*">
+                <div class="file-meta-row">
+                    <span id="current-file-name" class="current-file-name"></span>
+                    <span id="crop-count" class="crop-count hidden"></span>
+                </div>
+            </div>
+
+            <div class="step-section">
+                <h2><span class="step-badge">4</span>啟動裁切</h2>
+                <button id="start-crop-btn" class="btn-primary" disabled>
+                    開始裁切 (X)
+                </button>
+                <div id="status-message" role="status" aria-live="polite">
+                    請匯入圖片
+                </div>
+            </div>
+
+            <!-- 使用說明（預設收合，節省空間） -->
+            <details class="step-section help-details">
+                <summary>使用說明</summary>
+                <p class="help-text">
+                    使用滑鼠滾輪<span class="k k-plain">放大/縮小</span>，點擊左鍵<span class="k k-plain">拖曳圖片</span><br>
+                    <br>
+                    裁切模式下，點擊並拖曳滑鼠以選擇裁切區域。<br>
+                    完成後，請使用鍵盤：<br>
+                    <span class="k k-save">D鍵</span> 或 <span class="k k-save">→鍵</span>：快速儲存圖片<br>
+                    <span class="k k-reset">A鍵</span> 或 <span class="k k-reset">←鍵</span>：重新選擇裁切區域<br>
+                    <span class="k k-mode">X鍵</span>：切換裁切模式<br>
+                </p>
+            </details>
+        </div>
+
+        <!-- 右側畫布區域 -->
+        <div id="canvas-container">
+            <div id="canvas-wrapper">
+                <canvas id="main-canvas"></canvas>
+                <div id="crop-overlay">
+                    <div id="crop-rect"></div>
+                    <div id="crop-size-label"></div>
+                </div>
+                <div class="canvas-hud-left">
+                    <span id="mode-badge" class="hud-chip mode-chip hidden">瀏覽模式</span>
+                </div>
+                <div class="canvas-hud">
+                    <span id="zoom-badge" class="hud-chip hidden">100%</span>
+                    <button id="fit-btn" class="hud-btn hidden" title="重置縮放與位置">重置畫面</button>
+                </div>
+                <div id="empty-state">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                    <div class="empty-title">尚未匯入圖片</div>
+                    <div class="empty-sub">將圖片拖曳到這裡，或使用左側面板匯入</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 回到首頁按鈕 -->
+    <a href="https://mygodcatisfat.github.io" class="back-home-btn" title="回到首頁" aria-label="回到首頁">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l9-9 9 9M4 10v10a1 1 0 001 1h3m10-11v11a1 1 0 01-1 1h-3m-4 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1" />
+        </svg>
+        <span class="label">回到首頁</span>
+    </a>
+
+    <script>
+        // ---------- 主題切換 ----------
+        const themeToggle = document.getElementById('theme-toggle');
+        const THEME_KEY = 'crop-tool-theme';
+
+        function applyTheme(theme) {
+            document.documentElement.dataset.theme = theme;
+            themeToggle.setAttribute('aria-checked', theme === 'dark' ? 'true' : 'false');
+        }
+
+        const storedTheme = localStorage.getItem(THEME_KEY);
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        applyTheme(storedTheme || (prefersDark ? 'dark' : 'light'));
+
+        themeToggle.addEventListener('click', () => {
+            const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+            applyTheme(next);
+            localStorage.setItem(THEME_KEY, next);
+        });
+
+        // DOM 元素
+        const imageInput = document.getElementById('image-input');
+        const startCropBtn = document.getElementById('start-crop-btn');
+        const mainCanvas = document.getElementById('main-canvas');
+        const canvasWrapper = document.getElementById('canvas-wrapper');
+        const statusMessage = document.getElementById('status-message');
+        const fileTypeSelect = document.getElementById('file-type-select');
+        const nameOptions = document.getElementById('name-options');
+        const fixedNameInput = document.getElementById('fixed-name-input');
+        const namingRadios = document.querySelectorAll('input[name="naming-type"]');
+        const cropOverlay = document.getElementById('crop-overlay');
+        const cropRectEl = document.getElementById('crop-rect');
+        const cropSizeLabel = document.getElementById('crop-size-label');
+        const emptyState = document.getElementById('empty-state');
+        const zoomBadge = document.getElementById('zoom-badge');
+        const fitBtn = document.getElementById('fit-btn');
+        const currentFileNameEl = document.getElementById('current-file-name');
+        const cropCountEl = document.getElementById('crop-count');
+        const modeBadge = document.getElementById('mode-badge');
+        const importStep = imageInput.closest('.step-section');
+        const cropStep = startCropBtn.closest('.step-section');
+        const ctx = mainCanvas.getContext('2d');
+
+        // 狀態訊息小工具：依類型上色，方便一眼分辨成功/警告/錯誤
+        function setStatus(message, type = 'info') {
+            statusMessage.textContent = message;
+            statusMessage.classList.remove('status-success', 'status-error', 'status-warn');
+            if (type === 'success') statusMessage.classList.add('status-success');
+            else if (type === 'error') statusMessage.classList.add('status-error');
+            else if (type === 'warn') statusMessage.classList.add('status-warn');
+        }
+
+        // 縮放上下限（相對於「圖片剛好貼合畫布」的比例）
+        const MIN_ZOOM_FACTOR = 0.1;
+        const MAX_ZOOM_FACTOR = 30;
+
+        // 狀態變數
+        const img = new Image();
+        let currentFile = null;
+        let currentObjectUrl = null;
+        let fitScale = 1;          // 貼合畫布時的縮放值，作為縮放上下限的基準
+        let scale = 1;
+        let pan = { x: 0, y: 0 };
+        let startPan = { x: 0, y: 0 };
+        let isPan = false;
+        let isImageLoaded = false;
+        let isCropping = false;
+        let isCropAreaSelected = false;
+        let cropRect = { x: 0, y: 0, width: 0, height: 0 };
+        let sequentialNumber = 1;  // 裁切序號，同一張圖多次裁切時遞增避免檔名重複
+        let cropCountThisImage = 0; // 這張圖片已成功裁切儲存的次數
+        let startCropPoint = null;
+        let isDrawingCrop = false;
+
+        // 更新「本張已裁切 N 張」提示
+        function updateCropCountUI() {
+            if (cropCountThisImage > 0) {
+                cropCountEl.textContent = `已裁切 ${cropCountThisImage} 張`;
+                cropCountEl.classList.remove('hidden');
+            } else {
+                cropCountEl.classList.add('hidden');
+            }
+        }
+
+        // 更新畫布左上角的模式提示（瀏覽 / 裁切中 / 已選取待儲存）
+        function updateModeBadge() {
+            if (!isImageLoaded) {
+                modeBadge.classList.add('hidden');
+                return;
+            }
+            modeBadge.classList.remove('hidden');
+            modeBadge.classList.remove('mode-cropping', 'mode-selected');
+            if (isCropping && isCropAreaSelected) {
+                modeBadge.textContent = '已選取，按 D 儲存';
+                modeBadge.classList.add('mode-selected');
+            } else if (isCropping) {
+                modeBadge.textContent = '裁切模式：拖曳選取區域';
+                modeBadge.classList.add('mode-cropping');
+            } else {
+                modeBadge.textContent = '瀏覽模式';
+            }
+        }
+
+        // 調整畫布尺寸以適應容器
+        function resizeCanvas() {
+            mainCanvas.width = canvasWrapper.clientWidth;
+            mainCanvas.height = canvasWrapper.clientHeight;
+            if (isImageLoaded) {
+                fitImageToCanvas();
+            }
+            draw();
+        }
+
+        // 將圖片填滿畫布
+        function fitImageToCanvas() {
+            const canvasRatio = mainCanvas.width / mainCanvas.height;
+            const imageRatio = img.width / img.height;
+
+            if (imageRatio > canvasRatio) {
+                scale = mainCanvas.height / img.height;
+                pan.x = (mainCanvas.width - img.width * scale) / 2;
+                pan.y = 0;
+            } else {
+                scale = mainCanvas.width / img.width;
+                pan.y = (mainCanvas.height - img.height * scale) / 2;
+                pan.x = 0;
+            }
+            fitScale = scale;
+            updateZoomBadge();
+        }
+
+        function updateZoomBadge() {
+            zoomBadge.textContent = `${Math.round((scale / fitScale) * 100)}%`;
+        }
+
+        // 以 ResizeObserver 追蹤容器尺寸，比 window resize 更可靠
+        // （首次版面計算完成時也會觸發，不必等 load 事件）
+        let lastSize = '';
+        new ResizeObserver(() => {
+            const size = `${canvasWrapper.clientWidth}x${canvasWrapper.clientHeight}`;
+            if (size === lastSize || canvasWrapper.clientWidth === 0) return;
+            lastSize = size;
+            resizeCanvas();
+        }).observe(canvasWrapper);
+
+        // 監聽命名方式的變化
+        namingRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                nameOptions.classList.toggle('hidden', e.target.value !== 'name');
+            });
+        });
+
+        // ---------- 單張圖片匯入 ----------
+        function handleFiles(fileList) {
+            const file = Array.from(fileList).find(f => f.type.startsWith('image/'));
+            if (!file) {
+                setStatus('未偵測到圖片檔案，請確認檔案格式。', 'warn');
+                return;
+            }
+            currentFile = file;
+            sequentialNumber = 1; // 每次匯入新圖重新編號
+            cropCountThisImage = 0;
+            updateCropCountUI();
+            importStep.classList.add('step-done');
+            loadCurrentFile();
+        }
+
+        imageInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+        // 拖放匯入：拖曳圖片到畫布區域即可匯入
+        ['dragenter', 'dragover'].forEach(evt => {
+            canvasWrapper.addEventListener(evt, (e) => {
+                e.preventDefault();
+                canvasWrapper.classList.add('drag-over');
+            });
+        });
+        ['dragleave', 'dragend'].forEach(evt => {
+            canvasWrapper.addEventListener(evt, (e) => {
+                if (e.target === canvasWrapper) canvasWrapper.classList.remove('drag-over');
+            });
+        });
+        canvasWrapper.addEventListener('drop', (e) => {
+            e.preventDefault();
+            canvasWrapper.classList.remove('drag-over');
+            if (e.dataTransfer?.files?.length) handleFiles(e.dataTransfer.files);
+        });
+
+        function loadCurrentFile() {
+            // 釋放前一張圖片的 blob URL，避免記憶體累積
+            if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
+            currentObjectUrl = URL.createObjectURL(currentFile);
+            img.src = currentObjectUrl;
+        }
+
+        img.onload = () => {
+            isImageLoaded = true;
+            startCropBtn.disabled = false;
+            emptyState.classList.add('hidden');
+            zoomBadge.classList.remove('hidden');
+            fitBtn.classList.remove('hidden');
+            currentFileNameEl.textContent = currentFile.name;
+            resizeCanvas();
+            updateModeBadge();
+            setStatus(
+                isCropping ? '請選擇裁切區域。' : '圖片載入成功。請使用滑鼠滾輪縮放或拖曳圖片。',
+                'success'
+            );
+        };
+
+        img.onerror = () => {
+            setStatus(`無法載入圖片：${currentFile?.name ?? ''}`, 'error');
+        };
+
+        // ---------- 繪製 ----------
+        function draw() {
+            ctx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+            if (isImageLoaded) {
+                ctx.drawImage(img, pan.x, pan.y, img.width * scale, img.height * scale);
+            }
+            updateCropRect();
+        }
+
+        // 裁切框以 DOM 呈現；元素只建立一次，靠 display 切換顯示
+        function updateCropRect() {
+            const visible = isCropping && (isDrawingCrop || isCropAreaSelected)
+                && cropRect.width > 0 && cropRect.height > 0;
+            if (!visible) {
+                cropRectEl.style.display = 'none';
+                cropSizeLabel.style.display = 'none';
+                return;
+            }
+            cropRectEl.style.display = 'block';
+            cropRectEl.style.left = `${cropRect.x}px`;
+            cropRectEl.style.top = `${cropRect.y}px`;
+            cropRectEl.style.width = `${cropRect.width}px`;
+            cropRectEl.style.height = `${cropRect.height}px`;
+
+            // 顯示裁切結果的實際像素尺寸（依原圖比例換算，而非畫面上的顯示尺寸）
+            const sourceWidth = Math.round(cropRect.width / scale);
+            const sourceHeight = Math.round(cropRect.height / scale);
+            cropSizeLabel.textContent = `${sourceWidth} × ${sourceHeight}px`;
+            cropSizeLabel.style.display = 'block';
+            cropSizeLabel.style.left = `${cropRect.x}px`;
+            cropSizeLabel.style.top = `${Math.max(cropRect.y, 20)}px`;
+        }
+
+        // 縮放功能（限制在 fitScale 的 0.1x ~ 30x 之間）
+        mainCanvas.addEventListener('wheel', (e) => {
+            if (!isImageLoaded || isCropping) return;
+            e.preventDefault();
+            const oldScale = scale;
+            const zoomFactor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+            const minScale = fitScale * MIN_ZOOM_FACTOR;
+            const maxScale = fitScale * MAX_ZOOM_FACTOR;
+            scale = Math.min(maxScale, Math.max(minScale, scale * zoomFactor));
+            if (scale === oldScale) return; // 已達上下限
+
+            // 保持滑鼠指標位置的圖片內容不變
+            pan.x = e.offsetX - ((e.offsetX - pan.x) / oldScale) * scale;
+            pan.y = e.offsetY - ((e.offsetY - pan.y) / oldScale) * scale;
+
+            updateZoomBadge();
+            draw();
+        }, { passive: false });
+
+        // 重置畫面：回到「貼合畫布」的縮放與置中位置
+        fitBtn.addEventListener('click', () => {
+            if (!isImageLoaded) return;
+            fitImageToCanvas();
+            draw();
+        });
+
+        // 拖曳平移功能
+        mainCanvas.addEventListener('mousedown', (e) => {
+            if (!isImageLoaded || isCropping) return;
+            isPan = true;
+            startPan.x = e.offsetX - pan.x;
+            startPan.y = e.offsetY - pan.y;
+            mainCanvas.style.cursor = 'grabbing';
+        });
+
+        mainCanvas.addEventListener('mousemove', (e) => {
+            if (!isPan) return;
+            pan.x = e.offsetX - startPan.x;
+            pan.y = e.offsetY - startPan.y;
+            draw();
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (!isPan) return;
+            isPan = false;
+            mainCanvas.style.cursor = 'move';
+        });
+
+        // 圖片在畫布座標系中的邊界（供裁切框鉗制用）
+        function getImageBounds() {
+            return {
+                left: pan.x,
+                top: pan.y,
+                right: pan.x + img.width * scale,
+                bottom: pan.y + img.height * scale
+            };
+        }
+
+        function clampToImage(x, y) {
+            const b = getImageBounds();
+            return {
+                x: Math.min(Math.max(x, b.left), b.right),
+                y: Math.min(Math.max(y, b.top), b.bottom)
+            };
+        }
+
+        // 裁切模式下的滑鼠事件 (監聽在遮罩層上)
+        cropOverlay.addEventListener('mousedown', (e) => {
+            if (!isCropping || !isImageLoaded) return;
+            isCropAreaSelected = false;
+            isDrawingCrop = true;
+            startCropPoint = clampToImage(e.offsetX, e.offsetY);
+            cropRect = { x: startCropPoint.x, y: startCropPoint.y, width: 0, height: 0 };
+            setStatus('正在選擇裁切區域...');
+            draw();
+        });
+
+        cropOverlay.addEventListener('mousemove', (e) => {
+            if (!isDrawingCrop) return;
+            const point = clampToImage(e.offsetX, e.offsetY);
+            cropRect = {
+                x: Math.min(startCropPoint.x, point.x),
+                y: Math.min(startCropPoint.y, point.y),
+                width: Math.abs(point.x - startCropPoint.x),
+                height: Math.abs(point.y - startCropPoint.y)
+            };
+            draw();
+        });
+
+        cropOverlay.addEventListener('mouseup', () => {
+            if (!isDrawingCrop) return;
+            isDrawingCrop = false;
+            if (cropRect.width > 0 && cropRect.height > 0) {
+                isCropAreaSelected = true;
+                setStatus('已選擇裁切區域。請使用鍵盤控制。', 'success');
+            } else {
+                setStatus('裁切區域太小，請重新選擇。', 'warn');
+                resetCropMode();
+            }
+            updateModeBadge();
+            draw();
+        });
+
+        // 啟動/停止裁切模式
+        startCropBtn.addEventListener('click', toggleCropMode);
+
+        function toggleCropMode() {
+            isCropping = !isCropping;
+            isCropAreaSelected = false;
+            isDrawingCrop = false;
+            startCropPoint = null;
+            if (isCropping) {
+                startCropBtn.textContent = '停止裁切 (X)';
+                setStatus('點擊並拖曳滑鼠以選擇裁切區域。');
+                mainCanvas.style.cursor = 'crosshair';
+                cropOverlay.style.pointerEvents = 'auto';
+            } else {
+                startCropBtn.textContent = '開始裁切 (X)';
+                setStatus('裁切模式已停止。現在可以拖曳或縮放圖片。');
+                mainCanvas.style.cursor = 'move';
+                cropOverlay.style.pointerEvents = 'none';
+            }
+            updateModeBadge();
+            draw();
+        }
+
+        // 鍵盤控制（在輸入框內打字時不觸發快捷鍵）
+        window.addEventListener('keydown', (e) => {
+            const tag = document.activeElement?.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+            if (!isImageLoaded || e.ctrlKey || e.metaKey || e.altKey) return;
+
+            const key = e.key.toLowerCase();
+
+            if (e.key === 'ArrowRight' || key === 'd') {
+                if (isCropping && isCropAreaSelected) {
+                    e.preventDefault();
+                    saveCroppedImage();
+                }
+            } else if (e.key === 'ArrowLeft' || key === 'a') {
+                if (isCropping && isCropAreaSelected) {
+                    e.preventDefault();
+                    resetCropMode();
+                }
+            } else if (key === 'x') {
+                e.preventDefault();
+                toggleCropMode();
+            }
+        });
+
+        function resetCropMode() {
+            isCropAreaSelected = false;
+            isDrawingCrop = false;
+            isCropping = true;
+            cropOverlay.style.pointerEvents = 'auto';
+            setStatus('請重新選擇裁切區域。');
+            mainCanvas.style.cursor = 'crosshair';
+            updateModeBadge();
+            draw(); // 清除裁切框
+        }
+
+        // 依命名設定產生檔名（不含副檔名）
+        function buildFileName() {
+            const namingType = document.querySelector('input[name="naming-type"]:checked').value;
+
+            if (namingType === 'time') {
+                const now = new Date();
+                const pad = (num) => num.toString().padStart(2, '0');
+                return `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`
+                     + `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`
+                     + `${pad(sequentialNumber)}`;
+            }
+
+            const namePosition = document.querySelector('input[name="name-position"]:checked').value;
+            const fixedName = fixedNameInput.value.trim() || 'cropped-image';
+            const seq = sequentialNumber.toString().padStart(8, '0');
+            return namePosition === 'prefix' ? `${fixedName}${seq}` : `${seq}${fixedName}`;
+        }
+
+        // 儲存圖片：改用 toBlob + Object URL，比 toDataURL 更省記憶體也更快
+        function saveCroppedImage() {
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+
+            // 依裁切框調整新 canvas 尺寸（至少 1px）
+            tempCanvas.width = Math.max(1, Math.round(cropRect.width));
+            tempCanvas.height = Math.max(1, Math.round(cropRect.height));
+
+            // 轉換裁切區域的座標和尺寸到原始圖片的比例
+            const sourceX = (cropRect.x - pan.x) / scale;
+            const sourceY = (cropRect.y - pan.y) / scale;
+            const sourceWidth = cropRect.width / scale;
+            const sourceHeight = cropRect.height / scale;
+
+            const fileType = fileTypeSelect.value;
+            // JPG 沒有透明度，先鋪白底避免透明區域變黑
+            if (fileType === 'image/jpeg') {
+                tempCtx.fillStyle = '#ffffff';
+                tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            }
+
+            tempCtx.drawImage(
+                img,
+                sourceX, sourceY, sourceWidth, sourceHeight,
+                0, 0, tempCanvas.width, tempCanvas.height
+            );
+
+            const extension = fileType.split('/')[1].replace('jpeg', 'jpg');
+            const fileName = `${buildFileName()}.${extension}`;
+
+            tempCanvas.toBlob((blob) => {
+                if (!blob) {
+                    setStatus('匯出失敗，請改用其他圖片格式。', 'error');
+                    return;
+                }
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = fileName;
+                link.click();
+                // 下載觸發後才能釋放，延遲一輪確保瀏覽器已取得資料
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+                setStatus(`圖片已下載：${fileName}`, 'success');
+                cropStep.classList.add('step-done');
+                sequentialNumber++;
+                cropCountThisImage++;
+                updateCropCountUI();
+
+                // 立即清除選取狀態避免重複儲存，但延後顯示「請重新選擇」，
+                // 讓使用者能先看到下載成功的訊息，而不是被瞬間蓋掉
+                isCropAreaSelected = false;
+                isDrawingCrop = false;
+                isCropping = true;
+                cropOverlay.style.pointerEvents = 'auto';
+                mainCanvas.style.cursor = 'crosshair';
+                updateModeBadge();
+                draw();
+                setTimeout(() => setStatus('請重新選擇裁切區域。'), 1200);
+            }, fileType, 0.92);
+        }
+
+        // 先畫一次（實際尺寸由上方 ResizeObserver 補上）
+        resizeCanvas();
+    </script>
+</body>
+</html>

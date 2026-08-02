@@ -13,10 +13,10 @@
       "id": "bulk-image-crop",
       "title": "圖片裁切",
       "tags": ["影像工具", "自動化"],
-      "version": "v2.0",
+      "version": "v115080302",
       "status": "active",
       "description": "這是一個專為快速大量處理圖片設計的線上裁切工具，使用者可設定自訂命名規則與輸出格式，並透過滑鼠框選與鍵盤快捷鍵來高效裁切圖片。",
-      "url": "https://mygodcatisfat.github.io/Bulk_Rapid_Cut/%E5%BF%AB%E9%80%9F%E8%A3%81%E5%88%87%E5%A4%A7%E9%87%8F%E5%9C%96%E7%89%87.html"
+      "url": "https://mygodcatisfat.github.io/Bulk_Rapid_Cut/index.html"
     },
     {
       "id": "latlon-to-address",
@@ -67,7 +67,7 @@
       "id": "longpic",
       "title": "對話紀錄分割",
       "tags": ["偵查工作", "圖片", "截圖"],
-      "version": "v115010602",
+      "version": "v115080203",
       "status": "active",
       "description": "這是一個線上對話紀錄圖片分割工具，使用者可匯入 LINE 等長截圖，自訂每張裁切高度與重疊長度（避免對話中斷），並支援預覽、縮放及打包下載分割後的圖片。",
       "url": "https://mygodcatisfat.github.io/LongPic/main.html"
@@ -76,7 +76,7 @@
       "id": "pic2pdf",
       "title": "圖片轉換PDF",
       "tags": ["偵查工作", "圖片", "PDF"],
-      "version": "v115030501",
+      "version": "v115080303",
       "status": "active",
       "description": "這是一個可以將多種圖片轉換成PDF的工具。",
       "url": "https://mygodcatisfat.github.io/Pic2PDF/index.html"

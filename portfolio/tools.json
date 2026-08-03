@@ -82,6 +82,15 @@
       "url": "https://mygodcatisfat.github.io/Pic2PDF/index.html"
     },
     {
+      "id": "autoelearn",
+      "title": "elearn時數達標",
+      "tags": ["Elearn", "上課", "自動化"],
+      "version": "115080309",
+      "status": "active",
+      "description": "自動化上課、考試、問卷~~",
+      "url": "https://mygodcatisfat.github.io/"
+    },
+    {
       "id": "quick-image-import",
       "title": "圖片快速匯入",
       "tags": ["工作效率", "圖片", "WORD"],

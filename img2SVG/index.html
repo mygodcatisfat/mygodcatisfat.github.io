@@ -802,7 +802,8 @@ function handleFile(file){
 }
 
 function nextFrame(){
-  return new Promise(function(resolve){ requestAnimationFrame(function(){ setTimeout(resolve, 0); }); });
+  // 用 setTimeout 而非 requestAnimationFrame，避免分頁被切到背景（例如手機使用者切到別的 App）時 rAF 被暫停，導致轉換卡住不動
+  return new Promise(function(resolve){ setTimeout(resolve, 0); });
 }
 
 function showStageProgress(){
@@ -866,12 +867,28 @@ els.convertBtn.addEventListener('click', async function(){
   try {
     await nextFrame();
 
+    var isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    var maxPixels = isMobile ? 1200000 : 6000000; // 手機/桌面記憶體上限不同，避免向量化陣列把分頁記憶體撐爆而被系統關閉
+    var srcW = state.img.width, srcH = state.img.height;
+    var srcPixels = srcW * srcH;
+    var drawW = srcW, drawH = srcH;
+    if(srcPixels > maxPixels){
+      var ratio = Math.sqrt(maxPixels / srcPixels);
+      drawW = Math.max(1, Math.round(srcW * ratio));
+      drawH = Math.max(1, Math.round(srcH * ratio));
+    }
+
     var canvas = document.createElement('canvas');
-    canvas.width = state.img.width;
-    canvas.height = state.img.height;
+    canvas.width = drawW;
+    canvas.height = drawH;
     var ctx = canvas.getContext('2d');
-    ctx.drawImage(state.img, 0, 0);
+    ctx.drawImage(state.img, 0, 0, drawW, drawH);
     var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+    if(drawW !== srcW || drawH !== srcH){
+      setProgress(1, '圖片過大，已自動縮小至 ' + drawW + '×' + drawH + ' 以避免記憶體不足...');
+      await new Promise(function(r){ setTimeout(r, 400); });
+    }
 
     var options = window.ImageTracer.checkoptions({
       numberofcolors: parseInt(els.numberofcolors.value, 10),
@@ -899,7 +916,10 @@ els.convertBtn.addEventListener('click', async function(){
     els.copyBtn.disabled = false;
 
     els.statusBadge.style.display = 'inline-block';
-    if(svgBytes > state.origFileBytes * 1.5){
+    if(drawW !== srcW || drawH !== srcH){
+      els.statusBadge.textContent = '⚠ 圖片過大已自動縮小為 ' + drawW + '×' + drawH + '（避免手機記憶體不足閃退）';
+      els.statusBadge.style.color = '#c0392b';
+    } else if(svgBytes > state.origFileBytes * 1.5){
       els.statusBadge.textContent = '⚠ SVG 較大，建議降低顏色數或提高簡化度';
       els.statusBadge.style.color = '#c0392b';
     } else {

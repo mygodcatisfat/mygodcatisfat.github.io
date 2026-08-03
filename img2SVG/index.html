@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>圖片轉 SVG 向量化工具</title>
+<style>
+:root{
+  --bg:#f6f5f2; --panel:#ffffff; --text:#2b2924; --muted:#6b6558;
+  --accent:#e07a3f; --accent2:#3f7de0; --border:#e2ddd3; --shadow:rgba(43,41,36,.06);
+}
+:root[data-theme="dark"]{
+  --bg:#1c1a17; --panel:#252220; --text:#eee9df; --muted:#a89e8c; --border:#3a3530; --shadow:rgba(0,0,0,.4);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --bg:#1c1a17; --panel:#252220; --text:#eee9df; --muted:#a89e8c; --border:#3a3530; --shadow:rgba(0,0,0,.4);}
+}
+*{box-sizing:border-box;}
+html,body{width:100%;}
+body{
+  margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:var(--bg); color:var(--text); min-height:100vh;
+}
+header{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:10px 16px; border-bottom:1px solid var(--border);
+}
+.header-left{display:flex; align-items:center; gap:10px; min-width:0;}
+.header-right{display:flex; align-items:center; gap:8px; flex-shrink:0;}
+.icon-btn{
+  display:flex; align-items:center; justify-content:center; text-decoration:none; color:var(--text);
+  font-size:1rem; width:32px; height:32px; border:1px solid var(--border); border-radius:8px;
+  background:var(--bg); cursor:pointer; flex-shrink:0; padding:0;
+}
+.icon-btn:hover{background:var(--panel);}
+header h1{margin:0; font-size:1.05rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+header p{display:none;}
+.theme-switch{
+  display:flex; align-items:center; gap:2px; border:1px solid var(--border); border-radius:20px;
+  padding:3px; background:var(--bg); flex-shrink:0;
+}
+.theme-switch button{
+  border:none; background:transparent; color:var(--muted); width:26px; height:26px; border-radius:50%;
+  cursor:pointer; font-size:.85rem; line-height:1; display:flex; align-items:center; justify-content:center; padding:0;
+}
+.theme-switch button.active{background:var(--panel); color:var(--text); box-shadow:0 1px 3px var(--shadow);}
+.modal-overlay{
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:100;
+  align-items:center; justify-content:center; padding:20px;
+}
+.modal-overlay.show{display:flex;}
+.modal-box{
+  background:var(--panel); border-radius:10px; max-width:520px; width:100%; max-height:80vh; overflow:auto;
+  padding:20px; box-shadow:0 8px 30px var(--shadow); color:var(--text);
+}
+.modal-box h3{margin:0 0 10px; font-size:1.05rem;}
+.modal-box h4{margin:14px 0 4px; font-size:.88rem;}
+.modal-box p, .modal-box li{font-size:.82rem; line-height:1.7; color:var(--muted); text-align:justify;}
+.modal-box ul, .modal-box ol{margin:4px 0; padding-left:1.2em;}
+.modal-close{
+  margin-top:14px; width:100%; padding:8px; border:none; border-radius:6px; background:var(--accent);
+  color:#fff; font-size:.85rem; cursor:pointer;
+}
+.layout{
+  display:grid; grid-template-columns:340px 1fr 1fr;
+  gap:10px; padding:10px 12px; width:100%;
+}
+@media (max-width:1000px){ .layout{grid-template-columns:1fr;} }
+.panel{
+  background:var(--panel); border:1px solid var(--border); border-radius:8px;
+  padding:12px; box-shadow:0 1px 4px var(--shadow);
+}
+.panel h2{margin:0 0 8px; font-size:.85rem; font-weight:600; color:var(--muted); display:flex; align-items:center; gap:6px;}
+.dropzone{
+  border:2px dashed var(--border); border-radius:8px; padding:8px 10px;
+  text-align:center; cursor:pointer; color:var(--muted); font-size:.78rem;
+  transition:.15s; margin-bottom:10px;
+}
+.dropzone.drag{border-color:var(--accent); background:color-mix(in srgb, var(--accent) 8%, transparent);}
+.dropzone input{display:none;}
+.param-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px 10px;}
+.field{margin-bottom:0;}
+.field label{display:flex; justify-content:space-between; align-items:center; gap:4px; font-size:.74rem; color:var(--muted); margin-bottom:2px;}
+.field label .lbl-name{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.field input[type=range]{width:100%; height:18px;}
+.fieldhint{font-size:.66rem; color:var(--muted); line-height:1.5; margin-top:3px; text-align:justify;}
+.field select{width:100%; padding:5px 6px; border-radius:6px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:.78rem;}
+.checkfield{display:flex; align-items:center; gap:6px; font-size:.78rem; color:var(--text); height:26px;}
+.checkfield input{width:auto;}
+.filename-field{margin-top:10px;}
+.filename-field label{display:block; font-size:.74rem; color:var(--muted); margin-bottom:3px;}
+.filename-field .filename-row{display:flex; align-items:center; gap:0;}
+.filename-field input{
+  flex:1; min-width:0; padding:7px 8px; border:1px solid var(--border); border-radius:6px 0 0 6px;
+  background:var(--bg); color:var(--text); font-size:.8rem; border-right:none;
+}
+.filename-field .ext{
+  padding:7px 8px; border:1px solid var(--border); border-radius:0 6px 6px 0; background:var(--bg);
+  color:var(--muted); font-size:.8rem;
+}
+.presets{display:flex; flex-wrap:wrap; gap:5px; margin-bottom:6px;}
+.presets button{
+  border:1px solid var(--border); background:var(--bg); color:var(--text);
+  padding:4px 9px; border-radius:20px; font-size:.74rem; cursor:pointer;
+}
+.presets button.active{background:var(--accent); color:#fff; border-color:var(--accent);}
+button.primary{
+  width:100%; padding:9px; border:none; border-radius:6px; background:var(--accent);
+  color:#fff; font-size:.88rem; font-weight:600; cursor:pointer; margin-top:10px;
+}
+button.primary:disabled{opacity:.5; cursor:not-allowed;}
+button.secondary{
+  padding:7px 12px; border:1px solid var(--border); background:var(--bg); color:var(--text);
+  border-radius:6px; cursor:pointer; font-size:.8rem;
+}
+.stage-progress{display:flex; flex-direction:column; align-items:center; gap:10px; width:70%; max-width:280px;}
+.stage-progress .progress-track{width:100%; height:8px; border-radius:6px; background:var(--bg); border:1px solid var(--border); overflow:hidden;}
+.stage-progress .progress-fill{height:100%; width:0%; background:var(--accent); transition:width .12s linear;}
+.stage-progress .progress-label{display:flex; justify-content:space-between; width:100%; font-size:.74rem; color:var(--muted);}
+.preview-box{display:flex; flex-direction:column; height:100%;}
+.preview-stage{
+  flex:1; min-height:180px; border:1px solid var(--border); border-radius:8px;
+  background:
+    linear-gradient(45deg,#0000 25%,rgba(128,128,128,.15) 25%,rgba(128,128,128,.15) 50%,#0000 50%,#0000 75%,rgba(128,128,128,.15) 75%,rgba(128,128,128,.15)) ,
+    linear-gradient(45deg,#0000 25%,rgba(128,128,128,.15) 25%,rgba(128,128,128,.15) 50%,#0000 50%,#0000 75%,rgba(128,128,128,.15) 75%,rgba(128,128,128,.15));
+  background-size:20px 20px; background-position:0 0, 10px 10px;
+  display:flex; align-items:center; justify-content:center; overflow:auto; padding:8px;
+}
+.preview-stage img, .preview-stage svg{max-width:100%; max-height:100%;}
+.meta{display:flex; justify-content:space-between; font-size:.78rem; color:var(--muted); margin-top:8px;}
+.meta b{color:var(--text);}
+.actions{display:flex; gap:8px; margin-top:8px;}
+.hint{font-size:.72rem; color:var(--muted); line-height:1.5; margin-top:8px; text-align:justify;}
+.badge{
+  display:inline-block; font-size:.68rem; padding:2px 8px; border-radius:10px;
+  background:color-mix(in srgb, var(--accent2) 15%, transparent); color:var(--accent2); margin-left:6px;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <h1>圖片轉 SVG 向量化工具</h1>
+  </div>
+  <div class="header-right">
+    <button class="icon-btn" id="helpBtn" type="button" title="使用說明">❓</button>
+    <div class="theme-switch" id="themeSwitch">
+      <button data-theme="light" type="button" title="淺色模式">☀️</button>
+      <button data-theme="dark" type="button" title="深色模式">🌙</button>
+    </div>
+    <a class="icon-btn" href="https://mygodcatisfat.github.io" target="_blank" rel="noopener" title="回到首頁">🏠</a>
+  </div>
+</header>
+
+<div class="modal-overlay" id="helpModal">
+  <div class="modal-box">
+    <h3>使用說明</h3>
+    <p>本工具完全在瀏覽器內運算，圖片不會上傳到任何伺服器，可離線使用。適合 Logo、圖示、線稿、截圖等色塊分明的圖片；照片類效果有限，容易產生大量路徑與較大檔案。</p>
+    <h4>操作步驟</h4>
+    <ol>
+      <li>上傳圖片：點擊上傳區塊選擇檔案，或直接拖曳圖片進去。</li>
+      <li>選擇預設集：依圖片類型挑一組最接近的預設（Logo / 線稿 / 截圖 / 照片），系統會自動帶入建議參數。</li>
+      <li>視需要微調參數：每項下方都有說明文字，滑桿調整後畫面不會自動更新，需再次按「轉換」。</li>
+      <li>輸入檔案名稱（可選）：預設會用目前時間產生檔名，也可以自行修改。</li>
+      <li>按下「轉換為 SVG」：畫面會顯示即時進度，完成後右側會出現向量化結果與統計資訊。</li>
+      <li>下載或複製：滿意結果後可下載 .svg 檔案，或直接複製 SVG 原始碼貼到其他地方使用。</li>
+    </ol>
+    <h4>常見狀況</h4>
+    <ul>
+      <li>SVG 檔案比原圖還大：通常代表顏色數太多或圖片雜訊太多，可嘗試降低顏色數量、提高忽略雜點的數值。</li>
+      <li>出現大量白色斑點：這是照片紋理被誤判成雜訊色塊造成的，請提高「模糊去雜訊」與「模糊敏感度」再重新轉換。</li>
+    </ul>
+    <button class="modal-close" id="helpCloseBtn">關閉</button>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- 左側：控制面板 -->
+  <div class="panel">
+    <h2>1. 上傳圖片</h2>
+    <div class="dropzone" id="dropzone">
+      點擊選擇，或拖曳圖片到這裡 (PNG / JPG / GIF / BMP)
+      <input type="file" id="fileInput" accept="image/*">
+    </div>
+
+    <h2>2. 預設集</h2>
+    <div class="presets" id="presets">
+      <button data-preset="logo" class="active">Logo / 圖示</button>
+      <button data-preset="lineart">線稿</button>
+      <button data-preset="screenshot">截圖 / UI</button>
+      <button data-preset="photo">照片(實驗性)</button>
+    </div>
+    <div class="hint" id="presetDesc" style="margin-top:0; margin-bottom:10px;"></div>
+
+    <h2>3. 參數微調</h2>
+    <div class="param-grid">
+      <div class="field">
+        <label><span class="lbl-name">顏色數量</span><span id="lbl_colors">16</span></label>
+        <input type="range" id="numberofcolors" min="2" max="256" value="16">
+        <div class="fieldhint">圖片被簡化成幾種顏色來描繪。數字越大越接近原圖，但檔案也越大。Logo 用 4～8，照片建議 20 以上。</div>
+      </div>
+      <div class="field">
+        <label><span class="lbl-name">路徑簡化</span><span id="lbl_ltres">1</span></label>
+        <input type="range" id="ltres" min="0" max="50" step="0.5" value="1">
+        <div class="fieldhint">直線邊緣容許誤差(ltres)。數字越大邊緣被拉直、簡化越多；設 0 表示盡量貼合原始像素邊緣。</div>
+      </div>
+      <div class="field">
+        <label><span class="lbl-name">曲線精度</span><span id="lbl_qtres">1</span></label>
+        <input type="range" id="qtres" min="0" max="50" step="0.5" value="1">
+        <div class="fieldhint">弧線、圓角容許誤差(qtres)。數字越大曲線被簡化越多，點數變少、更平滑但較失真。</div>
+      </div>
+      <div class="field">
+        <label><span class="lbl-name">忽略雜點</span><span id="lbl_pathomit">8</span></label>
+        <input type="range" id="pathomit" min="0" max="100" value="8">
+        <div class="fieldhint">面積小於這個像素數的雜點會被刪除(pathomit)，用來清掉雜訊；數字太大可能誤刪小細節（如文字）。</div>
+      </div>
+      <div class="field">
+        <label><span class="lbl-name">模糊去雜訊</span><span id="lbl_blur">0</span></label>
+        <input type="range" id="blurradius" min="0" max="5" value="0">
+        <div class="fieldhint">轉換前先模糊化(blurradius)，減少雜訊與鋸齒，代價是細節變糊。上限 5 為函式庫硬性限制。</div>
+      </div>
+      <div class="field">
+        <label><span class="lbl-name">模糊敏感度</span><span id="lbl_blurdelta">20</span></label>
+        <input type="range" id="blurdelta" min="0" max="1024" step="10" value="20">
+        <div class="fieldhint">判斷像素算不算雜訊的門檻(blurdelta)，只在模糊去雜訊開啟時有效。出現大量白色斑點時請調高此值。</div>
+      </div>
+      <div class="field">
+        <label><span class="lbl-name">直角增強</span><span id="lbl_rae">開啟</span></label>
+        <div class="checkfield"><input type="checkbox" id="rightangleenhance" checked> 保持直角</div>
+        <div class="fieldhint">保留圖片中的 90 度直角轉彎，適合截圖、UI、建築線稿；照片、手繪圖建議關閉。</div>
+      </div>
+      <div class="field">
+        <label><span class="lbl-name">輸出縮放</span><span id="lbl_scale">1x</span></label>
+        <input type="range" id="scale" min="1" max="8" step="1" value="1">
+        <div class="fieldhint">只放大輸出座標值(scale)，不影響清晰度。除非有特殊需求，一般保持 1x 即可。</div>
+      </div>
+    </div>
+
+    <div class="filename-field">
+      <label>檔案名稱</label>
+      <div class="filename-row">
+        <input type="text" id="fileNameInput">
+        <span class="ext">.svg</span>
+      </div>
+    </div>
+
+    <button class="primary" id="convertBtn" disabled>轉換為 SVG</button>
+    <div class="hint">調整完參數後點「轉換」重新產生。顏色越多、pathomit 越小，檔案越大也越精細。</div>
+  </div>
+
+  <!-- 中間：原圖 -->
+  <div class="panel preview-box">
+    <h2>原始圖片</h2>
+    <div class="preview-stage" id="originalStage">
+      <span style="color:var(--muted); font-size:.85rem;">尚未上傳圖片</span>
+    </div>
+    <div class="meta"><span>尺寸</span><b id="origSize">-</b></div>
+    <div class="meta"><span>檔案大小</span><b id="origFileSize">-</b></div>
+  </div>
+
+  <!-- 右側：SVG 結果 -->
+  <div class="panel preview-box">
+    <h2>SVG 結果 <span class="badge" id="statusBadge" style="display:none;"></span></h2>
+    <div class="preview-stage" id="svgStage">
+      <span style="color:var(--muted); font-size:.85rem;">轉換後顯示於此</span>
+    </div>
+    <div class="meta"><span>SVG 大小</span><b id="svgFileSize">-</b></div>
+    <div class="meta"><span>路徑數量</span><b id="pathCount">-</b></div>
+    <div class="actions">
+      <button class="secondary" id="downloadBtn" disabled>下載 .svg</button>
+      <button class="secondary" id="copyBtn" disabled>複製 SVG 原始碼</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/*
+  imagetracer.js v1.2.6 — public domain (The Unlicense)
+  https://github.com/jankovicsandras/imagetracerjs
+  Bundled inline so this tool works fully offline.
+*/
+</script>
+<script>
+(function(){ 'use strict';
+function ImageTracer(){
+	var _this = this;
+	this.versionnumber = '1.2.6',
+	this.imageToSVG = function( url, callback, options ){
+		options = _this.checkoptions(options);
+		_this.loadImage( url, function(canvas){ callback( _this.imagedataToSVG( _this.getImgdata(canvas), options ) ); }, options );
+	},
+	this.imagedataToSVG = function( imgd, options ){
+		options = _this.checkoptions(options);
+		var td = _this.imagedataToTracedata( imgd, options );
+		return _this.getsvgstring(td, options);
+	},
+	this.imageToTracedata = function( url, callback, options ){
+		options = _this.checkoptions(options);
+		_this.loadImage( url, function(canvas){ callback( _this.imagedataToTracedata( _this.getImgdata(canvas), options ) ); }, options );
+	},
+	this.imagedataToTracedata = function( imgd, options ){
+		options = _this.checkoptions(options);
+		var ii = _this.colorquantization( imgd, options );
+		if(options.layering === 0){
+			var tracedata = { layers : [], palette : ii.palette, width : ii.array[0].length-2, height : ii.array.length-2 };
+			for(var colornum=0; colornum<ii.palette.length; colornum++){
+				var tracedlayer = _this.batchtracepaths( _this.internodes( _this.pathscan( _this.layeringstep( ii, colornum ), options.pathomit ), options ), options.ltres, options.qtres );
+				tracedata.layers.push(tracedlayer);
+			}
+		}else{
+			var ls = _this.layering( ii );
+			if(options.layercontainerid){ _this.drawLayers( ls, _this.specpalette, options.scale, options.layercontainerid ); }
+			var bps = _this.batchpathscan( ls, options.pathomit );
+			var bis = _this.batchinternodes( bps, options );
+			var tracedata = { layers : _this.batchtracelayers( bis, options.ltres, options.qtres ), palette : ii.palette, width : imgd.width, height : imgd.height };
+		}
+		return tracedata;
+	},
+	this.optionpresets = {
+		'default': { corsenabled : false, ltres : 1, qtres : 1, pathomit : 8, rightangleenhance : true,
+			colorsampling : 2, numberofcolors : 16, mincolorratio : 0, colorquantcycles : 3, layering : 0,
+			strokewidth : 1, linefilter : false, scale : 1, roundcoords : 1, viewbox : false, desc : false,
+			lcpr : 0, qcpr : 0, blurradius : 0, blurdelta : 20 },
+		'posterized1': { colorsampling:0, numberofcolors:2 }, 'posterized2': { numberofcolors:4, blurradius:5 },
+		'curvy': { ltres:0.01, linefilter:true, rightangleenhance:false }, 'sharp': { qtres:0.01, linefilter:false },
+		'detailed': { pathomit:0, roundcoords:2, ltres:0.5, qtres:0.5, numberofcolors:64 }, 'smoothed': { blurradius:5, blurdelta: 64 },
+		'grayscale': { colorsampling:0, colorquantcycles:1, numberofcolors:7 }, 'fixedpalette': { colorsampling:0, colorquantcycles:1, numberofcolors:27 },
+		'randomsampling1': { colorsampling:1, numberofcolors:8 }, 'randomsampling2': { colorsampling:1, numberofcolors:64 },
+		'artistic1': { colorsampling:0, colorquantcycles:1, pathomit:0, blurradius:5, blurdelta: 64, ltres:0.01, linefilter:true, numberofcolors:16, strokewidth:2 },
+		'artistic2': { qtres:0.01, colorsampling:0, colorquantcycles:1, numberofcolors:4, strokewidth:0 }, 'artistic3': { qtres:10, ltres:10, numberofcolors:8 },
+		'artistic4': { qtres:10, ltres:10, numberofcolors:64, blurradius:5, blurdelta: 256, strokewidth:2 },
+		'posterized3': { ltres: 1, qtres: 1, pathomit: 20, rightangleenhance: true, colorsampling: 0, numberofcolors: 3, mincolorratio: 0, colorquantcycles: 3, blurradius: 3, blurdelta: 20, strokewidth: 0, linefilter: false, roundcoords: 1, pal: [ { r: 0, g: 0, b: 100, a: 255 }, { r: 255, g: 255, b: 255, a: 255 } ] }
+	},
+	this.checkoptions = function(options){
+		options = options || {};
+		if(typeof options === 'string'){ options = options.toLowerCase(); if( _this.optionpresets[options] ){ options = _this.optionpresets[options]; }else{ options = {}; } }
+		var ok = Object.keys(_this.optionpresets['default']);
+		for(var k=0; k<ok.length; k++){ if(!options.hasOwnProperty(ok[k])){ options[ok[k]] = _this.optionpresets['default'][ok[k]]; } }
+		return options;
+	},
+	this.colorquantization = function( imgd, options ){
+		var arr = [], idx=0, cd,cdl,ci, paletteacc = [], pixelnum = imgd.width * imgd.height, i, j, k, cnt, palette;
+		if( imgd.data.length < pixelnum * 4 ){
+			var newimgddata = new Uint8ClampedArray(pixelnum * 4);
+			for(var pxcnt = 0; pxcnt < pixelnum ; pxcnt++){
+				newimgddata[pxcnt*4  ] = imgd.data[pxcnt*3  ]; newimgddata[pxcnt*4+1] = imgd.data[pxcnt*3+1];
+				newimgddata[pxcnt*4+2] = imgd.data[pxcnt*3+2]; newimgddata[pxcnt*4+3] = 255;
+			}
+			imgd.data = newimgddata;
+		}
+		for( j=0; j<imgd.height+2; j++ ){ arr[j]=[]; for(i=0; i<imgd.width+2 ; i++){ arr[j][i] = -1; } }
+		if(options.pal){ palette = options.pal; }
+		else if(options.colorsampling === 0){ palette = _this.generatepalette(options.numberofcolors); }
+		else if(options.colorsampling === 1){ palette = _this.samplepalette( options.numberofcolors, imgd ); }
+		else{ palette = _this.samplepalette2( options.numberofcolors, imgd ); }
+		if( options.blurradius > 0 ){ imgd = _this.blur( imgd, options.blurradius, options.blurdelta ); }
+		for( cnt=0; cnt < options.colorquantcycles; cnt++ ){
+			if(cnt>0){
+				for( k=0; k < palette.length; k++ ){
+					if( paletteacc[k].n > 0 ){ palette[k] = { r: Math.floor( paletteacc[k].r / paletteacc[k].n ), g: Math.floor( paletteacc[k].g / paletteacc[k].n ), b: Math.floor( paletteacc[k].b / paletteacc[k].n ), a: Math.floor( paletteacc[k].a / paletteacc[k].n ) }; }
+					if( ( paletteacc[k].n/pixelnum < options.mincolorratio ) && ( cnt < options.colorquantcycles-1 ) ){ palette[k] = { r: Math.floor(Math.random()*255), g: Math.floor(Math.random()*255), b: Math.floor(Math.random()*255), a: Math.floor(Math.random()*255) }; }
+				}
+			}
+			for( i=0; i < palette.length; i++ ){ paletteacc[i] = { r:0, g:0, b:0, a:0, n:0 }; }
+			for( j=0; j < imgd.height; j++ ){
+				for( i=0; i < imgd.width; i++ ){
+					idx = (j*imgd.width+i)*4; ci=0; cdl = 1024;
+					for( k=0; k<palette.length; k++ ){
+						cd = Math.abs(palette[k].r-imgd.data[idx]) + Math.abs(palette[k].g-imgd.data[idx+1]) + Math.abs(palette[k].b-imgd.data[idx+2]) + Math.abs(palette[k].a-imgd.data[idx+3]);
+						if(cd<cdl){ cdl = cd; ci = k; }
+					}
+					paletteacc[ci].r += imgd.data[idx  ]; paletteacc[ci].g += imgd.data[idx+1]; paletteacc[ci].b += imgd.data[idx+2]; paletteacc[ci].a += imgd.data[idx+3]; paletteacc[ci].n++;
+					arr[j+1][i+1] = ci;
+				}
+			}
+		}
+		return { array:arr, palette:palette };
+	},
+	this.samplepalette = function( numberofcolors, imgd ){
+		var idx, palette=[];
+		for(var i=0; i<numberofcolors; i++){ idx = Math.floor( Math.random() * imgd.data.length / 4 ) * 4; palette.push({ r:imgd.data[idx  ], g:imgd.data[idx+1], b:imgd.data[idx+2], a:imgd.data[idx+3] }); }
+		return palette;
+	},
+	this.samplepalette2 = function( numberofcolors, imgd ){
+		var idx, palette=[], ni = Math.ceil(Math.sqrt(numberofcolors)), nj = Math.ceil(numberofcolors/ni), vx = imgd.width / (ni+1), vy = imgd.height / (nj+1);
+		for(var j=0; j<nj; j++){ for(var i=0; i<ni; i++){ if(palette.length === numberofcolors){ break; }else{ idx = Math.floor( ((j+1)*vy) * imgd.width + ((i+1)*vx) ) * 4; palette.push( { r:imgd.data[idx], g:imgd.data[idx+1], b:imgd.data[idx+2], a:imgd.data[idx+3] } ); } } }
+		return palette;
+	},
+	this.generatepalette = function(numberofcolors){
+		var palette = [], rcnt, gcnt, bcnt;
+		if(numberofcolors<8){ var graystep = Math.floor(255/(numberofcolors-1)); for(var i=0; i<numberofcolors; i++){ palette.push({ r:i*graystep, g:i*graystep, b:i*graystep, a:255 }); } }
+		else{
+			var colorqnum = Math.floor(Math.pow(numberofcolors, 1/3)), colorstep = Math.floor(255/(colorqnum-1)), rndnum = numberofcolors - colorqnum*colorqnum*colorqnum;
+			for(rcnt=0; rcnt<colorqnum; rcnt++){ for(gcnt=0; gcnt<colorqnum; gcnt++){ for(bcnt=0; bcnt<colorqnum; bcnt++){ palette.push( { r:rcnt*colorstep, g:gcnt*colorstep, b:bcnt*colorstep, a:255 } ); } } }
+			for(rcnt=0; rcnt<rndnum; rcnt++){ palette.push({ r:Math.floor(Math.random()*255), g:Math.floor(Math.random()*255), b:Math.floor(Math.random()*255), a:Math.floor(Math.random()*255) }); }
+		}
+		return palette;
+	},
+	this.layering = function(ii){
+		var layers = [], val=0, ah = ii.array.length, aw = ii.array[0].length, n1,n2,n3,n4,n5,n6,n7,n8, i, j, k;
+		for(k=0; k<ii.palette.length; k++){ layers[k] = []; for(j=0; j<ah; j++){ layers[k][j] = []; for(i=0; i<aw; i++){ layers[k][j][i]=0; } } }
+		for(j=1; j<ah-1; j++){
+			for(i=1; i<aw-1; i++){
+				val = ii.array[j][i];
+				n1 = ii.array[j-1][i-1]===val ? 1 : 0; n2 = ii.array[j-1][i  ]===val ? 1 : 0; n3 = ii.array[j-1][i+1]===val ? 1 : 0; n4 = ii.array[j  ][i-1]===val ? 1 : 0;
+				n5 = ii.array[j  ][i+1]===val ? 1 : 0; n6 = ii.array[j+1][i-1]===val ? 1 : 0; n7 = ii.array[j+1][i  ]===val ? 1 : 0; n8 = ii.array[j+1][i+1]===val ? 1 : 0;
+				layers[val][j+1][i+1] = 1 + n5 * 2 + n8 * 4 + n7 * 8 ;
+				if(!n4){ layers[val][j+1][i  ] = 0 + 2 + n7 * 4 + n6 * 8 ; }
+				if(!n2){ layers[val][j  ][i+1] = 0 + n3*2 + n5 * 4 + 8 ; }
+				if(!n1){ layers[val][j  ][i  ] = 0 + n2*2 + 4 + n4 * 8 ; }
+			}
+		}
+		return layers;
+	},
+	this.layeringstep = function(ii,cnum){
+		var layer = [], ah = ii.array.length, aw = ii.array[0].length, i, j;
+		for(j=0; j<ah; j++){ layer[j] = []; for(i=0; i<aw; i++){ layer[j][i]=0; } }
+		for(j=1; j<ah; j++){ for(i=1; i<aw; i++){ layer[j][i] = ( ii.array[j-1][i-1]===cnum ? 1 : 0 ) + ( ii.array[j-1][i]===cnum ? 2 : 0 ) + ( ii.array[j][i-1]===cnum ? 8 : 0 ) + ( ii.array[j][i]===cnum ? 4 : 0 ); } }
+		return layer;
+	},
+	this.pointinpoly = function( p, pa ){
+		var isin=false;
+		for(var i=0,j=pa.length-1; i<pa.length; j=i++){ isin = ( ((pa[i].y > p.y) !== (pa[j].y > p.y)) && (p.x < (pa[j].x - pa[i].x) * (p.y - pa[i].y) / (pa[j].y - pa[i].y) + pa[i].x) ) ? !isin : isin; }
+		return isin;
+	},
+	this.pathscan_combined_lookup = [
+		[[-1,-1,-1,-1], [-1,-1,-1,-1], [-1,-1,-1,-1], [-1,-1,-1,-1]], [[ 0, 1, 0,-1], [-1,-1,-1,-1], [-1,-1,-1,-1], [ 0, 2,-1, 0]],
+		[[-1,-1,-1,-1], [-1,-1,-1,-1], [ 0, 1, 0,-1], [ 0, 0, 1, 0]], [[ 0, 0, 1, 0], [-1,-1,-1,-1], [ 0, 2,-1, 0], [-1,-1,-1,-1]],
+		[[-1,-1,-1,-1], [ 0, 0, 1, 0], [ 0, 3, 0, 1], [-1,-1,-1,-1]], [[13, 3, 0, 1], [13, 2,-1, 0], [ 7, 1, 0,-1], [ 7, 0, 1, 0]],
+		[[-1,-1,-1,-1], [ 0, 1, 0,-1], [-1,-1,-1,-1], [ 0, 3, 0, 1]], [[ 0, 3, 0, 1], [ 0, 2,-1, 0], [-1,-1,-1,-1], [-1,-1,-1,-1]],
+		[[ 0, 3, 0, 1], [ 0, 2,-1, 0], [-1,-1,-1,-1], [-1,-1,-1,-1]], [[-1,-1,-1,-1], [ 0, 1, 0,-1], [-1,-1,-1,-1], [ 0, 3, 0, 1]],
+		[[11, 1, 0,-1], [14, 0, 1, 0], [14, 3, 0, 1], [11, 2,-1, 0]], [[-1,-1,-1,-1], [ 0, 0, 1, 0], [ 0, 3, 0, 1], [-1,-1,-1,-1]],
+		[[ 0, 0, 1, 0], [-1,-1,-1,-1], [ 0, 2,-1, 0], [-1,-1,-1,-1]], [[-1,-1,-1,-1], [-1,-1,-1,-1], [ 0, 1, 0,-1], [ 0, 0, 1, 0]],
+		[[ 0, 1, 0,-1], [-1,-1,-1,-1], [-1,-1,-1,-1], [ 0, 2,-1, 0]], [[-1,-1,-1,-1], [-1,-1,-1,-1], [-1,-1,-1,-1], [-1,-1,-1,-1]]
+	],
+	this.pathscan = function( arr, pathomit ){
+		var paths=[], pacnt=0, pcnt=0, px=0, py=0, w = arr[0].length, h = arr.length, dir=0, pathfinished=true, holepath=false, lookuprow;
+		for(var j=0; j<h; j++){
+			for(var i=0; i<w; i++){
+				if( (arr[j][i] == 4) || ( arr[j][i] == 11) ){
+					px = i; py = j; paths[pacnt] = {}; paths[pacnt].points = []; paths[pacnt].boundingbox = [px,py,px,py]; paths[pacnt].holechildren = [];
+					pathfinished = false; pcnt=0; holepath = (arr[j][i]==11); dir = 1;
+					while(!pathfinished){
+						paths[pacnt].points[pcnt] = {}; paths[pacnt].points[pcnt].x = px-1; paths[pacnt].points[pcnt].y = py-1; paths[pacnt].points[pcnt].t = arr[py][px];
+						if( (px-1) < paths[pacnt].boundingbox[0] ){ paths[pacnt].boundingbox[0] = px-1; }
+						if( (px-1) > paths[pacnt].boundingbox[2] ){ paths[pacnt].boundingbox[2] = px-1; }
+						if( (py-1) < paths[pacnt].boundingbox[1] ){ paths[pacnt].boundingbox[1] = py-1; }
+						if( (py-1) > paths[pacnt].boundingbox[3] ){ paths[pacnt].boundingbox[3] = py-1; }
+						lookuprow = _this.pathscan_combined_lookup[ arr[py][px] ][ dir ];
+						arr[py][px] = lookuprow[0]; dir = lookuprow[1]; px += lookuprow[2]; py += lookuprow[3];
+						if( (px-1 === paths[pacnt].points[0].x ) && ( py-1 === paths[pacnt].points[0].y ) ){
+							pathfinished = true;
+							if( paths[pacnt].points.length < pathomit ){ paths.pop(); }
+							else{
+								paths[pacnt].isholepath = holepath ? true : false;
+								if(holepath){
+									var parentidx = 0, parentbbox = [-1,-1,w+1,h+1];
+									for(var parentcnt=0; parentcnt < pacnt; parentcnt++){
+										if( (!paths[parentcnt].isholepath) && _this.boundingboxincludes( paths[parentcnt].boundingbox , paths[pacnt].boundingbox ) && _this.boundingboxincludes( parentbbox , paths[parentcnt].boundingbox ) && _this.pointinpoly( paths[pacnt].points[0], paths[parentcnt].points ) ){ parentidx = parentcnt; parentbbox = paths[parentcnt].boundingbox; }
+									}
+									paths[parentidx].holechildren.push( pacnt );
+								}
+								pacnt++;
+							}
+						}
+						pcnt++;
+					}
+				}
+			}
+		}
+		return paths;
+	},
+	this.boundingboxincludes = function( parentbbox, childbbox ){ return ( ( parentbbox[0] < childbbox[0] ) && ( parentbbox[1] < childbbox[1] ) && ( parentbbox[2] > childbbox[2] ) && ( parentbbox[3] > childbbox[3] ) ); },
+	this.batchpathscan = function( layers, pathomit ){ var bpaths = []; for(var k in layers){ if(!layers.hasOwnProperty(k)){ continue; } bpaths[k] = _this.pathscan( layers[k], pathomit ); } return bpaths; },
+	this.internodes = function( paths, options ){
+		var ins = [], palen=0, nextidx=0, nextidx2=0, previdx=0, previdx2=0, pacnt, pcnt;
+		for(pacnt=0; pacnt<paths.length; pacnt++){
+			ins[pacnt] = {}; ins[pacnt].points = []; ins[pacnt].boundingbox = paths[pacnt].boundingbox; ins[pacnt].holechildren = paths[pacnt].holechildren; ins[pacnt].isholepath = paths[pacnt].isholepath;
+			palen = paths[pacnt].points.length;
+			for(pcnt=0; pcnt<palen; pcnt++){
+				nextidx = (pcnt+1)%palen; nextidx2 = (pcnt+2)%palen; previdx = (pcnt-1+palen)%palen; previdx2 = (pcnt-2+palen)%palen;
+				if( options.rightangleenhance && _this.testrightangle( paths[pacnt], previdx2, previdx, pcnt, nextidx, nextidx2 ) ){
+					if(ins[pacnt].points.length > 0){ ins[pacnt].points[ ins[pacnt].points.length-1 ].linesegment = _this.getdirection( ins[pacnt].points[ ins[pacnt].points.length-1 ].x, ins[pacnt].points[ ins[pacnt].points.length-1 ].y, paths[pacnt].points[pcnt].x, paths[pacnt].points[pcnt].y ); }
+					ins[pacnt].points.push({ x : paths[pacnt].points[pcnt].x, y : paths[pacnt].points[pcnt].y, linesegment : _this.getdirection( paths[pacnt].points[pcnt].x, paths[pacnt].points[pcnt].y, (( paths[pacnt].points[pcnt].x + paths[pacnt].points[nextidx].x ) /2), (( paths[pacnt].points[pcnt].y + paths[pacnt].points[nextidx].y ) /2) ) });
+				}
+				ins[pacnt].points.push({ x : (( paths[pacnt].points[pcnt].x + paths[pacnt].points[nextidx].x ) /2), y : (( paths[pacnt].points[pcnt].y + paths[pacnt].points[nextidx].y ) /2), linesegment : _this.getdirection( (( paths[pacnt].points[pcnt].x + paths[pacnt].points[nextidx].x ) /2), (( paths[pacnt].points[pcnt].y + paths[pacnt].points[nextidx].y ) /2), (( paths[pacnt].points[nextidx].x + paths[pacnt].points[nextidx2].x ) /2), (( paths[pacnt].points[nextidx].y + paths[pacnt].points[nextidx2].y ) /2) ) });
+			}
+		}
+		return ins;
+	},
+	this.testrightangle = function( path, idx1, idx2, idx3, idx4, idx5 ){
+		return ( (( path.points[idx3].x === path.points[idx1].x) && ( path.points[idx3].x === path.points[idx2].x) && ( path.points[idx3].y === path.points[idx4].y) && ( path.points[idx3].y === path.points[idx5].y) ) ||
+				 (( path.points[idx3].y === path.points[idx1].y) && ( path.points[idx3].y === path.points[idx2].y) && ( path.points[idx3].x === path.points[idx4].x) && ( path.points[idx3].x === path.points[idx5].x) ) );
+	},
+	this.getdirection = function( x1, y1, x2, y2 ){
+		var val = 8;
+		if(x1 < x2){ if (y1 < y2){ val = 1; } else if(y1 > y2){ val = 7; } else { val = 0; } }
+		else if(x1 > x2){ if (y1 < y2){ val = 3; } else if(y1 > y2){ val = 5; } else { val = 4; } }
+		else{ if (y1 < y2){ val = 2; } else if(y1 > y2){ val = 6; } else { val = 8; } }
+		return val;
+	},
+	this.batchinternodes = function( bpaths, options ){ var binternodes = []; for (var k in bpaths) { if(!bpaths.hasOwnProperty(k)){ continue; } binternodes[k] = _this.internodes(bpaths[k], options); } return binternodes; },
+	this.tracepath = function( path, ltres, qtres ){
+		var pcnt=0, segtype1, segtype2, seqend, smp = {}; smp.segments = []; smp.boundingbox = path.boundingbox; smp.holechildren = path.holechildren; smp.isholepath = path.isholepath;
+		while(pcnt < path.points.length){
+			segtype1 = path.points[pcnt].linesegment; segtype2 = -1; seqend=pcnt+1;
+			while( ((path.points[seqend].linesegment === segtype1) || (path.points[seqend].linesegment === segtype2) || (segtype2 === -1)) && (seqend < path.points.length-1) ){
+				if((path.points[seqend].linesegment!==segtype1) && (segtype2===-1)){ segtype2 = path.points[seqend].linesegment; }
+				seqend++;
+			}
+			if(seqend === path.points.length-1){ seqend = 0; }
+			smp.segments = smp.segments.concat( _this.fitseq(path, ltres, qtres, pcnt, seqend) );
+			if(seqend>0){ pcnt = seqend; }else{ pcnt = path.points.length; }
+		}
+		return smp;
+	},
+	this.fitseq = function( path, ltres, qtres, seqstart, seqend ){
+		if( (seqend>path.points.length) || (seqend<0) ){ return []; }
+		var errorpoint=seqstart, errorval=0, curvepass=true, px, py, dist2;
+		var tl = (seqend-seqstart); if(tl<0){ tl += path.points.length; }
+		var vx = (path.points[seqend].x-path.points[seqstart].x) / tl, vy = (path.points[seqend].y-path.points[seqstart].y) / tl;
+		var pcnt = (seqstart+1) % path.points.length, pl;
+		while(pcnt != seqend){
+			pl = pcnt-seqstart; if(pl<0){ pl += path.points.length; }
+			px = path.points[seqstart].x + vx * pl; py = path.points[seqstart].y + vy * pl;
+			dist2 = (path.points[pcnt].x-px)*(path.points[pcnt].x-px) + (path.points[pcnt].y-py)*(path.points[pcnt].y-py);
+			if(dist2>ltres){curvepass=false;} if(dist2>errorval){ errorpoint=pcnt; errorval=dist2; }
+			pcnt = (pcnt+1)%path.points.length;
+		}
+		if(curvepass){ return [{ type:'L', x1:path.points[seqstart].x, y1:path.points[seqstart].y, x2:path.points[seqend].x, y2:path.points[seqend].y }]; }
+		var fitpoint = errorpoint; curvepass = true; errorval = 0;
+		var t=(fitpoint-seqstart)/tl, t1=(1-t)*(1-t), t2=2*(1-t)*t, t3=t*t;
+		var cpx = (t1*path.points[seqstart].x + t3*path.points[seqend].x - path.points[fitpoint].x)/-t2 , cpy = (t1*path.points[seqstart].y + t3*path.points[seqend].y - path.points[fitpoint].y)/-t2 ;
+		pcnt = seqstart+1;
+		while(pcnt != seqend){
+			t=(pcnt-seqstart)/tl; t1=(1-t)*(1-t); t2=2*(1-t)*t; t3=t*t;
+			px = t1 * path.points[seqstart].x + t2 * cpx + t3 * path.points[seqend].x; py = t1 * path.points[seqstart].y + t2 * cpy + t3 * path.points[seqend].y;
+			dist2 = (path.points[pcnt].x-px)*(path.points[pcnt].x-px) + (path.points[pcnt].y-py)*(path.points[pcnt].y-py);
+			if(dist2>qtres){curvepass=false;} if(dist2>errorval){ errorpoint=pcnt; errorval=dist2; }
+			pcnt = (pcnt+1)%path.points.length;
+		}
+		if(curvepass){ return [{ type:'Q', x1:path.points[seqstart].x, y1:path.points[seqstart].y, x2:cpx, y2:cpy, x3:path.points[seqend].x, y3:path.points[seqend].y }]; }
+		var splitpoint = fitpoint;
+		return _this.fitseq( path, ltres, qtres, seqstart, splitpoint ).concat( _this.fitseq( path, ltres, qtres, splitpoint, seqend ) );
+	},
+	this.batchtracepaths = function(internodepaths,ltres,qtres){ var btracedpaths = []; for(var k in internodepaths){ if(!internodepaths.hasOwnProperty(k)){ continue; } btracedpaths.push( _this.tracepath(internodepaths[k],ltres,qtres) ); } return btracedpaths; },
+	this.batchtracelayers = function(binternodes, ltres, qtres){ var btbis = []; for(var k in binternodes){ if(!binternodes.hasOwnProperty(k)){ continue; } btbis[k] = _this.batchtracepaths(binternodes[k], ltres, qtres); } return btbis; },
+	this.roundtodec = function(val,places){ return +val.toFixed(places); },
+	this.svgpathstring = function( tracedata, lnum, pathnum, options ){
+		var layer = tracedata.layers[lnum], smp = layer[pathnum], str='', pcnt;
+		if(options.linefilter && (smp.segments.length < 3)){ return str; }
+		str = '<path '+ ( options.desc ? ('desc="l '+lnum+' p '+pathnum+'" ') : '' ) + _this.tosvgcolorstr(tracedata.palette[lnum], options) + 'd="';
+		if( options.roundcoords === -1 ){
+			str += 'M '+ smp.segments[0].x1 * options.scale +' '+ smp.segments[0].y1 * options.scale +' ';
+			for(pcnt=0; pcnt<smp.segments.length; pcnt++){ str += smp.segments[pcnt].type +' '+ smp.segments[pcnt].x2 * options.scale +' '+ smp.segments[pcnt].y2 * options.scale +' '; if(smp.segments[pcnt].hasOwnProperty('x3')){ str += smp.segments[pcnt].x3 * options.scale +' '+ smp.segments[pcnt].y3 * options.scale +' '; } }
+			str += 'Z ';
+		}else{
+			str += 'M '+ _this.roundtodec( smp.segments[0].x1 * options.scale, options.roundcoords ) +' '+ _this.roundtodec( smp.segments[0].y1 * options.scale, options.roundcoords ) +' ';
+			for(pcnt=0; pcnt<smp.segments.length; pcnt++){ str += smp.segments[pcnt].type +' '+ _this.roundtodec( smp.segments[pcnt].x2 * options.scale, options.roundcoords ) +' '+ _this.roundtodec( smp.segments[pcnt].y2 * options.scale, options.roundcoords ) +' '; if(smp.segments[pcnt].hasOwnProperty('x3')){ str += _this.roundtodec( smp.segments[pcnt].x3 * options.scale, options.roundcoords ) +' '+ _this.roundtodec( smp.segments[pcnt].y3 * options.scale, options.roundcoords ) +' '; } }
+			str += 'Z ';
+		}
+		for( var hcnt=0; hcnt < smp.holechildren.length; hcnt++){
+			var hsmp = layer[ smp.holechildren[hcnt] ];
+			if( options.roundcoords === -1 ){
+				if(hsmp.segments[ hsmp.segments.length-1 ].hasOwnProperty('x3')){ str += 'M '+ hsmp.segments[ hsmp.segments.length-1 ].x3 * options.scale +' '+ hsmp.segments[ hsmp.segments.length-1 ].y3 * options.scale +' '; }
+				else{ str += 'M '+ hsmp.segments[ hsmp.segments.length-1 ].x2 * options.scale +' '+ hsmp.segments[ hsmp.segments.length-1 ].y2 * options.scale +' '; }
+				for(pcnt = hsmp.segments.length-1; pcnt >= 0; pcnt--){ str += hsmp.segments[pcnt].type +' '; if(hsmp.segments[pcnt].hasOwnProperty('x3')){ str += hsmp.segments[pcnt].x2 * options.scale +' '+ hsmp.segments[pcnt].y2 * options.scale +' '; } str += hsmp.segments[pcnt].x1 * options.scale +' '+ hsmp.segments[pcnt].y1 * options.scale +' '; }
+			}else{
+				if(hsmp.segments[ hsmp.segments.length-1 ].hasOwnProperty('x3')){ str += 'M '+ _this.roundtodec( hsmp.segments[ hsmp.segments.length-1 ].x3 * options.scale ) +' '+ _this.roundtodec( hsmp.segments[ hsmp.segments.length-1 ].y3 * options.scale ) +' '; }
+				else{ str += 'M '+ _this.roundtodec( hsmp.segments[ hsmp.segments.length-1 ].x2 * options.scale ) +' '+ _this.roundtodec( hsmp.segments[ hsmp.segments.length-1 ].y2 * options.scale ) +' '; }
+				for(pcnt = hsmp.segments.length-1; pcnt >= 0; pcnt--){ str += hsmp.segments[pcnt].type +' '; if(hsmp.segments[pcnt].hasOwnProperty('x3')){ str += _this.roundtodec( hsmp.segments[pcnt].x2 * options.scale ) +' '+ _this.roundtodec( hsmp.segments[pcnt].y2 * options.scale ) +' '; } str += _this.roundtodec( hsmp.segments[pcnt].x1 * options.scale ) +' '+ _this.roundtodec( hsmp.segments[pcnt].y1 * options.scale ) +' '; }
+			}
+			str += 'Z ';
+		}
+		str += '" />';
+		return str;
+	},
+	this.getsvgstring = function( tracedata, options ){
+		options = _this.checkoptions(options);
+		var w = tracedata.width * options.scale, h = tracedata.height * options.scale;
+		var svgstr = '<svg ' + (options.viewbox ? ('viewBox="0 0 '+w+' '+h+'" ') : ('width="'+w+'" height="'+h+'" ')) + 'version="1.1" xmlns="http://www.w3.org/2000/svg" desc="Created with imagetracer.js version '+_this.versionnumber+'" >';
+		for(var lcnt=0; lcnt < tracedata.layers.length; lcnt++){ for(var pcnt=0; pcnt < tracedata.layers[lcnt].length; pcnt++){ if( !tracedata.layers[lcnt][pcnt].isholepath ){ svgstr += _this.svgpathstring( tracedata, lcnt, pcnt, options ); } } }
+		svgstr+='</svg>';
+		return svgstr;
+	},
+	this.compareNumbers = function(a,b){ return a - b; },
+	this.torgbastr = function(c){ return 'rgba('+c.r+','+c.g+','+c.b+','+c.a+')'; },
+	this.tosvgcolorstr = function(c, options){ return 'fill="rgb('+c.r+','+c.g+','+c.b+')" stroke="rgb('+c.r+','+c.g+','+c.b+')" stroke-width="'+options.strokewidth+'" opacity="'+c.a/255.0+'" '; },
+	this.gks = [ [0.27901,0.44198,0.27901], [0.135336,0.228569,0.272192,0.228569,0.135336], [0.086776,0.136394,0.178908,0.195843,0.178908,0.136394,0.086776], [0.063327,0.093095,0.122589,0.144599,0.152781,0.144599,0.122589,0.093095,0.063327], [0.049692,0.069304,0.089767,0.107988,0.120651,0.125194,0.120651,0.107988,0.089767,0.069304,0.049692] ],
+	this.blur = function(imgd,radius,delta){
+		var i,j,k,d,idx,racc,gacc,bacc,aacc,wacc;
+		var imgd2 = { width:imgd.width, height:imgd.height, data:[] };
+		radius = Math.floor(radius); if(radius<1){ return imgd; } if(radius>5){ radius = 5; } delta = Math.abs( delta ); if(delta>1024){ delta = 1024; }
+		var thisgk = _this.gks[radius-1];
+		for( j=0; j < imgd.height; j++ ){ for( i=0; i < imgd.width; i++ ){
+			racc = 0; gacc = 0; bacc = 0; aacc = 0; wacc = 0;
+			for( k = -radius; k < radius+1; k++){ if( (i+k > 0) && (i+k < imgd.width) ){ idx = (j*imgd.width+i+k)*4; racc += imgd.data[idx  ] * thisgk[k+radius]; gacc += imgd.data[idx+1] * thisgk[k+radius]; bacc += imgd.data[idx+2] * thisgk[k+radius]; aacc += imgd.data[idx+3] * thisgk[k+radius]; wacc += thisgk[k+radius]; } }
+			idx = (j*imgd.width+i)*4; imgd2.data[idx  ] = Math.floor(racc / wacc); imgd2.data[idx+1] = Math.floor(gacc / wacc); imgd2.data[idx+2] = Math.floor(bacc / wacc); imgd2.data[idx+3] = Math.floor(aacc / wacc);
+		} }
+		var himgd = new Uint8ClampedArray(imgd2.data);
+		for( j=0; j < imgd.height; j++ ){ for( i=0; i < imgd.width; i++ ){
+			racc = 0; gacc = 0; bacc = 0; aacc = 0; wacc = 0;
+			for( k = -radius; k < radius+1; k++){ if( (j+k > 0) && (j+k < imgd.height) ){ idx = ((j+k)*imgd.width+i)*4; racc += himgd[idx  ] * thisgk[k+radius]; gacc += himgd[idx+1] * thisgk[k+radius]; bacc += himgd[idx+2] * thisgk[k+radius]; aacc += himgd[idx+3] * thisgk[k+radius]; wacc += thisgk[k+radius]; } }
+			idx = (j*imgd.width+i)*4; imgd2.data[idx  ] = Math.floor(racc / wacc); imgd2.data[idx+1] = Math.floor(gacc / wacc); imgd2.data[idx+2] = Math.floor(bacc / wacc); imgd2.data[idx+3] = Math.floor(aacc / wacc);
+		} }
+		for( j=0; j < imgd.height; j++ ){ for( i=0; i < imgd.width; i++ ){
+			idx = (j*imgd.width+i)*4;
+			d = Math.abs(imgd2.data[idx  ] - imgd.data[idx  ]) + Math.abs(imgd2.data[idx+1] - imgd.data[idx+1]) + Math.abs(imgd2.data[idx+2] - imgd.data[idx+2]) + Math.abs(imgd2.data[idx+3] - imgd.data[idx+3]);
+			if(d>delta){ imgd2.data[idx  ] = imgd.data[idx  ]; imgd2.data[idx+1] = imgd.data[idx+1]; imgd2.data[idx+2] = imgd.data[idx+2]; imgd2.data[idx+3] = imgd.data[idx+3]; }
+		} }
+		return imgd2;
+	},
+	this.loadImage = function(url,callback,options){
+		var img = new Image();
+		if(options && options.corsenabled){ img.crossOrigin = 'Anonymous'; }
+		img.onload = function(){ var canvas = document.createElement('canvas'); canvas.width = img.width; canvas.height = img.height; var context = canvas.getContext('2d'); context.drawImage(img,0,0); callback(canvas); };
+		img.src = url;
+	},
+	this.getImgdata = function(canvas){ var context = canvas.getContext('2d'); return context.getImageData(0,0,canvas.width,canvas.height); },
+	this.specpalette = [ {r:0,g:0,b:0,a:255}, {r:128,g:128,b:128,a:255}, {r:0,g:0,b:128,a:255}, {r:64,g:64,b:128,a:255}, {r:192,g:192,b:192,a:255}, {r:255,g:255,b:255,a:255}, {r:128,g:128,b:192,a:255}, {r:0,g:0,b:192,a:255}, {r:128,g:0,b:0,a:255}, {r:128,g:64,b:64,a:255}, {r:128,g:0,b:128,a:255}, {r:168,g:168,b:168,a:255}, {r:192,g:128,b:128,a:255}, {r:192,g:0,b:0,a:255}, {r:255,g:255,b:255,a:255}, {r:0,g:128,b:0,a:255} ],
+	this.drawLayers = function(layers,palette,scale,parentid){}
+	;
+}
+window.ImageTracer = new ImageTracer();
+})();
+</script>
+
+<script>
+(function(){
+'use strict';
+
+var els = {
+  dropzone: document.getElementById('dropzone'),
+  fileInput: document.getElementById('fileInput'),
+  presets: document.getElementById('presets'),
+  numberofcolors: document.getElementById('numberofcolors'),
+  ltres: document.getElementById('ltres'),
+  qtres: document.getElementById('qtres'),
+  pathomit: document.getElementById('pathomit'),
+  blurradius: document.getElementById('blurradius'),
+  blurdelta: document.getElementById('blurdelta'),
+  rightangleenhance: document.getElementById('rightangleenhance'),
+  scale: document.getElementById('scale'),
+  presetDesc: document.getElementById('presetDesc'),
+  convertBtn: document.getElementById('convertBtn'),
+  originalStage: document.getElementById('originalStage'),
+  svgStage: document.getElementById('svgStage'),
+  origSize: document.getElementById('origSize'),
+  origFileSize: document.getElementById('origFileSize'),
+  svgFileSize: document.getElementById('svgFileSize'),
+  pathCount: document.getElementById('pathCount'),
+  downloadBtn: document.getElementById('downloadBtn'),
+  copyBtn: document.getElementById('copyBtn'),
+  statusBadge: document.getElementById('statusBadge'),
+  themeSwitch: document.getElementById('themeSwitch'),
+  helpBtn: document.getElementById('helpBtn'),
+  helpModal: document.getElementById('helpModal'),
+  helpCloseBtn: document.getElementById('helpCloseBtn'),
+  fileNameInput: document.getElementById('fileNameInput')
+};
+
+// ---- 使用說明彈窗 ----
+function openHelp(){ els.helpModal.classList.add('show'); }
+function closeHelp(){ els.helpModal.classList.remove('show'); }
+els.helpBtn.addEventListener('click', openHelp);
+els.helpCloseBtn.addEventListener('click', closeHelp);
+els.helpModal.addEventListener('click', function(e){ if(e.target === els.helpModal) closeHelp(); });
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeHelp(); });
+
+// ---- 檔案名稱預設值：svg-yyyymmddhhmmss ----
+function defaultFileName(){
+  var d = new Date();
+  var pad = function(n){ return String(n).padStart(2, '0'); };
+  return 'svg-' + d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds());
+}
+els.fileNameInput.value = defaultFileName();
+
+// ---- 深色/淺色模式切換 ----
+function applyTheme(mode){
+  if(mode === 'light' || mode === 'dark'){
+    document.documentElement.setAttribute('data-theme', mode);
+    localStorage.setItem('img2svg-theme', mode);
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    localStorage.removeItem('img2svg-theme');
+  }
+  Array.prototype.forEach.call(els.themeSwitch.querySelectorAll('button'), function(b){
+    b.classList.toggle('active', b.dataset.theme === mode);
+  });
+}
+els.themeSwitch.addEventListener('click', function(e){
+  var btn = e.target.closest('button[data-theme]');
+  if(!btn) return;
+  applyTheme(btn.dataset.theme);
+});
+applyTheme(localStorage.getItem('img2svg-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+
+var PRESETS = {
+  logo: {
+    params: { numberofcolors: 8,  ltres: 1,   qtres: 1,   pathomit: 8,  blurradius: 0, blurdelta: 20,  rightangleenhance: true,  scale: 1 },
+    desc: '適合顏色少、線條乾淨的商標與圖示。顏色數壓低到 8 種以維持色塊乾淨俐落，簡化度取中間值讓轉角保持清楚，同時忽略小雜點避免產生多餘碎路徑。'
+  },
+  lineart: {
+    params: { numberofcolors: 4,  ltres: 0.3, qtres: 0.3, pathomit: 4,  blurradius: 0, blurdelta: 20,  rightangleenhance: false, scale: 1 },
+    desc: '適合黑白或少色的線稿、手繪草圖。顏色數降到最低（通常只需黑/白），簡化度也調低以完整保留筆觸曲線的細節，不套用直角增強以免破壞手繪的自然弧度。'
+  },
+  screenshot: {
+    params: { numberofcolors: 24, ltres: 1,   qtres: 1,   pathomit: 4,  blurradius: 0, blurdelta: 20,  rightangleenhance: true,  scale: 1 },
+    desc: '適合介面截圖、UI 設計稿。顏色數拉高到 24 以保留色塊與文字邊緣的區分度，並開啟直角增強讓按鈕、色塊邊框維持方正，不模糊處理以保持文字銳利。'
+  },
+  photo: {
+    params: { numberofcolors: 20, ltres: 3,   qtres: 3,   pathomit: 30, blurradius: 4, blurdelta: 300, rightangleenhance: false, scale: 1 },
+    desc: '照片類效果有限，此為實驗性設定。原始版本容易出現大量白色斑點雜訊（像印表機沒墨水的顆粒感），成因是毛髮、筆刷、噴墨紋理被誤判成一堆獨立小色塊。這組數值刻意降低顏色數、大幅拉高模糊敏感度(blurdelta)與忽略小雜點(pathomit)，把紋理雜訊先抹平，換取乾淨但更簡化、更像插畫感的結果；仍建議只用於構圖簡單、色塊分明的照片，若還有斑點可再把 blurdelta 往上調。'
+  }
+};
+
+var state = { img: null, fileName: 'image', origFileBytes: 0, currentSvg: null };
+
+function applyPreset(name){
+  var preset = PRESETS[name];
+  if(!preset) return;
+  var p = preset.params;
+  els.numberofcolors.value = p.numberofcolors;
+  els.ltres.value = p.ltres;
+  els.qtres.value = p.qtres;
+  els.pathomit.value = p.pathomit;
+  els.blurradius.value = p.blurradius;
+  els.blurdelta.value = p.blurdelta;
+  els.rightangleenhance.checked = p.rightangleenhance;
+  els.scale.value = p.scale;
+  els.presetDesc.textContent = preset.desc;
+  syncLabels();
+}
+
+function syncLabels(){
+  document.getElementById('lbl_colors').textContent = els.numberofcolors.value;
+  document.getElementById('lbl_ltres').textContent = els.ltres.value;
+  document.getElementById('lbl_qtres').textContent = els.qtres.value;
+  document.getElementById('lbl_pathomit').textContent = els.pathomit.value;
+  document.getElementById('lbl_blur').textContent = els.blurradius.value;
+  document.getElementById('lbl_blurdelta').textContent = els.blurdelta.value;
+  document.getElementById('lbl_rae').textContent = els.rightangleenhance.checked ? '開啟' : '關閉';
+  document.getElementById('lbl_scale').textContent = els.scale.value + 'x';
+}
+
+function humanBytes(n){
+  if(n < 1024) return n + ' B';
+  if(n < 1024*1024) return (n/1024).toFixed(1) + ' KB';
+  return (n/1024/1024).toFixed(2) + ' MB';
+}
+
+els.presets.addEventListener('click', function(e){
+  var btn = e.target.closest('button[data-preset]');
+  if(!btn) return;
+  Array.prototype.forEach.call(els.presets.querySelectorAll('button'), function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  applyPreset(btn.dataset.preset);
+});
+
+['numberofcolors','ltres','qtres','pathomit','blurradius','blurdelta','rightangleenhance','scale'].forEach(function(id){
+  els[id].addEventListener('input', syncLabels);
+});
+
+els.dropzone.addEventListener('click', function(){ els.fileInput.click(); });
+els.dropzone.addEventListener('dragover', function(e){ e.preventDefault(); els.dropzone.classList.add('drag'); });
+els.dropzone.addEventListener('dragleave', function(){ els.dropzone.classList.remove('drag'); });
+els.dropzone.addEventListener('drop', function(e){
+  e.preventDefault(); els.dropzone.classList.remove('drag');
+  if(e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+});
+els.fileInput.addEventListener('change', function(){
+  if(els.fileInput.files.length) handleFile(els.fileInput.files[0]);
+});
+
+function handleFile(file){
+  if(!file.type.startsWith('image/')){ alert('請選擇圖片檔案'); return; }
+  state.origFileBytes = file.size;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    var img = new Image();
+    img.onload = function(){
+      state.img = img;
+      els.originalStage.innerHTML = '';
+      var previewImg = img.cloneNode();
+      els.originalStage.appendChild(previewImg);
+      els.origSize.textContent = img.width + ' x ' + img.height + ' px';
+      els.origFileSize.textContent = humanBytes(state.origFileBytes);
+      els.convertBtn.disabled = false;
+      els.svgStage.innerHTML = '<span style="color:var(--muted); font-size:.85rem;">尚未轉換</span>';
+      els.svgFileSize.textContent = '-';
+      els.pathCount.textContent = '-';
+      els.downloadBtn.disabled = true;
+      els.copyBtn.disabled = true;
+      els.statusBadge.style.display = 'none';
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function nextFrame(){
+  return new Promise(function(resolve){ requestAnimationFrame(function(){ setTimeout(resolve, 0); }); });
+}
+
+function showStageProgress(){
+  els.svgStage.innerHTML =
+    '<div class="stage-progress">' +
+      '<div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>' +
+      '<div class="progress-label"><span id="progressStage">準備中...</span><span id="progressPct">0%</span></div>' +
+    '</div>';
+}
+
+function setProgress(pct, label){
+  var fill = document.getElementById('progressFill');
+  var stage = document.getElementById('progressStage');
+  var pctEl = document.getElementById('progressPct');
+  if(!fill) return;
+  fill.style.width = pct + '%';
+  pctEl.textContent = Math.round(pct) + '%';
+  stage.textContent = label;
+}
+
+// 逐色圖層描繪，每完成一層就更新進度並讓瀏覽器有機會重繪畫面
+async function traceWithProgress(imgData, options){
+  var IT = window.ImageTracer;
+  setProgress(2, '載入影像資料...');
+  await nextFrame();
+
+  setProgress(6, '顏色量化中...');
+  await nextFrame();
+  var ii = IT.colorquantization(imgData, options);
+
+  var tracedata = { layers: [], palette: ii.palette, width: ii.array[0].length - 2, height: ii.array.length - 2 };
+  var total = ii.palette.length;
+
+  for(var colornum = 0; colornum < total; colornum++){
+    var tracedlayer = IT.batchtracepaths(
+      IT.internodes( IT.pathscan( IT.layeringstep(ii, colornum), options.pathomit ), options ),
+      options.ltres, options.qtres
+    );
+    tracedata.layers.push(tracedlayer);
+
+    var pct = 10 + ((colornum + 1) / total) * 85;
+    setProgress(pct, '描繪路徑中 (' + (colornum + 1) + ' / ' + total + ' 色)');
+    await nextFrame();
+  }
+
+  setProgress(97, '產生 SVG 原始碼...');
+  await nextFrame();
+  var svgStr = IT.getsvgstring(tracedata, options);
+  setProgress(100, '完成');
+  return svgStr;
+}
+
+els.convertBtn.addEventListener('click', async function(){
+  if(!state.img) return;
+  els.convertBtn.disabled = true;
+  els.convertBtn.textContent = '轉換中...';
+  els.statusBadge.style.display = 'none';
+  showStageProgress();
+  setProgress(0, '準備中...');
+
+  try {
+    await nextFrame();
+
+    var canvas = document.createElement('canvas');
+    canvas.width = state.img.width;
+    canvas.height = state.img.height;
+    var ctx = canvas.getContext('2d');
+    ctx.drawImage(state.img, 0, 0);
+    var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+    var options = window.ImageTracer.checkoptions({
+      numberofcolors: parseInt(els.numberofcolors.value, 10),
+      ltres: parseFloat(els.ltres.value),
+      qtres: parseFloat(els.qtres.value),
+      pathomit: parseInt(els.pathomit.value, 10),
+      blurradius: parseInt(els.blurradius.value, 10),
+      blurdelta: parseInt(els.blurdelta.value, 10),
+      rightangleenhance: els.rightangleenhance.checked,
+      scale: parseInt(els.scale.value, 10),
+      roundcoords: 1,
+      viewbox: true,
+      strokewidth: 1
+    });
+
+    var svgStr = await traceWithProgress(imgData, options);
+    state.currentSvg = svgStr;
+
+    els.svgStage.innerHTML = svgStr;
+    var svgBytes = new Blob([svgStr]).size;
+    els.svgFileSize.textContent = humanBytes(svgBytes);
+    var pathMatches = svgStr.match(/<path /g);
+    els.pathCount.textContent = pathMatches ? pathMatches.length : 0;
+    els.downloadBtn.disabled = false;
+    els.copyBtn.disabled = false;
+
+    els.statusBadge.style.display = 'inline-block';
+    if(svgBytes > state.origFileBytes * 1.5){
+      els.statusBadge.textContent = '⚠ SVG 較大，建議降低顏色數或提高簡化度';
+      els.statusBadge.style.color = '#c0392b';
+    } else {
+      els.statusBadge.textContent = '✓ 完成';
+      els.statusBadge.style.color = '';
+    }
+  } catch(err){
+    els.svgStage.innerHTML = '<span style="color:var(--muted); font-size:.85rem;">轉換失敗</span>';
+    alert('轉換失敗: ' + err.message);
+  } finally {
+    els.convertBtn.disabled = false;
+    els.convertBtn.textContent = '轉換為 SVG';
+  }
+});
+
+els.downloadBtn.addEventListener('click', function(){
+  if(!state.currentSvg) return;
+  var blob = new Blob([state.currentSvg], { type: 'image/svg+xml' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = (els.fileNameInput.value.trim() || defaultFileName()) + '.svg';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+});
+
+els.copyBtn.addEventListener('click', function(){
+  if(!state.currentSvg) return;
+  navigator.clipboard.writeText(state.currentSvg).then(function(){
+    var orig = els.copyBtn.textContent;
+    els.copyBtn.textContent = '已複製!';
+    setTimeout(function(){ els.copyBtn.textContent = orig; }, 1500);
+  });
+});
+
+applyPreset('logo');
+
+})();
+</script>
+
+</body>
+</html>

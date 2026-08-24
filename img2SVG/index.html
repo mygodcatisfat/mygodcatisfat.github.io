@@ -4,136 +4,327 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>圖片轉 SVG 向量化工具</title>
+<script>
+/* 主題判斷必須在任何樣式之前同步執行，避免載入時先閃出錯誤主題(FOUC)。
+   localStorage 存取單獨 try/catch，讀取失敗時仍要優雅退回「跟隨系統」，不能連帶跳過設定屬性。 */
+(function(){
+  var pref = null;
+  try { pref = localStorage.getItem('img2svg-theme'); } catch(e) { pref = null; }
+  if(pref !== 'light' && pref !== 'dark'){
+    pref = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+  }
+  document.documentElement.setAttribute('data-theme', pref);
+})();
+</script>
 <style>
 :root{
-  --bg:#f6f5f2; --panel:#ffffff; --text:#2b2924; --muted:#6b6558;
-  --accent:#e07a3f; --accent2:#3f7de0; --border:#e2ddd3; --shadow:rgba(43,41,36,.06);
+  --primary:#1a365d;
+  --primary-text:var(--primary);
+  --primary-light:#2b6cb0;
+  --accent:#2c7a7b;
+  --bg:#eff3f8;
+  --card-bg:#ffffff;
+  --line:#cbd5e0;
+  --line-soft:#e2e8f0;
+  --ink:#1a202c;
+  --muted:#5a6b7f;
+  --err:#c53030;
+  --ok:#276749;
+  --warn:#b7791f;
+  --radius:9px;
+  --shadow:0 1px 2px rgba(16,42,67,.06), 0 5px 14px rgba(16,42,67,.06);
+  --field-bg:#ffffff;
+  --stage-bg:#f2f6fb;
+  --checker:rgba(26,54,93,.07);
 }
 :root[data-theme="dark"]{
-  --bg:#1c1a17; --panel:#252220; --text:#eee9df; --muted:#a89e8c; --border:#3a3530; --shadow:rgba(0,0,0,.4);
+  --primary-text:#7fb0e8;
+  --primary-light:#5b9fe0;
+  --accent:#3fb6ae;
+  --bg:#0b1119;
+  --card-bg:#151e2c;
+  --line:#33455c;
+  --line-soft:#243144;
+  --ink:#e2e8f0;
+  --muted:#8b98ab;
+  --err:#f56565;
+  --ok:#48bb78;
+  --warn:#ecc94b;
+  --field-bg:#0f1724;
+  --stage-bg:#111a27;
+  --checker:rgba(226,232,240,.06);
 }
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){ --bg:#1c1a17; --panel:#252220; --text:#eee9df; --muted:#a89e8c; --border:#3a3530; --shadow:rgba(0,0,0,.4);}
-}
+
+/* 分類色：控制面板三個區塊各自一組，深色模式整組覆寫 */
+.sec-upload{ --cat:#2b6cb0; --cat-tint:#eef3fa; --cat-line:#c3d6ec; }
+.sec-preset{ --cat:#2c7a7b; --cat-tint:#eef7f7; --cat-line:#bcdcdb; }
+.sec-param { --cat:#975a16; --cat-tint:#fdf5e7; --cat-line:#ecd9ae; }
+:root[data-theme="dark"] .sec-upload{ --cat:#7fb0e8; --cat-tint:#172236; --cat-line:#2b4260; }
+:root[data-theme="dark"] .sec-preset{ --cat:#5fd0c9; --cat-tint:#142826; --cat-line:#2a4c49; }
+:root[data-theme="dark"] .sec-param { --cat:#f0b45e; --cat-tint:#2c2211; --cat-line:#503d1c; }
+
 *{box-sizing:border-box;}
 html,body{width:100%;}
 body{
-  margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-  background:var(--bg); color:var(--text); min-height:100vh;
+  margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",sans-serif;
+  background:var(--bg); color:var(--ink); min-height:100vh;
 }
+
+/* 線條風單色 icon：顏色完全跟隨外層文字色 */
+.icon{width:1.05em; height:1.05em; flex:none; display:inline-block; vertical-align:-.16em;}
+.icon-lg{width:1.25em; height:1.25em;}
+
 header{
+  position:sticky; top:0; z-index:60;
   display:flex; align-items:center; justify-content:space-between; gap:10px;
-  padding:10px 16px; border-bottom:1px solid var(--border);
+  padding:9px 16px; background:var(--primary); color:#fff;
 }
-.header-left{display:flex; align-items:center; gap:10px; min-width:0;}
+.header-left{display:flex; align-items:center; gap:9px; min-width:0;}
+header h1{margin:0; font-size:1.02rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+header .sub{font-size:.72rem; color:rgba(255,255,255,.66); white-space:nowrap;}
 .header-right{display:flex; align-items:center; gap:8px; flex-shrink:0;}
-.icon-btn{
-  display:flex; align-items:center; justify-content:center; text-decoration:none; color:var(--text);
-  font-size:1rem; width:32px; height:32px; border:1px solid var(--border); border-radius:8px;
-  background:var(--bg); cursor:pointer; flex-shrink:0; padding:0;
+.hdr-btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
+  text-decoration:none; color:#fff; font-size:.78rem; height:30px; padding:0 10px;
+  border:1px solid rgba(255,255,255,.28); border-radius:6px; background:transparent;
+  cursor:pointer; transition:background .15s ease, border-color .15s ease;
 }
-.icon-btn:hover{background:var(--panel);}
-header h1{margin:0; font-size:1.05rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-header p{display:none;}
-.theme-switch{
-  display:flex; align-items:center; gap:2px; border:1px solid var(--border); border-radius:20px;
-  padding:3px; background:var(--bg); flex-shrink:0;
+.hdr-btn:hover{background:rgba(255,255,255,.13); border-color:rgba(255,255,255,.45);}
+
+/* iOS 風格深色模式開關：sun/moon 置於軌道內，滑塊未覆蓋的那側顯示目前主題 */
+.switch{
+  position:relative; width:52px; height:27px; border-radius:14px; flex:none;
+  background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.38);
+  cursor:pointer; padding:0; transition:background .15s ease, border-color .15s ease;
 }
-.theme-switch button{
-  border:none; background:transparent; color:var(--muted); width:26px; height:26px; border-radius:50%;
-  cursor:pointer; font-size:.85rem; line-height:1; display:flex; align-items:center; justify-content:center; padding:0;
+.switch:hover{background:rgba(255,255,255,.2);}
+.switch .sw-ic{
+  position:absolute; top:50%; margin-top:-7px; width:14px; height:14px;
+  color:#fff; opacity:.72; transition:opacity .15s ease;
 }
-.theme-switch button.active{background:var(--panel); color:var(--text); box-shadow:0 1px 3px var(--shadow);}
-.modal-overlay{
-  display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:100;
-  align-items:center; justify-content:center; padding:20px;
+.switch .sw-sun{left:6px;}
+.switch .sw-moon{right:6px;}
+.switch::after{
+  content:""; position:absolute; top:2px; left:2px; width:21px; height:21px; border-radius:50%;
+  background:#fff; box-shadow:0 1px 3px rgba(11,17,25,.35); transition:transform .15s ease;
 }
-.modal-overlay.show{display:flex;}
-.modal-box{
-  background:var(--panel); border-radius:10px; max-width:520px; width:100%; max-height:80vh; overflow:auto;
-  padding:20px; box-shadow:0 8px 30px var(--shadow); color:var(--text);
-}
-.modal-box h3{margin:0 0 10px; font-size:1.05rem;}
-.modal-box h4{margin:14px 0 4px; font-size:.88rem;}
-.modal-box p, .modal-box li{font-size:.82rem; line-height:1.7; color:var(--muted); text-align:justify;}
-.modal-box ul, .modal-box ol{margin:4px 0; padding-left:1.2em;}
-.modal-close{
-  margin-top:14px; width:100%; padding:8px; border:none; border-radius:6px; background:var(--accent);
-  color:#fff; font-size:.85rem; cursor:pointer;
-}
+/* 淺色(aria-checked=false)：滑塊靠右、露出左側太陽 */
+.switch[aria-checked="false"]::after{transform:translateX(25px);}
+.switch[aria-checked="false"] .sw-moon{opacity:0;}
+/* 深色(aria-checked=true)：滑塊靠左、露出右側月亮 */
+.switch[aria-checked="true"]::after{transform:translateX(0);}
+.switch[aria-checked="true"] .sw-sun{opacity:0;}
+.switch:focus-visible{outline:2px solid #fff; outline-offset:2px;}
+
 .layout{
-  display:grid; grid-template-columns:340px 1fr 1fr;
-  gap:10px; padding:10px 12px; width:100%;
+  display:grid; grid-template-columns:352px 1fr 1fr;
+  gap:12px; padding:12px; width:100%;
 }
-@media (max-width:1000px){ .layout{grid-template-columns:1fr;} }
+@media (max-width:1080px){ .layout{grid-template-columns:1fr;} }
+
 .panel{
-  background:var(--panel); border:1px solid var(--border); border-radius:8px;
-  padding:12px; box-shadow:0 1px 4px var(--shadow);
+  background:var(--card-bg); border-radius:var(--radius); box-shadow:var(--shadow);
+  padding:13px 15px;
 }
-.panel h2{margin:0 0 8px; font-size:.85rem; font-weight:600; color:var(--muted); display:flex; align-items:center; gap:6px;}
+.panel-title{
+  margin:0 0 10px; font-size:.86rem; font-weight:700; color:var(--primary-text);
+  display:flex; align-items:center; gap:7px;
+}
+/* 卡片內區塊：左側 3px 色條 + 淡色底標題列 */
+.sec-head{
+  display:flex; align-items:center; gap:7px; margin:0 0 9px;
+  background:var(--cat-tint); border-left:3px solid var(--cat); color:var(--cat);
+  padding:5px 9px; border-radius:0 5px 5px 0; font-size:.79rem; font-weight:700;
+}
+.sec-head + .sec-head{margin-top:14px;}
+.sec-body{margin-bottom:14px;}
+
 .dropzone{
-  border:2px dashed var(--border); border-radius:8px; padding:8px 10px;
-  text-align:center; cursor:pointer; color:var(--muted); font-size:.78rem;
-  transition:.15s; margin-bottom:10px;
+  border:1.5px dashed var(--line); border-radius:7px; padding:9px 10px;
+  text-align:center; cursor:pointer; color:var(--muted); font-size:.77rem;
+  background:var(--field-bg);
+  transition:border-color .15s ease, background .15s ease, color .15s ease;
+  display:flex; align-items:center; justify-content:center; gap:7px;
 }
-.dropzone.drag{border-color:var(--accent); background:color-mix(in srgb, var(--accent) 8%, transparent);}
+.dropzone:hover{border-color:var(--primary-light); color:var(--primary-text);}
+.dropzone.drag{border-color:var(--primary-light); background:var(--cat-tint); color:var(--primary-text);}
 .dropzone input{display:none;}
-.param-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px 10px;}
-.field{margin-bottom:0;}
-.field label{display:flex; justify-content:space-between; align-items:center; gap:4px; font-size:.74rem; color:var(--muted); margin-bottom:2px;}
-.field label .lbl-name{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-.field input[type=range]{width:100%; height:18px;}
-.fieldhint{font-size:.66rem; color:var(--muted); line-height:1.5; margin-top:3px; text-align:justify;}
-.field select{width:100%; padding:5px 6px; border-radius:6px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:.78rem;}
-.checkfield{display:flex; align-items:center; gap:6px; font-size:.78rem; color:var(--text); height:26px;}
-.checkfield input{width:auto;}
-.filename-field{margin-top:10px;}
-.filename-field label{display:block; font-size:.74rem; color:var(--muted); margin-bottom:3px;}
-.filename-field .filename-row{display:flex; align-items:center; gap:0;}
-.filename-field input{
-  flex:1; min-width:0; padding:7px 8px; border:1px solid var(--border); border-radius:6px 0 0 6px;
-  background:var(--bg); color:var(--text); font-size:.8rem; border-right:none;
-}
-.filename-field .ext{
-  padding:7px 8px; border:1px solid var(--border); border-radius:0 6px 6px 0; background:var(--bg);
-  color:var(--muted); font-size:.8rem;
-}
-.presets{display:flex; flex-wrap:wrap; gap:5px; margin-bottom:6px;}
+
+.presets{display:flex; flex-wrap:wrap; gap:5px; margin-bottom:7px;}
 .presets button{
-  border:1px solid var(--border); background:var(--bg); color:var(--text);
-  padding:4px 9px; border-radius:20px; font-size:.74rem; cursor:pointer;
+  display:inline-flex; align-items:center; gap:5px;
+  border:1px solid var(--line); background:var(--field-bg); color:var(--ink);
+  padding:4px 10px; border-radius:20px; font-size:.74rem; cursor:pointer;
+  transition:background .15s ease, color .15s ease, border-color .15s ease;
 }
-.presets button.active{background:var(--accent); color:#fff; border-color:var(--accent);}
+.presets button:hover{border-color:var(--primary-light); color:var(--primary-text);}
+.presets button.active{background:var(--primary-light); color:#fff; border-color:var(--primary-light);}
+
+.param-grid{display:grid; grid-template-columns:1fr 1fr; gap:9px 11px;}
+.field label{
+  display:flex; justify-content:space-between; align-items:center; gap:4px;
+  font-size:.73rem; color:var(--muted); margin-bottom:3px;
+}
+.field label .lbl-name{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.field label .lbl-val{color:var(--primary-text); font-weight:700; font-variant-numeric:tabular-nums;}
+.fieldhint{font-size:.66rem; color:var(--muted); line-height:1.55; margin-top:4px; text-align:justify;}
+.checkfield{display:flex; align-items:center; gap:6px; font-size:.77rem; color:var(--ink); height:26px;}
+.checkfield input{width:auto; accent-color:var(--primary-light);}
+
+input[type=range]{
+  width:100%; height:18px; margin:0; appearance:none; background:transparent; cursor:pointer;
+}
+input[type=range]::-webkit-slider-runnable-track{height:4px; border-radius:3px; background:var(--line-soft);}
+input[type=range]::-webkit-slider-thumb{
+  appearance:none; width:14px; height:14px; border-radius:50%; margin-top:-5px;
+  background:var(--primary-light); border:2px solid var(--card-bg); box-shadow:0 0 0 1px var(--line);
+  transition:box-shadow .15s ease;
+}
+input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 3px rgba(43,108,176,.16);}
+input[type=range]::-moz-range-track{height:4px; border-radius:3px; background:var(--line-soft);}
+input[type=range]::-moz-range-thumb{
+  width:14px; height:14px; border-radius:50%; border:2px solid var(--card-bg);
+  background:var(--primary-light); box-shadow:0 0 0 1px var(--line);
+}
+
+.filename-field{margin-top:12px;}
+.filename-field > label{
+  display:flex; align-items:center; gap:6px; font-size:.73rem; color:var(--muted); margin-bottom:4px;
+}
+.filename-row{display:flex; align-items:stretch;}
+.filename-row input{
+  flex:1; min-width:0; padding:6px 9px; border:1px solid var(--line); border-right:none;
+  border-radius:5px 0 0 5px; background:var(--field-bg); color:var(--ink); font-size:.8rem;
+  transition:border-color .15s ease, box-shadow .15s ease;
+}
+.filename-row input::placeholder{color:#c2ccd8;}
+.filename-row input:focus{
+  outline:none; border-color:var(--primary-light); box-shadow:0 0 0 3px rgba(43,108,176,.16);
+  position:relative; z-index:1;
+}
+.filename-row .ext{
+  display:flex; align-items:center; padding:6px 9px; border:1px solid var(--line);
+  border-radius:0 5px 5px 0; background:var(--line-soft); color:var(--muted); font-size:.8rem;
+}
+
 button.primary{
-  width:100%; padding:9px; border:none; border-radius:6px; background:var(--accent);
-  color:#fff; font-size:.88rem; font-weight:600; cursor:pointer; margin-top:10px;
+  width:100%; margin-top:11px; padding:9px; border:none; border-radius:7px;
+  background:var(--primary-light); color:#fff; font-size:.87rem; font-weight:700; cursor:pointer;
+  display:inline-flex; align-items:center; justify-content:center; gap:7px;
+  transition:background .15s ease;
 }
-button.primary:disabled{opacity:.5; cursor:not-allowed;}
+button.primary:hover:not(:disabled){background:#245e9b;}
+button.primary:disabled{background:var(--line); color:var(--muted); cursor:not-allowed;}
 button.secondary{
-  padding:7px 12px; border:1px solid var(--border); background:var(--bg); color:var(--text);
-  border-radius:6px; cursor:pointer; font-size:.8rem;
+  display:inline-flex; align-items:center; gap:6px;
+  padding:6px 11px; border:1px solid var(--line); background:var(--field-bg); color:var(--ink);
+  border-radius:6px; cursor:pointer; font-size:.79rem;
+  transition:background .15s ease, border-color .15s ease, color .15s ease;
 }
-.stage-progress{display:flex; flex-direction:column; align-items:center; gap:10px; width:70%; max-width:280px;}
-.stage-progress .progress-track{width:100%; height:8px; border-radius:6px; background:var(--bg); border:1px solid var(--border); overflow:hidden;}
-.stage-progress .progress-fill{height:100%; width:0%; background:var(--accent); transition:width .12s linear;}
-.stage-progress .progress-label{display:flex; justify-content:space-between; width:100%; font-size:.74rem; color:var(--muted);}
+button.secondary:hover:not(:disabled){background:var(--cat-tint,#eef3fa); border-color:var(--primary-light); color:var(--primary-text);}
+:root[data-theme="dark"] button.secondary:hover:not(:disabled){background:#172236;}
+button.secondary:disabled{background:var(--line-soft); color:var(--muted); cursor:not-allowed; border-color:var(--line-soft);}
+
 .preview-box{display:flex; flex-direction:column; height:100%;}
 .preview-stage{
-  flex:1; min-height:180px; border:1px solid var(--border); border-radius:8px;
+  flex:1; min-height:180px; border:1px solid var(--line-soft); border-radius:7px;
   background:
-    linear-gradient(45deg,#0000 25%,rgba(128,128,128,.15) 25%,rgba(128,128,128,.15) 50%,#0000 50%,#0000 75%,rgba(128,128,128,.15) 75%,rgba(128,128,128,.15)) ,
-    linear-gradient(45deg,#0000 25%,rgba(128,128,128,.15) 25%,rgba(128,128,128,.15) 50%,#0000 50%,#0000 75%,rgba(128,128,128,.15) 75%,rgba(128,128,128,.15));
-  background-size:20px 20px; background-position:0 0, 10px 10px;
+    linear-gradient(45deg,#0000 25%,var(--checker) 25%,var(--checker) 50%,#0000 50%,#0000 75%,var(--checker) 75%,var(--checker)),
+    linear-gradient(45deg,#0000 25%,var(--checker) 25%,var(--checker) 50%,#0000 50%,#0000 75%,var(--checker) 75%,var(--checker)),
+    var(--stage-bg);
+  background-size:18px 18px, 18px 18px, auto; background-position:0 0, 9px 9px, 0 0;
   display:flex; align-items:center; justify-content:center; overflow:auto; padding:8px;
 }
-.preview-stage img, .preview-stage svg{max-width:100%; max-height:100%;}
-.meta{display:flex; justify-content:space-between; font-size:.78rem; color:var(--muted); margin-top:8px;}
-.meta b{color:var(--text);}
-.actions{display:flex; gap:8px; margin-top:8px;}
-.hint{font-size:.72rem; color:var(--muted); line-height:1.5; margin-top:8px; text-align:justify;}
+.preview-stage img, .preview-stage svg, .preview-stage canvas{max-width:100%; max-height:100%;}
+.stage-empty{
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  color:var(--muted); font-size:.79rem;
+}
+.stage-empty .icon{width:1.7em; height:1.7em; opacity:.5;}
+
+.meta{
+  display:flex; justify-content:space-between; align-items:center;
+  font-size:.77rem; color:var(--muted); margin-top:8px;
+  padding-bottom:5px; border-bottom:1px solid var(--line-soft);
+}
+.meta:last-of-type{border-bottom:none; padding-bottom:0;}
+.meta b{color:var(--ink); font-variant-numeric:tabular-nums;}
+.actions{display:flex; gap:8px; margin-top:10px;}
+.hint{font-size:.71rem; color:var(--muted); line-height:1.6; margin-top:9px; text-align:justify;}
+.hint.with-icon{display:flex; gap:6px; align-items:flex-start;}
+.hint.with-icon .icon{margin-top:.15em; opacity:.7;}
+
 .badge{
-  display:inline-block; font-size:.68rem; padding:2px 8px; border-radius:10px;
-  background:color-mix(in srgb, var(--accent2) 15%, transparent); color:var(--accent2); margin-left:6px;
+  display:inline-flex; align-items:center; gap:4px; padding:1px 8px; border-radius:9px;
+  background:rgba(43,108,176,.15); color:var(--primary-light);
+  font-size:.7rem; font-weight:700;
+}
+.badge.is-warn{background:rgba(197,48,48,.14); color:var(--err);}
+.badge.is-ok{background:rgba(39,103,73,.15); color:var(--ok);}
+:root[data-theme="dark"] .badge.is-ok{background:rgba(72,187,120,.16);}
+
+/* 進度：對應真實執行階段 */
+.stage-progress{display:flex; flex-direction:column; align-items:center; gap:9px; width:74%; max-width:290px;}
+.stage-progress .progress-track{
+  width:100%; height:7px; border-radius:5px; background:var(--line-soft);
+  border:1px solid var(--line); overflow:hidden;
+}
+.stage-progress .progress-fill{height:100%; width:0%; background:var(--primary-light); transition:width .25s ease;}
+.stage-progress .progress-label{
+  display:flex; justify-content:space-between; gap:8px; width:100%;
+  font-size:.73rem; color:var(--muted);
+}
+.stage-progress .progress-label b{color:var(--primary-text); font-variant-numeric:tabular-nums;}
+
+/* Toast：非阻斷式回饋 */
+.toast{
+  position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(10px);
+  display:inline-flex; align-items:center; gap:7px;
+  background:var(--primary); color:#fff; padding:9px 15px; border-radius:8px;
+  font-size:.8rem; box-shadow:0 6px 22px rgba(16,42,67,.28); z-index:120;
+  opacity:0; pointer-events:none; transition:opacity .2s cubic-bezier(.4,0,.2,1), transform .2s cubic-bezier(.4,0,.2,1);
+}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+/* Modal：自製，不使用原生 alert/confirm */
+.modal-overlay{
+  display:none; position:fixed; inset:0; background:rgba(11,17,25,.5); z-index:100;
+  align-items:center; justify-content:center; padding:20px;
+}
+.modal-overlay.show{display:flex; animation:modalIn .18s cubic-bezier(.4,0,.2,1);}
+@keyframes modalIn{ from{opacity:0;} to{opacity:1;} }
+.modal-box{
+  background:var(--card-bg); border-radius:var(--radius); max-width:540px; width:100%;
+  max-height:82vh; overflow:auto; padding:18px 20px; box-shadow:0 12px 38px rgba(16,42,67,.3);
+  color:var(--ink); animation:modalBoxIn .24s cubic-bezier(.4,0,.2,1);
+}
+@keyframes modalBoxIn{ from{opacity:0; transform:translateY(-8px);} to{opacity:1; transform:none;} }
+.modal-box h3{
+  margin:0 0 12px; font-size:1rem; color:var(--primary-text);
+  display:flex; align-items:center; gap:7px;
+}
+.modal-box h4{
+  margin:15px 0 5px; font-size:.83rem; color:var(--ink);
+  display:flex; align-items:center; gap:6px;
+}
+.modal-box p, .modal-box li{font-size:.8rem; line-height:1.75; color:var(--muted); text-align:justify;}
+.modal-box ul, .modal-box ol{margin:4px 0; padding-left:1.25em;}
+.modal-box li{margin-bottom:3px;}
+.modal-actions{display:flex; justify-content:flex-end; gap:8px; margin-top:16px;}
+.modal-actions button{
+  display:inline-flex; align-items:center; gap:6px; padding:7px 15px; border-radius:6px;
+  font-size:.82rem; cursor:pointer; border:1px solid transparent; transition:background .15s ease;
+}
+.modal-actions .btn-main{background:var(--primary-light); color:#fff;}
+.modal-actions .btn-main:hover{background:#245e9b;}
+.modal-actions .btn-ghost{background:var(--field-bg); color:var(--ink); border-color:var(--line);}
+.modal-actions .btn-ghost:hover{background:var(--line-soft);}
+
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration:.01ms !important; animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;
+  }
 }
 </style>
 </head>
@@ -142,119 +333,142 @@ button.secondary{
 <header>
   <div class="header-left">
     <h1>圖片轉 SVG 向量化工具</h1>
+    <span class="sub">純前端運算，圖片不離開本機</span>
   </div>
   <div class="header-right">
-    <button class="icon-btn" id="helpBtn" type="button" title="使用說明">❓</button>
-    <div class="theme-switch" id="themeSwitch">
-      <button data-theme="light" type="button" title="淺色模式">☀️</button>
-      <button data-theme="dark" type="button" title="深色模式">🌙</button>
-    </div>
-    <a class="icon-btn" href="https://mygodcatisfat.github.io" target="_blank" rel="noopener" title="回到首頁">🏠</a>
+    <button class="switch" id="themeSwitch" type="button" role="switch" aria-checked="false" aria-label="深色模式">
+      <i data-icon="sun" class="sw-ic sw-sun"></i>
+      <i data-icon="moon" class="sw-ic sw-moon"></i>
+    </button>
+    <button class="hdr-btn" id="helpBtn" type="button"><i data-icon="book"></i>功能說明</button>
+    <a class="hdr-btn" href="https://mygodcatisfat.github.io" target="_blank" rel="noopener"><i data-icon="home"></i>回到首頁</a>
   </div>
 </header>
 
 <div class="modal-overlay" id="helpModal">
   <div class="modal-box">
-    <h3>使用說明</h3>
+    <h3><i data-icon="book" class="icon-lg"></i>使用說明</h3>
     <p>本工具完全在瀏覽器內運算，圖片不會上傳到任何伺服器，可離線使用。適合 Logo、圖示、線稿、截圖等色塊分明的圖片；照片類效果有限，容易產生大量路徑與較大檔案。</p>
-    <h4>操作步驟</h4>
+    <h4><i data-icon="check"></i>操作步驟</h4>
     <ol>
-      <li>上傳圖片：點擊上傳區塊選擇檔案，或直接拖曳圖片進去。</li>
+      <li>上傳圖片：點擊上傳區塊選擇檔案，或直接拖曳圖片進去，支援 PNG / JPG / GIF / BMP / WEBP / HEIC。</li>
       <li>選擇預設集：依圖片類型挑一組最接近的預設（Logo / 線稿 / 截圖 / 照片），系統會自動帶入建議參數。</li>
       <li>視需要微調參數：每項下方都有說明文字，滑桿調整後畫面不會自動更新，需再次按「轉換」。</li>
       <li>輸入檔案名稱（可選）：預設會用目前時間產生檔名，也可以自行修改。</li>
       <li>按下「轉換為 SVG」：畫面會顯示即時進度，完成後右側會出現向量化結果與統計資訊。</li>
       <li>下載或複製：滿意結果後可下載 .svg 檔案，或直接複製 SVG 原始碼貼到其他地方使用。</li>
     </ol>
-    <h4>常見狀況</h4>
+    <h4><i data-icon="alert"></i>常見狀況</h4>
     <ul>
       <li>SVG 檔案比原圖還大：通常代表顏色數太多或圖片雜訊太多，可嘗試降低顏色數量、提高忽略雜點的數值。</li>
       <li>出現大量白色斑點：這是照片紋理被誤判成雜訊色塊造成的，請提高「模糊去雜訊」與「模糊敏感度」再重新轉換。</li>
+      <li>手機轉換大圖：為避免記憶體不足導致分頁被系統關閉，超過門檻的圖片會自動等比例縮小後再處理，並於結果區標示。</li>
+      <li>HEIC 無法開啟：HEIC 是 iPhone 的預設照片格式，只有 Safari 等部分瀏覽器能直接解碼。若出現提示，請改用 Safari，或先把照片轉存成 JPG / PNG 再上傳。</li>
     </ul>
-    <button class="modal-close" id="helpCloseBtn">關閉</button>
+    <div class="modal-actions">
+      <button class="btn-main" id="helpCloseBtn" type="button"><i data-icon="check"></i>我知道了</button>
+    </div>
   </div>
 </div>
+
+<div class="modal-overlay" id="alertModal">
+  <div class="modal-box" style="max-width:400px;">
+    <h3><i data-icon="alert" class="icon-lg"></i><span id="alertTitle">提示</span></h3>
+    <p id="alertText"></p>
+    <div class="modal-actions">
+      <button class="btn-main" id="alertCloseBtn" type="button">關閉</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><i data-icon="check"></i><span id="toastText"></span></div>
 
 <div class="layout">
 
   <!-- 左側：控制面板 -->
   <div class="panel">
-    <h2>1. 上傳圖片</h2>
-    <div class="dropzone" id="dropzone">
-      點擊選擇，或拖曳圖片到這裡 (PNG / JPG / GIF / BMP)
-      <input type="file" id="fileInput" accept="image/*">
-    </div>
-
-    <h2>2. 預設集</h2>
-    <div class="presets" id="presets">
-      <button data-preset="logo" class="active">Logo / 圖示</button>
-      <button data-preset="lineart">線稿</button>
-      <button data-preset="screenshot">截圖 / UI</button>
-      <button data-preset="photo">照片(實驗性)</button>
-    </div>
-    <div class="hint" id="presetDesc" style="margin-top:0; margin-bottom:10px;"></div>
-
-    <h2>3. 參數微調</h2>
-    <div class="param-grid">
-      <div class="field">
-        <label><span class="lbl-name">顏色數量</span><span id="lbl_colors">16</span></label>
-        <input type="range" id="numberofcolors" min="2" max="256" value="16">
-        <div class="fieldhint">圖片被簡化成幾種顏色來描繪。數字越大越接近原圖，但檔案也越大。Logo 用 4～8，照片建議 20 以上。</div>
-      </div>
-      <div class="field">
-        <label><span class="lbl-name">路徑簡化</span><span id="lbl_ltres">1</span></label>
-        <input type="range" id="ltres" min="0" max="50" step="0.5" value="1">
-        <div class="fieldhint">直線邊緣容許誤差(ltres)。數字越大邊緣被拉直、簡化越多；設 0 表示盡量貼合原始像素邊緣。</div>
-      </div>
-      <div class="field">
-        <label><span class="lbl-name">曲線精度</span><span id="lbl_qtres">1</span></label>
-        <input type="range" id="qtres" min="0" max="50" step="0.5" value="1">
-        <div class="fieldhint">弧線、圓角容許誤差(qtres)。數字越大曲線被簡化越多，點數變少、更平滑但較失真。</div>
-      </div>
-      <div class="field">
-        <label><span class="lbl-name">忽略雜點</span><span id="lbl_pathomit">8</span></label>
-        <input type="range" id="pathomit" min="0" max="100" value="8">
-        <div class="fieldhint">面積小於這個像素數的雜點會被刪除(pathomit)，用來清掉雜訊；數字太大可能誤刪小細節（如文字）。</div>
-      </div>
-      <div class="field">
-        <label><span class="lbl-name">模糊去雜訊</span><span id="lbl_blur">0</span></label>
-        <input type="range" id="blurradius" min="0" max="5" value="0">
-        <div class="fieldhint">轉換前先模糊化(blurradius)，減少雜訊與鋸齒，代價是細節變糊。上限 5 為函式庫硬性限制。</div>
-      </div>
-      <div class="field">
-        <label><span class="lbl-name">模糊敏感度</span><span id="lbl_blurdelta">20</span></label>
-        <input type="range" id="blurdelta" min="0" max="1024" step="10" value="20">
-        <div class="fieldhint">判斷像素算不算雜訊的門檻(blurdelta)，只在模糊去雜訊開啟時有效。出現大量白色斑點時請調高此值。</div>
-      </div>
-      <div class="field">
-        <label><span class="lbl-name">直角增強</span><span id="lbl_rae">開啟</span></label>
-        <div class="checkfield"><input type="checkbox" id="rightangleenhance" checked> 保持直角</div>
-        <div class="fieldhint">保留圖片中的 90 度直角轉彎，適合截圖、UI、建築線稿；照片、手繪圖建議關閉。</div>
-      </div>
-      <div class="field">
-        <label><span class="lbl-name">輸出縮放</span><span id="lbl_scale">1x</span></label>
-        <input type="range" id="scale" min="1" max="8" step="1" value="1">
-        <div class="fieldhint">只放大輸出座標值(scale)，不影響清晰度。除非有特殊需求，一般保持 1x 即可。</div>
+    <div class="sec-upload">
+      <div class="sec-head"><i data-icon="upload"></i>1. 上傳圖片</div>
+      <div class="dropzone" id="dropzone">
+        <i data-icon="image"></i><span>點擊選擇，或拖曳圖片到這裡 (PNG / JPG / GIF / BMP / WEBP / HEIC)</span>
+        <input type="file" id="fileInput" accept="image/*,.heic,.heif,image/heic,image/heif">
       </div>
     </div>
 
-    <div class="filename-field">
-      <label>檔案名稱</label>
-      <div class="filename-row">
-        <input type="text" id="fileNameInput">
-        <span class="ext">.svg</span>
+    <div class="sec-preset">
+      <div class="sec-head" style="margin-top:14px;"><i data-icon="layers"></i>2. 預設集</div>
+      <div class="presets" id="presets">
+        <button data-preset="logo" class="active" type="button">Logo / 圖示</button>
+        <button data-preset="lineart" type="button">線稿</button>
+        <button data-preset="screenshot" type="button">截圖 / UI</button>
+        <button data-preset="photo" type="button">照片(實驗性)</button>
       </div>
+      <div class="hint" id="presetDesc" style="margin-top:0;"></div>
     </div>
 
-    <button class="primary" id="convertBtn" disabled>轉換為 SVG</button>
-    <div class="hint">調整完參數後點「轉換」重新產生。顏色越多、pathomit 越小，檔案越大也越精細。</div>
+    <div class="sec-param">
+      <div class="sec-head" style="margin-top:14px;"><i data-icon="sliders"></i>3. 參數微調</div>
+      <div class="param-grid">
+        <div class="field">
+          <label><span class="lbl-name">顏色數量</span><span class="lbl-val" id="lbl_colors">16</span></label>
+          <input type="range" id="numberofcolors" min="2" max="256" value="16">
+          <div class="fieldhint">圖片被簡化成幾種顏色來描繪。數字越大越接近原圖，但檔案也越大。Logo 用 4～8，照片建議 20 以上。</div>
+        </div>
+        <div class="field">
+          <label><span class="lbl-name">路徑簡化</span><span class="lbl-val" id="lbl_ltres">1</span></label>
+          <input type="range" id="ltres" min="0" max="50" step="0.5" value="1">
+          <div class="fieldhint">直線邊緣容許誤差(ltres)。數字越大邊緣被拉直、簡化越多；設 0 表示盡量貼合原始像素邊緣。</div>
+        </div>
+        <div class="field">
+          <label><span class="lbl-name">曲線精度</span><span class="lbl-val" id="lbl_qtres">1</span></label>
+          <input type="range" id="qtres" min="0" max="50" step="0.5" value="1">
+          <div class="fieldhint">弧線、圓角容許誤差(qtres)。數字越大曲線被簡化越多，點數變少、更平滑但較失真。</div>
+        </div>
+        <div class="field">
+          <label><span class="lbl-name">忽略雜點</span><span class="lbl-val" id="lbl_pathomit">8</span></label>
+          <input type="range" id="pathomit" min="0" max="100" value="8">
+          <div class="fieldhint">面積小於這個像素數的雜點會被刪除(pathomit)，用來清掉雜訊；數字太大可能誤刪小細節（如文字）。</div>
+        </div>
+        <div class="field">
+          <label><span class="lbl-name">模糊去雜訊</span><span class="lbl-val" id="lbl_blur">0</span></label>
+          <input type="range" id="blurradius" min="0" max="5" value="0">
+          <div class="fieldhint">轉換前先模糊化(blurradius)，減少雜訊與鋸齒，代價是細節變糊。上限 5 為函式庫硬性限制。</div>
+        </div>
+        <div class="field">
+          <label><span class="lbl-name">模糊敏感度</span><span class="lbl-val" id="lbl_blurdelta">20</span></label>
+          <input type="range" id="blurdelta" min="0" max="1024" step="10" value="20">
+          <div class="fieldhint">判斷像素算不算雜訊的門檻(blurdelta)，只在模糊去雜訊開啟時有效。出現大量白色斑點時請調高此值。</div>
+        </div>
+        <div class="field">
+          <label><span class="lbl-name">直角增強</span><span class="lbl-val" id="lbl_rae">開啟</span></label>
+          <div class="checkfield"><input type="checkbox" id="rightangleenhance" checked> 保持直角</div>
+          <div class="fieldhint">保留圖片中的 90 度直角轉彎，適合截圖、UI、建築線稿；照片、手繪圖建議關閉。</div>
+        </div>
+        <div class="field">
+          <label><span class="lbl-name">輸出縮放</span><span class="lbl-val" id="lbl_scale">1x</span></label>
+          <input type="range" id="scale" min="1" max="8" step="1" value="1">
+          <div class="fieldhint">只放大輸出座標值(scale)，不影響清晰度。除非有特殊需求，一般保持 1x 即可。</div>
+        </div>
+      </div>
+
+      <div class="filename-field">
+        <label><i data-icon="file-text"></i>檔案名稱</label>
+        <div class="filename-row">
+          <input type="text" id="fileNameInput">
+          <span class="ext">.svg</span>
+        </div>
+      </div>
+
+      <button class="primary" id="convertBtn" type="button" disabled><i data-icon="zap"></i>轉換為 SVG</button>
+      <div class="hint with-icon"><i data-icon="info"></i><span>調整完參數後點「轉換」重新產生。顏色越多、pathomit 越小，檔案越大也越精細。</span></div>
+    </div>
   </div>
 
   <!-- 中間：原圖 -->
   <div class="panel preview-box">
-    <h2>原始圖片</h2>
+    <div class="panel-title"><i data-icon="image"></i>原始圖片</div>
     <div class="preview-stage" id="originalStage">
-      <span style="color:var(--muted); font-size:.85rem;">尚未上傳圖片</span>
+      <span class="stage-empty"><i data-icon="image"></i>尚未上傳圖片</span>
     </div>
     <div class="meta"><span>尺寸</span><b id="origSize">-</b></div>
     <div class="meta"><span>檔案大小</span><b id="origFileSize">-</b></div>
@@ -262,15 +476,15 @@ button.secondary{
 
   <!-- 右側：SVG 結果 -->
   <div class="panel preview-box">
-    <h2>SVG 結果 <span class="badge" id="statusBadge" style="display:none;"></span></h2>
+    <div class="panel-title"><i data-icon="shapes"></i>SVG 結果 <span class="badge" id="statusBadge" style="display:none;"></span></div>
     <div class="preview-stage" id="svgStage">
-      <span style="color:var(--muted); font-size:.85rem;">轉換後顯示於此</span>
+      <span class="stage-empty"><i data-icon="shapes"></i>轉換後顯示於此</span>
     </div>
     <div class="meta"><span>SVG 大小</span><b id="svgFileSize">-</b></div>
     <div class="meta"><span>路徑數量</span><b id="pathCount">-</b></div>
     <div class="actions">
-      <button class="secondary" id="downloadBtn" disabled>下載 .svg</button>
-      <button class="secondary" id="copyBtn" disabled>複製 SVG 原始碼</button>
+      <button class="secondary" id="downloadBtn" type="button" disabled><i data-icon="file-down"></i>下載 .svg</button>
+      <button class="secondary" id="copyBtn" type="button" disabled><i data-icon="copy"></i>複製 SVG 原始碼</button>
     </div>
   </div>
 
@@ -659,8 +873,65 @@ var els = {
   helpBtn: document.getElementById('helpBtn'),
   helpModal: document.getElementById('helpModal'),
   helpCloseBtn: document.getElementById('helpCloseBtn'),
+  alertModal: document.getElementById('alertModal'),
+  alertTitle: document.getElementById('alertTitle'),
+  alertText: document.getElementById('alertText'),
+  alertCloseBtn: document.getElementById('alertCloseBtn'),
+  toast: document.getElementById('toast'),
+  toastText: document.getElementById('toastText'),
   fileNameInput: document.getElementById('fileNameInput')
 };
+
+// ---- 圖示系統：名稱 → SVG path，載入時統一把 <i data-icon> 換成線條風 SVG ----
+var ICONS = {
+  'home':      '<path d="M3 10.6 12 3.4l9 7.2"/><path d="M5.4 9.6V20.6h13.2V9.6"/><path d="M10 20.6v-5.2h4v5.2"/>',
+  'book':      '<path d="M4 4.5A1.5 1.5 0 0 1 5.5 3H19v18H5.5A1.5 1.5 0 0 1 4 19.5z"/><path d="M4 17.2h15"/><path d="M8 7.5h7"/>',
+  'sun':       '<circle cx="12" cy="12" r="4"/><path d="M12 2.6v2M12 19.4v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2.6 12h2M19.4 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  'moon':      '<path d="M20.2 14.6A8.6 8.6 0 0 1 9.4 3.8a8.6 8.6 0 1 0 10.8 10.8z"/>',
+  'upload':    '<path d="M12 15.4V3.6"/><path d="M7.8 7.8 12 3.6l4.2 4.2"/><path d="M3.6 15.4v4a1.6 1.6 0 0 0 1.6 1.6h13.6a1.6 1.6 0 0 0 1.6-1.6v-4"/>',
+  'image':     '<rect x="3.2" y="4.4" width="17.6" height="15.2" rx="2"/><circle cx="8.6" cy="9.6" r="1.6"/><path d="M20.8 15.6 16 10.8l-8 8.8"/>',
+  'shapes':    '<rect x="3.2" y="12.6" width="8" height="8" rx="1.4"/><circle cx="16.8" cy="7.2" r="4"/><path d="M7.2 3.4 3.6 9.8h7.2z"/>',
+  'layers':    '<path d="M12 3.2 3.4 8 12 12.8 20.6 8z"/><path d="M3.4 12.4 12 17.2l8.6-4.8"/><path d="M3.4 16.8 12 21.6l8.6-4.8"/>',
+  'sliders':   '<path d="M3.6 7.2h9.2"/><path d="M17.2 7.2h3.2"/><circle cx="15" cy="7.2" r="2.2"/><path d="M3.6 16.8h3.2"/><path d="M11.2 16.8h9.2"/><circle cx="9" cy="16.8" r="2.2"/>',
+  'file-text': '<path d="M14 3.2H7a2 2 0 0 0-2 2v13.6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.2z"/><path d="M14 3.2v5h5"/><path d="M8.8 13.2h6.4M8.8 16.8h4.4"/>',
+  'file-down': '<path d="M14 3.2H7a2 2 0 0 0-2 2v13.6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.2z"/><path d="M14 3.2v5h5"/><path d="M12 11.4v5.4"/><path d="M9.8 14.6 12 16.8l2.2-2.2"/>',
+  'copy':      '<rect x="9" y="9" width="11.8" height="11.8" rx="2"/><path d="M5.4 15H4.6A1.4 1.4 0 0 1 3.2 13.6V4.6a1.4 1.4 0 0 1 1.4-1.4h9a1.4 1.4 0 0 1 1.4 1.4v.8"/>',
+  'check':     '<path d="M4.4 12.4 9.2 17.2 19.6 6.8"/>',
+  'alert':     '<path d="M12 3.6 2.8 20.4h18.4z"/><path d="M12 10v4.2"/><path d="M12 17.4h.01"/>',
+  'info':      '<circle cx="12" cy="12" r="8.8"/><path d="M12 11.2v5"/><path d="M12 7.9h.01"/>',
+  'zap':       '<path d="M13.2 2.8 4.4 14h6.6l-1.2 7.2L19.6 10h-6.6z"/>'
+};
+(function renderIcons(root){
+  var nodes = (root || document).querySelectorAll('i[data-icon]');
+  Array.prototype.forEach.call(nodes, function(node){
+    var body = ICONS[node.dataset.icon];
+    if(!body) return;
+    var cls = 'icon' + (node.className ? ' ' + node.className : '');
+    var svg = '<svg class="' + cls + '"' + (node.id ? ' id="' + node.id + '"' : '') +
+      ' viewBox="0 0 24 24" aria-hidden="true" focusable="false"' +
+      ' stroke="currentColor" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' +
+      body + '</svg>';
+    node.outerHTML = svg;
+  });
+})();
+
+// ---- 非阻斷式回饋 toast ----
+var toastTimer = null;
+function showToast(msg){
+  els.toastText.textContent = msg;
+  els.toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ els.toast.classList.remove('show'); }, 2400);
+}
+
+// ---- 自製提示彈窗（原生 alert 在部分環境會被封鎖，使用者會誤以為系統沒反應）----
+function showAlert(text, title){
+  els.alertTitle.textContent = title || '提示';
+  els.alertText.textContent = text;
+  els.alertModal.classList.add('show');
+}
+els.alertCloseBtn.addEventListener('click', function(){ els.alertModal.classList.remove('show'); });
+els.alertModal.addEventListener('click', function(e){ if(e.target === els.alertModal) els.alertModal.classList.remove('show'); });
 
 // ---- 使用說明彈窗 ----
 function openHelp(){ els.helpModal.classList.add('show'); }
@@ -668,7 +939,11 @@ function closeHelp(){ els.helpModal.classList.remove('show'); }
 els.helpBtn.addEventListener('click', openHelp);
 els.helpCloseBtn.addEventListener('click', closeHelp);
 els.helpModal.addEventListener('click', function(e){ if(e.target === els.helpModal) closeHelp(); });
-document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeHelp(); });
+document.addEventListener('keydown', function(e){
+  if(e.key !== 'Escape') return;
+  closeHelp();
+  els.alertModal.classList.remove('show');
+});
 
 // ---- 檔案名稱預設值：svg-yyyymmddhhmmss ----
 function defaultFileName(){
@@ -678,25 +953,16 @@ function defaultFileName(){
 }
 els.fileNameInput.value = defaultFileName();
 
-// ---- 深色/淺色模式切換 ----
+// ---- 深色/淺色模式切換（初始主題已於 <head> 同步設定，此處只負責之後的切換）----
 function applyTheme(mode){
-  if(mode === 'light' || mode === 'dark'){
-    document.documentElement.setAttribute('data-theme', mode);
-    localStorage.setItem('img2svg-theme', mode);
-  } else {
-    document.documentElement.removeAttribute('data-theme');
-    localStorage.removeItem('img2svg-theme');
-  }
-  Array.prototype.forEach.call(els.themeSwitch.querySelectorAll('button'), function(b){
-    b.classList.toggle('active', b.dataset.theme === mode);
-  });
+  document.documentElement.setAttribute('data-theme', mode);
+  try { localStorage.setItem('img2svg-theme', mode); } catch(e) {}
+  els.themeSwitch.setAttribute('aria-checked', mode === 'dark' ? 'true' : 'false');
 }
-els.themeSwitch.addEventListener('click', function(e){
-  var btn = e.target.closest('button[data-theme]');
-  if(!btn) return;
-  applyTheme(btn.dataset.theme);
+els.themeSwitch.addEventListener('click', function(){
+  applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
 });
-applyTheme(localStorage.getItem('img2svg-theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light');
 
 var PRESETS = {
   logo: {
@@ -775,30 +1041,77 @@ els.fileInput.addEventListener('change', function(){
   if(els.fileInput.files.length) handleFile(els.fileInput.files[0]);
 });
 
-function handleFile(file){
-  if(!file.type.startsWith('image/')){ alert('請選擇圖片檔案'); return; }
-  state.origFileBytes = file.size;
-  var reader = new FileReader();
-  reader.onload = function(e){
-    var img = new Image();
-    img.onload = function(){
-      state.img = img;
-      els.originalStage.innerHTML = '';
-      var previewImg = img.cloneNode();
-      els.originalStage.appendChild(previewImg);
-      els.origSize.textContent = img.width + ' x ' + img.height + ' px';
-      els.origFileSize.textContent = humanBytes(state.origFileBytes);
-      els.convertBtn.disabled = false;
-      els.svgStage.innerHTML = '<span style="color:var(--muted); font-size:.85rem;">尚未轉換</span>';
-      els.svgFileSize.textContent = '-';
-      els.pathCount.textContent = '-';
-      els.downloadBtn.disabled = true;
-      els.copyBtn.disabled = true;
-      els.statusBadge.style.display = 'none';
+var HEIC_RE = /\.(heic|heif)$/i;
+function isHeic(file){
+  return HEIC_RE.test(file.name || '') || /^image\/(heic|heif)/i.test(file.type || '');
+}
+
+// 透過 <img> 解碼（PNG/JPG/GIF/BMP/WEBP，以及 Safari 等原生支援 HEIC 的瀏覽器）
+function decodeViaImg(file){
+  return new Promise(function(resolve, reject){
+    var reader = new FileReader();
+    reader.onerror = function(){ reject(new Error('read-failed')); };
+    reader.onload = function(e){
+      var img = new Image();
+      img.onload = function(){
+        // 部分瀏覽器對無法解碼的格式仍會觸發 onload，但尺寸為 0
+        if(!img.naturalWidth || !img.naturalHeight){ reject(new Error('decode-failed')); return; }
+        resolve(img);
+      };
+      img.onerror = function(){ reject(new Error('decode-failed')); };
+      img.src = e.target.result;
     };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
+    reader.readAsDataURL(file);
+  });
+}
+
+// 退而求其次：createImageBitmap 在部分瀏覽器能解碼 <img> 不支援的格式
+function decodeViaBitmap(file){
+  if(typeof createImageBitmap !== 'function') return Promise.reject(new Error('unsupported'));
+  return createImageBitmap(file).then(function(bmp){
+    var c = document.createElement('canvas');
+    c.width = bmp.width; c.height = bmp.height;
+    c.getContext('2d').drawImage(bmp, 0, 0);
+    if(bmp.close) bmp.close();
+    return c;
+  });
+}
+
+function decodeImageFile(file){
+  return decodeViaImg(file).catch(function(){ return decodeViaBitmap(file); });
+}
+
+function handleFile(file){
+  var acceptable = (file.type && file.type.indexOf('image/') === 0) || isHeic(file);
+  if(!acceptable){
+    showAlert('請選擇圖片檔案（PNG / JPG / GIF / BMP / WEBP / HEIC）。', '檔案格式不支援');
+    return;
+  }
+
+  decodeImageFile(file).then(function(src){
+    state.img = src;                       // 可能是 <img>，也可能是已解碼的 <canvas>
+    state.origFileBytes = file.size;
+
+    els.originalStage.innerHTML = '';
+    // canvas 沒辦法用 cloneNode 複製像素，直接放進預覽區即可（後續 drawImage 也吃 canvas）
+    els.originalStage.appendChild(src.tagName === 'CANVAS' ? src : src.cloneNode());
+
+    els.origSize.textContent = src.width + ' x ' + src.height + ' px';
+    els.origFileSize.textContent = humanBytes(state.origFileBytes);
+    els.convertBtn.disabled = false;
+    els.svgStage.innerHTML = '<span class="stage-empty">尚未轉換</span>';
+    els.svgFileSize.textContent = '-';
+    els.pathCount.textContent = '-';
+    els.downloadBtn.disabled = true;
+    els.copyBtn.disabled = true;
+    els.statusBadge.style.display = 'none';
+  }).catch(function(){
+    if(isHeic(file)){
+      showAlert('這個瀏覽器無法解碼 HEIC/HEIF 圖片。HEIC 是 iPhone 的預設格式，目前只有 Safari 等部分瀏覽器能直接開啟。請改用 Safari，或先將照片轉存成 JPG / PNG 後再上傳。', '無法讀取 HEIC 圖片');
+    } else {
+      showAlert('無法讀取這個圖片檔案，檔案可能已損毀或格式不受支援。', '讀取失敗');
+    }
+  });
 }
 
 function nextFrame(){
@@ -810,7 +1123,7 @@ function showStageProgress(){
   els.svgStage.innerHTML =
     '<div class="stage-progress">' +
       '<div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>' +
-      '<div class="progress-label"><span id="progressStage">準備中...</span><span id="progressPct">0%</span></div>' +
+      '<div class="progress-label"><span id="progressStage">準備中...</span><b id="progressPct">0%</b></div>' +
     '</div>';
 }
 
@@ -859,7 +1172,7 @@ async function traceWithProgress(imgData, options){
 els.convertBtn.addEventListener('click', async function(){
   if(!state.img) return;
   els.convertBtn.disabled = true;
-  els.convertBtn.textContent = '轉換中...';
+  els.convertBtn.textContent = '轉換中…';
   els.statusBadge.style.display = 'none';
   showStageProgress();
   setProgress(0, '準備中...');
@@ -915,23 +1228,23 @@ els.convertBtn.addEventListener('click', async function(){
     els.downloadBtn.disabled = false;
     els.copyBtn.disabled = false;
 
-    els.statusBadge.style.display = 'inline-block';
+    els.statusBadge.style.display = 'inline-flex';
     if(drawW !== srcW || drawH !== srcH){
-      els.statusBadge.textContent = '⚠ 圖片過大已自動縮小為 ' + drawW + '×' + drawH + '（避免手機記憶體不足閃退）';
-      els.statusBadge.style.color = '#c0392b';
+      els.statusBadge.className = 'badge is-warn';
+      els.statusBadge.textContent = '已自動縮小為 ' + drawW + '×' + drawH;
     } else if(svgBytes > state.origFileBytes * 1.5){
-      els.statusBadge.textContent = '⚠ SVG 較大，建議降低顏色數或提高簡化度';
-      els.statusBadge.style.color = '#c0392b';
+      els.statusBadge.className = 'badge is-warn';
+      els.statusBadge.textContent = 'SVG 較大，建議降低顏色數';
     } else {
-      els.statusBadge.textContent = '✓ 完成';
-      els.statusBadge.style.color = '';
+      els.statusBadge.className = 'badge is-ok';
+      els.statusBadge.textContent = '完成';
     }
   } catch(err){
-    els.svgStage.innerHTML = '<span style="color:var(--muted); font-size:.85rem;">轉換失敗</span>';
-    alert('轉換失敗: ' + err.message);
+    els.svgStage.innerHTML = '<span class="stage-empty">轉換失敗</span>';
+    showAlert('轉換過程發生錯誤：' + err.message + '。請嘗試降低顏色數量或改用較小的圖片。', '轉換失敗');
   } finally {
     els.convertBtn.disabled = false;
-    els.convertBtn.textContent = '轉換為 SVG';
+    els.convertBtn.innerHTML = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" stroke="currentColor" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + ICONS['zap'] + '</svg>轉換為 SVG';
   }
 });
 
@@ -941,19 +1254,21 @@ els.downloadBtn.addEventListener('click', function(){
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a');
   a.href = url;
-  a.download = (els.fileNameInput.value.trim() || defaultFileName()) + '.svg';
+  var name = (els.fileNameInput.value.trim() || defaultFileName()) + '.svg';
+  a.download = name;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+  showToast('已下載 ' + name);
 });
 
 els.copyBtn.addEventListener('click', function(){
   if(!state.currentSvg) return;
   navigator.clipboard.writeText(state.currentSvg).then(function(){
-    var orig = els.copyBtn.textContent;
-    els.copyBtn.textContent = '已複製!';
-    setTimeout(function(){ els.copyBtn.textContent = orig; }, 1500);
+    showToast('SVG 原始碼已複製到剪貼簿');
+  }, function(){
+    showAlert('複製失敗，瀏覽器拒絕存取剪貼簿。請改用「下載 .svg」取得檔案。', '無法複製');
   });
 });
 

@@ -1,0 +1,2814 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>警察逮捕人犯障礙時間計算工具</title>
+  <script>
+    /* 3. 深色/淺色模式：在 <style> 解析前就決定好 data-theme，避免載入時先閃一下淺色再跳深色 */
+    (function() {
+      var saved = null;
+      try { saved = localStorage.getItem('jsrf-theme'); } catch (e) { /* localStorage 不可用，saved 保持 null */ }
+      var theme = (saved === 'dark' || saved === 'light') ? saved
+        : ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+  <style>
+    :root {
+      --primary: #1a365d;
+      --primary-text: var(--primary); /* 標題/文字用色；深色模式會改亮，--primary 本身維持深藍當作頁首背景 */
+      --primary-light: #2b6cb0;
+      --accent: #2c7a7b;
+      --bg: #eff3f8;
+      --card-bg: #ffffff;
+      --line: #cbd5e0;
+      --line-soft: #e2e8f0;
+      --ink: #1a202c;
+      --muted: #5a6b7f;
+      --err: #c53030;
+      --ok: #276749;
+      --warn: #b7791f;
+      --radius: 9px;
+      --shadow: 0 1px 2px rgba(16, 42, 67, .06), 0 5px 14px rgba(16, 42, 67, .06);
+      --header-h: 52px;
+    }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Microsoft JhengHei", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      margin: 0;
+      padding: 0 0 48px;
+      line-height: 1.5;
+    }
+
+    /* ---------------- 線條風單色 icon ---------------- */
+    .icon {
+      width: 1.05em; height: 1.05em; flex: none;
+      stroke: currentColor; fill: none;
+      stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
+      vertical-align: -.16em;
+    }
+    .icon-lg { width: 1.25em; height: 1.25em; }
+
+    /* ---------------- 頁首 ---------------- */
+    .app-header {
+      position: sticky; top: 0; z-index: 60;
+      background: var(--primary);
+      color: #fff;
+      border-bottom: 1px solid rgba(255, 255, 255, .12);
+    }
+    .header-inner {
+      display: flex; align-items: center; gap: 12px;
+      padding: 6px 16px; width: 100%;
+    }
+    .app-title { font-size: 1.02rem; font-weight: 700; margin: 0; letter-spacing: .01em; }
+    .app-sub { font-size: .71rem; opacity: .7; margin: 0; font-weight: 400; }
+    .header-inner .spacer { flex: 1 1 auto; }
+    .hbtn {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, .3);
+      color: #fff; border-radius: 6px;
+      padding: 5px 11px; font-size: .81rem; font-weight: 600;
+      cursor: pointer; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 6px;
+      font-family: inherit; white-space: nowrap;
+      transition: background .15s, border-color .15s;
+    }
+    .hbtn:hover { background: rgba(255, 255, 255, .13); border-color: rgba(255, 255, 255, .55); }
+
+    /* 3. 深色/淺色模式切換開關 */
+    .theme-switch {
+      position: relative; width: 46px; height: 25px; flex: none;
+      border-radius: 13px; border: 1px solid rgba(255, 255, 255, .35);
+      background: rgba(255, 255, 255, .14); cursor: pointer; padding: 0;
+      display: inline-flex; align-items: center;
+      transition: background .2s, border-color .2s;
+    }
+    .theme-switch:hover { border-color: rgba(255, 255, 255, .6); }
+    .theme-switch:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+    .theme-switch .ts-icon {
+      position: absolute; top: 50%; width: 13px; height: 13px;
+      transform: translateY(-50%); color: rgba(255, 255, 255, .75);
+      transition: opacity .2s; pointer-events: none;
+    }
+    .theme-switch .ts-sun  { left: 5px; }
+    .theme-switch .ts-moon { right: 5px; }
+    .theme-switch .ts-thumb {
+      position: absolute; top: 2px; left: 2px; width: 19px; height: 19px;
+      border-radius: 50%; background: #fff;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, .35);
+      transition: transform .22s cubic-bezier(.4, 0, .2, 1);
+    }
+    .theme-switch[aria-checked="true"] .ts-thumb { transform: translateX(21px); }
+    .theme-switch[aria-checked="true"] .ts-moon { opacity: 1; }
+    .theme-switch[aria-checked="true"] .ts-sun { opacity: .55; }
+    .theme-switch[aria-checked="false"] .ts-sun { opacity: 1; }
+    .theme-switch[aria-checked="false"] .ts-moon { opacity: .55; }
+
+    /* ---------------- 版面：主欄 + 右側節點圖 ---------------- */
+    .app-body {
+      display: flex; align-items: flex-start; gap: 14px;
+      padding: 12px 16px 0; width: 100%;
+    }
+    .main-col { flex: 1 1 auto; min-width: 0; }
+    .side-col {
+      flex: 0 0 250px; width: 250px;
+      position: sticky; top: calc(var(--header-h) + 12px);
+      max-height: calc(100vh - var(--header-h) - 24px);
+      overflow-y: auto; overflow-x: hidden;
+    }
+    /* 窄螢幕：工作列改為整段落在人犯卡片下方，功能完全不損失 */
+    @media (max-width: 1080px) {
+      .app-body { padding: 10px 10px 0; flex-wrap: wrap; }
+      .main-col { flex: 1 1 100%; }
+      .side-col {
+        flex: 1 1 100%; width: 100%;
+        position: static; max-height: none; overflow: visible;
+      }
+    }
+    @media (max-width: 640px) {
+      .app-body { padding: 8px 8px 0; gap: 0; }
+      .header-inner { padding: 6px 10px; gap: 8px; }
+      .app-sub { display: none; }
+    }
+
+    .panel {
+      background: var(--card-bg); border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 11px 14px; margin-bottom: 11px;
+    }
+    @media (max-width: 640px) { .panel { padding: 9px; } }
+
+    .panel-title {
+      margin: 0 0 8px; font-size: .87rem; font-weight: 700; color: var(--primary-text);
+      display: flex; align-items: center; gap: 6px;
+    }
+
+    code {
+      background: #edf2f7; padding: 1px 5px; border-radius: 3px;
+      font-size: .95em; font-family: "Consolas", "Menlo", monospace;
+    }
+
+    /* 單行緊湊提示列 */
+    .hint-inline {
+      display: flex; align-items: flex-start; gap: 8px;
+      font-size: .78rem; color: var(--muted); line-height: 1.6;
+      margin-top: 9px; padding-top: 9px; border-top: 1px dashed var(--line-soft);
+    }
+    .hint-inline b { color: var(--ink); }
+    .hint-inline .sep { color: var(--line); margin: 0 3px; }
+
+    /* ---------------- 工具列 ---------------- */
+    .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
+    .field-inline {
+      display: flex; align-items: center; gap: 6px;
+      background: #f2f6fb; border: 1px solid var(--line); border-radius: 6px; padding: 3px 9px;
+    }
+    .field-inline label {
+      font-weight: 700; color: var(--primary-text); font-size: .8rem;
+      white-space: nowrap; display: flex; align-items: center; gap: 5px;
+    }
+    .field-inline input { width: 60px; padding: 3px 5px; text-align: center; }
+    .toolbar .spacer { flex: 1 1 auto; }
+
+    .btn-mini {
+      background: #fff; color: var(--primary-text);
+      border: 1px solid var(--line); border-radius: 6px;
+      padding: 5px 10px; font-size: .8rem; font-weight: 600;
+      cursor: pointer; font-family: inherit; white-space: nowrap;
+      display: inline-flex; align-items: center; gap: 6px;
+      transition: background .15s, border-color .15s, color .15s;
+    }
+    .btn-mini:hover { background: #f2f6fb; border-color: var(--primary-light); }
+    .btn-mini.danger { color: var(--err); }
+    .btn-mini.danger:hover { background: #fff5f5; border-color: var(--err); }
+
+    /* ---------------- 人犯卡片 ---------------- */
+    .suspect-card {
+      background: var(--card-bg);
+      border: 1px solid var(--line-soft);
+      border-left: 4px solid var(--primary-light);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 0 0 10px; margin-bottom: 11px;
+      overflow: hidden;
+      transition: height .38s cubic-bezier(.4, 0, .2, 1),
+                  margin .38s cubic-bezier(.4, 0, .2, 1),
+                  padding .38s cubic-bezier(.4, 0, .2, 1),
+                  opacity .26s ease, transform .3s ease,
+                  border-color .2s, box-shadow .2s;
+    }
+    .suspect-card.has-error { border-left-color: var(--err); }
+    /* 3. 刪除時「被抽走」，下方卡片平順往上補位 */
+    .suspect-card.removing {
+      opacity: 0; transform: translateX(-34px) scale(.96);
+      pointer-events: none;
+    }
+    @keyframes cardIn { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: none; } }
+    .suspect-card.entering { animation: cardIn .34s cubic-bezier(.4, 0, .2, 1); }
+    @keyframes cardFlash {
+      0%   { box-shadow: 0 0 0 0 rgba(43, 108, 176, .55), var(--shadow); }
+      100% { box-shadow: 0 0 0 14px rgba(43, 108, 176, 0), var(--shadow); }
+    }
+    .suspect-card.flash { animation: cardFlash 1s ease-out; border-left-color: var(--primary-light); }
+
+    .suspect-header {
+      font-size: .9rem; font-weight: 700; color: var(--primary-text);
+      background: #eaf0f7; padding: 6px 12px;
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 8px; flex-wrap: wrap;
+    }
+    .suspect-header .hdr-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    /* 4. 三個區塊各有專屬色系與外框，一眼就能區分 */
+    .card-section {
+      margin: 9px 12px 0; border: 1px solid var(--sec-line);
+      border-radius: 8px; overflow: hidden; background: var(--card-bg);
+    }
+    .card-section:last-of-type { margin-bottom: 2px; }
+    .sec-person  { --sec: #2c7a7b; --sec-tint: #eef7f7; --sec-line: #bcdcdb; }
+    .sec-arrest  { --sec: #975a16; --sec-tint: #fdf5e7; --sec-line: #ecd9ae; }
+    .sec-barrier { --sec: #2b6cb0; --sec-tint: #eef3fa; --sec-line: #c3d6ec; }
+
+    .section-label {
+      font-size: .76rem; font-weight: 700; color: var(--sec, var(--muted));
+      letter-spacing: .03em; margin: 0; padding: 5px 10px;
+      background: var(--sec-tint, #f2f6fb);
+      border-bottom: 1px solid var(--sec-line, var(--line-soft));
+      border-left: 3px solid var(--sec, var(--line));
+      display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    }
+    .section-label .sec-note {
+      font-size: .69rem; font-weight: 400; color: var(--muted); letter-spacing: 0;
+    }
+    .card-body { padding: 9px 10px; }
+    @media (max-width: 640px) {
+      .card-section { margin: 7px 8px 0; }
+      .card-body { padding: 8px; }
+    }
+
+    /* 緊湊欄位網格：標籤在上、輸入在下，取代原本高聳的兩列表格 */
+    .compact-grid { display: grid; gap: 7px 10px; }
+    .cols-4 { grid-template-columns: repeat(4, 1fr); }
+    .cols-3 { grid-template-columns: .85fr 1.35fr 1fr; }
+    .cfield { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .cfield > .cflabel {
+      font-size: .72rem; font-weight: 700; color: var(--primary-text);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    @media (max-width: 980px) { .cols-4, .cols-3 { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 520px) { .cols-4, .cols-3 { grid-template-columns: 1fr; } }
+
+    .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+    table.form-table { width: 100%; border-collapse: collapse; min-width: 540px; }
+    table.form-table th, table.form-table td {
+      border: 1px solid #bcc8d6; padding: 4px 7px; vertical-align: middle; font-size: .83rem;
+    }
+    table.form-table th {
+      background: #f2f6fb; font-weight: 700; text-align: center;
+      white-space: nowrap; color: var(--primary-text);
+    }
+    table.form-table thead th { background: #e3eaf3; }
+
+    /* 2 + 5. 法定障礙事由：置左、事由與操作鈕分置兩端
+       （選擇器需壓過 table.form-table th 的置中設定） */
+    table.form-table .barrier-row > th,
+    table.form-table .group-row > th {
+      text-align: left; white-space: normal; font-weight: 600;
+    }
+    .rsn { display: flex; align-items: center; gap: 6px; min-height: 26px; }
+    .rsn > .rsn-text { flex: 1 1 auto; min-width: 0; }
+    .rsn > .reason-input { flex: 1 1 auto; min-width: 0; }
+    /* 3. 其他障礙時間的刪除鍵緊貼事由輸入框右側 */
+    .rsn > .btn-add, .rsn > .btn-del { flex: none; margin-left: 0; }
+    .rsn > .rsn-text + .btn-add, .rsn > .rsn-text + .btn-del { margin-left: auto; }
+
+    /* 每個事由的識別圖示；未填寫的列整體淡化，已填寫的一眼突顯 */
+    .rsn-icon { color: var(--primary-light); opacity: .75; flex: none; }
+    .barrier-row.is-empty .rsn-text { color: #93a3b5; font-weight: 500; }
+    .barrier-row.is-empty .rsn-icon { opacity: .3; }
+    .barrier-row.is-filled .rsn-text { color: var(--primary-text); }
+
+    /* 小計：文字下方加上佔比橫條，一眼看出哪個事由影響最大 */
+    .row-subtotal .sub-val { display: block; }
+    .sub-bar {
+      display: block; height: 3px; border-radius: 2px;
+      background: #e2e8f0; margin: 3px auto 0; max-width: 120px; overflow: hidden;
+    }
+    .sub-bar > i { display: block; height: 100%; width: 0; background: var(--primary-light); transition: width .25s ease; }
+    .row-subtotal.zero .sub-bar, .row-subtotal.bad .sub-bar { visibility: hidden; }
+
+    /* 交通障礙段號徽章 */
+    .seg-badge {
+      display: inline-block; margin-left: 5px; padding: 0 6px;
+      border-radius: 9px; background: #dbe7f5; color: var(--primary-light);
+      font-size: .69rem; font-weight: 700; white-space: nowrap;
+    }
+
+    /* 其他障礙時間的群組標題列 */
+    .group-row > th {
+      background: #e8eff8 !important; color: var(--primary-text);
+      font-size: .78rem; padding: 4px 7px !important;
+    }
+
+    /* 目前作用中的列highlight，方便對照 */
+    .barrier-row > th, .barrier-row > td { transition: background .12s; }
+    .barrier-row:hover > td { background: #f7fbff; }
+    .barrier-row:focus-within > th { background: #dfeaf8; }
+    .barrier-row:focus-within > td { background: #f4f9ff; }
+
+    input[type="text"], select {
+      width: 100%; padding: 5px 8px;
+      border: 1px solid var(--line); border-radius: 5px;
+      font-size: .84rem; font-family: inherit; background: #fff; color: var(--ink);
+      transition: border-color .15s, box-shadow .15s;
+    }
+    input[type="text"]:focus, select:focus {
+      outline: none; border-color: var(--primary-light);
+      box-shadow: 0 0 0 3px rgba(43, 108, 176, .16);
+    }
+    /* 1. 提示字調淡，與實際輸入內容明顯區隔 */
+    input::placeholder { color: #c2ccd8; opacity: 1; font-weight: 400; }
+    input::-ms-input-placeholder { color: #c2ccd8; }
+    input.time-input, input.arrest-time-input, input.idno-input {
+      font-family: "Consolas", "Menlo", "Courier New", monospace; letter-spacing: .05em;
+    }
+
+    input.is-invalid {
+      border-color: var(--err) !important; background: #fff5f5;
+      box-shadow: 0 0 0 3px rgba(197, 48, 48, .13);
+    }
+    input.is-pending { border-color: #d69e2e; background: #fffdf5; }
+    input.is-valid { border-color: #68d391; }
+    .field-msg { font-size: .715rem; line-height: 1.35; margin-top: 2px; display: none; }
+    .field-msg.show { display: flex; align-items: flex-start; gap: 4px; }
+
+    /* 障礙時間列：把驗證訊息移到輸入框右側同一行，省下每列一行的高度 */
+    .input-line { display: flex; align-items: center; gap: 9px; }
+    .input-line > input { flex: 0 1 188px; }
+    .input-line > .field-msg { margin-top: 0; flex: 1 1 auto; min-width: 0; }
+    @media (max-width: 900px) {
+      .input-line { flex-direction: column; align-items: stretch; gap: 2px; }
+      .input-line > input { flex: none; }
+    }
+    .field-msg.err { color: var(--err); font-weight: 700; }
+    .field-msg.pending { color: var(--warn); }
+    .field-msg.ok { color: var(--ok); }
+
+    .location-box { margin-bottom: 4px; }
+    .row-subtotal {
+      font-weight: 700; color: var(--primary-text); white-space: nowrap;
+      text-align: center; background: #fafcfe;
+    }
+    .row-subtotal.zero { color: #b6c2d0; font-weight: 400; }
+    .row-subtotal.bad { color: var(--err); background: #fff5f5; }
+
+    .btn-add {
+      background: #fff; color: var(--ok); border: 1px solid #9ae6b4; border-radius: 5px;
+      padding: 4px 9px; font-size: .78rem; cursor: pointer; margin-left: 6px;
+      font-weight: 600; white-space: nowrap; font-family: inherit;
+      display: inline-flex; align-items: center; gap: 4px; transition: background .15s, color .15s;
+    }
+    .btn-add:hover { background: var(--ok); color: #fff; border-color: var(--ok); }
+
+    .btn-del {
+      background: #fff; color: var(--err); border: 1px solid #feb2b2; border-radius: 5px;
+      padding: 3px 8px; font-size: .75rem; cursor: pointer; margin-left: 6px;
+      white-space: nowrap; font-weight: 600; font-family: inherit;
+      display: inline-flex; align-items: center; gap: 4px; transition: background .15s, color .15s;
+    }
+    .btn-del:hover { background: var(--err); color: #fff; border-color: var(--err); }
+
+    .btn-copy {
+      background: #fff; color: var(--primary-light); border: 1px solid #90cdf4; border-radius: 5px;
+      padding: 5px 11px; font-size: .78rem; cursor: pointer; font-weight: 600;
+      white-space: nowrap; font-family: inherit;
+      display: inline-flex; align-items: center; gap: 5px; transition: background .15s, color .15s;
+    }
+    .btn-copy:hover { background: var(--primary-light); color: #fff; border-color: var(--primary-light); }
+
+    .btn-add-suspect {
+      width: 100%; background: var(--accent); color: #fff; border: none;
+      border-radius: var(--radius); padding: 9px; font-size: .9rem; font-weight: 700;
+      cursor: pointer; margin-bottom: 11px; font-family: inherit; box-shadow: var(--shadow);
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: background .15s;
+    }
+    .btn-add-suspect:hover { background: #285e61; }
+    .btn-add-suspect:disabled { background: #cbd5e0; color: #718096; cursor: not-allowed; box-shadow: none; }
+
+    /* 計算結果：改為橫向並排，取代原本兩列的表格 */
+    .result-strip { display: flex; gap: 8px; margin-top: 9px; flex-wrap: wrap; }
+    .stat {
+      flex: 1 1 220px; display: flex; align-items: center; gap: 10px;
+      border: 1px solid #a8bacd; border-radius: 7px;
+      background: #f5faff; padding: 6px 12px; min-width: 0;
+    }
+    .stat-label {
+      font-size: .76rem; font-weight: 700; color: var(--primary-text);
+      white-space: nowrap; flex: none;
+    }
+    .stat-value { font-size: .95rem; font-weight: 700; margin-left: auto; text-align: right; }
+    .stat.deadline { background: #fff7f7; border-color: #e8b4b4; }
+    .highlight-text { color: var(--err); }
+    .deadline-result:not(.highlight-ready) { font-size: .8rem; font-weight: 600; color: #a0aec0; }
+
+    /* ---------------- 總覽 ---------------- */
+    .summary-list { list-style: none; margin: 0; padding: 0; font-size: .8rem; }
+    .summary-list li {
+      display: flex; align-items: center; gap: 9px; flex-wrap: wrap;
+      padding: 3px 0; border-bottom: 1px dashed var(--line-soft);
+    }
+    .summary-list li:last-child { border-bottom: 0; }
+    .sum-no {
+      background: #e3eaf3; color: var(--primary-text); border-radius: 4px;
+      padding: 0 7px; font-weight: 700; font-size: .75rem; flex: none;
+    }
+    .sum-deadline { font-weight: 700; color: var(--err); }
+    .sum-pending { color: #a0aec0; }
+
+    /* ---------------- 匯出 ---------------- */
+    .export-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+    .export-row label { font-size: .85rem; font-weight: 700; color: var(--primary-text); }
+    .export-row select { width: auto; min-width: 230px; padding: 7px 9px; }
+    .btn-main {
+      padding: 8px 18px; border: none; border-radius: 6px; font-size: .9rem;
+      font-weight: 700; cursor: pointer; flex: 1 1 230px; font-family: inherit;
+      background: #2b579a; color: #fff;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      transition: background .15s;
+    }
+    .btn-main:hover { background: #1e3d6b; }
+    .btn-main:disabled { background: #cbd5e0; color: #718096; cursor: not-allowed; }
+    .format-note { font-size: .76rem; color: var(--muted); margin-top: 7px; }
+
+    .error-banner {
+      display: none; margin-top: 9px; padding: 9px 12px;
+      border: 1px solid var(--err); border-left: 4px solid var(--err);
+      border-radius: 7px; background: #fff5f5; color: var(--err);
+      font-size: .83rem; line-height: 1.65;
+    }
+    .error-banner.show { display: block; }
+    .error-banner ul { margin: 6px 0 0; padding-left: 20px; }
+
+    .privacy-note {
+      margin-top: 9px; padding: 7px 11px; border-radius: 6px;
+      background: #fffaf0; border: 1px solid #f0d894; color: #744210;
+      font-size: .76rem; line-height: 1.55; display: flex; gap: 7px; align-items: flex-start;
+    }
+
+    /* ---------------- 右側節點圖 ---------------- */
+    .side-panel {
+      background: var(--card-bg); border-radius: var(--radius);
+      box-shadow: var(--shadow); padding: 10px; margin-bottom: 11px;
+    }
+    .side-panel:last-child { margin-bottom: 0; }
+
+    /* 右側工作列：年度欄位與各項操作鈕 */
+    .rail-year { display: flex; flex-direction: column; gap: 3px; }
+    .rail-year label {
+      font-size: .73rem; font-weight: 700; color: var(--primary-text);
+      display: flex; align-items: center; gap: 5px;
+    }
+    .rail-year input { width: 100%; text-align: center; }
+    .rail-actions {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px;
+    }
+    .rail-actions .btn-mini { width: 100%; justify-content: center; padding: 6px 4px; }
+    .rail-hint {
+      margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line-soft);
+      font-size: .71rem; line-height: 1.55; color: var(--muted);
+    }
+    .rail-hint b { color: var(--ink); }
+    .rail-hint code { font-size: .92em; padding: 0 3px; }
+
+    /* 右側工作列：匯出區塊改為直式堆疊 */
+    .rail-export .export-row { flex-direction: column; align-items: stretch; gap: 7px; }
+    .rail-export .export-row label { font-size: .73rem; }
+    .rail-export select { width: 100%; min-width: 0; padding: 6px 8px; font-size: .8rem; }
+    .rail-export .btn-main { width: 100%; flex: none; font-size: .84rem; padding: 9px 8px; }
+    .rail-export .format-note { font-size: .69rem; line-height: 1.5; margin-top: 6px; }
+    .rail-export .error-banner { font-size: .71rem; padding: 7px 9px; line-height: 1.5; }
+    .rail-export .error-banner ul { padding-left: 15px; }
+    .rail-export .privacy-note { font-size: .69rem; line-height: 1.5; padding: 6px 8px; }
+    .side-title {
+      font-size: .8rem; font-weight: 700; color: var(--primary-text);
+      display: flex; align-items: center; gap: 6px; margin-bottom: 8px;
+      padding-bottom: 7px; border-bottom: 1px solid var(--line-soft);
+    }
+    .node-list { list-style: none; margin: 0; padding: 0; position: relative; }
+    .node-list::before {
+      content: ''; position: absolute; left: 12px; top: 14px; bottom: 14px;
+      width: 2px; background: #dbe3ec;
+    }
+    .node-item {
+      position: relative; display: flex; gap: 8px; align-items: center;
+      padding: 3px 5px 3px 0; cursor: pointer; border-radius: 6px;
+      transition: background .15s;
+    }
+    .node-item:hover { background: #eff4fa; }
+    .node-item.active { background: #e4eefa; }
+    .node-item.active .node-dot { box-shadow: 0 0 0 3px rgba(43, 108, 176, .18); }
+    .node-dot {
+      position: relative; z-index: 1; width: 26px; height: 26px; flex: none;
+      border-radius: 50%; background: #fff; border: 2px solid #a0aec0; color: #4a5568;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .75rem; font-weight: 700; transition: box-shadow .2s, border-color .2s, color .2s;
+    }
+    .node-item.ok   .node-dot { border-color: #38a169; color: var(--ok); }
+    .node-item.warn .node-dot { border-color: #d69e2e; color: #975a16; }
+    .node-item.err  .node-dot { border-color: var(--err); color: var(--err); background: #fff5f5; }
+    .node-info { min-width: 0; display: flex; flex-direction: column; }
+    .node-name {
+      font-size: .78rem; font-weight: 600; color: var(--ink); line-height: 1.3;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .node-meta {
+      font-size: .68rem; color: var(--muted); line-height: 1.3;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .node-item.err .node-meta { color: var(--err); }
+    /* 3. 原「總覽」的資料併入節點：障礙總計與滿 16 小時 */
+    .node-deadline {
+      font-size: .72rem; font-weight: 700; line-height: 1.3;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      color: var(--err);
+    }
+    .node-item:not(.ok) .node-deadline { color: #b6c2d0; font-weight: 400; }
+    .node-item { padding: 5px 5px 5px 0; }
+    .node-add { opacity: .8; }
+    .node-add .node-dot { border-style: dashed; border-color: var(--accent); color: var(--accent); }
+    .node-add .node-name { color: var(--accent); }
+    .node-add.disabled { opacity: .4; cursor: not-allowed; }
+    .node-legend {
+      margin-top: 8px; padding-top: 7px; border-top: 1px solid var(--line-soft);
+      font-size: .68rem; color: var(--muted); display: flex; flex-direction: column; gap: 2px;
+    }
+    .node-legend span { display: flex; align-items: center; gap: 5px; }
+    .lg-dot { width: 8px; height: 8px; border-radius: 50%; border: 2px solid; flex: none; }
+
+    /* ---------------- 彈跳視窗 ---------------- */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(15, 30, 50, .55);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9999; padding: 16px; opacity: 0; transition: opacity .15s ease;
+    }
+    .modal-overlay.show { opacity: 1; }
+    .modal {
+      background: #fff; border-radius: 12px; width: 100%; max-width: 580px;
+      max-height: 86vh; display: flex; flex-direction: column;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, .35);
+      transform: translateY(-10px); transition: transform .15s ease;
+    }
+    .modal-overlay.show .modal { transform: translateY(0); }
+    .modal-header {
+      padding: 14px 18px; font-size: 1rem; font-weight: 700; color: var(--primary-text);
+      border-bottom: 1px solid var(--line-soft); display: flex; align-items: center; gap: 8px;
+    }
+    .modal-body {
+      padding: 16px 18px; font-size: .88rem; line-height: 1.75;
+      overflow-y: auto; white-space: pre-wrap; color: var(--ink);
+    }
+    .modal-body.rich { white-space: normal; }
+    .modal-body h4 {
+      margin: 16px 0 6px; font-size: .88rem; color: var(--primary-text);
+      border-left: 3px solid var(--primary-light); padding-left: 8px;
+    }
+    .modal-body h4:first-child { margin-top: 0; }
+    .modal-body ul { margin: 0; padding-left: 20px; }
+    .modal-body li { margin-bottom: 3px; }
+    .modal-footer {
+      padding: 12px 18px; border-top: 1px solid var(--line-soft);
+      display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap;
+    }
+    .modal-btn {
+      padding: 9px 18px; border-radius: 7px; border: 1px solid var(--line);
+      background: #fff; color: var(--ink); font-size: .88rem; font-weight: 600;
+      cursor: pointer; font-family: inherit; min-width: 86px;
+    }
+    .modal-btn:hover { background: #f2f6fb; }
+    .modal-btn.primary { background: var(--primary-light); border-color: var(--primary-light); color: #fff; }
+    .modal-btn.primary:hover { background: var(--primary); }
+    .modal-btn.danger { background: var(--err); border-color: var(--err); color: #fff; }
+    .modal-btn.danger:hover { background: #9b2c2c; }
+    .modal-btn:focus-visible { outline: 3px solid rgba(43, 108, 176, .4); outline-offset: 2px; }
+
+    /* ---------------- 2. 匯出進度視窗 ---------------- */
+    .progress-overlay {
+      position: fixed; inset: 0; background: rgba(15, 30, 50, .55);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9998; padding: 16px; opacity: 0; transition: opacity .15s ease;
+    }
+    .progress-overlay.show { opacity: 1; }
+    .progress-modal {
+      background: var(--card-bg); border-radius: 12px; width: 100%; max-width: 380px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, .35); padding: 20px 22px;
+      transform: translateY(-10px); transition: transform .15s ease;
+    }
+    .progress-overlay.show .progress-modal { transform: translateY(0); }
+    .progress-title {
+      font-size: .95rem; font-weight: 700; color: var(--primary-text);
+      display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
+    }
+    .progress-title .icon { animation: spin 1.1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .progress-track {
+      width: 100%; height: 8px; border-radius: 5px; background: var(--line-soft);
+      overflow: hidden; position: relative;
+    }
+    .progress-fill {
+      height: 100%; width: 0%; border-radius: 5px;
+      background: linear-gradient(90deg, var(--primary-light), var(--accent));
+      transition: width .25s ease;
+    }
+    .progress-fill.done { background: var(--ok); }
+    .progress-meta {
+      display: flex; justify-content: space-between; align-items: baseline;
+      margin-top: 9px; gap: 8px;
+    }
+    .progress-stage {
+      font-size: .8rem; color: var(--muted); flex: 1 1 auto; min-width: 0;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .progress-pct { font-size: .82rem; font-weight: 700; color: var(--primary-text); flex: none; }
+
+    /* ---------------- 浮動提示 ---------------- */
+    .toast-wrap {
+      position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%);
+      z-index: 10000; display: flex; flex-direction: column; gap: 8px;
+      align-items: center; pointer-events: none;
+    }
+    .toast {
+      background: var(--primary); color: #fff; padding: 10px 16px; border-radius: 8px;
+      font-size: .85rem; font-weight: 600; display: flex; align-items: center; gap: 8px;
+      box-shadow: 0 8px 26px rgba(0, 0, 0, .28);
+      animation: toastIn .24s cubic-bezier(.4, 0, .2, 1);
+      transition: opacity .25s ease, transform .25s ease;
+    }
+    @keyframes toastIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+    .toast.out { opacity: 0; transform: translateY(12px); }
+
+    .back-top {
+      position: fixed; right: 20px; bottom: 20px; z-index: 55;
+      width: 42px; height: 42px; border-radius: 50%;
+      background: var(--primary); color: #fff; border: none; cursor: pointer;
+      display: none; align-items: center; justify-content: center;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, .25);
+    }
+    .back-top.show { display: flex; }
+    @media (min-width: 1081px) { .back-top { right: 278px; } }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+
+    /* =====================================================================
+       3. 深色模式
+       ---------------------------------------------------------------------
+       --primary（#1a365d）刻意維持不變 —— 它只用來當頁首/浮動提示/回頂端
+       這幾個「navy 色塊」的背景色，在深色頁面上仍然清楚可辨。真正需要隨主題
+       變亮的文字改用 --primary-text（已在對應規則中把原本的
+       color:var(--primary) 全部換成 color:var(--primary-text)）。
+       其餘規則中大量使用「淺色調背景 + 深色文字」的字面色碼（表格底色、
+       輸入框、提示框、節點圖…），在此統一覆寫為深色對應版本。
+       ===================================================================== */
+    :root[data-theme="dark"] {
+      --primary-text: #7fb0e8;
+      --primary-light: #5b9fe0;
+      --accent: #3fb6ae;
+      --bg: #0b1119;
+      --card-bg: #151e2c;
+      --line: #33455c;
+      --line-soft: #243144;
+      --ink: #e2e8f0;
+      --muted: #8b98ab;
+      --err: #f56565;
+      --ok: #48bb78;
+      --warn: #ecc94b;
+    }
+
+    :root[data-theme="dark"] code { background: #212d3d; }
+    :root[data-theme="dark"] .field-inline { background: #182234; }
+    :root[data-theme="dark"] .btn-mini { background: #151e2c; }
+    :root[data-theme="dark"] .btn-mini:hover { background: #1c2940; }
+    :root[data-theme="dark"] .btn-mini.danger:hover { background: #3a1f22; }
+    :root[data-theme="dark"] .suspect-header { background: #1c2740; }
+
+    :root[data-theme="dark"] .sec-person  { --sec: #5fd0c9; --sec-tint: #142826; --sec-line: #2a4c49; }
+    :root[data-theme="dark"] .sec-arrest  { --sec: #f0b45e; --sec-tint: #2c2211; --sec-line: #503d1c; }
+    :root[data-theme="dark"] .sec-barrier { --sec: #7fb0e8; --sec-tint: #172236; --sec-line: #2b4260; }
+
+    :root[data-theme="dark"] table.form-table th,
+    :root[data-theme="dark"] table.form-table td { border-color: #33455c; }
+    :root[data-theme="dark"] table.form-table th { background: #182234; }
+    :root[data-theme="dark"] table.form-table thead th { background: #1f2c42; }
+
+    :root[data-theme="dark"] .barrier-row.is-empty .rsn-text { color: #64748b; }
+    :root[data-theme="dark"] .sub-bar { background: #253449; }
+    :root[data-theme="dark"] .seg-badge { background: #1f3a5c; }
+    :root[data-theme="dark"] .group-row > th { background: #1c2940 !important; }
+    :root[data-theme="dark"] .barrier-row:hover > td { background: #182234; }
+    :root[data-theme="dark"] .barrier-row:focus-within > th { background: #20304a; }
+    :root[data-theme="dark"] .barrier-row:focus-within > td { background: #1b2a40; }
+
+    :root[data-theme="dark"] input[type="text"],
+    :root[data-theme="dark"] select { background: #101826; color: var(--ink); }
+    :root[data-theme="dark"] input::placeholder { color: #4a5a70; }
+    :root[data-theme="dark"] input::-ms-input-placeholder { color: #4a5a70; }
+    :root[data-theme="dark"] input.is-invalid { background: #34191c; }
+    :root[data-theme="dark"] input.is-pending { background: #2e2712; }
+
+    :root[data-theme="dark"] .row-subtotal { background: #131c29; }
+    :root[data-theme="dark"] .row-subtotal.zero { color: #5b6b80; }
+    :root[data-theme="dark"] .row-subtotal.bad { background: #34191c; }
+
+    :root[data-theme="dark"] .btn-add,
+    :root[data-theme="dark"] .btn-del,
+    :root[data-theme="dark"] .btn-copy,
+    :root[data-theme="dark"] .modal-btn { background: #151e2c; }
+    :root[data-theme="dark"] .modal-btn:hover { background: #1c2940; }
+    :root[data-theme="dark"] .btn-add-suspect:disabled { background: #263248; color: #8b98ab; }
+
+    :root[data-theme="dark"] .stat { border-color: #33455c; background: #121b28; }
+    :root[data-theme="dark"] .stat.deadline { background: #2c1a1c; border-color: #5c3438; }
+    :root[data-theme="dark"] .deadline-result:not(.highlight-ready) { color: #64748b; }
+    :root[data-theme="dark"] .sum-no { background: #1f2c42; }
+
+    :root[data-theme="dark"] .error-banner { background: #2c1a1c; }
+    :root[data-theme="dark"] .privacy-note { background: #2c2410; border-color: #4f3f1a; color: #ecd487; }
+
+    :root[data-theme="dark"] .node-list::before { background: #2c3b4f; }
+    :root[data-theme="dark"] .node-item:hover { background: #182234; }
+    :root[data-theme="dark"] .node-item.active { background: #1c2c42; }
+    :root[data-theme="dark"] .node-dot { background: #101826; border-color: #4a5a70; color: #9aa8bb; }
+    :root[data-theme="dark"] .node-item.ok .node-dot { border-color: #48bb78; }
+    :root[data-theme="dark"] .node-item.warn .node-dot { border-color: #ecc94b; color: #ecc94b; }
+    :root[data-theme="dark"] .node-item.err .node-dot { background: #2c1a1c; }
+
+    :root[data-theme="dark"] .modal,
+    :root[data-theme="dark"] .progress-modal { background: #151e2c; }
+    :root[data-theme="dark"] .modal-overlay { background: rgba(0, 0, 0, .65); }
+    :root[data-theme="dark"] .progress-overlay { background: rgba(0, 0, 0, .65); }
+  </style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-inner">
+    <div>
+      <h1 class="app-title">解送人犯一覽表計算系統</h1>
+      <p class="app-sub">法定障礙時間計算 ‧ 滿 16 小時期限推算 ‧ 一覽表匯出</p>
+    </div>
+    <span class="spacer"></span>
+    <button type="button" class="theme-switch" id="themeToggle" role="switch" aria-checked="false"
+            title="切換深色／淺色模式" onclick="toggleTheme()">
+      <i data-icon="sun" class="ts-icon ts-sun"></i>
+      <i data-icon="moon" class="ts-icon ts-moon"></i>
+      <span class="ts-thumb"></span>
+    </button>
+    <button type="button" class="hbtn" onclick="showHelp()"><i data-icon="book"></i> 功能說明</button>
+    <a class="hbtn" href="https://mygodcatisfat.github.io" target="_blank" rel="noopener"><i data-icon="home"></i> 回到首頁</a>
+  </div>
+</header>
+
+<div class="app-body">
+
+  <main class="main-col">
+
+    <div id="suspectCardsContainer"></div>
+
+    <button type="button" id="addSuspectBtn" class="btn-add-suspect" onclick="addNewSuspectCard()">
+      <i data-icon="plus"></i> <span id="addSuspectLabel">新增人犯 (最多 10 人)</span>
+    </button>
+
+  </main>
+
+  <aside class="side-col">
+
+    <!-- 5. 原本的工具列面板，置於節點圖上方 -->
+    <div class="side-panel">
+      <div class="rail-year">
+        <label for="baseYear"><i data-icon="calendar"></i> 案件年度 (西元)</label>
+        <input type="text" id="baseYear" maxlength="4" inputmode="numeric">
+      </div>
+      <div class="rail-actions">
+        <button type="button" class="btn-mini" onclick="fillSampleData()"><i data-icon="file-text"></i> 填入範例</button>
+        <button type="button" class="btn-mini" onclick="document.getElementById('importFile').click()"><i data-icon="import"></i> 匯入 JSON</button>
+        <button type="button" class="btn-mini danger" onclick="clearAll()"><i data-icon="trash"></i> 清除全部</button>
+        <button type="button" class="btn-mini" onclick="exportJson()"><i data-icon="export"></i> 匯出 JSON</button>
+        <input type="file" id="importFile" accept="application/json,.json" hidden>
+      </div>
+      <div class="rail-hint">
+        <b>逮捕時間</b> <code>MMDDhhmm</code>（8 碼）<br>
+        <b>障礙時間</b> <code>MMDDhhmm-MMDDhhmm</code>（17 碼，打滿 8 碼自動補「-」）<br>
+        跨年案件 (12月→1月) 會自動跨年計算。詳見右上「功能說明」。
+      </div>
+    </div>
+
+    <!-- 3. 節點圖，內含原「總覽」的障礙總計與滿 16 小時 -->
+    <div class="side-panel">
+      <div class="side-title"><i data-icon="nodes"></i> 人犯節點圖</div>
+      <ol class="node-list" id="nodeList"></ol>
+      <div class="node-legend">
+        <span><i class="lg-dot" style="border-color:#38a169;"></i> 已完成計算</span>
+        <span><i class="lg-dot" style="border-color:#d69e2e;"></i> 尚未填寫逮捕時間</span>
+        <span><i class="lg-dot" style="border-color:#c53030;"></i> 有格式錯誤</span>
+      </div>
+    </div>
+
+    <!-- 4. 匯出一覽表，置於節點圖下方 -->
+    <div class="side-panel rail-export">
+      <div class="side-title"><i data-icon="file-down"></i> 匯出一覽表</div>
+      <div class="export-row">
+        <label for="exportFormat">匯出格式</label>
+        <select id="exportFormat">
+          <option value="docx">Word 文件 (.docx)</option>
+          <option value="doc">Word 97-2003 相容 (.doc)</option>
+          <option value="odt">OpenDocument 文件 (.odt)</option>
+        </select>
+        <button class="btn-main" id="exportBtn" onclick="exportDocument()">
+          <i data-icon="file-down"></i> 匯出解送人犯一覽表
+        </button>
+      </div>
+      <div class="format-note" id="formatNote"></div>
+      <div class="error-banner" id="errorBanner"></div>
+      <div class="privacy-note">
+        <i data-icon="lock" class="icon-lg"></i>
+        <span>所有計算都在本機完成，不會上傳資料。內容暫存於本機瀏覽器，公用電腦用畢請按「清除全部」。</span>
+      </div>
+    </div>
+
+  </aside>
+
+</div>
+
+<button type="button" class="back-top" id="backTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="回到頂端">
+  <i data-icon="arrow-up" class="icon-lg"></i>
+</button>
+
+<div class="modal-overlay" id="modalOverlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-header" id="modalTitle"></div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer" id="modalFooter"></div>
+  </div>
+</div>
+
+<!-- 2. 匯出進度視窗（獨立於確認彈窗，不受 Esc / 背景點擊關閉影響，匯出中不可中斷） -->
+<div class="progress-overlay" id="progressOverlay" hidden>
+  <div class="progress-modal" role="status" aria-live="polite">
+    <div class="progress-title"><i data-icon="file-down" class="icon-lg"></i> <span id="progressTitle">匯出中…</span></div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-meta">
+      <span class="progress-stage" id="progressStage">準備中…</span>
+      <span class="progress-pct" id="progressPct">0%</span>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+/* =========================================================================
+   單色線條 icon（stroke 使用 currentColor，隨文字顏色變化）
+   ========================================================================= */
+const ICONS = {
+  home:      '<path d="M3.5 11.2 12 4l8.5 7.2"/><path d="M5.8 10v9.4a1.1 1.1 0 0 0 1.1 1.1h3.3v-5.6h3.6v5.6h3.3a1.1 1.1 0 0 0 1.1-1.1V10"/>',
+  book:      '<path d="M12 6.6S10 4.6 6.2 4.6H3.2v12.9h3c3.8 0 5.8 2 5.8 2s2-2 5.8-2h3V4.6h-3c-3.8 0-5.8 2-5.8 2Z"/><path d="M12 6.6v13.9"/>',
+  nodes:     '<circle cx="12" cy="12" r="3.2"/><path d="M12 3v5.8M12 15.2V21"/>',
+  list:      '<path d="M8.5 6.5h12M8.5 12h12M8.5 17.5h12"/><path d="M4 6.5h.01M4 12h.01M4 17.5h.01"/>',
+  calendar:  '<rect x="3.6" y="5.2" width="16.8" height="15.4" rx="2.2"/><path d="M8 3.2v4M16 3.2v4M3.6 10.2h16.8"/>',
+  'file-text':'<path d="M14 3.2H7.2A2.2 2.2 0 0 0 5 5.4v13.2a2.2 2.2 0 0 0 2.2 2.2h9.6a2.2 2.2 0 0 0 2.2-2.2V8.2Z"/><path d="M14 3.2v5h5"/><path d="M9 13.2h6M9 16.6h4"/>',
+  'file-down':'<path d="M14 3.2H7.2A2.2 2.2 0 0 0 5 5.4v13.2a2.2 2.2 0 0 0 2.2 2.2h9.6a2.2 2.2 0 0 0 2.2-2.2V8.2Z"/><path d="M14 3.2v5h5"/><path d="M12 11.6v5.4"/><path d="M9.8 14.8 12 17l2.2-2.2"/>',
+  import:    '<path d="M12 3.6v10.6"/><path d="M8.2 10.6 12 14.4l3.8-3.8"/><path d="M4 16.8v2.5a1.2 1.2 0 0 0 1.2 1.2h13.6a1.2 1.2 0 0 0 1.2-1.2v-2.5"/>',
+  export:    '<path d="M12 14.4V3.8"/><path d="M8.2 7.6 12 3.8l3.8 3.8"/><path d="M4 16.8v2.5a1.2 1.2 0 0 0 1.2 1.2h13.6a1.2 1.2 0 0 0 1.2-1.2v-2.5"/>',
+  trash:     '<path d="M4 7h16"/><path d="M9.5 7V4.6h5V7"/><path d="M6.6 7l.9 13.1h9l.9-13.1"/><path d="M10.4 10.6v6.6M13.6 10.6v6.6"/>',
+  copy:      '<rect x="9" y="9" width="11.2" height="11.2" rx="2"/><path d="M15.4 6.6V5.6A1.8 1.8 0 0 0 13.6 3.8H5.6A1.8 1.8 0 0 0 3.8 5.6v8a1.8 1.8 0 0 0 1.8 1.8h1"/>',
+  x:         '<path d="M6.4 6.4l11.2 11.2M17.6 6.4 6.4 17.6"/>',
+  plus:      '<path d="M12 5.2v13.6M5.2 12h13.6"/>',
+  lock:      '<rect x="4.4" y="10.2" width="15.2" height="10.4" rx="2.2"/><path d="M8 10.2V7.2a4 4 0 0 1 8 0v3"/>',
+  user:      '<circle cx="12" cy="8.2" r="3.6"/><path d="M4.8 20.2a7.2 7.2 0 0 1 14.4 0"/>',
+  pin:       '<path d="M12 21s6.6-5.6 6.6-10.4a6.6 6.6 0 1 0-13.2 0C5.4 15.4 12 21 12 21Z"/><circle cx="12" cy="10.4" r="2.4"/>',
+  clock:     '<circle cx="12" cy="12" r="8.8"/><path d="M12 6.8V12l3.4 2"/>',
+  alert:     '<path d="M12 3.6 21.4 20H2.6L12 3.6Z"/><path d="M12 9.6v4.6M12 17.4h.01"/>',
+  help:      '<circle cx="12" cy="12" r="8.8"/><path d="M9.4 9.5a2.7 2.7 0 0 1 5.2.9c0 1.8-2.6 2.2-2.6 4"/><path d="M12 17.6h.01"/>',
+  info:      '<circle cx="12" cy="12" r="8.8"/><path d="M12 11v5.4M12 7.6h.01"/>',
+  check:     '<circle cx="12" cy="12" r="8.8"/><path d="M8.2 12.4l2.6 2.6 5-5.4"/>',
+  'arrow-up':'<path d="M12 19.5V4.8"/><path d="M5.4 11.4 12 4.8l6.6 6.6"/>',
+  hourglass: '<path d="M7 3.6h10M7 20.4h10"/><path d="M8.2 3.6v3c0 2 3.8 3.6 3.8 5.4s-3.8 3.4-3.8 5.4v3"/><path d="M15.8 3.6v3c0 2-3.8 3.6-3.8 5.4s3.8 3.4 3.8 5.4v3"/>',
+  route:     '<circle cx="6.4" cy="6.4" r="2.5"/><circle cx="17.6" cy="17.6" r="2.5"/><path d="M6.4 8.9v4.5a4.2 4.2 0 0 0 4.2 4.2h4.5"/>',
+  moon:      '<path d="M20.4 14.7A8.6 8.6 0 0 1 9.3 3.6a8.6 8.6 0 1 0 11.1 11.1Z"/>',
+  dots:      '<circle cx="5.4" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="18.6" cy="12" r="1.4"/>',
+  sun:       '<circle cx="12" cy="12" r="4.4"/><path d="M12 2.6v2.6M12 18.8v2.6M4.6 4.6l1.9 1.9M17.5 17.5l1.9 1.9M2.6 12h2.6M18.8 12h2.6M4.6 19.4l1.9-1.9M17.5 6.5l1.9-1.9"/>'
+};
+
+function iconSvg(name, cls) {
+  return `<svg class="icon ${cls || ''}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name] || ''}</svg>`;
+}
+
+/** 把 <i data-icon="xxx"> 佔位符換成實際 SVG
+ *  注意：要以「class token」為單位過濾，不能用字串 replace，
+ *  否則 rsn-icon / icon-lg 這類名稱會被截斷 */
+function renderIcons(root) {
+  (root || document).querySelectorAll('i[data-icon]').forEach(el => {
+    const n = el.getAttribute('data-icon');
+    if (!ICONS[n]) return;
+    const extra = (el.className || '').split(/\s+/).filter(c => c && c !== 'icon').join(' ');
+    el.outerHTML = iconSvg(n, extra);
+  });
+}
+
+/* =========================================================================
+   全域狀態
+   ========================================================================= */
+let suspectCounter = 0;
+let subItemCounters = {};
+let cardObserver = null;
+let activeCardId = null;
+
+const STORAGE_KEY = 'jsrfList-v3';
+const APP_TAG = 'jsrf-list';
+const DATA_VERSION = 3;
+const PERSONAL_FIELDS = ['name', 'birth', 'idno', 'addr'];
+
+const FORMAT_NOTES = {
+  docx: '產生標準 Office Open XML 文件，可用 Word 2007 以上、LibreOffice、Google 文件開啟。',
+  doc:  '以 Word 相容 HTML 格式產生，供舊版 Word 或需要 .doc 副檔名時使用。',
+  odt:  '產生 OpenDocument 標準文件，可用 LibreOffice、OpenOffice、Word 2010 以上開啟。'
+};
+
+/* =========================================================================
+   效能優化：全域重算（節點圖 + 匯出可用性 + 暫存）以 rAF 合併
+   ---------------------------------------------------------------------
+   單一欄位變動只需重畫「該欄位所在的那張卡片」；節點圖與匯出檢查是
+   O(n) 的全域工作，若每個按鍵都同步重跑，10 人時會變成連續的
+   O(n²)（尤其匯入/還原時逐一新增卡片，每次都重建整份節點圖）。
+   這裡把這兩件事＋本機暫存寫入合併到「每個畫面影格最多跑一次」，
+   按鍵手感不變，但同一影格內的多次變動只會計算一次。
+   結構性操作（新增/刪除人犯、複製、匯入、清除…）改呼叫
+   flushGlobalUpdate()，確保回傳當下 DOM／節點圖已同步、可立即讀取。
+   ========================================================================= */
+let _rafHandle = null;
+function scheduleGlobalUpdate() {
+  if (_rafHandle !== null) return;
+  _rafHandle = requestAnimationFrame(() => {
+    _rafHandle = null;
+    updateExportAvailability();
+    buildNodeMap();
+    saveState();
+  });
+}
+function flushGlobalUpdate() {
+  if (_rafHandle !== null) { cancelAnimationFrame(_rafHandle); _rafHandle = null; }
+  updateExportAvailability();
+  buildNodeMap();
+  saveState();
+}
+window.addEventListener('beforeunload', flushGlobalUpdate);
+
+/* =========================================================================
+   3. 深色/淺色模式切換
+   （<head> 內的行內 script 已在畫面繪製前設好 data-theme，這裡只需要
+   把開關的視覺狀態同步、並提供切換時的行為）
+   ========================================================================= */
+const THEME_KEY = 'jsrf-theme';
+
+function syncThemeSwitch() {
+  const btn = document.getElementById('themeToggle');
+  if (!btn) return;
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  btn.setAttribute('aria-checked', isDark ? 'true' : 'false');
+}
+
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const next = isDark ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  syncThemeSwitch();
+  try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+}
+
+window.onload = function() {
+  renderIcons();
+  syncThemeSwitch();
+  document.documentElement.style.setProperty('--header-h',
+    document.querySelector('.app-header').offsetHeight + 'px');
+
+  document.getElementById('baseYear').value = new Date().getFullYear();
+  document.getElementById('baseYear').addEventListener('input', function() {
+    this.value = this.value.replace(/\D/g, '').slice(0, 4);
+    recalculateAll(); // 年度影響所有人犯的計算，需立即同步重算（內含 flushGlobalUpdate，已含存檔)
+  });
+  document.getElementById('exportFormat').addEventListener('change', updateFormatNote);
+  document.getElementById('importFile').addEventListener('change', handleImportFile);
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && !document.getElementById('modalOverlay').hidden) { closeModal(false); return; }
+    // Enter 直接跳到同一位人犯的下一個時間欄位，連續輸入不用一直點滑鼠
+    if (e.key === 'Enter' && e.target && e.target.classList &&
+        (e.target.classList.contains('time-input') || e.target.classList.contains('arrest-time-input'))) {
+      e.preventDefault();
+      const card = e.target.closest('.suspect-card');
+      if (!card) return;
+      const fields = Array.from(card.querySelectorAll('.arrest-time-input, .time-input'));
+      const i = fields.indexOf(e.target);
+      if (i > -1 && i < fields.length - 1) fields[i + 1].focus();
+      else e.target.blur();
+    }
+  });
+  document.getElementById('modalOverlay').addEventListener('mousedown', function(e) {
+    if (e.target === this) closeModal(false);
+  });
+  window.addEventListener('scroll', function() {
+    document.getElementById('backTop').classList.toggle('show', window.pageYOffset > 400);
+  }, { passive: true });
+
+  updateFormatNote();
+  if (!restoreState()) addNewSuspectCard();
+  recalculateAll();
+};
+
+function updateFormatNote() {
+  document.getElementById('formatNote').innerText =
+    FORMAT_NOTES[document.getElementById('exportFormat').value] || '';
+}
+
+function getBaseYear() {
+  const v = parseInt(document.getElementById('baseYear').value, 10);
+  return (v >= 1912 && v <= 9999) ? v : new Date().getFullYear();
+}
+
+/* =========================================================================
+   彈跳視窗與浮動提示
+   ========================================================================= */
+let modalResolve = null;
+
+function showModal(opts) {
+  return new Promise(resolve => {
+    if (modalResolve) { const r = modalResolve; modalResolve = null; r(undefined); }
+    modalResolve = resolve;
+
+    const overlay = document.getElementById('modalOverlay');
+    document.getElementById('modalTitle').innerHTML =
+      (opts.icon ? iconSvg(opts.icon, 'icon-lg') : '') + escapeHtml(opts.title || '訊息');
+
+    const body = document.getElementById('modalBody');
+    body.className = 'modal-body' + (opts.html ? ' rich' : '');
+    if (opts.html) body.innerHTML = opts.html; else body.innerText = opts.message || '';
+    body.scrollTop = 0;
+
+    const footer = document.getElementById('modalFooter');
+    footer.innerHTML = '';
+    (opts.buttons || [{ label: '確定', value: true, primary: true }]).forEach(b => {
+      const btn = document.createElement('button');
+      btn.className = 'modal-btn' + (b.primary ? ' primary' : '') + (b.danger ? ' danger' : '');
+      btn.innerText = b.label;
+      btn.addEventListener('click', () => closeModal(b.value));
+      footer.appendChild(btn);
+    });
+
+    overlay.hidden = false;
+    requestAnimationFrame(() => overlay.classList.add('show'));
+    setTimeout(() => {
+      const f = footer.querySelector('.primary, .danger') || footer.querySelector('button');
+      if (f) f.focus();
+    }, 40);
+  });
+}
+
+function closeModal(value) {
+  const overlay = document.getElementById('modalOverlay');
+  overlay.classList.remove('show');
+  overlay.hidden = true;
+  if (modalResolve) { const r = modalResolve; modalResolve = null; r(value); }
+}
+
+function showAlert(message, title, iconName) {
+  return showModal({ title: title || '提示', icon: iconName || 'info', message: message,
+    buttons: [{ label: '確定', value: true, primary: true }] });
+}
+function showError(message, title) {
+  return showModal({ title: title || '無法完成', icon: 'alert', message: message,
+    buttons: [{ label: '我知道了', value: true, primary: true }] });
+}
+function showConfirm(message, title, okLabel) {
+  return showModal({ title: title || '請確認', icon: 'help', message: message,
+    buttons: [{ label: '取消', value: false }, { label: okLabel || '確定', value: true, danger: true }] });
+}
+
+/** 非阻斷式浮動提示 */
+function toast(message, iconName) {
+  const wrap = document.getElementById('toastWrap');
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.innerHTML = iconSvg(iconName || 'check', 'icon-lg') + '<span></span>';
+  el.querySelector('span').innerText = message;
+  wrap.appendChild(el);
+  setTimeout(() => {
+    el.classList.add('out');
+    setTimeout(() => el.remove(), 280);
+  }, 2400);
+}
+
+/* ---- 2. 匯出進度視窗：讓使用者看到匯出的實際執行情形 ---- */
+
+/** 等待瀏覽器完成一次繪製，讓進度條的畫面更新真的有機會顯示出來 */
+function nextFrame() {
+  return new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+}
+function wait(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+function showProgress(title) {
+  document.getElementById('progressTitle').innerText = title || '匯出中…';
+  const fill = document.getElementById('progressFill');
+  fill.style.width = '0%';
+  fill.classList.remove('done');
+  document.getElementById('progressStage').innerText = '準備中…';
+  document.getElementById('progressPct').innerText = '0%';
+  const overlay = document.getElementById('progressOverlay');
+  overlay.hidden = false;
+  requestAnimationFrame(() => overlay.classList.add('show'));
+}
+
+function updateProgress(pct, stageText) {
+  pct = Math.max(0, Math.min(100, Math.round(pct)));
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressPct').innerText = pct + '%';
+  if (stageText) document.getElementById('progressStage').innerText = stageText;
+}
+
+async function hideProgress(delayMs) {
+  if (delayMs) await wait(delayMs);
+  const overlay = document.getElementById('progressOverlay');
+  overlay.classList.remove('show');
+  await wait(150);
+  overlay.hidden = true;
+}
+
+function showHelp() {
+  showModal({
+    title: '功能說明', icon: 'book',
+    html: `
+      <h4>1. 時間輸入格式</h4>
+      <ul>
+        <li><b>逮捕時間</b>：<code>MMDDhhmm</code> 共 8 碼，例如 <code>09251601</code> = 9月25日 16:01。</li>
+        <li><b>各項障礙時間</b>：<code>MMDDhhmm-MMDDhhmm</code> 共 17 碼。<b>只要輸入數字</b>，打滿前 8 碼會立刻自動補上「-」，接著輸入結束時間即可。</li>
+        <li>年份取自上方「案件年度」。跨年案件 (12月→隔年1月) 會自動判斷跨年。</li>
+      </ul>
+
+      <h4>2. 格式檢查</h4>
+      <ul>
+        <li>月份、日期 (含閏年)、時、分都會檢查，結束時間必須晚於開始時間。</li>
+        <li>有誤時欄位轉紅並顯示原因；<b>未修正前無法匯出一覽表</b>。</li>
+        <li>輸入到一半時顯示橘色提示，離開欄位後才轉為紅色警告。</li>
+      </ul>
+
+      <h4>3. 計算方式</h4>
+      <ul>
+        <li>法定障礙總計 = 等候辯護人 + 辯護人接見 + 各段交通障礙 + 夜障 + 其他障礙。</li>
+        <li>滿 16 小時時間 = 逮捕時間 + 16 小時 + 法定障礙總計時間。</li>
+        <li>顯示日期為民國年 (例：115/09/26)。</li>
+      </ul>
+
+      <h4>4. 多人作業</h4>
+      <ul>
+        <li>最多可建立 10 位人犯。</li>
+        <li>從第 2 位起會出現「<b>複製上一個人犯資料（不含人別資料）</b>」，可把上一位的<b>逮捕資訊與各項障礙時間</b>整份帶過來（同案多人常常這些都一樣）。</li>
+        <li><b>人別資料不會被複製</b>，姓名、出生日期、身分證號、戶籍地址仍需個別填寫，避免誤植。</li>
+        <li>右側「人犯節點圖」可一眼看出每位的狀態，點擊節點即可跳到該位人犯。</li>
+      </ul>
+
+      <h4>5. 匯出與存檔</h4>
+      <ul>
+        <li><b>一覽表</b>可匯出 <code>.docx</code>、<code>.doc</code>、<code>.odt</code> 三種格式，皆為 A4 橫向標準格式。</li>
+        <li><b>匯出 JSON</b>：把目前所有輸入存成檔案，日後可用「匯入 JSON」還原繼續編輯。</li>
+        <li>輸入內容會自動暫存在本機瀏覽器，關閉後重開仍在。</li>
+      </ul>
+
+      <h4>6. 資料安全</h4>
+      <ul>
+        <li>所有計算都在本機完成，<b>不會上傳任何資料</b>。</li>
+        <li>個資欄位為選填，一旦填寫就會存入本機暫存與匯出檔案。</li>
+        <li>公用電腦使用完畢，請按「<b>清除全部</b>」清除暫存資料。</li>
+      </ul>
+    `,
+    buttons: [{ label: '關閉', value: true, primary: true }]
+  });
+}
+
+/* =========================================================================
+   時間解析與格式驗證
+   ========================================================================= */
+
+function daysInMonth(year, month) { return new Date(year, month, 0).getDate(); }
+
+function validateSingleTime(str, year) {
+  const s = (str || '').trim();
+  if (s === '') return { empty: true, ok: true, msg: '', date: null };
+
+  if (!/^\d{8}$/.test(s)) {
+    return { empty: false, ok: false, date: null,
+      msg: `格式須為 MMDDhhmm 共 8 碼數字 (目前 ${s.replace(/\D/g, '').length} 碼)` };
+  }
+
+  const MM = parseInt(s.substring(0, 2), 10);
+  const DD = parseInt(s.substring(2, 4), 10);
+  const HH = parseInt(s.substring(4, 6), 10);
+  const mm = parseInt(s.substring(6, 8), 10);
+
+  if (MM < 1 || MM > 12) return { empty: false, ok: false, date: null, msg: `月份「${s.substring(0,2)}」無效，須為 01–12` };
+  const maxDay = daysInMonth(year, MM);
+  if (DD < 1 || DD > maxDay) return { empty: false, ok: false, date: null, msg: `${year} 年 ${MM} 月只有 ${maxDay} 天，日期「${s.substring(2,4)}」無效` };
+  if (HH > 23) return { empty: false, ok: false, date: null, msg: `小時「${s.substring(4,6)}」無效，須為 00–23` };
+  if (mm > 59) return { empty: false, ok: false, date: null, msg: `分鐘「${s.substring(6,8)}」無效，須為 00–59` };
+
+  return { empty: false, ok: true, msg: '', date: new Date(year, MM - 1, DD, HH, mm) };
+}
+
+function validateTimeRange(str, year) {
+  const s = (str || '').trim();
+  if (s === '') return { empty: true, ok: true, msg: '', minutes: 0, start: null, end: null, crossYear: false };
+
+  if (!/^\d{8}-\d{8}$/.test(s)) {
+    return { empty: false, ok: false, minutes: 0, start: null, end: null, crossYear: false,
+      msg: `格式須為 MMDDhhmm-MMDDhhmm 共 17 碼 (目前 ${s.replace(/\D/g, '').length} 碼數字)` };
+  }
+
+  const a = validateSingleTime(s.substring(0, 8), year);
+  if (!a.ok) return { empty: false, ok: false, minutes: 0, start: null, end: null, crossYear: false, msg: '開始時間：' + a.msg };
+
+  const b = validateSingleTime(s.substring(9, 17), year);
+  if (!b.ok) return { empty: false, ok: false, minutes: 0, start: null, end: null, crossYear: false, msg: '結束時間：' + b.msg };
+
+  let startDate = a.date, endDate = b.date, crossYear = false;
+
+  if (endDate <= startDate && startDate.getMonth() === 11 && endDate.getMonth() === 0) {
+    endDate = new Date(endDate.getTime());
+    endDate.setFullYear(endDate.getFullYear() + 1);
+    crossYear = true;
+  }
+
+  if (endDate <= startDate) {
+    return { empty: false, ok: false, minutes: 0, start: startDate, end: endDate, crossYear: false,
+      msg: '結束時間須晚於開始時間，請確認前後順序' };
+  }
+
+  return { empty: false, ok: true, msg: '',
+    minutes: Math.floor((endDate - startDate) / 60000), start: startDate, end: endDate, crossYear: crossYear };
+}
+
+function isPartialRange(s) { return /^\d{1,8}-?\d{0,7}$/.test((s || '').trim()); }
+
+function formatMinutes(mins) {
+  const hrs = Math.floor(mins / 60), remMins = mins % 60;
+  if (hrs === 0 && remMins === 0) return '0 小時 0 分';
+  if (hrs === 0) return `${remMins} 分`;
+  return `${hrs} 小時 ${remMins} 分`;
+}
+
+function rocParts(dateObj) {
+  if (!dateObj) return null;
+  return {
+    date: `${dateObj.getFullYear() - 1911}/${String(dateObj.getMonth() + 1).padStart(2, '0')}/${String(dateObj.getDate()).padStart(2, '0')}`,
+    time: `${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`
+  };
+}
+function rocDateTimeText(d) { const p = rocParts(d); return p ? `${p.date} ${p.time}` : ''; }
+function rangeText(res) {
+  if (!res || !res.ok || res.empty) return '';
+  return `${rocDateTimeText(res.start)} - ${rocDateTimeText(res.end)}`;
+}
+
+/* =========================================================================
+   輸入遮罩
+   ========================================================================= */
+
+function maskRangeInput(input, ev) {
+  const deleting = !!(ev && typeof ev.inputType === 'string' && ev.inputType.indexOf('delete') === 0);
+  const oldVal = input.value;
+  const pos = input.selectionStart === null ? oldVal.length : input.selectionStart;
+  const digitsBefore = oldVal.slice(0, pos).replace(/\D/g, '').length;
+
+  const d = oldVal.replace(/\D/g, '').slice(0, 16);
+  let newVal;
+  if (d.length > 8) newVal = d.slice(0, 8) + '-' + d.slice(8);
+  else if (d.length === 8 && !deleting) newVal = d + '-';
+  else newVal = d;
+
+  if (newVal === oldVal) return;
+  input.value = newVal;
+
+  let counted = 0, i = 0;
+  for (; i < newVal.length && counted < digitsBefore; i++) if (/\d/.test(newVal[i])) counted++;
+  if (counted === 8 && i === 8 && newVal.length === 9) i = 9;
+  try { input.setSelectionRange(i, i); } catch (e) {}
+}
+
+function maskSingleInput(input) {
+  const oldVal = input.value;
+  const pos = input.selectionStart === null ? oldVal.length : input.selectionStart;
+  const newVal = oldVal.replace(/\D/g, '').slice(0, 8);
+  if (newVal === oldVal) return;
+  input.value = newVal;
+  const c = Math.min(pos, newVal.length);
+  try { input.setSelectionRange(c, c); } catch (e) {}
+}
+
+// 三者都會（透過 calculateSuspectTotal 或直接）以 scheduleGlobalUpdate() 合併節點圖／匯出檢查／存檔，
+// 讓連續輸入時每個影格只做一次全域重算，而非每個按鍵都做。
+function onRangeInput(input, cardId, ev) { maskRangeInput(input, ev); calculateSuspectTotal(cardId); }
+function onArrestInput(input, cardId) { maskSingleInput(input); calculateSuspectTotal(cardId); }
+function onFieldInput(cardId) { scheduleGlobalUpdate(); }
+
+function onIdInput(input) {
+  const pos = input.selectionStart;
+  const up = input.value.toUpperCase();
+  if (up !== input.value) { input.value = up; try { input.setSelectionRange(pos, pos); } catch (e) {} }
+  scheduleGlobalUpdate();
+}
+
+/* =========================================================================
+   人犯卡片
+   ========================================================================= */
+
+function addNewSuspectCard(data, animate) {
+  const container = document.getElementById('suspectCardsContainer');
+  const currentCards = container.querySelectorAll('.suspect-card');
+
+  if (currentCards.length >= 10) {
+    showError('最多只能建立 10 位人犯，無法再新增。');
+    return null;
+  }
+
+  suspectCounter++;
+  const id = suspectCounter;
+  const num = currentCards.length + 1;
+  subItemCounters[id] = { traffic: 1, other: 0 };
+
+  const card = document.createElement('div');
+  card.className = 'suspect-card' + (animate ? ' entering' : '');
+  card.setAttribute('data-card-id', id);
+
+  card.innerHTML = `
+    <div class="suspect-header">
+      <span class="suspect-title">【編號 ${num}】人犯時間與地點資料</span>
+      <div class="hdr-actions">
+        <button type="button" class="btn-copy" onclick="copyFromPrevious(this)" hidden>
+          <i data-icon="copy"></i> 複製上一個人犯資料（不含人別資料）
+        </button>
+        <button type="button" class="btn-del delete-suspect-btn" style="font-size:.79rem; padding:5px 10px;" onclick="removeSuspectCard(this)">
+          <i data-icon="x"></i> 刪除此人犯
+        </button>
+      </div>
+    </div>
+
+    <section class="card-section sec-person">
+    <div class="section-label"><i data-icon="user"></i> 人別資料
+      <span class="sec-note">選填；涉及個資請注意保密，不會被「複製上一個」帶入</span></div>
+    <div class="card-body">
+      <div class="compact-grid cols-4">
+        <label class="cfield"><span class="cflabel">姓名</span>
+          <input type="text" class="name-input" placeholder="例如：王OO" oninput="onFieldInput(${id})"></label>
+        <label class="cfield"><span class="cflabel">出生日期</span>
+          <input type="text" class="birth-input" placeholder="例如：85/03/12" oninput="scheduleGlobalUpdate()"></label>
+        <label class="cfield"><span class="cflabel">身分證號</span>
+          <input type="text" class="idno-input" maxlength="12" placeholder="例如：A123456789" oninput="onIdInput(this)"></label>
+        <label class="cfield"><span class="cflabel">戶籍地址</span>
+          <input type="text" class="addr-input" placeholder="例如：臺北市信義區OO路O段OO號" oninput="scheduleGlobalUpdate()"></label>
+      </div>
+    </div>
+    </section>
+
+    <section class="card-section sec-arrest">
+    <div class="section-label"><i data-icon="pin"></i> 逮捕資訊
+      <span class="sec-note">起算「滿 16 小時」的基準</span></div>
+    <div class="card-body">
+      <div class="compact-grid cols-3">
+        <label class="cfield"><span class="cflabel">逮捕時間</span>
+          <input type="text" class="arrest-time-input" maxlength="8" inputmode="numeric"
+                 placeholder="09251601" oninput="onArrestInput(this, ${id})" onblur="calculateSuspectTotal(${id})">
+          <div class="field-msg"></div>
+        </label>
+        <label class="cfield"><span class="cflabel">逮捕地點</span>
+          <input type="text" class="arrest-location-input" placeholder="EX:臺北市信義區忠孝東路O段OOO號" oninput="scheduleGlobalUpdate()"></label>
+        <label class="cfield"><span class="cflabel">辯護人</span>
+          <input type="text" class="lawyer-input" placeholder="例如：OOO律師 (若無請填無)" oninput="scheduleGlobalUpdate()"></label>
+      </div>
+    </div>
+    </section>
+
+    <section class="card-section sec-barrier">
+    <div class="section-label"><i data-icon="clock"></i> 法定障礙時間
+      <span class="sec-note">這些時段不計入 16 小時，會往後遞延解送期限</span></div>
+    <div class="card-body">
+      <div class="table-scroll">
+      <table class="form-table">
+        <thead>
+          <tr>
+            <th style="width:36%; text-align:left;">法定障礙事由</th>
+            <th style="width:44%;">起訖時間 (MMDDhhmm-MMDDhhmm) / 地點</th>
+            <th style="width:20%;">小計</th>
+          </tr>
+        </thead>
+        <tbody class="barrier-tbody">
+          <tr class="barrier-row" data-type="lawyerWait" data-label="等候辯護人致未予訊問時間">
+            <th><div class="rsn"><i data-icon="hourglass" class="rsn-icon"></i><span class="rsn-text">等候辯護人致未予訊問時間</span></div></th>
+            <td>
+              <div class="input-line">
+                <input type="text" class="time-input" maxlength="17" inputmode="numeric"
+                       placeholder="09251800-09251900" oninput="onRangeInput(this, ${id}, event)" onblur="calculateSuspectTotal(${id})">
+                <div class="field-msg"></div>
+              </div>
+            </td>
+            <td class="row-subtotal zero"><span class="sub-val">0 小時 0 分</span><span class="sub-bar"><i></i></span></td>
+          </tr>
+
+          <tr class="barrier-row" data-type="lawyerInterview" data-label="辯護人接見時間">
+            <th><div class="rsn"><i data-icon="user" class="rsn-icon"></i><span class="rsn-text">辯護人接見時間</span></div></th>
+            <td>
+              <div class="input-line">
+                <input type="text" class="time-input" maxlength="17" inputmode="numeric"
+                       placeholder="09251900-09251945" oninput="onRangeInput(this, ${id}, event)" onblur="calculateSuspectTotal(${id})">
+                <div class="field-msg"></div>
+              </div>
+            </td>
+            <td class="row-subtotal zero"><span class="sub-val">0 小時 0 分</span><span class="sub-bar"><i></i></span></td>
+          </tr>
+
+          <tr class="barrier-row traffic-row" data-type="traffic" data-label="交通障礙時間 (第 1 段)">
+            <th>
+              <div class="rsn">
+                <i data-icon="route" class="rsn-icon"></i>
+                <span class="rsn-text">交通障礙時間<span class="seg-badge traffic-label">第 1 段</span></span>
+                <button type="button" class="btn-add" onclick="addTrafficRow(${id})"><i data-icon="plus"></i> 新增交通障礙</button>
+              </div>
+            </th>
+            <td>
+              <div class="location-box">
+                <input type="text" class="loc-input" placeholder="起訖地點 (例如: 逮捕地點 至 花蓮地檢)" style="font-size:.82rem;" oninput="scheduleGlobalUpdate()">
+              </div>
+              <div class="input-line">
+                <input type="text" class="time-input" maxlength="17" inputmode="numeric"
+                       placeholder="09252000-09252100" oninput="onRangeInput(this, ${id}, event)" onblur="calculateSuspectTotal(${id})">
+                <div class="field-msg"></div>
+              </div>
+            </td>
+            <td class="row-subtotal zero"><span class="sub-val">0 小時 0 分</span><span class="sub-bar"><i></i></span></td>
+          </tr>
+
+          <tr class="barrier-row" data-type="nightStop" data-label="夜障時間">
+            <th><div class="rsn"><i data-icon="moon" class="rsn-icon"></i><span class="rsn-text">夜障時間</span></div></th>
+            <td>
+              <div class="input-line">
+                <input type="text" class="time-input" maxlength="17" inputmode="numeric"
+                       placeholder="09252131-09260549" oninput="onRangeInput(this, ${id}, event)" onblur="calculateSuspectTotal(${id})">
+                <div class="field-msg"></div>
+              </div>
+            </td>
+            <td class="row-subtotal zero"><span class="sub-val">0 小時 0 分</span><span class="sub-bar"><i></i></span></td>
+          </tr>
+
+          <tr class="group-row">
+            <th colspan="3">
+              <div class="rsn">
+                <i data-icon="dots" class="rsn-icon"></i>
+                <span class="rsn-text">其他障礙時間</span>
+                <button type="button" class="btn-add" onclick="addOtherRow(${id})"><i data-icon="plus"></i> 新增其他障礙</button>
+              </div>
+            </th>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+
+      <div class="result-strip">
+        <div class="stat">
+          <span class="stat-label">法定障礙總計時間</span>
+          <span class="stat-value total-hours">0 小時 0 分</span>
+        </div>
+        <div class="stat deadline">
+          <span class="stat-label">滿 16 小時時間</span>
+          <span class="stat-value deadline-result">--</span>
+        </div>
+      </div>
+    </div>
+    </section>
+  `;
+
+  container.appendChild(card);
+  renderIcons(card);
+  if (data) fillCardData(card, id, data);
+  if (animate) setTimeout(() => card.classList.remove('entering'), 400);
+
+  reindexSuspectCards();
+  calculateSuspectTotal(id);
+  observeCards();
+  // 注意：這裡刻意不 flush —— applyState/restoreState 會在迴圈中重複呼叫本函式
+  // 逐一建立多位人犯，若每次都同步 flush 會重新製造 O(n²)；改由呼叫端最後
+  // 統一呼叫 recalculateAll()（內含一次 flush）即可，單一按鈕新增時則在下一
+  // 影格內自動同步，人眼無法感知這 16ms 級的延遲。
+  return card;
+}
+
+/** 3. 刪除動畫：卡片被抽走，下方卡片平順往上補位 */
+function animateRemoveCard(card, done) {
+  const h = card.offsetHeight;
+  card.style.height = h + 'px';
+  card.style.overflow = 'hidden';
+  void card.offsetHeight;                 // 強制 reflow，讓高度動畫生效
+  card.classList.add('removing');
+  card.style.height = '0px';
+  card.style.marginBottom = '0px';
+  card.style.paddingTop = '0px';
+  card.style.paddingBottom = '0px';
+  setTimeout(() => { card.remove(); if (done) done(); }, 400);
+}
+
+async function removeSuspectCard(btn) {
+  const card = btn.closest('.suspect-card');
+  const title = card.querySelector('.suspect-title').innerText;
+  const ok = await showConfirm(`確定要刪除「${title}」嗎？\n此動作無法復原。`, '刪除人犯', '刪除');
+  if (!ok) return;
+
+  animateRemoveCard(card, () => {
+    reindexSuspectCards();
+    recalculateAll(); // 內含 flushGlobalUpdate，已同步存檔
+    observeCards();
+    toast('已刪除該筆人犯資料', 'trash');
+  });
+}
+
+/** 5. 複製「上一個人犯」的案件資料（不含人別資料） */
+async function copyFromPrevious(btn) {
+  const card = btn.closest('.suspect-card');
+  const cards = Array.from(document.querySelectorAll('.suspect-card'));
+  const idx = cards.indexOf(card);
+  if (idx <= 0) return;
+
+  const prev = collectCardData(cards[idx - 1]);
+  PERSONAL_FIELDS.forEach(f => { delete prev[f]; });   // 人別資料不複製
+
+  const cur = collectCardData(card);
+  const hasCaseData =
+    [cur.arrestTime, cur.arrestLoc, cur.lawyer, cur.lawyerWait, cur.lawyerInterview, cur.nightStop]
+      .some(v => (v || '').trim()) ||
+    cur.traffic.some(t => (t.loc || '').trim() || (t.time || '').trim()) ||
+    cur.other.length > 0;
+
+  if (hasCaseData) {
+    const ok = await showConfirm(
+      `將以【編號 ${idx}】的逮捕資訊與各項障礙時間覆蓋目前【編號 ${idx + 1}】的內容。\n\n` +
+      `人別資料（姓名、出生日期、身分證號、戶籍地址）不會被覆蓋。\n\n是否繼續？`,
+      '複製上一個人犯資料（不含人別資料）', '覆蓋');
+    if (!ok) return;
+  }
+
+  applyCaseDataToCard(card, prev);
+  toast(`已複製【編號 ${idx}】的案件資料`, 'copy');
+}
+
+/** 清掉卡片的案件欄位（保留人別資料） */
+function resetCardCaseFields(card) {
+  card.querySelector('.arrest-time-input').value = '';
+  card.querySelector('.arrest-location-input').value = '';
+  card.querySelector('.lawyer-input').value = '';
+  card.querySelector('.barrier-row[data-type="lawyerWait"] .time-input').value = '';
+  card.querySelector('.barrier-row[data-type="lawyerInterview"] .time-input').value = '';
+  card.querySelector('.barrier-row[data-type="nightStop"] .time-input').value = '';
+  card.querySelectorAll('.barrier-row[data-type="other"]').forEach(r => r.remove());
+  card.querySelectorAll('.barrier-row[data-type="traffic"]').forEach((r, i) => {
+    if (i > 0) { r.remove(); return; }
+    r.querySelector('.loc-input').value = '';
+    r.querySelector('.time-input').value = '';
+  });
+}
+
+function applyCaseDataToCard(card, d) {
+  const id = parseInt(card.getAttribute('data-card-id'), 10);
+  resetCardCaseFields(card);
+
+  card.querySelector('.arrest-time-input').value = d.arrestTime || '';
+  card.querySelector('.arrest-location-input').value = d.arrestLoc || '';
+  card.querySelector('.lawyer-input').value = d.lawyer || '';
+  card.querySelector('.barrier-row[data-type="lawyerWait"] .time-input').value = d.lawyerWait || '';
+  card.querySelector('.barrier-row[data-type="lawyerInterview"] .time-input').value = d.lawyerInterview || '';
+  card.querySelector('.barrier-row[data-type="nightStop"] .time-input').value = d.nightStop || '';
+
+  const trafficList = d.traffic || [];
+  if (trafficList.length > 0) {
+    const first = card.querySelector('.barrier-row[data-type="traffic"]');
+    first.querySelector('.loc-input').value = trafficList[0].loc || '';
+    first.querySelector('.time-input').value = trafficList[0].time || '';
+    for (let i = 1; i < trafficList.length; i++) addTrafficRow(id, trafficList[i]);
+  }
+  (d.other || []).forEach(o => addOtherRow(id, o));
+
+  renumberTrafficRows(card);
+  calculateSuspectTotal(id);
+  flushGlobalUpdate();
+
+  card.classList.add('flash');
+  setTimeout(() => card.classList.remove('flash'), 1000);
+}
+
+function reindexSuspectCards() {
+  const cards = document.querySelectorAll('.suspect-card');
+  cards.forEach((card, idx) => {
+    const titleSpan = card.querySelector('.suspect-title');
+    if (titleSpan) titleSpan.innerText = `【編號 ${idx + 1}】人犯時間與地點資料`;
+    // 編號 1 沒有「上一個」，不顯示複製鈕
+    const copyBtn = card.querySelector('.btn-copy');
+    if (copyBtn) copyBtn.hidden = (idx === 0);
+    const delBtn = card.querySelector('.delete-suspect-btn');
+    if (delBtn) delBtn.hidden = (cards.length <= 1);
+  });
+
+  const btn = document.getElementById('addSuspectBtn');
+  btn.disabled = cards.length >= 10;
+  document.getElementById('addSuspectLabel').innerText = cards.length >= 10
+    ? '已達上限 10 人'
+    : `新增人犯 (目前 ${cards.length} 人，最多 10 人)`;
+
+  scheduleGlobalUpdate();
+}
+
+function addTrafficRow(cardId, data) {
+  const card = document.querySelector(`.suspect-card[data-card-id="${cardId}"]`);
+  if (!card) return;
+  subItemCounters[cardId].traffic++;
+  const tbody = card.querySelector('.barrier-tbody');
+  const nightRow = card.querySelector('.barrier-row[data-type="nightStop"]');
+
+  const tr = document.createElement('tr');
+  tr.className = 'barrier-row traffic-row';
+  tr.setAttribute('data-type', 'traffic');
+  tr.innerHTML = `
+    <th>
+      <div class="rsn">
+        <i data-icon="route" class="rsn-icon"></i>
+        <span class="rsn-text">交通障礙時間<span class="seg-badge traffic-label">第 1 段</span></span>
+        <button type="button" class="btn-del" onclick="removeSubRow(this, ${cardId})"><i data-icon="x"></i> 刪除</button>
+      </div>
+    </th>
+    <td>
+      <div class="location-box">
+        <input type="text" class="loc-input" placeholder="起訖地點 (例如: 信義分局 至 臺北地檢)" style="font-size:.82rem;" oninput="scheduleGlobalUpdate()">
+      </div>
+      <div class="input-line">
+        <input type="text" class="time-input" maxlength="17" inputmode="numeric"
+               placeholder="09261000-09261200" oninput="onRangeInput(this, ${cardId}, event)" onblur="calculateSuspectTotal(${cardId})">
+        <div class="field-msg"></div>
+      </div>
+    </td>
+    <td class="row-subtotal zero"><span class="sub-val">0 小時 0 分</span><span class="sub-bar"><i></i></span></td>
+  `;
+  tbody.insertBefore(tr, nightRow);
+  renderIcons(tr);
+
+  if (data) {
+    tr.querySelector('.loc-input').value = data.loc || '';
+    tr.querySelector('.time-input').value = data.time || '';
+  } else {
+    tr.querySelector('.loc-input').focus();
+  }
+
+  renumberTrafficRows(card);
+  calculateSuspectTotal(cardId);
+  flushGlobalUpdate(); // 離散的按鈕動作，立即同步存檔／重畫，不等下一影格
+}
+
+function renumberTrafficRows(card) {
+  card.querySelectorAll('.barrier-row[data-type="traffic"]').forEach((tr, idx) => {
+    const label = tr.querySelector('.traffic-label');
+    if (label) label.innerText = `第 ${idx + 1} 段`;
+    tr.setAttribute('data-label', `交通障礙時間 (第 ${idx + 1} 段)`);
+  });
+}
+
+function addOtherRow(cardId, data) {
+  const card = document.querySelector(`.suspect-card[data-card-id="${cardId}"]`);
+  if (!card) return;
+  subItemCounters[cardId].other++;
+  const tbody = card.querySelector('.barrier-tbody');
+
+  const tr = document.createElement('tr');
+  tr.className = 'barrier-row other-row';
+  tr.setAttribute('data-type', 'other');
+  tr.innerHTML = `
+    <th>
+      <div class="rsn">
+        <input type="text" class="reason-input" placeholder="請輸入障礙事由 (如: 身體狀況/提審/通譯)" style="font-size:.82rem;" oninput="scheduleGlobalUpdate()">
+        <button type="button" class="btn-del" onclick="removeSubRow(this, ${cardId})"><i data-icon="x"></i> 刪除</button>
+      </div>
+    </th>
+    <td>
+      <div class="input-line">
+        <input type="text" class="time-input" maxlength="17" inputmode="numeric"
+               placeholder="09261300-09261400" oninput="onRangeInput(this, ${cardId}, event)" onblur="calculateSuspectTotal(${cardId})">
+        <div class="field-msg"></div>
+      </div>
+    </td>
+    <td class="row-subtotal zero"><span class="sub-val">0 小時 0 分</span><span class="sub-bar"><i></i></span></td>
+  `;
+  tbody.appendChild(tr);
+  renderIcons(tr);
+
+  if (data) {
+    tr.querySelector('.reason-input').value = data.reason || '';
+    tr.querySelector('.time-input').value = data.time || '';
+  } else {
+    tr.querySelector('.reason-input').focus();
+  }
+
+  calculateSuspectTotal(cardId);
+  flushGlobalUpdate();
+}
+
+/** 子項目刪除也帶淡出效果 */
+function removeSubRow(btn, cardId) {
+  const card = btn.closest('.suspect-card');
+  const tr = btn.closest('tr');
+  tr.style.transition = 'opacity .22s ease, transform .22s ease';
+  tr.style.opacity = '0';
+  tr.style.transform = 'translateX(-18px)';
+  setTimeout(() => {
+    tr.remove();
+    renumberTrafficRows(card);
+    calculateSuspectTotal(cardId);
+    flushGlobalUpdate();
+  }, 220);
+}
+
+/* =========================================================================
+   計算與驗證顯示
+   ========================================================================= */
+
+function setFieldState(input, state, message) {
+  const msgEl = input.parentElement.querySelector('.field-msg');
+  input.classList.remove('is-invalid', 'is-valid', 'is-pending');
+  if (state === 'err') input.classList.add('is-invalid');
+  else if (state === 'ok') input.classList.add('is-valid');
+  else if (state === 'pending') input.classList.add('is-pending');
+
+  if (!msgEl) return;
+  msgEl.className = 'field-msg';
+  if (message) {
+    msgEl.classList.add('show', state === 'err' ? 'err' : (state === 'pending' ? 'pending' : 'ok'));
+    msgEl.innerHTML = (state === 'err' ? iconSvg('alert') : '') + '<span></span>';
+    msgEl.querySelector('span').innerText = message;
+  } else {
+    msgEl.innerHTML = '';
+  }
+}
+
+function calculateSuspectTotal(cardId) {
+  const card = document.querySelector(`.suspect-card[data-card-id="${cardId}"]`);
+  if (!card) return;
+
+  const year = getBaseYear();
+  let totalMinutes = 0, hasError = false, maxMinutes = 0;
+  const bars = [];
+
+  card.querySelectorAll('.barrier-row').forEach(row => {
+    const input = row.querySelector('.time-input');
+    const subtotalTd = row.querySelector('.row-subtotal');
+    if (!input || !subtotalTd) return;
+
+    const res = validateTimeRange(input.value, year);
+    const valEl = subtotalTd.querySelector('.sub-val') || subtotalTd;
+    const barEl = subtotalTd.querySelector('.sub-bar > i');
+    subtotalTd.classList.remove('bad');
+    row.classList.toggle('is-empty', res.empty);
+    row.classList.toggle('is-filled', !res.empty && res.ok);
+
+    if (res.empty) {
+      setFieldState(input, 'none', '');
+      valEl.innerText = formatMinutes(0);
+      subtotalTd.classList.add('zero');
+    } else if (!res.ok) {
+      hasError = true;
+      if (input === document.activeElement && isPartialRange(input.value)) {
+        setFieldState(input, 'pending', '尚未輸入完成，請繼續輸入結束時間');
+        valEl.innerText = '輸入中…';
+        subtotalTd.classList.add('zero');
+      } else {
+        setFieldState(input, 'err', res.msg);
+        valEl.innerText = '格式錯誤';
+        subtotalTd.classList.remove('zero');
+        subtotalTd.classList.add('bad');
+      }
+    } else {
+      totalMinutes += res.minutes;
+      if (res.minutes > maxMinutes) maxMinutes = res.minutes;
+      setFieldState(input, 'ok', rangeText(res) + (res.crossYear ? '（跨年）' : ''));
+      valEl.innerText = formatMinutes(res.minutes);
+      subtotalTd.classList.toggle('zero', res.minutes === 0);
+      if (barEl) bars.push({ el: barEl, mins: res.minutes });
+    }
+    if (barEl && (res.empty || !res.ok)) barEl.style.width = '0%';
+  });
+
+  // 佔比橫條以「最長的一項」為 100%，凸顯影響最大的事由
+  bars.forEach(b => {
+    b.el.style.width = maxMinutes > 0 ? (b.mins / maxMinutes * 100).toFixed(1) + '%' : '0%';
+  });
+
+  card.querySelector('.total-hours').innerText = formatMinutes(totalMinutes);
+
+  const arrestInput = card.querySelector('.arrest-time-input');
+  const arrestRes = validateSingleTime(arrestInput.value, year);
+  const deadlineTd = card.querySelector('.deadline-result');
+
+  if (arrestRes.empty) {
+    setFieldState(arrestInput, 'none', '');
+    deadlineTd.innerText = '請先填逮捕時間';
+    deadlineTd.classList.remove('highlight-text', 'highlight-ready');
+  } else if (!arrestRes.ok) {
+    hasError = true;
+    if (arrestInput === document.activeElement && /^\d{1,7}$/.test(arrestInput.value)) {
+      setFieldState(arrestInput, 'pending', '尚未輸入完成 (需 8 碼)');
+    } else {
+      setFieldState(arrestInput, 'err', arrestRes.msg);
+    }
+    deadlineTd.innerText = '逮捕時間格式錯誤';
+    deadlineTd.classList.remove('highlight-text', 'highlight-ready');
+  } else {
+    setFieldState(arrestInput, 'ok', rocDateTimeText(arrestRes.date));
+    const p = rocParts(new Date(arrestRes.date.getTime() + (16 * 60 + totalMinutes) * 60000));
+    deadlineTd.innerText = `${p.date} ${p.time}`;
+    deadlineTd.classList.add('highlight-text', 'highlight-ready');
+  }
+
+  card.classList.toggle('has-error', hasError);
+  scheduleGlobalUpdate();
+}
+
+function recalculateAll() {
+  document.querySelectorAll('.suspect-card').forEach(card => {
+    calculateSuspectTotal(parseInt(card.getAttribute('data-card-id'), 10));
+  });
+  // 明確 flush：呼叫端（頁面載入／匯入還原／匯出前檢查）都需要「回傳當下」
+  // 節點圖與匯出可用性就已經是最新的，不能等下一影格
+  flushGlobalUpdate();
+}
+
+/** 取得單一卡片的狀態，供總覽與節點圖共用 */
+function cardStatus(card) {
+  const name = card.querySelector('.name-input').value.trim();
+  const total = card.querySelector('.total-hours').innerText;
+  const deadline = card.querySelector('.deadline-result').innerText.replace(/\n/g, ' ').trim();
+  const hasError = card.classList.contains('has-error');
+  const done = /^\d/.test(deadline);
+  return {
+    name: name, total: total, deadline: deadline,
+    state: hasError ? 'err' : (done ? 'ok' : 'warn'),
+    done: done
+  };
+}
+
+/* =========================================================================
+   右側節點圖（已併入原「總覽」的障礙總計與滿 16 小時）
+   ========================================================================= */
+
+function buildNodeMap() {
+  const list = document.getElementById('nodeList');
+  if (!list) return;
+  const cards = Array.from(document.querySelectorAll('.suspect-card'));
+
+  let html = cards.map((card, idx) => {
+    const s = cardStatus(card);
+    const id = card.getAttribute('data-card-id');
+    const meta = s.state === 'err' ? '有格式錯誤' : `障礙總計 ${s.total}`;
+    const deadline = s.done ? `滿 16 小時 ${s.deadline}` : '尚未填寫逮捕時間';
+    return `<li class="node-item ${s.state}${String(id) === String(activeCardId) ? ' active' : ''}"
+                data-card-id="${id}" onclick="jumpToCard('${id}')"
+                title="跳至編號 ${idx + 1}${s.name ? '：' + escapeHtml(s.name) : ''}">
+      <span class="node-dot">${idx + 1}</span>
+      <span class="node-info">
+        <span class="node-name">${s.name ? escapeHtml(s.name) : '（未填姓名）'}</span>
+        <span class="node-meta">${escapeHtml(meta)}</span>
+        <span class="node-deadline">${escapeHtml(deadline)}</span>
+      </span>
+    </li>`;
+  }).join('');
+
+  const full = cards.length >= 10;
+  html += `<li class="node-item node-add${full ? ' disabled' : ''}"
+               onclick="${full ? '' : 'addNewSuspectCard(null, true)'}" title="新增人犯">
+    <span class="node-dot"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${ICONS.plus}</svg></span>
+    <span class="node-info"><span class="node-name">${full ? '已達 10 人上限' : '新增人犯'}</span></span>
+  </li>`;
+
+  list.innerHTML = html;
+}
+
+function jumpToCard(id) {
+  const card = document.querySelector(`.suspect-card[data-card-id="${id}"]`);
+  if (!card) return;
+  const headerH = document.querySelector('.app-header').offsetHeight;
+  const y = card.getBoundingClientRect().top + window.pageYOffset - headerH - 14;
+  window.scrollTo({ top: y, behavior: 'smooth' });
+  setActiveNode(id);
+  card.classList.add('flash');
+  setTimeout(() => card.classList.remove('flash'), 1000);
+}
+
+function setActiveNode(id) {
+  activeCardId = id;
+  document.querySelectorAll('.node-item[data-card-id]').forEach(li => {
+    li.classList.toggle('active', li.getAttribute('data-card-id') === String(id));
+  });
+}
+
+function observeCards() {
+  if (cardObserver) cardObserver.disconnect();
+  if (typeof IntersectionObserver === 'undefined') return;
+  cardObserver = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) setActiveNode(e.target.getAttribute('data-card-id'));
+    });
+  }, { rootMargin: '-25% 0px -65% 0px', threshold: 0 });
+  document.querySelectorAll('.suspect-card').forEach(c => cardObserver.observe(c));
+}
+
+/* =========================================================================
+   匯出前檢查
+   ========================================================================= */
+
+function collectErrors() {
+  const year = getBaseYear();
+  const errors = [];
+
+  document.querySelectorAll('.suspect-card').forEach((card, idx) => {
+    const arrestInput = card.querySelector('.arrest-time-input');
+    const ar = validateSingleTime(arrestInput.value, year);
+    if (!ar.ok) errors.push({ input: arrestInput, text: `編號 ${idx + 1} —「逮捕時間」：${ar.msg}` });
+
+    card.querySelectorAll('.barrier-row').forEach(row => {
+      const input = row.querySelector('.time-input');
+      if (!input) return;
+      const res = validateTimeRange(input.value, year);
+      if (res.ok) return;
+
+      let label = row.getAttribute('data-label') || '';
+      if (row.getAttribute('data-type') === 'other') {
+        const reason = row.querySelector('.reason-input');
+        const r = reason ? reason.value.trim() : '';
+        label = r ? `其他障礙時間 - ${r}` : '其他障礙時間';
+      }
+      if (!label) label = '障礙時間';
+      errors.push({ input: input, text: `編號 ${idx + 1} —「${label}」：${res.msg}` });
+    });
+  });
+
+  return errors;
+}
+
+function updateExportAvailability() {
+  const errors = collectErrors();
+  const banner = document.getElementById('errorBanner');
+  const btn = document.getElementById('exportBtn');
+
+  if (errors.length === 0) {
+    banner.classList.remove('show');
+    banner.innerHTML = '';
+    btn.disabled = false;
+    return;
+  }
+
+  btn.disabled = true;
+  banner.classList.add('show');
+  banner.innerHTML = `<b>有 ${errors.length} 個欄位格式錯誤，請修正後才能匯出：</b><ul>` +
+    errors.map(e => `<li>${escapeHtml(e.text)}</li>`).join('') + '</ul>';
+}
+
+/* =========================================================================
+   範例 / 清除 / 暫存 / JSON
+   ========================================================================= */
+
+function fillSampleData() {
+  const card = document.querySelector('.suspect-card');
+  if (!card) return;
+  const id = parseInt(card.getAttribute('data-card-id'), 10);
+  card.querySelector('.name-input').value = '王OO';
+  card.querySelector('.birth-input').value = '85/03/12';
+  card.querySelector('.idno-input').value = 'A123456789';
+  card.querySelector('.addr-input').value = '臺北市信義區OO路O段OO號';
+  card.querySelector('.arrest-time-input').value = '09251601';
+  card.querySelector('.arrest-location-input').value = '臺北市信義區忠孝東路五段123號';
+  card.querySelector('.lawyer-input').value = 'OOO律師';
+  card.querySelector('.barrier-row[data-type="lawyerWait"] .time-input').value = '09251800-09251900';
+  card.querySelector('.barrier-row[data-type="lawyerInterview"] .time-input').value = '09251900-09251945';
+  const traffic = card.querySelector('.barrier-row[data-type="traffic"]');
+  traffic.querySelector('.loc-input').value = '逮捕地點 至 臺北地檢';
+  traffic.querySelector('.time-input').value = '09252000-09252100';
+  card.querySelector('.barrier-row[data-type="nightStop"] .time-input').value = '09252131-09260549';
+  calculateSuspectTotal(id);
+  flushGlobalUpdate();
+  toast('已填入範例資料', 'file-text');
+}
+
+async function clearAll() {
+  const ok = await showConfirm('確定要清除所有已輸入的資料嗎？\n包含本機暫存，此動作無法復原。', '清除全部', '清除');
+  if (!ok) return;
+  try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+  document.getElementById('suspectCardsContainer').innerHTML = '';
+  subItemCounters = {};
+  activeCardId = null;
+  document.getElementById('baseYear').value = new Date().getFullYear();
+  addNewSuspectCard();
+  recalculateAll();
+  toast('已清除所有資料', 'trash');
+}
+
+function collectCardData(card) {
+  const traffic = [];
+  card.querySelectorAll('.barrier-row[data-type="traffic"]').forEach(tr => {
+    traffic.push({
+      loc: tr.querySelector('.loc-input') ? tr.querySelector('.loc-input').value : '',
+      time: tr.querySelector('.time-input').value
+    });
+  });
+  const other = [];
+  card.querySelectorAll('.barrier-row[data-type="other"]').forEach(tr => {
+    other.push({
+      reason: tr.querySelector('.reason-input') ? tr.querySelector('.reason-input').value : '',
+      time: tr.querySelector('.time-input').value
+    });
+  });
+  return {
+    name: card.querySelector('.name-input').value,
+    birth: card.querySelector('.birth-input').value,
+    idno: card.querySelector('.idno-input').value,
+    addr: card.querySelector('.addr-input').value,
+    arrestTime: card.querySelector('.arrest-time-input').value,
+    arrestLoc: card.querySelector('.arrest-location-input').value,
+    lawyer: card.querySelector('.lawyer-input').value,
+    lawyerWait: card.querySelector('.barrier-row[data-type="lawyerWait"] .time-input').value,
+    lawyerInterview: card.querySelector('.barrier-row[data-type="lawyerInterview"] .time-input').value,
+    nightStop: card.querySelector('.barrier-row[data-type="nightStop"] .time-input').value,
+    traffic: traffic,
+    other: other
+  };
+}
+
+function collectState() {
+  const suspects = [];
+  document.querySelectorAll('.suspect-card').forEach(card => suspects.push(collectCardData(card)));
+  return { app: APP_TAG, version: DATA_VERSION, year: document.getElementById('baseYear').value, suspects: suspects };
+}
+
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(collectState())); } catch (e) {}
+}
+
+function fillCardData(card, id, d) {
+  card.querySelector('.name-input').value = d.name || '';
+  card.querySelector('.birth-input').value = d.birth || '';
+  card.querySelector('.idno-input').value = d.idno || '';
+  card.querySelector('.addr-input').value = d.addr || '';
+  card.querySelector('.arrest-time-input').value = d.arrestTime || '';
+  card.querySelector('.arrest-location-input').value = d.arrestLoc || '';
+  card.querySelector('.lawyer-input').value = d.lawyer || '';
+  card.querySelector('.barrier-row[data-type="lawyerWait"] .time-input').value = d.lawyerWait || '';
+  card.querySelector('.barrier-row[data-type="lawyerInterview"] .time-input').value = d.lawyerInterview || '';
+  card.querySelector('.barrier-row[data-type="nightStop"] .time-input').value = d.nightStop || '';
+
+  const trafficList = d.traffic || [];
+  if (trafficList.length > 0) {
+    const first = card.querySelector('.barrier-row[data-type="traffic"]');
+    first.querySelector('.loc-input').value = trafficList[0].loc || '';
+    first.querySelector('.time-input').value = trafficList[0].time || '';
+    for (let i = 1; i < trafficList.length; i++) addTrafficRow(id, trafficList[i]);
+  }
+  (d.other || []).forEach(o => addOtherRow(id, o));
+  renumberTrafficRows(card);
+}
+
+function applyState(data) {
+  document.getElementById('suspectCardsContainer').innerHTML = '';
+  subItemCounters = {};
+  activeCardId = null;
+  if (data.year) document.getElementById('baseYear').value = String(data.year).replace(/\D/g, '').slice(0, 4);
+  (data.suspects || []).slice(0, 10).forEach(d => addNewSuspectCard(d));
+  if (document.querySelectorAll('.suspect-card').length === 0) addNewSuspectCard();
+  recalculateAll(); // 內含 flushGlobalUpdate，已同步存檔
+  observeCards();
+}
+
+function restoreState() {
+  let saved;
+  try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch (e) { return false; }
+  // 本機暫存也可能損壞，一律走同一套檢查與正規化
+  const result = inspectImportData(saved);
+  if (result.fatal) return false;
+  if (result.data.year) document.getElementById('baseYear').value = result.data.year;
+  result.data.suspects.slice(0, 10).forEach(d => addNewSuspectCard(d));
+  return document.querySelectorAll('.suspect-card').length > 0;
+}
+
+function exportJson() {
+  const state = collectState();
+  state.savedAt = new Date().toISOString();
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  downloadBlob(blob, `解送人犯資料(共${state.suspects.length}人)_${new Date().toISOString().slice(0, 10)}.json`);
+  showAlert(`已匯出 ${state.suspects.length} 位人犯的資料檔。\n\n此檔案含個人資料，請妥善保管，日後可用「匯入 JSON」還原繼續編輯。`,
+            '匯出完成', 'export');
+}
+
+/* ---- 1. 匯入檔案的格式檢查與正規化 ---- */
+
+const SUSPECT_KEYS = ['name', 'birth', 'idno', 'addr', 'arrestTime', 'arrestLoc', 'lawyer',
+                      'lawyerWait', 'lawyerInterview', 'nightStop', 'traffic', 'other'];
+
+/** 只接受字串/數字/布林，其餘（物件、陣列、null）一律視為空值，避免出現 [object Object] */
+function str(v) {
+  const t = typeof v;
+  if (t === 'string') return v;
+  if (t === 'number' && Number.isFinite(v)) return String(v);
+  if (t === 'boolean') return String(v);
+  return '';
+}
+
+function normalizeSuspect(s) {
+  return {
+    name: str(s.name), birth: str(s.birth), idno: str(s.idno), addr: str(s.addr),
+    arrestTime: str(s.arrestTime), arrestLoc: str(s.arrestLoc), lawyer: str(s.lawyer),
+    lawyerWait: str(s.lawyerWait), lawyerInterview: str(s.lawyerInterview), nightStop: str(s.nightStop),
+    traffic: Array.isArray(s.traffic)
+      ? s.traffic.filter(t => t && typeof t === 'object').map(t => ({ loc: str(t.loc), time: str(t.time) })) : [],
+    other: Array.isArray(s.other)
+      ? s.other.filter(o => o && typeof o === 'object').map(o => ({ reason: str(o.reason), time: str(o.time) })) : []
+  };
+}
+
+/**
+ * 檢查匯入內容是否為本系統的 JSON 檔
+ * 回傳 { fatal } 代表無法匯入；{ data, tagged, futureVersion } 代表可匯入
+ */
+function inspectImportData(data) {
+  if (data === null || typeof data !== 'object' || Array.isArray(data))
+    return { fatal: '檔案的最外層不是一個 JSON 物件，這不是本系統匯出的檔案。' };
+
+  if (!Array.isArray(data.suspects))
+    return { fatal: '檔案中找不到「suspects」人犯資料陣列，這不是本系統匯出的檔案。' };
+
+  if (data.suspects.length === 0)
+    return { fatal: '檔案中沒有任何人犯資料。' };
+
+  for (let i = 0; i < data.suspects.length; i++) {
+    const s = data.suspects[i];
+    if (!s || typeof s !== 'object' || Array.isArray(s))
+      return { fatal: `第 ${i + 1} 筆人犯資料不是物件格式，檔案內容已損壞或不是本系統的檔案。` };
+    if (!SUSPECT_KEYS.some(k => Object.prototype.hasOwnProperty.call(s, k)))
+      return { fatal: `第 ${i + 1} 筆人犯資料找不到任何本系統的欄位（如 arrestTime、nightStop），這不是本系統匯出的檔案。` };
+  }
+
+  const version = Number(data.version);
+  return {
+    data: { year: str(data.year), suspects: data.suspects.map(normalizeSuspect) },
+    tagged: data.app === APP_TAG,
+    futureVersion: Number.isFinite(version) && version > DATA_VERSION ? version : null
+  };
+}
+
+async function handleImportFile() {
+  const fileInput = document.getElementById('importFile');
+  const file = fileInput.files && fileInput.files[0];
+  if (!file) return;
+
+  try {
+    const text = await file.text();
+    let raw;
+    try { raw = JSON.parse(text); }
+    catch (e) { throw new Error('檔案不是有效的 JSON 格式，無法解析。'); }
+
+    const result = inspectImportData(raw);
+    if (result.fatal) throw new Error(result.fatal);
+
+    // 缺少本系統識別標記 → 先跳警告讓使用者決定
+    if (!result.tagged) {
+      const go = await showModal({
+        title: '這可能不是本系統的檔案', icon: 'alert',
+        message: `「${file.name}」缺少本系統的識別標記（app: "${APP_TAG}"）。\n\n` +
+                 `它可能來自其他程式、或內容曾被修改過。系統仍可讀出 ${result.data.suspects.length} 筆看起來像人犯資料的內容，` +
+                 `但欄位不一定正確對應，匯入後請務必逐項核對。\n\n仍要嘗試匯入嗎？`,
+        buttons: [{ label: '取消', value: false }, { label: '仍要匯入', value: true, danger: true }]
+      });
+      if (!go) { fileInput.value = ''; return; }
+    } else if (result.futureVersion) {
+      const go = await showModal({
+        title: '檔案版本較新', icon: 'alert',
+        message: `這個檔案的版本為 ${result.futureVersion}，比目前系統的版本 ${DATA_VERSION} 新。\n\n` +
+                 `部分欄位可能無法完整讀取，是否仍要匯入？`,
+        buttons: [{ label: '取消', value: false }, { label: '仍要匯入', value: true, danger: true }]
+      });
+      if (!go) { fileInput.value = ''; return; }
+    }
+
+    const count = result.data.suspects.length;
+    const extra = count > 10 ? `\n（檔案含 ${count} 筆，只會匯入前 10 筆）` : '';
+    const ok = await showConfirm(
+      `即將以「${file.name}」的內容取代目前所有資料。\n\n檔案中有 ${count} 位人犯。${extra}\n\n目前尚未存檔的內容將會遺失，是否繼續？`,
+      '匯入 JSON', '匯入');
+    if (!ok) { fileInput.value = ''; return; }
+
+    applyState(result.data);
+    toast(`已匯入 ${document.querySelectorAll('.suspect-card').length} 位人犯的資料`, 'import');
+  } catch (err) {
+    await showError('匯入失敗：' + err.message, '匯入失敗');
+  }
+  fileInput.value = '';
+}
+
+/* =========================================================================
+   匯出：欄位定義與資料模型
+   ========================================================================= */
+
+const COLS = [
+  { h: '編號',                      w: 3,  align: 'center' },
+  { h: '姓名',                      w: 6,  align: 'center' },
+  { h: '出生日期',                  w: 6,  align: 'center' },
+  { h: '身分證號',                  w: 7,  align: 'center' },
+  { h: '戶籍地址',                  w: 9,  align: 'left'   },
+  { h: '逮捕時間',                  w: 7,  align: 'center' },
+  { h: '逮捕地點',                  w: 9,  align: 'left'   },
+  { h: '辯護人',                    w: 6,  align: 'center' },
+  { h: '等候辯護人到場時間',        w: 9,  align: 'center' },
+  { h: '辯護人接見時間',            w: 9,  align: 'center' },
+  { h: '交通障礙時間 (含起訖地點)', w: 11, align: 'left'   },
+  { h: '夜障開始時間',              w: 7,  align: 'center' },
+  { h: '其他障礙時間',              w: 8,  align: 'left'   },
+  { h: '法定障礙總計時間',          w: 5,  align: 'center' },
+  { h: '滿 16 小時時間',            w: 6,  align: 'center' }
+];
+const COL_WEIGHT_TOTAL = COLS.reduce((s, c) => s + c.w, 0);
+
+function line(text, bold) { return { t: text, b: !!bold }; }
+function textCell(v, align) { return { lines: v && v.trim() ? [line(v.trim())] : [], align: align || 'center' }; }
+
+function rangeCellLines(res) {
+  const lines = [];
+  if (res.empty || !res.ok) return lines;
+  lines.push(line(rangeText(res)));
+  if (res.minutes > 0) lines.push(line(`合計 ${formatMinutes(res.minutes)}`, true));
+  return lines;
+}
+
+/** 建立單一人犯的一列匯出資料（供一般匯出與匯出進度條的漸進式處理共用） */
+function buildExportRowForCard(card, idx, year) {
+    const d = collectCardData(card);
+    const arrestRes = validateSingleTime(d.arrestTime, year);
+    const waitRes = validateTimeRange(d.lawyerWait, year);
+    const interviewRes = validateTimeRange(d.lawyerInterview, year);
+    const nightRes = validateTimeRange(d.nightStop, year);
+
+    const trafficLines = [];
+    let trafficTotal = 0;
+    d.traffic.forEach((t, tIdx) => {
+      const loc = (t.loc || '').trim();
+      const res = validateTimeRange(t.time, year);
+      trafficTotal += res.ok ? res.minutes : 0;
+      if (!loc && (res.empty || !res.ok)) return;
+      if (trafficLines.length > 0) trafficLines.push(line(''));
+      if (d.traffic.length > 1) trafficLines.push(line(`第 ${tIdx + 1} 段：`, true));
+      if (loc) trafficLines.push(line('地點：' + loc));
+      if (res.ok && !res.empty) trafficLines.push(line(rangeText(res)));
+    });
+    if (trafficTotal > 0) trafficLines.push(line(`合計 ${formatMinutes(trafficTotal)}`, true));
+
+    const otherLines = [];
+    let otherTotal = 0;
+    d.other.forEach(o => {
+      const reason = (o.reason || '').trim();
+      const res = validateTimeRange(o.time, year);
+      otherTotal += res.ok ? res.minutes : 0;
+      if (!reason && (res.empty || !res.ok)) return;
+      if (otherLines.length > 0) otherLines.push(line(''));
+      if (reason) otherLines.push(line('事由：' + reason, true));
+      if (res.ok && !res.empty) otherLines.push(line(rangeText(res)));
+    });
+    if (otherTotal > 0) otherLines.push(line(`合計 ${formatMinutes(otherTotal)}`, true));
+
+    const totalMins = (waitRes.ok ? waitRes.minutes : 0)
+                    + (interviewRes.ok ? interviewRes.minutes : 0)
+                    + trafficTotal
+                    + (nightRes.ok ? nightRes.minutes : 0)
+                    + otherTotal;
+
+    const arrestLines = [];
+    if (arrestRes.ok && !arrestRes.empty) {
+      const p = rocParts(arrestRes.date);
+      arrestLines.push(line(p.date), line(p.time));
+    }
+
+    const deadlineLines = [];
+    if (arrestRes.ok && !arrestRes.empty) {
+      const p = rocParts(new Date(arrestRes.date.getTime() + (16 * 60 + totalMins) * 60000));
+      deadlineLines.push(line(p.date, true), line(p.time, true));
+    } else {
+      deadlineLines.push(line('--'));
+    }
+
+    return [
+      { lines: [line(String(idx + 1))], align: 'center' },
+      textCell(d.name,  'center'),
+      textCell(d.birth, 'center'),
+      textCell(d.idno,  'center'),
+      textCell(d.addr,  'left'),
+      { lines: arrestLines, align: 'center' },
+      textCell(d.arrestLoc, 'left'),
+      textCell(d.lawyer, 'center'),
+      { lines: rangeCellLines(waitRes),      align: 'center' },
+      { lines: rangeCellLines(interviewRes), align: 'center' },
+      { lines: trafficLines,                 align: 'left'   },
+      { lines: rangeCellLines(nightRes),     align: 'center' },
+      { lines: otherLines,                   align: 'left'   },
+      { lines: [line(formatMinutes(totalMins), true)], align: 'center' },
+      { lines: deadlineLines,                align: 'center' }
+    ];
+}
+
+/** 一次建立所有人犯的匯出資料列（非漸進式，供內部工具/測試使用） */
+function buildExportRows() {
+  const year = getBaseYear();
+  const rows = [];
+  document.querySelectorAll('.suspect-card').forEach((card, idx) => {
+    rows.push(buildExportRowForCard(card, idx, year));
+  });
+  return rows;
+}
+
+/* =========================================================================
+   共用工具
+   ========================================================================= */
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                  .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+const escapeXml = escapeHtml;
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
+}
+
+const CRC_TABLE = (function() {
+  const table = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    table[n] = c >>> 0;
+  }
+  return table;
+})();
+
+function crc32(bytes) {
+  let c = 0xFFFFFFFF;
+  for (let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+
+function utf8(str) { return new TextEncoder().encode(str); }
+
+function buildZip(entries) {
+  const chunks = [], central = [];
+  let offset = 0;
+
+  const now = new Date();
+  const dosTime = ((now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1)) & 0xFFFF;
+  const dosDate = (((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate()) & 0xFFFF;
+
+  entries.forEach(entry => {
+    const nameBytes = utf8(entry.name);
+    const data = entry.data;
+    const crc = crc32(data);
+
+    const local = new Uint8Array(30 + nameBytes.length);
+    const lv = new DataView(local.buffer);
+    lv.setUint32(0, 0x04034b50, true);
+    lv.setUint16(4, 20, true);
+    lv.setUint16(6, 0x0800, true);
+    lv.setUint16(8, 0, true);
+    lv.setUint16(10, dosTime, true);
+    lv.setUint16(12, dosDate, true);
+    lv.setUint32(14, crc, true);
+    lv.setUint32(18, data.length, true);
+    lv.setUint32(22, data.length, true);
+    lv.setUint16(26, nameBytes.length, true);
+    lv.setUint16(28, 0, true);
+    local.set(nameBytes, 30);
+    chunks.push(local, data);
+
+    const cd = new Uint8Array(46 + nameBytes.length);
+    const cv = new DataView(cd.buffer);
+    cv.setUint32(0, 0x02014b50, true);
+    cv.setUint16(4, 20, true);
+    cv.setUint16(6, 20, true);
+    cv.setUint16(8, 0x0800, true);
+    cv.setUint16(10, 0, true);
+    cv.setUint16(12, dosTime, true);
+    cv.setUint16(14, dosDate, true);
+    cv.setUint32(16, crc, true);
+    cv.setUint32(20, data.length, true);
+    cv.setUint32(24, data.length, true);
+    cv.setUint16(28, nameBytes.length, true);
+    cv.setUint16(30, 0, true);
+    cv.setUint16(32, 0, true);
+    cv.setUint16(34, 0, true);
+    cv.setUint16(36, 0, true);
+    cv.setUint32(38, 0, true);
+    cv.setUint32(42, offset, true);
+    cd.set(nameBytes, 46);
+    central.push(cd);
+
+    offset += local.length + data.length;
+  });
+
+  const centralSize = central.reduce((s, c) => s + c.length, 0);
+  const eocd = new Uint8Array(22);
+  const ev = new DataView(eocd.buffer);
+  ev.setUint32(0, 0x06054b50, true);
+  ev.setUint16(4, 0, true);
+  ev.setUint16(6, 0, true);
+  ev.setUint16(8, entries.length, true);
+  ev.setUint16(10, entries.length, true);
+  ev.setUint32(12, centralSize, true);
+  ev.setUint32(16, offset, true);
+  ev.setUint16(20, 0, true);
+
+  return new Blob([...chunks, ...central, eocd], { type: 'application/octet-stream' });
+}
+
+/* =========================================================================
+   匯出 1：.doc (Word 相容 HTML)
+   ========================================================================= */
+
+function buildDocHtml(rows) {
+  const cellHtml = cell => {
+    if (cell.lines.length === 0) return '&nbsp;';
+    return cell.lines.map(l => l.t === '' ? '&nbsp;'
+      : (l.b ? `<b>${escapeHtml(l.t)}</b>` : escapeHtml(l.t))).join('<br>');
+  };
+
+  const headHtml = COLS.map(c =>
+    `<th style="width:${(c.w / COL_WEIGHT_TOTAL * 100).toFixed(2)}%;">${escapeHtml(c.h)}</th>`).join('');
+
+  const bodyHtml = rows.map(row =>
+    '<tr>' + row.map(cell => `<td style="text-align:${cell.align};">${cellHtml(cell)}</td>`).join('') + '</tr>'
+  ).join('');
+
+  return `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head>
+<meta charset='utf-8'>
+<title>解送人犯一覽表</title>
+<!--[if gte mso 9]>
+<xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml>
+<![endif]-->
+<style>
+@page WordSection1 { size: 841.8pt 595.3pt; mso-page-orientation: landscape; margin: 1.0cm 1.0cm 1.0cm 1.0cm; }
+div.WordSection1 { page: WordSection1; }
+body { font-family: "標楷體", "Microsoft JhengHei", Arial, sans-serif; font-size: 10pt; }
+h2 { text-align: center; font-size: 18pt; font-weight: bold; margin-bottom: 15px; }
+table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+th, td { border: 1px solid #000; padding: 5px 4px; font-size: 9pt; vertical-align: middle; word-wrap: break-word; }
+th { background-color: #f2f2f2; font-weight: bold; text-align: center; }
+</style>
+</head>
+<body>
+<div class="WordSection1">
+<h2>解送人犯一覽表</h2>
+<table><thead><tr>${headHtml}</tr></thead><tbody>${bodyHtml}</tbody></table>
+</div>
+</body>
+</html>`;
+}
+
+/* =========================================================================
+   匯出 2：.docx (Office Open XML)
+   ========================================================================= */
+
+const DOCX_PAGE_W = 16838, DOCX_PAGE_H = 11906, DOCX_MARGIN = 567;
+const DOCX_TABLE_W = DOCX_PAGE_W - DOCX_MARGIN * 2;
+
+function docxColWidths() {
+  return COLS.map(c => Math.round(c.w / COL_WEIGHT_TOTAL * DOCX_TABLE_W));
+}
+
+function docxRun(text, bold, sizeHalfPt) {
+  const rPr = `<w:rPr><w:rFonts w:ascii="標楷體" w:eastAsia="標楷體" w:hAnsi="標楷體"/>` +
+              `${bold ? '<w:b/>' : ''}<w:sz w:val="${sizeHalfPt}"/><w:szCs w:val="${sizeHalfPt}"/></w:rPr>`;
+  return `<w:r>${rPr}<w:t xml:space="preserve">${escapeXml(text)}</w:t></w:r>`;
+}
+
+function docxPara(text, bold, align, sizeHalfPt) {
+  const pPr = `<w:pPr><w:spacing w:before="0" w:after="0" w:line="240" w:lineRule="auto"/>` +
+              `<w:jc w:val="${align === 'center' ? 'center' : 'left'}"/></w:pPr>`;
+  return `<w:p>${pPr}${text === '' ? '' : docxRun(text, bold, sizeHalfPt)}</w:p>`;
+}
+
+function docxCell(cell, width, isHeader) {
+  const shd = isHeader ? '<w:shd w:val="clear" w:color="auto" w:fill="F2F2F2"/>' : '';
+  const tcPr = `<w:tcPr><w:tcW w:w="${width}" w:type="dxa"/>${shd}<w:vAlign w:val="center"/></w:tcPr>`;
+  const lines = cell.lines.length ? cell.lines : [line('')];
+  return `<w:tc>${tcPr}${lines.map(l => docxPara(l.t, l.b, cell.align, 18)).join('')}</w:tc>`;
+}
+
+function buildDocxDocumentXml(rows) {
+  const widths = docxColWidths();
+
+  const borders = `<w:tblBorders>
+    <w:top w:val="single" w:sz="6" w:space="0" w:color="000000"/>
+    <w:left w:val="single" w:sz="6" w:space="0" w:color="000000"/>
+    <w:bottom w:val="single" w:sz="6" w:space="0" w:color="000000"/>
+    <w:right w:val="single" w:sz="6" w:space="0" w:color="000000"/>
+    <w:insideH w:val="single" w:sz="6" w:space="0" w:color="000000"/>
+    <w:insideV w:val="single" w:sz="6" w:space="0" w:color="000000"/>
+  </w:tblBorders>`;
+
+  const grid = '<w:tblGrid>' + widths.map(w => `<w:gridCol w:w="${w}"/>`).join('') + '</w:tblGrid>';
+
+  const headerRow = '<w:tr><w:trPr><w:tblHeader/></w:trPr>' +
+    COLS.map((c, i) => docxCell({ lines: [line(c.h, true)], align: 'center' }, widths[i], true)).join('') + '</w:tr>';
+
+  const bodyRows = rows.map(row =>
+    '<w:tr>' + row.map((cell, i) => docxCell(cell, widths[i], false)).join('') + '</w:tr>').join('');
+
+  const title = `<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:after="120"/></w:pPr>` +
+                docxRun('解送人犯一覽表', true, 36) + '</w:p>';
+
+  const sectPr = `<w:sectPr>
+    <w:pgSz w:w="${DOCX_PAGE_W}" w:h="${DOCX_PAGE_H}" w:orient="landscape"/>
+    <w:pgMar w:top="${DOCX_MARGIN}" w:right="${DOCX_MARGIN}" w:bottom="${DOCX_MARGIN}" w:left="${DOCX_MARGIN}" w:header="0" w:footer="0" w:gutter="0"/>
+  </w:sectPr>`;
+
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+<w:body>
+${title}
+<w:tbl>
+  <w:tblPr><w:tblW w:w="${DOCX_TABLE_W}" w:type="dxa"/>${borders}<w:tblLayout w:type="fixed"/></w:tblPr>
+  ${grid}
+  ${headerRow}
+  ${bodyRows}
+</w:tbl>
+${sectPr}
+</w:body>
+</w:document>`;
+}
+
+/** 第二階段：把已組好的 document.xml 封裝成 .docx (ZIP) 容器 */
+function buildDocxZipFromXml(documentXml) {
+  const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+<Default Extension="xml" ContentType="application/xml"/>
+<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+</Types>`;
+
+  const rels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+</Relationships>`;
+
+  return buildZip([
+    { name: '[Content_Types].xml', data: utf8(contentTypes) },
+    { name: '_rels/.rels',         data: utf8(rels) },
+    { name: 'word/document.xml',   data: utf8(documentXml) }
+  ]);
+}
+
+function buildDocxBlob(rows) {
+  return buildDocxZipFromXml(buildDocxDocumentXml(rows));
+}
+
+/* =========================================================================
+   匯出 3：.odt (OpenDocument Text)
+   ========================================================================= */
+
+const ODT_TABLE_W_CM = 27.7;
+
+function odtColWidths() {
+  return COLS.map(c => (c.w / COL_WEIGHT_TOTAL * ODT_TABLE_W_CM).toFixed(3));
+}
+
+function odtCell(cell, styleName) {
+  const paraStyle = cell.align === 'center' ? 'Pc' : 'Pl';
+  const lines = cell.lines.length ? cell.lines : [line('')];
+  const body = lines.map(l => {
+    if (l.t === '') return `<text:p text:style-name="${paraStyle}"/>`;
+    const content = l.b ? `<text:span text:style-name="Tb">${escapeXml(l.t)}</text:span>` : escapeXml(l.t);
+    return `<text:p text:style-name="${paraStyle}">${content}</text:p>`;
+  }).join('');
+  return `<table:table-cell table:style-name="${styleName}" office:value-type="string">${body}</table:table-cell>`;
+}
+
+function buildOdtContentXml(rows) {
+  const widths = odtColWidths();
+
+  const colStyles = widths.map((w, i) =>
+    `<style:style style:name="co${i + 1}" style:family="table-column">` +
+    `<style:table-column-properties style:column-width="${w}cm"/></style:style>`).join('');
+
+  const colDefs = widths.map((w, i) => `<table:table-column table:style-name="co${i + 1}"/>`).join('');
+
+  const headerRow = '<table:table-header-rows><table:table-row>' +
+    COLS.map(c => odtCell({ lines: [line(c.h, true)], align: 'center' }, 'ceH')).join('') +
+    '</table:table-row></table:table-header-rows>';
+
+  const bodyRows = rows.map(row =>
+    '<table:table-row>' + row.map(cell => odtCell(cell, 'ce1')).join('') + '</table:table-row>').join('');
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<office:document-content
+  xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
+  xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"
+  xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"
+  xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"
+  xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0"
+  office:version="1.2">
+<office:automatic-styles>
+  <style:style style:name="Ttl" style:family="paragraph">
+    <style:paragraph-properties fo:text-align="center" fo:margin-bottom="0.3cm"/>
+    <style:text-properties fo:font-size="18pt" fo:font-weight="bold" style:font-name-asian="標楷體"/>
+  </style:style>
+  <style:style style:name="Pc" style:family="paragraph">
+    <style:paragraph-properties fo:text-align="center"/>
+    <style:text-properties fo:font-size="9pt" style:font-name-asian="標楷體"/>
+  </style:style>
+  <style:style style:name="Pl" style:family="paragraph">
+    <style:paragraph-properties fo:text-align="start"/>
+    <style:text-properties fo:font-size="9pt" style:font-name-asian="標楷體"/>
+  </style:style>
+  <style:style style:name="Tb" style:family="text">
+    <style:text-properties fo:font-weight="bold" style:font-weight-asian="bold"/>
+  </style:style>
+  <style:style style:name="Tbl" style:family="table">
+    <style:table-properties style:width="${ODT_TABLE_W_CM}cm" table:align="margins"/>
+  </style:style>
+  ${colStyles}
+  <style:style style:name="ce1" style:family="table-cell">
+    <style:table-cell-properties fo:border="0.5pt solid #000000" fo:padding="0.08cm" style:vertical-align="middle"/>
+  </style:style>
+  <style:style style:name="ceH" style:family="table-cell">
+    <style:table-cell-properties fo:border="0.5pt solid #000000" fo:padding="0.08cm" style:vertical-align="middle" fo:background-color="#f2f2f2"/>
+  </style:style>
+</office:automatic-styles>
+<office:body>
+<office:text>
+  <text:p text:style-name="Ttl">解送人犯一覽表</text:p>
+  <table:table table:name="解送人犯一覽表" table:style-name="Tbl">
+    ${colDefs}
+    ${headerRow}
+    ${bodyRows}
+  </table:table>
+</office:text>
+</office:body>
+</office:document-content>`;
+}
+
+function buildOdtStylesXml() {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<office:document-styles
+  xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"
+  xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"
+  xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0"
+  office:version="1.2">
+<office:styles/>
+<office:automatic-styles>
+  <style:page-layout style:name="pm1">
+    <style:page-layout-properties fo:page-width="29.7cm" fo:page-height="21cm"
+      style:print-orientation="landscape"
+      fo:margin-top="1cm" fo:margin-bottom="1cm" fo:margin-left="1cm" fo:margin-right="1cm"/>
+  </style:page-layout>
+</office:automatic-styles>
+<office:master-styles>
+  <style:master-page style:name="Standard" style:page-layout-name="pm1"/>
+</office:master-styles>
+</office:document-styles>`;
+}
+
+/** 第二階段：把已組好的 content.xml 封裝成 .odt (ZIP) 容器 */
+function buildOdtZipFromContent(contentXml) {
+  const manifest = `<?xml version="1.0" encoding="UTF-8"?>
+<manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0" manifest:version="1.2">
+<manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.text"/>
+<manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/>
+<manifest:file-entry manifest:full-path="styles.xml" manifest:media-type="text/xml"/>
+</manifest:manifest>`;
+
+  return buildZip([
+    { name: 'mimetype',              data: utf8('application/vnd.oasis.opendocument.text') },
+    { name: 'META-INF/manifest.xml', data: utf8(manifest) },
+    { name: 'styles.xml',            data: utf8(buildOdtStylesXml()) },
+    { name: 'content.xml',           data: utf8(contentXml) }
+  ]);
+}
+
+function buildOdtBlob(rows) {
+  return buildOdtZipFromContent(buildOdtContentXml(rows));
+}
+
+/* =========================================================================
+   匯出進入點
+   ========================================================================= */
+
+const FORMAT_LABELS = { docx: 'Word 文件 (.docx)', doc: 'Word 97-2003 相容 (.doc)', odt: 'OpenDocument 文件 (.odt)' };
+
+/**
+ * 2. 匯出解送人犯一覽表 —— 逐步顯示實際執行情形的進度條。
+ * 各階段的百分比與提示文字對應真實正在做的工作（驗證 → 逐人整理資料 →
+ * 產生文件內容 → 準備下載），而非單純的假動畫；階段之間輔以極短暫停，
+ * 讓文字有機會被使用者看清楚，而非一閃而過。
+ */
+async function exportDocument() {
+  const cards = document.querySelectorAll('.suspect-card');
+  if (cards.length === 0) { await showError('請至少新增一位人犯！'); return; }
+
+  // 匯出前的格式檢查維持同步、立即回饋，有錯誤就不進入進度視窗
+  recalculateAll();
+  const errors = collectErrors();
+  if (errors.length > 0) {
+    await showError(`有 ${errors.length} 個欄位的時間格式不正確，無法匯出：\n\n` +
+                    errors.map(e => '• ' + e.text).join('\n'), '無法匯出');
+    errors[0].input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    errors[0].input.focus();
+    return;
+  }
+
+  const format = document.getElementById('exportFormat').value;
+  const year = getBaseYear();
+  const n = cards.length;
+  const baseName = `解送人犯一覽表(共${n}人)_${new Date().toISOString().slice(0, 10)}`;
+
+  showProgress(`匯出 ${FORMAT_LABELS[format] || format}`);
+
+  try {
+    updateProgress(4, '驗證資料格式中…');
+    await wait(140);
+
+    // 逐人整理匯出資料：真實的逐筆工作量，每處理完一人就更新一次進度，
+    // 並讓瀏覽器有機會重繪，使用者看得到條狀圖確實在往前走。
+    const rows = [];
+    for (let i = 0; i < n; i++) {
+      rows.push(buildExportRowForCard(cards[i], i, year));
+      updateProgress(8 + Math.round((i + 1) / n * 55), `整理人犯資料中…（${i + 1}/${n}）`);
+      await nextFrame();
+    }
+
+    updateProgress(66, `產生 ${format.toUpperCase()} 文件內容中…`);
+    await wait(150);
+
+    let blob;
+    if (format === 'doc') {
+      blob = new Blob(['﻿', buildDocHtml(rows)], { type: 'application/msword' });
+    } else if (format === 'docx') {
+      updateProgress(78, '組合文件結構 (XML)…');
+      await nextFrame();
+      const xml = buildDocxDocumentXml(rows); // 真正的階段一：組出 word/document.xml
+      updateProgress(88, '封裝為 .docx (ZIP)…');
+      await nextFrame();
+      blob = new Blob([buildDocxZipFromXml(xml)], // 真正的階段二：封裝成 ZIP 容器
+        { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    } else {
+      updateProgress(78, '組合文件結構 (XML)…');
+      await nextFrame();
+      const xml = buildOdtContentXml(rows); // 真正的階段一：組出 content.xml
+      updateProgress(88, '封裝為 .odt (ZIP)…');
+      await nextFrame();
+      blob = new Blob([buildOdtZipFromContent(xml)], // 真正的階段二：封裝成 ZIP 容器
+        { type: 'application/vnd.oasis.opendocument.text' });
+    }
+
+    updateProgress(96, '準備下載…');
+    await wait(120);
+
+    const filename = baseName + '.' + format;
+    downloadBlob(blob, filename);
+
+    document.getElementById('progressFill').classList.add('done');
+    updateProgress(100, `完成！已開始下載 ${filename}`);
+    await hideProgress(450);
+
+    toast(`已匯出 ${format.toUpperCase()} 檔（共 ${n} 人）`, 'file-down');
+  } catch (err) {
+    await hideProgress(0);
+    await showError('匯出時發生錯誤：' + err.message, '匯出失敗');
+    throw err;
+  }
+}
+</script>
+
+</body>
+</html>

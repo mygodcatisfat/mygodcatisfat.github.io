@@ -64,6 +64,15 @@
       "url": "https://mygodcatisfat.github.io/money_investigate/index.html"
     },
     {
+      "id": "PrisonerTransferCalculation",
+      "title": "解送人犯一覽表計算",
+      "tags": ["偵查工作", "時間計算", "報表"],
+      "version": "v115082502",
+      "status": "active",
+      "description": "此工具可以精確計算逮捕人犯的法定羈押期限，並支援記錄各種「障礙時間」（如交通、偵訊中斷等）。系統提供動態使用者介面管理多筆人犯資料，進行實時輸入驗證，並計算個別障礙時間總和及最終期限，以確保符合法律規定之拘留時限。",
+      "url": "https://mygodcatisfat.github.io/PrisonerTransferCalculation/index.html"
+    },
+    {
       "id": "longpic",
       "title": "對話紀錄分割",
       "tags": ["偵查工作", "圖片", "截圖"],
@@ -82,12 +91,21 @@
       "url": "https://mygodcatisfat.github.io/Pic2PDF/index.html"
     },
     {
+      "id": "img2SVG",
+      "title": "圖片轉換SVG",
+      "tags": ["影像處理", "向量圖", "SVG"],
+      "version": "v115082504",
+      "status": "active",
+      "description": "這個工具利用JavaScript於瀏覽器端將位元影像轉換為SVG向量圖形。提供顏色量化、路徑簡化、雜點去除等多種參數調整，支援主流圖片格式上傳，並具備即時預覽與下載功能，實現本地化影像處理。",
+      "url": "https://mygodcatisfat.github.io/img2SVG/index.html"
+    },
+    {
       "id": "autoelearn",
       "title": "elearn時數達標",
       "tags": ["Elearn", "上課", "自動化"],
-      "version": "115080309",
-      "status": "active",
-      "description": "自動化上課、考試、問卷~~",
+      "version": "Coming Soon",
+      "status": "coming-soon",
+      "description": "開發中",
       "url": "https://mygodcatisfat.github.io/"
     },
     {

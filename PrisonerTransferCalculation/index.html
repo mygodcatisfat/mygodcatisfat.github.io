@@ -32,6 +32,7 @@
       --radius: 9px;
       --shadow: 0 1px 2px rgba(16, 42, 67, .06), 0 5px 14px rgba(16, 42, 67, .06);
       --header-h: 52px;
+      --node-track: #dbe3ec;   /* 節點圖的連接線顏色 */
     }
     * { box-sizing: border-box; }
     [hidden] { display: none !important; }
@@ -283,7 +284,10 @@
     }
     .rsn { display: flex; align-items: center; gap: 6px; min-height: 26px; }
     .rsn > .rsn-text { flex: 1 1 auto; min-width: 0; }
-    .rsn > .reason-input { flex: 1 1 auto; min-width: 0; }
+    /* 交通障礙的「起訖地點」與其他障礙的「障礙事由」在同一個位置、同樣撐滿剩餘寬度 */
+    .rsn > .reason-input,
+    .rsn > .loc-input { flex: 1 1 auto; min-width: 0; }
+    .rsn > .seg-badge { flex: none; margin-left: 0; }
     /* 3. 其他障礙時間的刪除鍵緊貼事由輸入框右側 */
     .rsn > .btn-add, .rsn > .btn-del { flex: none; margin-left: 0; }
     .rsn > .rsn-text + .btn-add, .rsn > .rsn-text + .btn-del { margin-left: auto; }
@@ -292,6 +296,7 @@
     .rsn-icon { color: var(--primary-light); opacity: .75; flex: none; }
     .barrier-row.is-empty .rsn-text { color: #93a3b5; font-weight: 500; }
     .barrier-row.is-empty .rsn-icon { opacity: .3; }
+    .barrier-row.is-empty .seg-badge { opacity: .5; }
     .barrier-row.is-filled .rsn-text { color: var(--primary-text); }
 
     /* 小計：文字下方加上佔比橫條，一眼看出哪個事由影響最大 */
@@ -360,7 +365,6 @@
     .field-msg.pending { color: var(--warn); }
     .field-msg.ok { color: var(--ok); }
 
-    .location-box { margin-bottom: 4px; }
     .row-subtotal {
       font-weight: 700; color: var(--primary-text); white-space: nowrap;
       text-align: center; background: #fafcfe;
@@ -501,10 +505,47 @@
       display: flex; align-items: center; gap: 6px; margin-bottom: 8px;
       padding-bottom: 7px; border-bottom: 1px solid var(--line-soft);
     }
-    .node-list { list-style: none; margin: 0; padding: 0; position: relative; }
-    .node-list::before {
-      content: ''; position: absolute; left: 12px; top: 14px; bottom: 14px;
-      width: 2px; background: #dbe3ec;
+    /* 人數多時（上限 30）節點清單會很長，讓它自己內部捲動，
+       避免把下方的「匯出一覽表」面板推到工作列外而難以找到 */
+    .node-list {
+      list-style: none; margin: 0; padding: 0 2px 0 0; position: relative;
+      max-height: 46vh; overflow-y: auto; overscroll-behavior: contain;
+    }
+    /* 節點間的連接線：由每個節點各畫一段、相鄰自然接成一條。
+       不用掛在捲動容器上的絕對定位 ::before —— 那樣線長只會等於
+       可視區高度，捲動後下半段就斷掉。 */
+    .node-item::before {
+      content: ''; position: absolute; left: 12px; top: 0; bottom: 0;
+      width: 2px; background: var(--node-track); z-index: 0;
+    }
+    .node-item:first-child::before { top: 14px; }
+    .node-item:last-child::before  { bottom: 14px; }
+
+    /* ---- 節點拖曳排序 ---- */
+    .node-item[data-card-id] { cursor: grab; touch-action: none; }
+    .node-grip {
+      flex: none; display: flex; align-items: center; color: var(--muted);
+      opacity: 0; transition: opacity .15s; margin-left: 2px;
+    }
+    .node-item:hover .node-grip { opacity: .55; }
+    /* 拖曳中的節點：抬起、加陰影、蓋在其他節點之上 */
+    .node-item.dragging {
+      cursor: grabbing; z-index: 5;
+      background: var(--card-bg);
+      box-shadow: 0 8px 22px rgba(16, 42, 67, .28);
+      outline: 2px solid var(--primary-light); outline-offset: -2px;
+    }
+    .node-item.dragging .node-grip { opacity: .9; }
+    .node-item.dragging::before { opacity: 0; }  /* 抬起時不顯示自己那段連接線 */
+    /* 讓出位置的其他節點淡化一點，凸顯正在拖曳的那個 */
+    .node-list.is-dragging .node-item:not(.dragging) { opacity: .62; }
+    .node-list.is-dragging { cursor: grabbing; }
+    .node-list::-webkit-scrollbar { width: 6px; }
+    .node-list::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+    .node-list::-webkit-scrollbar-track { background: transparent; }
+    /* 窄螢幕時工作列已改為滿版靜態排列，不需要再限制高度 */
+    @media (max-width: 1080px) {
+      .node-list { max-height: none; overflow-y: visible; }
     }
     .node-item {
       position: relative; display: flex; gap: 8px; align-items: center;
@@ -743,7 +784,7 @@
     :root[data-theme="dark"] .error-banner { background: #2c1a1c; }
     :root[data-theme="dark"] .privacy-note { background: #2c2410; border-color: #4f3f1a; color: #ecd487; }
 
-    :root[data-theme="dark"] .node-list::before { background: #2c3b4f; }
+    :root[data-theme="dark"] { --node-track: #2c3b4f; }
     :root[data-theme="dark"] .node-item:hover { background: #182234; }
     :root[data-theme="dark"] .node-item.active { background: #1c2c42; }
     :root[data-theme="dark"] .node-dot { background: #101826; border-color: #4a5a70; color: #9aa8bb; }
@@ -784,7 +825,7 @@
     <div id="suspectCardsContainer"></div>
 
     <button type="button" id="addSuspectBtn" class="btn-add-suspect" onclick="addNewSuspectCard()">
-      <i data-icon="plus"></i> <span id="addSuspectLabel">新增人犯 (最多 10 人)</span>
+      <i data-icon="plus"></i> <span id="addSuspectLabel">新增人犯 (最多 30 人)</span>
     </button>
 
   </main>
@@ -905,6 +946,7 @@ const ICONS = {
   route:     '<circle cx="6.4" cy="6.4" r="2.5"/><circle cx="17.6" cy="17.6" r="2.5"/><path d="M6.4 8.9v4.5a4.2 4.2 0 0 0 4.2 4.2h4.5"/>',
   moon:      '<path d="M20.4 14.7A8.6 8.6 0 0 1 9.3 3.6a8.6 8.6 0 1 0 11.1 11.1Z"/>',
   dots:      '<circle cx="5.4" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="18.6" cy="12" r="1.4"/>',
+  grip:      '<path d="M9 5.6h.01M15 5.6h.01M9 12h.01M15 12h.01M9 18.4h.01M15 18.4h.01"/>',
   sun:       '<circle cx="12" cy="12" r="4.4"/><path d="M12 2.6v2.6M12 18.8v2.6M4.6 4.6l1.9 1.9M17.5 17.5l1.9 1.9M2.6 12h2.6M18.8 12h2.6M4.6 19.4l1.9-1.9M17.5 6.5l1.9-1.9"/>'
 };
 
@@ -936,6 +978,8 @@ const STORAGE_KEY = 'jsrfList-v3';
 const APP_TAG = 'jsrf-list';
 const DATA_VERSION = 3;
 const PERSONAL_FIELDS = ['name', 'birth', 'idno', 'addr'];
+/** 人犯數量上限。改這一個值即可，所有按鈕文案、節點圖、匯入截斷都會跟著調整 */
+const MAX_SUSPECTS = 30;
 
 const FORMAT_NOTES = {
   docx: '產生標準 Office Open XML 文件，可用 Word 2007 以上、LibreOffice、Google 文件開啟。',
@@ -947,7 +991,7 @@ const FORMAT_NOTES = {
    效能優化：全域重算（節點圖 + 匯出可用性 + 暫存）以 rAF 合併
    ---------------------------------------------------------------------
    單一欄位變動只需重畫「該欄位所在的那張卡片」；節點圖與匯出檢查是
-   O(n) 的全域工作，若每個按鍵都同步重跑，10 人時會變成連續的
+   O(n) 的全域工作，若每個按鍵都同步重跑，人數多時會變成連續的
    O(n²)（尤其匯入/還原時逐一新增卡片，每次都重建整份節點圖）。
    這裡把這兩件事＋本機暫存寫入合併到「每個畫面影格最多跑一次」，
    按鍵手感不變，但同一影格內的多次變動只會計算一次。
@@ -1029,6 +1073,7 @@ window.onload = function() {
   }, { passive: true });
 
   updateFormatNote();
+  initNodeDrag();   // 節點拖曳排序（監聽器掛在清單本身，重建子節點不受影響）
   if (!restoreState()) addNewSuspectCard();
   recalculateAll();
 };
@@ -1177,7 +1222,7 @@ function showHelp() {
 
       <h4>4. 多人作業</h4>
       <ul>
-        <li>最多可建立 10 位人犯。</li>
+        <li>最多可建立 30 位人犯。</li>
         <li>從第 2 位起會出現「<b>複製上一個人犯資料（不含人別資料）</b>」，可把上一位的<b>逮捕資訊與各項障礙時間</b>整份帶過來（同案多人常常這些都一樣）。</li>
         <li><b>人別資料不會被複製</b>，姓名、出生日期、身分證號、戶籍地址仍需個別填寫，避免誤植。</li>
         <li>右側「人犯節點圖」可一眼看出每位的狀態，點擊節點即可跳到該位人犯。</li>
@@ -1340,15 +1385,15 @@ function addNewSuspectCard(data, animate) {
   const container = document.getElementById('suspectCardsContainer');
   const currentCards = container.querySelectorAll('.suspect-card');
 
-  if (currentCards.length >= 10) {
-    showError('最多只能建立 10 位人犯，無法再新增。');
+  if (currentCards.length >= MAX_SUSPECTS) {
+    showError(`最多只能建立 ${MAX_SUSPECTS} 位人犯，無法再新增。`);
     return null;
   }
 
   suspectCounter++;
   const id = suspectCounter;
   const num = currentCards.length + 1;
-  subItemCounters[id] = { traffic: 1, other: 0 };
+  subItemCounters[id] = { traffic: 0, other: 0 };
 
   const card = document.createElement('div');
   card.className = 'suspect-card' + (animate ? ' entering' : '');
@@ -1440,27 +1485,6 @@ function addNewSuspectCard(data, animate) {
             <td class="row-subtotal zero"><span class="sub-val">0 小時 0 分</span><span class="sub-bar"><i></i></span></td>
           </tr>
 
-          <tr class="barrier-row traffic-row" data-type="traffic" data-label="交通障礙時間 (第 1 段)">
-            <th>
-              <div class="rsn">
-                <i data-icon="route" class="rsn-icon"></i>
-                <span class="rsn-text">交通障礙時間<span class="seg-badge traffic-label">第 1 段</span></span>
-                <button type="button" class="btn-add" onclick="addTrafficRow(${id})"><i data-icon="plus"></i> 新增交通障礙</button>
-              </div>
-            </th>
-            <td>
-              <div class="location-box">
-                <input type="text" class="loc-input" placeholder="起訖地點 (例如: 逮捕地點 至 花蓮地檢)" style="font-size:.82rem;" oninput="scheduleGlobalUpdate()">
-              </div>
-              <div class="input-line">
-                <input type="text" class="time-input" maxlength="17" inputmode="numeric"
-                       placeholder="09252000-09252100" oninput="onRangeInput(this, ${id}, event)" onblur="calculateSuspectTotal(${id})">
-                <div class="field-msg"></div>
-              </div>
-            </td>
-            <td class="row-subtotal zero"><span class="sub-val">0 小時 0 分</span><span class="sub-bar"><i></i></span></td>
-          </tr>
-
           <tr class="barrier-row" data-type="nightStop" data-label="夜障時間">
             <th><div class="rsn"><i data-icon="moon" class="rsn-icon"></i><span class="rsn-text">夜障時間</span></div></th>
             <td>
@@ -1473,7 +1497,17 @@ function addNewSuspectCard(data, animate) {
             <td class="row-subtotal zero"><span class="sub-val">0 小時 0 分</span><span class="sub-bar"><i></i></span></td>
           </tr>
 
-          <tr class="group-row">
+          <tr class="group-row" data-group="traffic">
+            <th colspan="3">
+              <div class="rsn">
+                <i data-icon="route" class="rsn-icon"></i>
+                <span class="rsn-text">交通障礙時間</span>
+                <button type="button" class="btn-add" onclick="addTrafficRow(${id})"><i data-icon="plus"></i> 新增交通障礙</button>
+              </div>
+            </th>
+          </tr>
+
+          <tr class="group-row" data-group="other">
             <th colspan="3">
               <div class="rsn">
                 <i data-icon="dots" class="rsn-icon"></i>
@@ -1580,12 +1614,9 @@ function resetCardCaseFields(card) {
   card.querySelector('.barrier-row[data-type="lawyerWait"] .time-input').value = '';
   card.querySelector('.barrier-row[data-type="lawyerInterview"] .time-input').value = '';
   card.querySelector('.barrier-row[data-type="nightStop"] .time-input').value = '';
+  // 交通障礙與其他障礙都是完全動態的列，一律整批移除
   card.querySelectorAll('.barrier-row[data-type="other"]').forEach(r => r.remove());
-  card.querySelectorAll('.barrier-row[data-type="traffic"]').forEach((r, i) => {
-    if (i > 0) { r.remove(); return; }
-    r.querySelector('.loc-input').value = '';
-    r.querySelector('.time-input').value = '';
-  });
+  card.querySelectorAll('.barrier-row[data-type="traffic"]').forEach(r => r.remove());
 }
 
 function applyCaseDataToCard(card, d) {
@@ -1599,13 +1630,7 @@ function applyCaseDataToCard(card, d) {
   card.querySelector('.barrier-row[data-type="lawyerInterview"] .time-input').value = d.lawyerInterview || '';
   card.querySelector('.barrier-row[data-type="nightStop"] .time-input').value = d.nightStop || '';
 
-  const trafficList = d.traffic || [];
-  if (trafficList.length > 0) {
-    const first = card.querySelector('.barrier-row[data-type="traffic"]');
-    first.querySelector('.loc-input').value = trafficList[0].loc || '';
-    first.querySelector('.time-input').value = trafficList[0].time || '';
-    for (let i = 1; i < trafficList.length; i++) addTrafficRow(id, trafficList[i]);
-  }
+  (d.traffic || []).forEach(t => addTrafficRow(id, t));
   (d.other || []).forEach(o => addOtherRow(id, o));
 
   renumberTrafficRows(card);
@@ -1629,10 +1654,10 @@ function reindexSuspectCards() {
   });
 
   const btn = document.getElementById('addSuspectBtn');
-  btn.disabled = cards.length >= 10;
-  document.getElementById('addSuspectLabel').innerText = cards.length >= 10
-    ? '已達上限 10 人'
-    : `新增人犯 (目前 ${cards.length} 人，最多 10 人)`;
+  btn.disabled = cards.length >= MAX_SUSPECTS;
+  document.getElementById('addSuspectLabel').innerText = cards.length >= MAX_SUSPECTS
+    ? `已達上限 ${MAX_SUSPECTS} 人`
+    : `新增人犯 (目前 ${cards.length} 人，最多 ${MAX_SUSPECTS} 人)`;
 
   scheduleGlobalUpdate();
 }
@@ -1642,7 +1667,8 @@ function addTrafficRow(cardId, data) {
   if (!card) return;
   subItemCounters[cardId].traffic++;
   const tbody = card.querySelector('.barrier-tbody');
-  const nightRow = card.querySelector('.barrier-row[data-type="nightStop"]');
+  // 交通障礙的列插在「交通障礙時間」群組標題之後、「其他障礙時間」群組標題之前
+  const otherGroup = tbody.querySelector('.group-row[data-group="other"]');
 
   const tr = document.createElement('tr');
   tr.className = 'barrier-row traffic-row';
@@ -1650,15 +1676,12 @@ function addTrafficRow(cardId, data) {
   tr.innerHTML = `
     <th>
       <div class="rsn">
-        <i data-icon="route" class="rsn-icon"></i>
-        <span class="rsn-text">交通障礙時間<span class="seg-badge traffic-label">第 1 段</span></span>
+        <span class="seg-badge traffic-label">第 1 段</span>
+        <input type="text" class="loc-input" placeholder="起訖地點 (例如: 信義分局 至 臺北地檢)" style="font-size:.82rem;" oninput="scheduleGlobalUpdate()">
         <button type="button" class="btn-del" onclick="removeSubRow(this, ${cardId})"><i data-icon="x"></i> 刪除</button>
       </div>
     </th>
     <td>
-      <div class="location-box">
-        <input type="text" class="loc-input" placeholder="起訖地點 (例如: 信義分局 至 臺北地檢)" style="font-size:.82rem;" oninput="scheduleGlobalUpdate()">
-      </div>
       <div class="input-line">
         <input type="text" class="time-input" maxlength="17" inputmode="numeric"
                placeholder="09261000-09261200" oninput="onRangeInput(this, ${cardId}, event)" onblur="calculateSuspectTotal(${cardId})">
@@ -1667,7 +1690,7 @@ function addTrafficRow(cardId, data) {
     </td>
     <td class="row-subtotal zero"><span class="sub-val">0 小時 0 分</span><span class="sub-bar"><i></i></span></td>
   `;
-  tbody.insertBefore(tr, nightRow);
+  tbody.insertBefore(tr, otherGroup);
   renderIcons(tr);
 
   if (data) {
@@ -1878,6 +1901,9 @@ function cardStatus(card) {
 function buildNodeMap() {
   const list = document.getElementById('nodeList');
   if (!list) return;
+  // 拖曳進行中不得重建：innerHTML 會把正在拖的元素銷毀，導致拖曳中斷。
+  // 拖曳結束時 commitNodeOrder() 一定會再 flush 一次，不會漏掉更新。
+  if (isDraggingNode) return;
   const cards = Array.from(document.querySelectorAll('.suspect-card'));
 
   let html = cards.map((card, idx) => {
@@ -1887,27 +1913,204 @@ function buildNodeMap() {
     const deadline = s.done ? `滿 16 小時 ${s.deadline}` : '尚未填寫逮捕時間';
     return `<li class="node-item ${s.state}${String(id) === String(activeCardId) ? ' active' : ''}"
                 data-card-id="${id}" onclick="jumpToCard('${id}')"
-                title="跳至編號 ${idx + 1}${s.name ? '：' + escapeHtml(s.name) : ''}">
+                title="編號 ${idx + 1}${s.name ? '：' + escapeHtml(s.name) : ''}（點擊跳至該人犯，拖曳可調整順序）">
       <span class="node-dot">${idx + 1}</span>
       <span class="node-info">
         <span class="node-name">${s.name ? escapeHtml(s.name) : '（未填姓名）'}</span>
         <span class="node-meta">${escapeHtml(meta)}</span>
         <span class="node-deadline">${escapeHtml(deadline)}</span>
       </span>
+      <span class="node-grip" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24">${ICONS.grip}</svg></span>
     </li>`;
   }).join('');
 
-  const full = cards.length >= 10;
+  const full = cards.length >= MAX_SUSPECTS;
   html += `<li class="node-item node-add${full ? ' disabled' : ''}"
                onclick="${full ? '' : 'addNewSuspectCard(null, true)'}" title="新增人犯">
     <span class="node-dot"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${ICONS.plus}</svg></span>
-    <span class="node-info"><span class="node-name">${full ? '已達 10 人上限' : '新增人犯'}</span></span>
+    <span class="node-info"><span class="node-name">${full ? `已達 ${MAX_SUSPECTS} 人上限` : '新增人犯'}</span></span>
   </li>`;
 
   list.innerHTML = html;
 }
 
+/* =========================================================================
+   1. 節點拖曳排序
+   ---------------------------------------------------------------------
+   以 Pointer Events 實作（滑鼠與觸控通用）。拖曳時「即時重排」DOM，
+   被讓開的節點用 FLIP 技巧補上位移動畫，正在拖的節點則跟著指標移動。
+   放開後才把主畫面的人犯卡片依節點順序實際重排並重新編號。
+   ========================================================================= */
+let isDraggingNode = false;
+let nodeDrag = null;
+let lastNodeDragEnd = 0;
+let nodeAutoScrollRAF = null;
+
+const DRAG_THRESHOLD = 5;   // 位移超過此值才視為拖曳，否則當作點擊（跳至該人犯）
+
+function initNodeDrag() {
+  const list = document.getElementById('nodeList');
+  if (!list || list.dataset.dragReady) return;
+  list.dataset.dragReady = '1';
+
+  list.addEventListener('pointerdown', onNodePointerDown);
+  list.addEventListener('pointermove', onNodePointerMove);
+  list.addEventListener('pointerup', onNodePointerUp);
+  list.addEventListener('pointercancel', onNodePointerUp);
+  // 註：拖曳結束後隨之而來的 click 不在這裡攔截。因為 commitNodeOrder()
+  // 會重建節點圖，原本的節點已脫離 DOM，掛在清單上的 capture 監聽器收不到
+  // 那個 click。改為在 jumpToCard() 內部以時間戳守衛，不受事件路由影響。
+}
+
+function onNodePointerDown(e) {
+  if (e.button !== undefined && e.button !== 0) return;
+  const item = e.target.closest('.node-item[data-card-id]');
+  if (!item) return;
+  const list = document.getElementById('nodeList');
+  if (list.querySelectorAll('.node-item[data-card-id]').length < 2) return; // 只有一位不需排序
+
+  nodeDrag = { item, list, pointerId: e.pointerId, startY: e.clientY, offset: 0, started: false, lastY: e.clientY };
+  try { item.setPointerCapture(e.pointerId); } catch (err) {}
+}
+
+function onNodePointerMove(e) {
+  if (!nodeDrag || e.pointerId !== nodeDrag.pointerId) return;
+  nodeDrag.lastY = e.clientY;
+  const dy = e.clientY - nodeDrag.startY;
+
+  if (!nodeDrag.started) {
+    if (Math.abs(dy) < DRAG_THRESHOLD) return;   // 還在容許的手震範圍，維持點擊語意
+    nodeDrag.started = true;
+    isDraggingNode = true;
+    nodeDrag.item.classList.add('dragging');
+    nodeDrag.list.classList.add('is-dragging');
+    document.body.style.userSelect = 'none';
+    startNodeAutoScroll();
+  }
+
+  e.preventDefault();
+  nodeDrag.offset = dy;
+  nodeDrag.item.style.transform = `translateY(${dy}px)`;
+  maybeSwapNode();
+}
+
+/** 依目前拖曳位置，判斷是否越過相鄰節點的中線，是則即時重排 */
+function maybeSwapNode() {
+  const { item, list } = nodeDrag;
+  const rect = item.getBoundingClientRect();          // 已含 transform
+  const centerY = rect.top + rect.height / 2;
+  const siblings = Array.from(list.querySelectorAll('.node-item[data-card-id]')).filter(n => n !== item);
+
+  for (const sib of siblings) {
+    const r = sib.getBoundingClientRect();
+    const mid = r.top + r.height / 2;
+    const itemIsAfter = !!(sib.compareDocumentPosition(item) & Node.DOCUMENT_POSITION_FOLLOWING);
+    if (centerY < mid && itemIsAfter)  { moveNodeWithFlip(item, sib, 'before'); return; }
+    if (centerY > mid && !itemIsAfter) { moveNodeWithFlip(item, sib, 'after');  return; }
+  }
+}
+
+/** 搬移節點並用 FLIP 讓被擠開的節點平順滑到新位置 */
+function moveNodeWithFlip(item, ref, pos) {
+  const list = item.parentElement;
+  const others = Array.from(list.children).filter(el => el !== item);
+  const before = new Map(others.map(el => [el, el.getBoundingClientRect().top]));
+  const visualTop = item.getBoundingClientRect().top;   // 搬移前的視覺位置
+
+  if (pos === 'before') ref.before(item); else ref.after(item);
+
+  // 重新校準拖曳中節點的位移基準，讓它在版面改變後不會突然跳動
+  const layoutTop = item.getBoundingClientRect().top - nodeDrag.offset;
+  nodeDrag.offset = visualTop - layoutTop;
+  nodeDrag.startY = nodeDrag.lastY - nodeDrag.offset;
+  item.style.transform = `translateY(${nodeDrag.offset}px)`;
+
+  others.forEach(el => {
+    const oldTop = before.get(el);
+    if (oldTop === undefined) return;
+    const delta = oldTop - el.getBoundingClientRect().top;
+    if (!delta) return;
+    el.style.transition = 'none';
+    el.style.transform = `translateY(${delta}px)`;
+    requestAnimationFrame(() => {
+      el.style.transition = 'transform .18s cubic-bezier(.4,0,.2,1)';
+      el.style.transform = '';
+    });
+  });
+}
+
+/** 拖到清單上下緣時自動捲動（節點清單有 max-height，30 人時必然要捲） */
+function startNodeAutoScroll() {
+  const EDGE = 30, SPEED = 9;
+  const step = () => {
+    if (!nodeDrag || !nodeDrag.started) { nodeAutoScrollRAF = null; return; }
+    const { list, lastY } = nodeDrag;
+    const r = list.getBoundingClientRect();
+    if (lastY < r.top + EDGE && list.scrollTop > 0) {
+      list.scrollTop -= SPEED;
+      maybeSwapNode();
+    } else if (lastY > r.bottom - EDGE && list.scrollTop < list.scrollHeight - list.clientHeight) {
+      list.scrollTop += SPEED;
+      maybeSwapNode();
+    }
+    nodeAutoScrollRAF = requestAnimationFrame(step);
+  };
+  if (nodeAutoScrollRAF === null) nodeAutoScrollRAF = requestAnimationFrame(step);
+}
+
+function onNodePointerUp(e) {
+  if (!nodeDrag || (e.pointerId !== undefined && e.pointerId !== nodeDrag.pointerId)) return;
+  const { item, list, started } = nodeDrag;
+  try { item.releasePointerCapture(nodeDrag.pointerId); } catch (err) {}
+
+  if (!started) { nodeDrag = null; return; }   // 沒真的拖動 → 保留點擊跳轉行為
+
+  // 讓節點平順落回定位
+  item.style.transition = 'transform .18s cubic-bezier(.4,0,.2,1)';
+  item.style.transform = '';
+  setTimeout(() => { item.style.transition = ''; }, 200);
+
+  item.classList.remove('dragging');
+  list.classList.remove('is-dragging');
+  document.body.style.userSelect = '';
+  isDraggingNode = false;
+  lastNodeDragEnd = Date.now();
+  nodeDrag = null;
+  if (nodeAutoScrollRAF !== null) { cancelAnimationFrame(nodeAutoScrollRAF); nodeAutoScrollRAF = null; }
+
+  commitNodeOrder();
+}
+
+/** 把主畫面的人犯卡片依節點目前順序實際重排，並重新編號 */
+function commitNodeOrder() {
+  const list = document.getElementById('nodeList');
+  const container = document.getElementById('suspectCardsContainer');
+  const order = Array.from(list.querySelectorAll('.node-item[data-card-id]'))
+                     .map(n => n.getAttribute('data-card-id'));
+
+  const currentOrder = Array.from(container.querySelectorAll('.suspect-card'))
+                            .map(c => c.getAttribute('data-card-id'));
+  const changed = order.join(',') !== currentOrder.join(',');
+
+  if (changed) {
+    const frag = document.createDocumentFragment();
+    order.forEach(id => {
+      const card = container.querySelector(`.suspect-card[data-card-id="${id}"]`);
+      if (card) frag.appendChild(card);   // appendChild 會把既有節點搬過來
+    });
+    container.appendChild(frag);
+    reindexSuspectCards();
+    observeCards();
+    toast('已調整人犯順序', 'nodes');
+  }
+
+  // 無論順序有無改變，都要重建節點圖以還原乾淨狀態（清掉殘留的 inline transform）
+  flushGlobalUpdate();
+}
+
 function jumpToCard(id) {
+  // 剛完成拖曳排序時，忽略瀏覽器隨後補送的那次 click，避免主畫面無故跳動
+  if (Date.now() - lastNodeDragEnd < 300) return;
   const card = document.querySelector(`.suspect-card[data-card-id="${id}"]`);
   if (!card) return;
   const headerH = document.querySelector('.app-header').offsetHeight;
@@ -2004,10 +2207,9 @@ function fillSampleData() {
   card.querySelector('.lawyer-input').value = 'OOO律師';
   card.querySelector('.barrier-row[data-type="lawyerWait"] .time-input').value = '09251800-09251900';
   card.querySelector('.barrier-row[data-type="lawyerInterview"] .time-input').value = '09251900-09251945';
-  const traffic = card.querySelector('.barrier-row[data-type="traffic"]');
-  traffic.querySelector('.loc-input').value = '逮捕地點 至 臺北地檢';
-  traffic.querySelector('.time-input').value = '09252000-09252100';
   card.querySelector('.barrier-row[data-type="nightStop"] .time-input').value = '09252131-09260549';
+  card.querySelectorAll('.barrier-row[data-type="traffic"]').forEach(r => r.remove());
+  addTrafficRow(id, { loc: '逮捕地點 至 臺北地檢', time: '09252000-09252100' });
   calculateSuspectTotal(id);
   flushGlobalUpdate();
   toast('已填入範例資料', 'file-text');
@@ -2079,13 +2281,7 @@ function fillCardData(card, id, d) {
   card.querySelector('.barrier-row[data-type="lawyerInterview"] .time-input').value = d.lawyerInterview || '';
   card.querySelector('.barrier-row[data-type="nightStop"] .time-input').value = d.nightStop || '';
 
-  const trafficList = d.traffic || [];
-  if (trafficList.length > 0) {
-    const first = card.querySelector('.barrier-row[data-type="traffic"]');
-    first.querySelector('.loc-input').value = trafficList[0].loc || '';
-    first.querySelector('.time-input').value = trafficList[0].time || '';
-    for (let i = 1; i < trafficList.length; i++) addTrafficRow(id, trafficList[i]);
-  }
+  (d.traffic || []).forEach(t => addTrafficRow(id, t));
   (d.other || []).forEach(o => addOtherRow(id, o));
   renumberTrafficRows(card);
 }
@@ -2095,7 +2291,7 @@ function applyState(data) {
   subItemCounters = {};
   activeCardId = null;
   if (data.year) document.getElementById('baseYear').value = String(data.year).replace(/\D/g, '').slice(0, 4);
-  (data.suspects || []).slice(0, 10).forEach(d => addNewSuspectCard(d));
+  (data.suspects || []).slice(0, MAX_SUSPECTS).forEach(d => addNewSuspectCard(d));
   if (document.querySelectorAll('.suspect-card').length === 0) addNewSuspectCard();
   recalculateAll(); // 內含 flushGlobalUpdate，已同步存檔
   observeCards();
@@ -2108,7 +2304,7 @@ function restoreState() {
   const result = inspectImportData(saved);
   if (result.fatal) return false;
   if (result.data.year) document.getElementById('baseYear').value = result.data.year;
-  result.data.suspects.slice(0, 10).forEach(d => addNewSuspectCard(d));
+  result.data.suspects.slice(0, MAX_SUSPECTS).forEach(d => addNewSuspectCard(d));
   return document.querySelectorAll('.suspect-card').length > 0;
 }
 
@@ -2212,7 +2408,7 @@ async function handleImportFile() {
     }
 
     const count = result.data.suspects.length;
-    const extra = count > 10 ? `\n（檔案含 ${count} 筆，只會匯入前 10 筆）` : '';
+    const extra = count > MAX_SUSPECTS ? `\n（檔案含 ${count} 筆，只會匯入前 ${MAX_SUSPECTS} 筆）` : '';
     const ok = await showConfirm(
       `即將以「${file.name}」的內容取代目前所有資料。\n\n檔案中有 ${count} 位人犯。${extra}\n\n目前尚未存檔的內容將會遺失，是否繼續？`,
       '匯入 JSON', '匯入');
@@ -2758,13 +2954,16 @@ async function exportDocument() {
     updateProgress(4, '驗證資料格式中…');
     await wait(140);
 
-    // 逐人整理匯出資料：真實的逐筆工作量，每處理完一人就更新一次進度，
-    // 並讓瀏覽器有機會重繪，使用者看得到條狀圖確實在往前走。
+    // 逐人整理匯出資料：真實的逐筆工作量，每處理完一人就更新一次進度文字。
+    // 讓出畫面（等待重繪）採「分批」而非每一筆都做 —— 實際運算量很小，
+    // 若每筆都等一個影格，30 人會平白多花約 1 秒純等待。這裡固定切成
+    // 最多 12 批，無論 1 人或 30 人，進度條都平順推進且總耗時可控。
     const rows = [];
+    const yieldEvery = Math.max(1, Math.ceil(n / 12));
     for (let i = 0; i < n; i++) {
       rows.push(buildExportRowForCard(cards[i], i, year));
       updateProgress(8 + Math.round((i + 1) / n * 55), `整理人犯資料中…（${i + 1}/${n}）`);
-      await nextFrame();
+      if ((i + 1) % yieldEvery === 0 || i === n - 1) await nextFrame();
     }
 
     updateProgress(66, `產生 ${format.toUpperCase()} 文件內容中…`);

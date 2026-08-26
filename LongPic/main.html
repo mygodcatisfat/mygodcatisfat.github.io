@@ -4,135 +4,260 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>對話紀錄分割工具</title>
+
+    <!-- 主題判斷必須在任何樣式之前同步執行，避免載入時閃爍(FOUC) -->
+    <script>
+        (function () {
+            var t = null;
+            try { t = localStorage.getItem('splitter-theme'); } catch (e) { /* 環境禁用 storage 時忽略，改用系統偏好 */ }
+            if (t !== 'dark' && t !== 'light') {
+                t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+            }
+            document.documentElement.setAttribute('data-theme', t);
+        })();
+    </script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         :root {
-            --primary-color: #00B900;
-            --bg-color: #f5f5f5;
-            --panel-bg: #ffffff;
-            --border-color: #ddd;
-            --text-color: #333;
-            --highlight-color: rgba(255, 0, 0, 0.3);
+            --primary: #1a365d;
+            --primary-text: var(--primary);
+            --primary-light: #2b6cb0;
+            --accent: #2c7a7b;
+            --bg: #eff3f8;
+            --card-bg: #ffffff;
+            --line: #cbd5e0;
+            --line-soft: #e2e8f0;
+            --ink: #1a202c;
+            --muted: #5a6b7f;
+            --err: #c53030;
+            --ok: #276749;
+            --warn: #b7791f;
+            --radius: 9px;
+            --shadow: 0 1px 2px rgba(16,42,67,.06), 0 5px 14px rgba(16,42,67,.06);
+
+            /* 面板內的淡色資訊區塊 */
+            --tint: #eef3fa;
+            --tint-line: #c3d6ec;
+            /* 預覽畫布底色 */
+            --canvas: #dde5ee;
+            /* 分類色：分割線(青綠) / 重疊區(琥珀)，只用來區分性質，不代表狀態 */
+            --cut: #2c7a7b;
+            --cut-on: #ffffff;
+            --overlap: #975a16;
+            --overlap-fill: rgba(151,90,22,.15);
+            --overlap-stripe: rgba(151,90,22,.26);
+            /* 導覽地圖分頁交替底色 */
+            --band-a: rgba(43,108,176,.10);
+            --band-b: rgba(43,108,176,.22);
         }
+
+        :root[data-theme="dark"] {
+            --primary-text: #7fb0e8;
+            --primary-light: #5b9fe0;
+            --accent: #3fb6ae;
+            --bg: #0b1119;
+            --card-bg: #151e2c;
+            --line: #33455c;
+            --line-soft: #243144;
+            --ink: #e2e8f0;
+            --muted: #8b98ab;
+            --err: #f56565;
+            --ok: #48bb78;
+            --warn: #ecc94b;
+
+            --tint: #172236;
+            --tint-line: #2b4260;
+            --canvas: #0e151f;
+            --cut: #3fb6ae;
+            --cut-on: #0b1119;
+            --overlap: #f0b45e;
+            --overlap-fill: rgba(240,180,94,.15);
+            --overlap-stripe: rgba(240,180,94,.26);
+            --band-a: rgba(91,159,224,.12);
+            --band-b: rgba(91,159,224,.26);
+        }
+
+        * { box-sizing: border-box; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--ink);
             margin: 0;
-            padding: 20px;
+            padding: 0;
             display: flex;
             flex-direction: column;
-            align-items: center;
             height: 100vh;
-            box-sizing: border-box;
+            transition: background-color .15s ease, color .15s ease;
         }
 
-        h1 {
-            color: var(--text-color);
-            margin-bottom: 20px;
-            flex-shrink: 0;
+        /* ---------- 頁首（sticky，品牌深色底，白字） ---------- */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 60;
             display: flex;
             align-items: center;
-            gap: 15px;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 9px 16px;
+            background: var(--primary);
+            color: #fff;
+            flex-shrink: 0;
         }
+        .header-left { display: flex; align-items: center; gap: 9px; min-width: 0; }
+        header h1 {
+            margin: 0;
+            font-size: 1.02rem;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        header .sub {
+            font-size: .72rem;
+            color: rgba(255,255,255,.66);
+            white-space: nowrap;
+        }
+        .header-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
-        .home-btn {
-            position: fixed;
-            top: 14px;
-            left: 14px;
-            background: white;
-            color: var(--text-color);
-            text-decoration: none;
-            padding: 8px 14px;
-            border-radius: 20px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-            font-size: 0.85em;
-            font-weight: bold;
-            z-index: 40;
+        .hdr-btn {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 6px;
-            transition: box-shadow 0.15s, transform 0.15s;
+            text-decoration: none;
+            color: #fff;
+            font-family: inherit;
+            font-size: .78rem;
+            height: 30px;
+            padding: 0 10px;
+            border: 1px solid rgba(255,255,255,.28);
+            border-radius: 6px;
+            background: transparent;
+            cursor: pointer;
+            transition: background .15s ease, border-color .15s ease;
         }
-        .home-btn:hover {
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            transform: translateY(-1px);
+        .hdr-btn:hover { background: rgba(255,255,255,.13); border-color: rgba(255,255,255,.45); }
+        .hdr-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+        .page {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            justify-content: center;
+            padding: 16px;
         }
+
+        /* ---------- 圖示系統：線條風單色 SVG，顏色跟隨文字色 ---------- */
+        i[data-icon] {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.05em;
+            height: 1.05em;
+            flex-shrink: 0;
+        }
+        i[data-icon] svg { width: 100%; height: 100%; display: block; }
+        i[data-icon].icon-lg { width: 1.25em; height: 1.25em; }
+        i[data-icon].icon-xl { width: 2.4em; height: 2.4em; }
 
         .visually-hidden {
             position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
+            width: 1px; height: 1px;
+            padding: 0; margin: -1px;
             overflow: hidden;
             clip: rect(0,0,0,0);
             white-space: nowrap;
             border: 0;
         }
 
-        .help-icon-btn {
-            background: #4a4a4a;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            font-size: 14px;
-            cursor: pointer;
-            display: inline-flex;
-            justify-content: center;
-            align-items: center;
-            vertical-align: middle;
-        }
-        .help-icon-btn:hover { background: #2e2e2e; }
-
-        /* 鍵盤操作可見焦點框，滑鼠點擊時不顯示，兼顧美觀與無障礙 */
-        button:focus-visible,
-        input:focus-visible,
-        [tabindex]:focus-visible {
-            outline: 2px solid #007bff;
+        :focus-visible {
+            outline: 2px solid var(--primary-light);
             outline-offset: 2px;
         }
 
+        /* ---------- 深色模式開關（iOS 風格滑桿，位於深色頁首內） ---------- */
+        .switch {
+            position: relative;
+            width: 52px; height: 27px;
+            border-radius: 14px;
+            flex: none;
+            background: rgba(255,255,255,.14);
+            border: 1px solid rgba(255,255,255,.38);
+            cursor: pointer;
+            padding: 0;
+            transition: background .15s ease, border-color .15s ease;
+        }
+        .switch:hover { background: rgba(255,255,255,.2); }
+        .switch .sw-ic {
+            position: absolute;
+            top: 50%;
+            margin-top: -7px;
+            width: 14px; height: 14px;
+            color: #fff;
+            opacity: .72;
+            transition: opacity .15s ease;
+            pointer-events: none;
+        }
+        .switch .sw-sun { left: 6px; }
+        .switch .sw-moon { right: 6px; }
+        .switch::after {
+            content: "";
+            position: absolute;
+            top: 2px; left: 2px;
+            width: 21px; height: 21px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 1px 3px rgba(11,17,25,.35);
+            transition: transform .15s ease;
+        }
+        .switch[aria-checked="false"]::after { transform: translateX(25px); }
+        .switch[aria-checked="false"] .sw-moon { opacity: 0; }
+        .switch[aria-checked="true"]::after { transform: translateX(0); }
+        .switch[aria-checked="true"] .sw-sun { opacity: 0; }
+        .switch:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+        /* ---------- 版面 ---------- */
         .container {
             display: flex;
-            gap: 20px;
+            gap: 18px;
             width: 100%;
             max-width: 1400px;
-            height: calc(100vh - 100px);
+            height: 100%;
             overflow: hidden;
         }
 
+        .panel {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
         .controls {
-            background: var(--panel-bg);
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            width: 300px;
+            padding: 16px 18px;
+            width: 310px;
             flex-shrink: 0;
             overflow-y: auto;
             height: 100%;
-            box-sizing: border-box;
         }
 
         .control-group {
-            margin-bottom: 20px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid #eee;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--line-soft);
         }
-        .control-group:last-of-type {
-            border-bottom: none;
-        }
+        .control-group:last-of-type { border-bottom: none; }
 
         label {
             display: flex;
             align-items: center;
             gap: 8px;
             margin-bottom: 8px;
-            font-weight: bold;
-            font-size: 0.9em;
+            font-weight: 700;
+            font-size: .84rem;
+            color: var(--ink);
         }
 
         .step-num {
@@ -140,127 +265,264 @@
             justify-content: center;
             align-items: center;
             flex-shrink: 0;
-            width: 20px;
-            height: 20px;
+            width: 19px; height: 19px;
             border-radius: 50%;
-            background: var(--primary-color);
-            color: white;
-            font-size: 0.8em;
+            background: var(--primary-light);
+            color: #fff;
+            font-size: .68rem;
+            font-weight: 700;
+        }
+
+        .field-hint {
+            font-size: .74rem;
+            color: var(--muted);
+            margin-bottom: 6px;
         }
 
         input[type="number"] {
             width: 100%;
-            padding: 8px;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            box-sizing: border-box;
+            padding: 6px 9px;
+            border: 1px solid var(--line);
+            border-radius: 5px;
+            background: var(--card-bg);
+            color: var(--ink);
+            font-size: .86rem;
+            transition: border-color .15s ease, box-shadow .15s ease;
         }
-
-        .import-status-empty {
-            text-align: center;
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 3px rgba(43,108,176,.16);
         }
-        .import-hint {
-            font-size: 0.8em;
-            color: #888;
-            margin-top: 8px;
-        }
-        .import-status-filled {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: #f7f7f7;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 8px;
-        }
-        .sidebar-thumb {
-            width: 44px;
-            height: 44px;
-            object-fit: cover;
-            border-radius: 6px;
-            border: 1px solid var(--border-color);
-            flex-shrink: 0;
-        }
-        .import-file-meta {
-            flex: 1;
-            min-width: 0;
-        }
-        .import-file-name {
-            font-size: 0.85em;
-            font-weight: bold;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .import-file-size {
-            font-size: 0.75em;
-            color: #777;
-        }
-        #changeFileBtn {
-            width: auto;
-            flex-shrink: 0;
-            margin-bottom: 0;
-            padding: 6px 10px;
-            font-size: 0.8em;
+        input[type="number"].is-invalid {
+            border-color: var(--err);
+            box-shadow: 0 0 0 3px rgba(197,48,48,.13);
         }
 
         input[type="range"] {
             width: 100%;
-            margin-top: 5px;
+            margin-top: 7px;
+            accent-color: var(--primary-light);
         }
 
-        .btn {
-            background-color: var(--primary-color);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            cursor: pointer;
-            width: 100%;
-            font-size: 1em;
-            transition: background 0.2s;
+        .range-scale {
+            display: flex;
+            justify-content: space-between;
+            font-size: .68rem;
+            color: var(--muted);
+            margin-top: 2px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* ---------- 分割方式切換（分段控制） ---------- */
+        .seg {
+            display: flex;
+            gap: 4px;
+            padding: 3px;
+            background: var(--tint);
+            border: 1px solid var(--tint-line);
+            border-radius: 7px;
             margin-bottom: 10px;
         }
+        .seg-btn {
+            flex: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            border: none;
+            background: transparent;
+            color: var(--muted);
+            font-family: inherit;
+            font-size: .78rem;
+            font-weight: 600;
+            padding: 6px 4px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background .15s ease, color .15s ease;
+        }
+        .seg-btn:hover { color: var(--primary-text); }
+        .seg-btn.is-active {
+            background: var(--card-bg);
+            color: var(--primary-text);
+            box-shadow: 0 1px 2px rgba(16,42,67,.12);
+        }
 
-        .btn:hover {
-            background-color: #009900;
+        .derived-note {
+            margin-top: 8px;
+            font-size: .76rem;
+            color: var(--primary-text);
+            background: var(--tint);
+            border-left: 3px solid var(--primary-light);
+            border-radius: 0 5px 5px 0;
+            padding: 6px 9px;
         }
-        .btn:active {
-            transform: scale(0.97);
+
+        /* ---------- 匯入清單 ---------- */
+        .import-empty { text-align: center; }
+        .import-hint {
+            font-size: .74rem;
+            color: var(--muted);
+            margin-top: 7px;
+            line-height: 1.5;
         }
-        .btn:disabled {
-            background-color: #aaa;
-            cursor: not-allowed;
-            transform: none;
+
+        .img-list {
+            list-style: none;
+            margin: 0 0 9px;
+            padding: 0;
+            max-height: 230px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
         }
+        .img-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--tint);
+            border: 1px solid var(--tint-line);
+            border-radius: 7px;
+            padding: 6px 7px;
+            animation: itemIn .25s cubic-bezier(.4,0,.2,1) both;
+        }
+        .img-item-idx {
+            flex-shrink: 0;
+            width: 18px; height: 18px;
+            border-radius: 50%;
+            background: var(--primary-light);
+            color: #fff;
+            font-size: .66rem;
+            font-weight: 700;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .img-item-thumb {
+            width: 30px; height: 30px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid var(--line);
+            flex-shrink: 0;
+            background: var(--card-bg);
+        }
+        .img-item-meta { flex: 1; min-width: 0; }
+        .img-item-name {
+            font-size: .75rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .img-item-size { font-size: .68rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+        .img-item-ops { display: flex; gap: 2px; flex-shrink: 0; }
+        .op-btn {
+            width: 22px; height: 22px;
+            border: 1px solid transparent;
+            background: transparent;
+            border-radius: 4px;
+            color: var(--muted);
+            cursor: pointer;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+            font-size: .8rem;
+            transition: color .15s ease, background .15s ease, border-color .15s ease;
+        }
+        .op-btn:hover:not(:disabled) {
+            color: var(--primary-text);
+            background: var(--card-bg);
+            border-color: var(--line);
+        }
+        .op-btn.op-del:hover:not(:disabled) { color: var(--err); border-color: var(--err); }
+        .op-btn:disabled { opacity: .3; cursor: not-allowed; }
+
+        .list-actions { display: flex; gap: 7px; }
+        .list-actions .btn { flex: 1; }
+
+        /* ---------- 按鈕 ---------- */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            border: 1px solid transparent;
+            border-radius: 6px;
+            padding: 8px 14px;
+            font-size: .86rem;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+        }
+        .btn-primary { background: var(--primary-light); color: #fff; }
+        .btn-primary:hover { background: #245a94; }
+        :root[data-theme="dark"] .btn-primary:hover { background: #7ab3ea; }
 
         .btn-secondary {
-            background-color: #666;
+            background: var(--card-bg);
+            color: var(--ink);
+            border-color: var(--line);
         }
         .btn-secondary:hover {
-            background-color: #4d4d4d;
+            background: var(--tint);
+            border-color: var(--primary-light);
+            color: var(--primary-text);
         }
 
-        .btn-download-all {
-            background-color: #007bff;
+        .btn-danger {
+            background: var(--card-bg);
+            color: var(--err);
+            border-color: var(--err);
         }
-        .btn-download-all:hover {
-            background-color: #0056b3;
+        .btn-danger:hover { background: var(--err); color: #fff; }
+
+        .btn:disabled,
+        .btn:disabled:hover {
+            background: var(--line-soft);
+            color: var(--muted);
+            border-color: transparent;
+            cursor: not-allowed;
         }
 
+        .btn-sm { padding: 5px 10px; font-size: .76rem; width: auto; }
+        .btn-auto { width: auto; }
+
+        /* ---------- 資訊區塊 ---------- */
         .info-display {
-            background: #eef;
-            padding: 10px;
-            border-radius: 6px;
-            font-size: 0.85em;
-            margin-bottom: 15px;
-            color: #444;
+            background: var(--tint);
+            border-left: 3px solid var(--primary-light);
+            border-radius: 0 6px 6px 0;
+            padding: 9px 11px;
+            font-size: .79rem;
+            line-height: 1.55;
+            color: var(--ink);
+            margin-bottom: 16px;
+        }
+        .info-display.is-empty {
+            border-left-color: var(--line);
+            color: var(--muted);
+        }
+        .info-display.has-error { border-left-color: var(--err); }
+        .info-warn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--warn);
+            margin-top: 3px;
+        }
+        .info-err {
+            display: inline-flex;
+            align-items: flex-start;
+            gap: 5px;
+            color: var(--err);
         }
 
+        /* ---------- 預覽區 ---------- */
         .preview-area {
-            background: var(--panel-bg);
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             flex: 1;
             display: flex;
             flex-direction: column;
@@ -269,262 +531,415 @@
         }
 
         .preview-header {
-            padding: 15px;
-            border-bottom: 1px solid #eee;
-            background: #fff;
-            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 11px 14px;
+            border-bottom: 1px solid var(--line-soft);
             flex-shrink: 0;
+            font-size: .84rem;
+        }
+        .preview-header .title { font-weight: 700; }
+        .zoom-hint {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: .74rem;
+            color: var(--muted);
+        }
+        .zoom-level {
+            margin-left: auto;
+            font-size: .76rem;
+            color: var(--muted);
+            font-variant-numeric: tabular-nums;
         }
 
         #scrollContainer {
             flex: 1;
             overflow: auto;
             position: relative;
-            background-color: #444;
+            background-color: var(--canvas);
             display: flex;
             justify-content: center;
             align-items: flex-start;
-            padding: 20px;
+            padding: 18px;
+            transition: background-color .15s ease;
         }
-
-        #scrollContainer.drag-over-active {
-            outline: 3px dashed var(--primary-color);
-            outline-offset: -3px;
+        #scrollContainer.is-drag-over {
+            outline: 2px dashed var(--primary-light);
+            outline-offset: -6px;
         }
 
         #dropZone {
-            width: calc(100% - 40px);
-            height: calc(100% - 40px);
-            border: 3px dashed #777;
-            border-radius: 12px;
+            width: 100%;
+            min-height: 100%;
+            border: 2px dashed var(--line);
+            border-radius: var(--radius);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            color: #ccc;
-            gap: 10px;
+            gap: 9px;
+            color: var(--muted);
             cursor: pointer;
-            transition: border-color 0.15s, background-color 0.15s;
+            transition: border-color .15s ease, background-color .15s ease, color .15s ease;
         }
         #dropZone:hover,
-        #dropZone.drag-over {
-            border-color: var(--primary-color);
-            background-color: rgba(0, 185, 0, 0.08);
-            color: #eee;
+        #dropZone.is-drag-over {
+            border-color: var(--primary-light);
+            background-color: var(--tint);
+            color: var(--primary-text);
         }
-        #dropZone .drop-icon { font-size: 2.5em; }
-        #dropZone .drop-text { font-size: 1em; }
-        #dropZone .drop-subtext { font-size: 0.8em; color: #999; }
+        #dropZone .drop-text { font-size: .9rem; font-weight: 600; }
+        #dropZone .drop-subtext { font-size: .76rem; color: var(--muted); }
 
         .image-wrapper {
             position: relative;
             transform-origin: top center;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            box-shadow: 0 2px 6px rgba(16,42,67,.18), 0 12px 28px rgba(16,42,67,.16);
         }
 
-        #sourceImage {
+        #sourceImage { width: 100%; display: block; }
+
+        /* 多圖接合處的分界線，讓使用者看得出原始圖片邊界 */
+        .seam-line {
+            position: absolute;
+            left: 0;
             width: 100%;
-            display: block;
+            border-top: 1px dashed rgba(43,108,176,.75);
+            pointer-events: none;
+            z-index: 4;
         }
 
         .cut-line {
             position: absolute;
             left: 0;
             width: 100%;
-            border-top: 2px dashed red;
+            border-top: 2px dashed var(--cut);
             pointer-events: none;
             z-index: 10;
         }
-
         .cut-line::after {
             content: attr(data-index);
             position: absolute;
             right: 0;
-            top: -20px;
-            background: red;
-            color: white;
-            font-size: 12px;
-            padding: 2px 6px;
+            top: -19px;
+            background: var(--cut);
+            color: var(--cut-on);
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 7px;
             border-radius: 4px;
+            white-space: nowrap;
         }
 
         .overlap-zone {
             position: absolute;
             left: 0;
             width: 100%;
-            background-color: rgba(0, 185, 0, 0.2);
+            background-color: var(--overlap-fill);
             background-image: repeating-linear-gradient(
                 45deg,
-                rgba(0, 185, 0, 0.25),
-                rgba(0, 185, 0, 0.25) 6px,
-                transparent 6px,
-                transparent 12px
+                var(--overlap-stripe),
+                var(--overlap-stripe) 5px,
+                transparent 5px,
+                transparent 11px
             );
-            border-bottom: 1px solid rgba(0, 185, 0, 0.8);
+            border-bottom: 1px solid var(--overlap);
             pointer-events: none;
             z-index: 5;
         }
 
+        /* ---------- 導覽地圖 ---------- */
         .minimap-container {
-            width: 180px;
-            background: white;
-            padding: 10px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: 190px;
+            padding: 12px 11px;
             flex-shrink: 0;
             display: flex;
             flex-direction: column;
+            align-items: stretch;
+            height: 100%;
+        }
+        .minimap-head {
+            display: flex;
             align-items: center;
-            height: 100%; 
-            box-sizing: border-box;
+            gap: 6px;
+            margin-bottom: 9px;
+        }
+        .minimap-title {
+            font-size: .78rem;
+            font-weight: 700;
+            color: var(--primary-text);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .minimap-count {
+            margin-left: auto;
+            font-size: .68rem;
+            font-weight: 700;
+            color: #fff;
+            background: var(--primary-light);
+            border-radius: 999px;
+            padding: 1px 7px;
+            font-variant-numeric: tabular-nums;
         }
 
         .minimap-box {
             position: relative;
-            border: 1px solid #ccc;
+            border: 1px solid var(--line);
+            border-radius: 5px;
             width: 100%;
-            background: #eee;
-            cursor: pointer;
-            overflow-y: auto; 
+            background: var(--line-soft);
+            overflow-y: auto;
             overflow-x: hidden;
-            flex: 1; 
+            flex: 1;
+            cursor: pointer;
         }
 
-        #minimapImg {
-            width: 100%;
-            display: block;
-            opacity: 0.6;
-        }
+        #minimapImg { width: 100%; display: block; opacity: .45; }
 
         #minimapOverlayLayer {
             position: absolute;
-            top: 0;
-            left: 0;
+            top: 0; left: 0;
             width: 100%;
             z-index: 8;
             pointer-events: none;
         }
 
-        .minimap-band {
+        .mm-band {
             position: absolute;
             left: 0;
             width: 100%;
             pointer-events: none;
         }
-        .minimap-band.even { background: rgba(0, 185, 0, 0.2); }
-        .minimap-band.odd { background: rgba(0, 123, 255, 0.15); }
+        .mm-band.even { background: var(--band-a); }
+        .mm-band.odd  { background: var(--band-b); }
 
-        .minimap-band-label {
+        /* 分頁邊界：實線分隔，比純底色更容易一眼看出切在哪 */
+        .mm-divider {
             position: absolute;
-            top: 2px;
-            left: 2px;
-            background: rgba(0, 0, 0, 0.65);
-            color: white;
-            font-size: 9px;
-            font-weight: bold;
-            padding: 1px 4px;
-            border-radius: 3px;
-            line-height: 1.3;
+            left: 0;
+            width: 100%;
+            height: 0;
+            border-top: 1.5px solid var(--primary-light);
+            pointer-events: none;
+            z-index: 10;
         }
 
-        .minimap-toggle-btn {
-            display: none;
-            position: fixed;
-            right: 10px;
-            bottom: 10px;
-            z-index: 31;
-            background: #333;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 44px;
-            height: 44px;
-            font-size: 1.2em;
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-            justify-content: center;
-            align-items: center;
+        /* 重疊區：與預覽區使用同一組琥珀斜紋，語意一致 */
+        .mm-overlap {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            background-color: var(--overlap-fill);
+            background-image: repeating-linear-gradient(
+                45deg,
+                var(--overlap-stripe),
+                var(--overlap-stripe) 3px,
+                transparent 3px,
+                transparent 7px
+            );
+            pointer-events: none;
+            z-index: 9;
+        }
+
+        .mm-chip {
+            position: absolute;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--primary);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 999px;
+            white-space: nowrap;
+            line-height: 1.4;
+            box-shadow: 0 1px 4px rgba(11,17,25,.45);
+            pointer-events: none;
+            z-index: 12;
         }
 
         #minimapViewport {
             position: absolute;
-            top: 0;
-            left: 0;
+            top: 0; left: 0;
             width: 100%;
             height: 0;
-            background-color: rgba(0, 123, 255, 0.3);
-            border: 1px solid rgba(0, 123, 255, 0.8);
-            box-sizing: border-box;
-            cursor: move;
+            background-color: rgba(255,255,255,.10);
+            border: 2px solid var(--primary-light);
+            border-radius: 2px;
+            box-shadow: 0 0 0 1px rgba(255,255,255,.35) inset;
+            pointer-events: none;
             z-index: 20;
         }
 
+        .minimap-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px 10px;
+            margin-top: 9px;
+            font-size: .66rem;
+            color: var(--muted);
+        }
+        .minimap-legend span { display: inline-flex; align-items: center; gap: 4px; }
+        .lg-swatch {
+            width: 11px; height: 9px;
+            border-radius: 2px;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+        .lg-page { background: var(--band-b); border: 1px solid var(--primary-light); }
+        .lg-overlap {
+            background-color: var(--overlap-fill);
+            background-image: repeating-linear-gradient(45deg, var(--overlap-stripe), var(--overlap-stripe) 2px, transparent 2px, transparent 5px);
+            border: 1px solid var(--overlap);
+        }
+        .lg-view { background: transparent; border: 2px solid var(--primary-light); }
+
+        .minimap-toggle-btn {
+            display: none;
+            position: fixed;
+            right: 12px; bottom: 12px;
+            z-index: 31;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 42px; height: 42px;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* ---------- Modal ---------- */
         .modal-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
+            inset: 0;
+            background-color: rgba(11,17,25,.62);
             z-index: 2000;
             display: flex;
             justify-content: center;
             align-items: center;
             opacity: 0;
             visibility: hidden;
-            transition: opacity 0.3s;
+            /* visibility 延後到淡出結束才切換，開啟時則立即生效，讓 focus() 能正常作用 */
+            transition: opacity .18s cubic-bezier(.4,0,.2,1), visibility 0s linear .18s;
         }
-
         .modal-overlay.active {
             opacity: 1;
             visibility: visible;
+            transition: opacity .18s cubic-bezier(.4,0,.2,1), visibility 0s;
         }
 
         .modal-content {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
+            background: var(--card-bg);
+            color: var(--ink);
+            padding: 22px 24px;
+            border-radius: var(--radius);
             max-width: 500px;
             width: 90%;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            line-height: 1.6;
+            max-height: 86vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(11,17,25,.35);
+            line-height: 1.65;
             position: relative;
+            font-size: .86rem;
+            transform: translateY(-8px);
+            transition: transform .18s cubic-bezier(.4,0,.2,1);
         }
+        .modal-overlay.active .modal-content { transform: none; }
 
-        .modal-content h2 { margin-top: 0; color: var(--primary-color); }
-        .modal-content ol { padding-left: 20px; }
-        .modal-content li { margin-bottom: 10px; }
-        .close-hint { text-align: center; margin-top: 20px; font-size: 0.9em; color: #888; }
-
+        .modal-content h2 {
+            margin: 0 0 12px;
+            font-size: 1rem;
+            color: var(--primary-text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .modal-content h2.is-warn { color: var(--err); }
+        .modal-content ol { padding-left: 19px; margin: 0; }
+        .modal-content li { margin-bottom: 9px; }
+        .modal-content ul { padding-left: 17px; margin: 5px 0 0; }
+        .close-hint {
+            text-align: center;
+            margin-top: 16px;
+            font-size: .76rem;
+            color: var(--muted);
+        }
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 18px;
+        }
         .modal-close-btn {
             position: absolute;
-            top: 12px;
-            right: 12px;
-            background: #eee;
-            border: none;
+            top: 12px; right: 12px;
+            background: transparent;
+            border: 1px solid var(--line);
             border-radius: 50%;
-            width: 28px;
-            height: 28px;
-            font-size: 16px;
-            line-height: 1;
+            width: 26px; height: 26px;
             cursor: pointer;
-            color: #555;
+            color: var(--muted);
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+            transition: color .15s ease, border-color .15s ease, background-color .15s ease;
         }
-        .modal-close-btn:hover { background: #ddd; color: #222; }
+        .modal-close-btn:hover {
+            color: var(--err);
+            border-color: var(--err);
+            background: var(--card-bg);
+        }
 
+        .mismatch-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: .78rem;
+        }
+        .mismatch-table th, .mismatch-table td {
+            border: 1px solid var(--line);
+            padding: 5px 8px;
+            text-align: left;
+        }
+        .mismatch-table th {
+            background: var(--tint);
+            color: var(--primary-text);
+            font-weight: 700;
+        }
+        .mismatch-table td.num { text-align: center; font-variant-numeric: tabular-nums; }
+        .mismatch-table tr.is-bad td { color: var(--err); font-weight: 700; }
+
+        /* ---------- 結果檢視 ---------- */
         #resultSection {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.9);
+            inset: 0;
+            background: rgba(11,17,25,.94);
             z-index: 1000;
             display: flex;
             flex-direction: column;
-            padding: 20px;
-            box-sizing: border-box;
-            color: white;
+            padding: 18px;
+            color: #e2e8f0;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+        .result-header h2 {
+            margin: 0;
+            font-size: 1.05rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         #resultGallery {
@@ -532,30 +947,35 @@
             overflow-y: auto;
             display: flex;
             flex-wrap: wrap;
-            gap: 15px;
+            gap: 14px;
             justify-content: center;
-            padding: 20px;
+            align-items: flex-start;
+            align-content: flex-start;
+            padding: 14px 4px;
         }
 
         .result-item {
-            background: #333;
-            padding: 10px;
-            border-radius: 8px;
+            background: var(--card-bg);
+            color: var(--ink);
+            padding: 9px;
+            border-radius: var(--radius);
             text-align: center;
             position: relative;
+            box-shadow: var(--shadow);
+            animation: itemIn .3s cubic-bezier(.4,0,.2,1) both;
         }
 
         .result-item-badge {
             position: absolute;
-            top: 6px;
-            left: 6px;
-            background: rgba(0, 185, 0, 0.9);
-            color: white;
-            font-size: 0.75em;
-            font-weight: bold;
-            width: 22px;
-            height: 22px;
-            border-radius: 50%;
+            top: 6px; left: 6px;
+            background: var(--primary-light);
+            color: #fff;
+            font-size: .68rem;
+            font-weight: 700;
+            min-width: 21px;
+            height: 21px;
+            padding: 0 5px;
+            border-radius: 999px;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -563,49 +983,47 @@
         }
 
         .result-item img {
-            max-width: 200px;
-            border: 1px solid #555;
+            max-width: 190px;
+            border: 1px solid var(--line);
+            border-radius: 4px;
             display: block;
-            margin-bottom: 10px;
+            margin-bottom: 9px;
             cursor: zoom-in;
         }
-
-        .result-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
+        .result-item-size {
+            font-size: .68rem;
+            color: var(--muted);
+            margin-bottom: 7px;
+            font-variant-numeric: tabular-nums;
         }
 
         #progressInfo {
-            color: #ccc;
-            font-size: 0.9em;
+            font-size: .82rem;
             text-align: center;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
+            color: #cbd5e0;
         }
         .progress-bar-track {
             width: 100%;
-            max-width: 400px;
+            max-width: 380px;
             margin: 8px auto 0;
-            height: 8px;
-            background: #555;
-            border-radius: 4px;
+            height: 6px;
+            background: rgba(226,232,240,.22);
+            border-radius: 999px;
             overflow: hidden;
         }
         .progress-bar-fill {
             height: 100%;
-            background: var(--primary-color);
+            background: var(--primary-light);
             width: 0%;
-            transition: width 0.2s;
+            border-radius: 999px;
+            transition: width .25s ease;
         }
 
         #lightbox {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.92);
+            inset: 0;
+            background: rgba(11,17,25,.96);
             z-index: 3000;
             display: flex;
             justify-content: center;
@@ -615,222 +1033,401 @@
         #lightbox img {
             max-width: 92%;
             max-height: 92%;
-            box-shadow: 0 0 30px rgba(0,0,0,0.6);
+            border-radius: 4px;
+            box-shadow: 0 10px 40px rgba(0,0,0,.55);
+        }
+
+        /* ---------- Toast（非阻斷提示） ---------- */
+        .toast {
+            position: fixed;
+            left: 50%;
+            bottom: 26px;
+            transform: translate(-50%, 12px);
+            background: var(--primary);
+            color: #fff;
+            font-size: .83rem;
+            font-weight: 600;
+            padding: 9px 16px;
+            border-radius: 999px;
+            box-shadow: 0 6px 20px rgba(11,17,25,.32);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 4000;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity .2s cubic-bezier(.4,0,.2,1), transform .2s cubic-bezier(.4,0,.2,1), visibility 0s linear .2s;
+        }
+        .toast.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translate(-50%, 0);
+            transition: opacity .2s cubic-bezier(.4,0,.2,1), transform .2s cubic-bezier(.4,0,.2,1), visibility 0s;
+        }
+
+        @keyframes itemIn {
+            from { opacity: 0; transform: translateY(-9px); }
+            to   { opacity: 1; transform: none; }
         }
 
         .hidden { display: none !important; }
-        .zoom-hint { font-size: 0.8em; color: #666; margin-left: 10px; }
 
-        /* 響應式版面：放在樣式表最後，確保覆蓋前面同選擇器的基礎樣式 */
+        /* ---------- 響應式：置於最後，確保覆蓋前面同選擇器的基礎樣式 ---------- */
         @media (max-width: 900px) {
-            body { padding: 10px; }
+            .page { padding: 12px; }
+            header { padding: 8px 12px; }
+            header h1 { font-size: .95rem; }
+            header .sub { display: none; }
+            .hdr-btn { padding: 0 9px; }
+            .hdr-btn .hdr-btn-text { display: none; }
             .container {
                 flex-direction: column;
-                height: calc(100vh - 80px);
+                height: 100%;
             }
             .controls {
                 width: 100%;
                 height: auto;
-                max-height: 40vh;
+                max-height: 42vh;
             }
             .minimap-container {
                 position: fixed;
-                right: 10px;
-                bottom: 10px;
+                right: 12px; bottom: 12px;
                 top: auto;
-                height: 260px;
-                width: 140px;
+                height: 300px;
+                width: 152px;
                 z-index: 30;
-                transition: transform 0.2s;
+                transition: transform .2s cubic-bezier(.4,0,.2,1);
             }
-            .minimap-container.collapsed {
-                transform: translateX(calc(100% + 10px));
-            }
-            .minimap-toggle-btn {
-                display: flex;
+            .minimap-container.collapsed { transform: translateX(calc(100% + 14px)); }
+            .minimap-toggle-btn { display: flex; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: .01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: .01ms !important;
             }
         }
     </style>
 </head>
 <body>
 
-    <a class="home-btn" href="https://mygodcatisfat.github.io/" aria-label="回到首頁">🏠 回到首頁</a>
+    <header>
+        <div class="header-left">
+            <h1>對話紀錄分割工具</h1>
+            <span class="sub">純前端運算，圖片不離開本機</span>
+        </div>
+        <div class="header-right">
+            <button class="switch" id="themeToggle" type="button" role="switch" aria-checked="false" aria-label="深色模式">
+                <i data-icon="sun" class="sw-ic sw-sun"></i>
+                <i data-icon="moon" class="sw-ic sw-moon"></i>
+            </button>
+            <button class="hdr-btn" id="openHelpBtn" type="button" aria-label="功能說明"><i data-icon="book"></i><span class="hdr-btn-text">功能說明</span></button>
+            <a class="hdr-btn" href="https://mygodcatisfat.github.io" target="_blank" rel="noopener" aria-label="回到首頁"><i data-icon="home"></i><span class="hdr-btn-text">回到首頁</span></a>
+        </div>
+    </header>
 
-    <h1>
-        對話紀錄分割工具
-        <button class="help-icon-btn" id="openHelpBtn" aria-label="開啟使用說明">?</button>
-    </h1>
-
+    <main class="page">
     <div class="container">
-        <div class="controls">
+        <div class="controls panel">
             <div class="control-group">
                 <label><span class="step-num">1</span> 匯入圖片</label>
-                <div id="importEmptyState" class="import-status-empty">
-                    <button type="button" class="btn" id="pickFileBtn">📁 選擇圖片</button>
-                    <div class="import-hint">或直接拖曳圖片到右側預覽區</div>
+                <div id="importEmptyState" class="import-empty">
+                    <button type="button" class="btn btn-primary" id="pickFileBtn"><i data-icon="image"></i>選擇圖片</button>
+                    <div class="import-hint">可一次選取多張<strong>等寬</strong>圖片，系統會依順序接合成一張長圖；也可直接拖曳到右側預覽區。</div>
                 </div>
-                <div id="importFilledState" class="import-status-filled hidden">
-                    <img id="sidebarThumb" class="sidebar-thumb" alt="已匯入圖片縮圖">
-                    <div class="import-file-meta">
-                        <div id="importFileName" class="import-file-name"></div>
-                        <div id="importFileSize" class="import-file-size"></div>
+                <div id="importFilledState" class="hidden">
+                    <ul class="img-list" id="imgList"></ul>
+                    <div class="list-actions">
+                        <button type="button" class="btn btn-secondary btn-sm" id="addMoreBtn"><i data-icon="plus"></i>加入更多</button>
+                        <button type="button" class="btn btn-danger btn-sm" id="clearAllBtn"><i data-icon="trash"></i>全部移除</button>
                     </div>
-                    <button type="button" class="btn btn-secondary" id="changeFileBtn">更換圖片</button>
                 </div>
-                <input type="file" id="fileInput" accept="image/*" class="visually-hidden" aria-label="選擇要分割的圖片檔案">
+                <input type="file" id="fileInput" accept="image/*" multiple class="visually-hidden" aria-label="選擇要分割的圖片檔案">
             </div>
 
-            <div class="info-display" id="imageInfo">
-                請先選擇圖片...
-            </div>
+            <div class="info-display is-empty" id="imageInfo">尚未選擇圖片</div>
 
             <div class="control-group">
-                <label for="splitHeight"><span class="step-num">2</span> 單張圖片高度 (px)</label>
-                <input type="number" id="splitHeight" value="1500" min="100" step="50" aria-label="單張圖片高度，像素">
-                <input type="range" id="splitHeightRange" min="500" max="5000" value="1500" step="50" aria-label="單張圖片高度滑桿">
+                <label><span class="step-num">2</span> 分割方式</label>
+                <div class="seg" role="tablist" aria-label="分割方式">
+                    <button type="button" class="seg-btn is-active" id="modeFixedBtn" data-mode="fixed" role="tab" aria-selected="true"><i data-icon="ruler"></i>固定高度</button>
+                    <button type="button" class="seg-btn" id="modeEqualBtn" data-mode="equal" role="tab" aria-selected="false"><i data-icon="equal"></i>等分張數</button>
+                </div>
+
+                <div id="fixedPane">
+                    <div class="field-hint">每張固定此高度，最後一張可能較短。上限為圖片總高度。</div>
+                    <input type="number" id="splitHeight" value="1500" min="100" step="50" aria-label="單張圖片高度，像素">
+                    <input type="range" id="splitHeightRange" min="100" max="5000" value="1500" step="10" aria-label="單張圖片高度滑桿">
+                    <div class="range-scale"><span id="chunkMinLabel">100</span><span id="chunkMaxLabel">5000</span></div>
+                </div>
+
+                <div id="equalPane" class="hidden">
+                    <div class="field-hint">平均切成指定張數，已把重疊區算進去，每張都等高。</div>
+                    <input type="number" id="equalParts" value="3" min="2" max="50" step="1" aria-label="等分張數">
+                    <input type="range" id="equalPartsRange" min="2" max="20" value="3" step="1" aria-label="等分張數滑桿">
+                    <div class="range-scale"><span>2</span><span id="partsMaxLabel">20</span></div>
+                    <div class="derived-note" id="equalDerived">每張高度：—</div>
+                </div>
             </div>
 
             <div class="control-group">
                 <label for="overlapHeight"><span class="step-num">3</span> 相接圖片長度 (重疊 px)</label>
-                <div style="font-size:0.8em; color:#666; margin-bottom:4px;">保留上一張結尾，作為下一張的開頭</div>
+                <div class="field-hint">保留上一張結尾，作為下一張的開頭</div>
                 <input type="number" id="overlapHeight" value="150" min="0" step="10" aria-label="重疊高度，像素">
                 <input type="range" id="overlapHeightRange" min="0" max="500" value="150" step="10" aria-label="重疊高度滑桿">
+                <div class="range-scale"><span>0</span><span id="overlapMaxLabel">500</span></div>
             </div>
 
-            <div class="info-display" id="calcInfo">
-                預計分割張數: -
-            </div>
+            <div class="info-display is-empty" id="calcInfo">預計分割張數：—</div>
 
-            <button class="btn btn-secondary" id="processBtn">生成分割圖片</button>
+            <button class="btn btn-primary" id="processBtn"><i data-icon="scissors"></i>生成分割圖片</button>
         </div>
 
-        <div class="preview-area">
+        <div class="preview-area panel">
             <div class="preview-header">
-                <strong>圖片預覽</strong>
-                <span class="zoom-hint">💡 按住 Ctrl + 滾輪可縮放圖片</span>
-                <span id="zoomLevelDisplay" style="float:right; font-size:0.9em; color:#555;">縮放: 100%</span>
+                <span class="title">圖片預覽</span>
+                <span class="zoom-hint"><i data-icon="info"></i>按住 Ctrl + 滾輪可縮放圖片</span>
+                <span class="zoom-level" id="zoomLevelDisplay">縮放 100%</span>
             </div>
             <div id="scrollContainer">
                 <div id="dropZone" tabindex="0" role="button" aria-label="點擊或拖曳圖片以上傳">
-                    <div class="drop-icon">🖼️</div>
+                    <i data-icon="image" class="icon-xl"></i>
                     <div class="drop-text">拖曳圖片到這裡，或點擊選擇檔案</div>
-                    <div class="drop-subtext">支援 LINE 長截圖等對話紀錄圖片</div>
+                    <div class="drop-subtext">支援多張等寬長截圖，會自動依序接合</div>
                 </div>
                 <div id="imageWrapper" class="image-wrapper hidden">
-                    <img id="sourceImage" alt="Source Image">
+                    <img id="sourceImage" alt="待分割的原始圖片">
                     <div id="overlayLayer"></div>
                 </div>
             </div>
         </div>
 
-        <div class="minimap-container hidden" id="minimapPanel">
-            <label style="margin-bottom:10px;">導覽地圖</label>
-            <div class="minimap-box" id="minimapBox">
-                <img id="minimapImg" alt="Minimap">
+        <div class="minimap-container panel hidden" id="minimapPanel">
+            <div class="minimap-head">
+                <span class="minimap-title"><i data-icon="map"></i>導覽地圖</span>
+                <span class="minimap-count" id="minimapCount">—</span>
+            </div>
+            <div class="minimap-box" id="minimapBox" title="點擊可跳到該位置">
+                <img id="minimapImg" alt="導覽地圖縮圖">
                 <div id="minimapOverlayLayer"></div>
                 <div id="minimapViewport"></div>
             </div>
+            <div class="minimap-legend">
+                <span><i class="lg-swatch lg-page"></i>分頁範圍</span>
+                <span><i class="lg-swatch lg-overlap"></i>重疊區</span>
+                <span><i class="lg-swatch lg-view"></i>目前檢視</span>
+            </div>
         </div>
     </div>
+    </main>
 
-    <button class="minimap-toggle-btn" id="minimapToggleBtn" aria-label="切換導覽地圖顯示">🗺️</button>
+    <button class="minimap-toggle-btn hidden" id="minimapToggleBtn" aria-label="切換導覽地圖顯示"><i data-icon="map"></i></button>
 
     <div class="modal-overlay" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpModalTitle">
         <div class="modal-content">
-            <button class="modal-close-btn" id="closeHelpBtn" aria-label="關閉說明視窗">✕</button>
-            <h2 id="helpModalTitle">使用說明</h2>
+            <button class="modal-close-btn" id="closeHelpBtn" aria-label="關閉說明視窗"><i data-icon="x"></i></button>
+            <h2 id="helpModalTitle"><i data-icon="book"></i>功能說明</h2>
             <ol>
-                <li><strong>匯入圖片：</strong>上傳您的 LINE 長截圖或其他對話紀錄圖片。</li>
-                <li><strong>調整分割：</strong>
+                <li><strong>匯入圖片：</strong>可一次選多張長截圖。所有圖片必須<strong>等寬</strong>，系統會依清單順序由上而下接合成一張長圖；寬度不一致時會擋下並列出不符的檔案。清單可調整順序或移除單張。</li>
+                <li><strong>分割方式：</strong>
                     <ul>
-                        <li>設定「單張圖片高度」決定切出來的每張圖有多高。</li>
-                        <li>設定「相接圖片長度」決定圖片交接處的重疊部分，確保對話不中斷。</li>
+                        <li><strong>固定高度</strong>：每張切成指定高度，最後一張可能較短。高度上限即圖片總高。</li>
+                        <li><strong>等分張數</strong>：指定要切成幾張，系統依 <code>(總高 + (張數−1) × 重疊) ÷ 張數</code> 反推每張高度，確保每張等高。</li>
                     </ul>
                 </li>
-                <li><strong>預覽與縮放：</strong>
+                <li><strong>相接圖片長度：</strong>決定交接處的重疊像素，讓對話不會被切斷。</li>
+                <li><strong>預覽與導覽：</strong>
                     <ul>
-                        <li>畫面中間會顯示紅色虛線（分割線）與綠色區塊（重疊區）。</li>
+                        <li>青綠虛線為分割線、琥珀斜紋為重疊區，藍色虛線為多圖接合處。</li>
                         <li>按住 <strong>Ctrl + 滑鼠滾輪</strong> 可縮放預覽圖。</li>
-                        <li>右側導覽地圖可查看目前所在位置。</li>
+                        <li>導覽地圖用交替色塊與編號標示每張輸出圖，<strong>點擊地圖可直接跳到該位置</strong>。</li>
                     </ul>
                 </li>
-                <li><strong>匯出：</strong>點擊「生成分割圖片」並選擇單張下載或打包下載 (.zip)。</li>
+                <li><strong>匯出：</strong>點擊「生成分割圖片」，可單張下載或打包下載 (.zip)。</li>
             </ol>
             <div class="close-hint">點擊視窗外或按 Esc 鍵關閉</div>
         </div>
     </div>
 
+    <div class="modal-overlay" id="alertModal" role="dialog" aria-modal="true" aria-labelledby="alertTitle">
+        <div class="modal-content">
+            <button class="modal-close-btn" id="alertCloseBtn" aria-label="關閉"><i data-icon="x"></i></button>
+            <h2 id="alertTitle" class="is-warn"><i data-icon="alert"></i><span id="alertTitleText">無法匯入</span></h2>
+            <div id="alertBody"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary btn-auto" id="alertCancelBtn">取消</button>
+                <button type="button" class="btn btn-primary btn-auto" id="alertOkBtn"><i data-icon="image"></i>重新選擇圖片</button>
+            </div>
+        </div>
+    </div>
+
     <div id="resultSection" class="hidden">
         <div class="result-header">
-            <h2>分割結果</h2>
-            <div style="display:flex; gap:10px;">
-                <button class="btn btn-download-all hidden" id="downloadAllBtn" style="width:auto; margin:0;">📦 打包下載所有圖片 (.zip)</button>
-                <button class="btn btn-secondary" id="closeResultBtn" style="width:auto; margin:0;">關閉</button>
+            <h2><i data-icon="layers"></i>分割結果</h2>
+            <div style="display:flex; gap:9px;">
+                <button class="btn btn-primary btn-auto hidden" id="downloadAllBtn"><i data-icon="package"></i>打包下載所有圖片 (.zip)</button>
+                <button class="btn btn-secondary btn-auto" id="closeResultBtn"><i data-icon="x"></i>關閉</button>
             </div>
         </div>
         <div id="progressInfo" class="hidden">
-            <div id="progressText">處理中...</div>
-            <div class="progress-bar-track"><div class="progress-bar-fill" id="progressBarFill"></div></div>
+            <div id="progressText">處理中…</div>
+            <div class="progress-bar-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progressBar">
+                <div class="progress-bar-fill" id="progressBarFill"></div>
+            </div>
         </div>
         <div id="resultGallery"></div>
     </div>
 
     <div id="lightbox" class="hidden">
-        <img id="lightboxImg" alt="放大預覽">
+        <img id="lightboxImg" alt="分割結果放大預覽">
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite">
+        <i data-icon="check" id="toastIcon"></i><span id="toastText"></span>
     </div>
 
     <script>
-        const fileInput = document.getElementById('fileInput');
-        const splitHeightInput = document.getElementById('splitHeight');
-        const splitHeightRange = document.getElementById('splitHeightRange');
-        const overlapHeightInput = document.getElementById('overlapHeight');
-        const overlapHeightRange = document.getElementById('overlapHeightRange');
-        const scrollContainer = document.getElementById('scrollContainer');
-        const imageWrapper = document.getElementById('imageWrapper');
-        const sourceImage = document.getElementById('sourceImage');
-        const overlayLayer = document.getElementById('overlayLayer');
-        const minimapPanel = document.getElementById('minimapPanel');
-        const minimapBox = document.getElementById('minimapBox');
-        const minimapImg = document.getElementById('minimapImg');
-        const minimapOverlayLayer = document.getElementById('minimapOverlayLayer');
-        const minimapViewport = document.getElementById('minimapViewport');
-        const imageInfo = document.getElementById('imageInfo');
-        const calcInfo = document.getElementById('calcInfo');
-        const zoomLevelDisplay = document.getElementById('zoomLevelDisplay');
-        const resultSection = document.getElementById('resultSection');
-        const resultGallery = document.getElementById('resultGallery');
-        const downloadAllBtn = document.getElementById('downloadAllBtn');
-        const closeResultBtn = document.getElementById('closeResultBtn');
-        const openHelpBtn = document.getElementById('openHelpBtn');
-        const closeHelpBtn = document.getElementById('closeHelpBtn');
-        const helpModal = document.getElementById('helpModal');
-        const dropZone = document.getElementById('dropZone');
-        const minimapToggleBtn = document.getElementById('minimapToggleBtn');
-        const processBtn = document.getElementById('processBtn');
-        const progressInfo = document.getElementById('progressInfo');
-        const progressText = document.getElementById('progressText');
-        const progressBarFill = document.getElementById('progressBarFill');
-        const lightbox = document.getElementById('lightbox');
-        const lightboxImg = document.getElementById('lightboxImg');
-        const pickFileBtn = document.getElementById('pickFileBtn');
-        const changeFileBtn = document.getElementById('changeFileBtn');
-        const importEmptyState = document.getElementById('importEmptyState');
-        const importFilledState = document.getElementById('importFilledState');
-        const sidebarThumb = document.getElementById('sidebarThumb');
-        const importFileName = document.getElementById('importFileName');
-        const importFileSize = document.getElementById('importFileSize');
+        /* ============ 圖示表：名稱 → 極簡線條 SVG 內容 ============ */
+        const ICONS = {
+            home:    '<path d="M3.5 11.2 12 4l8.5 7.2"/><path d="M5.8 10.2V20h12.4v-9.8"/>',
+            help:    '<circle cx="12" cy="12" r="8.6"/><path d="M9.4 9.4a2.7 2.7 0 1 1 3.3 3.3c-.5.2-.8.7-.8 1.2v.5"/><path d="M12 17.3h.01"/>',
+            book:    '<path d="M4 4.5A1.5 1.5 0 0 1 5.5 3H19v18H5.5A1.5 1.5 0 0 1 4 19.5z"/><path d="M4 17.2h15"/><path d="M8 7.5h7"/>',
+            info:    '<circle cx="12" cy="12" r="8.6"/><path d="M12 11.2v5"/><path d="M12 7.9h.01"/>',
+            alert:   '<path d="M12 4.4 2.9 20h18.2z"/><path d="M12 10v4.1"/><path d="M12 17.4h.01"/>',
+            check:   '<path d="M4.5 12.6l4.8 4.8L19.5 7.2"/>',
+            x:       '<path d="M6.4 6.4l11.2 11.2"/><path d="M17.6 6.4L6.4 17.6"/>',
+            image:   '<rect x="3.2" y="4.4" width="17.6" height="15.2" rx="2.2"/><circle cx="8.6" cy="9.6" r="1.5"/><path d="M20.8 15.6 16 10.9 5.4 19.6"/>',
+            refresh: '<path d="M20 11.3a8 8 0 0 0-13.6-5.1L4.2 8.3"/><path d="M4.2 4.5v3.8H8"/><path d="M4 12.7a8 8 0 0 0 13.6 5.1l2.2-2.1"/><path d="M19.8 19.5v-3.8H16"/>',
+            scissors:'<circle cx="6.2" cy="6.4" r="2.4"/><circle cx="6.2" cy="17.6" r="2.4"/><path d="M8.3 7.8 19.6 17.8"/><path d="M8.3 16.2 19.6 6.2"/>',
+            download:'<path d="M12 4.3v10.4"/><path d="M8.2 11l3.8 3.7 3.8-3.7"/><path d="M4.6 17v1.4a1.6 1.6 0 0 0 1.6 1.6h11.6a1.6 1.6 0 0 0 1.6-1.6V17"/>',
+            package: '<path d="M12 3.6 20.6 8 12 12.4 3.4 8z"/><path d="M3.4 8v8L12 20.4 20.6 16V8"/><path d="M12 12.4v8"/>',
+            layers:  '<path d="M12 3.6 20.6 8 12 12.4 3.4 8z"/><path d="M3.4 12.8 12 17.2l8.6-4.4"/>',
+            map:     '<path d="M9 4.4 3.6 6.8v12.8L9 17.2l6 2.4 5.4-2.4V4.4L15 6.8z"/><path d="M9 4.4v12.8"/><path d="M15 6.8v12.8"/>',
+            sun:     '<circle cx="12" cy="12" r="3.8"/><path d="M12 2.6v2.1M12 19.3v2.1M4.9 4.9l1.5 1.5M17.6 17.6l1.5 1.5M2.6 12h2.1M19.3 12h2.1M4.9 19.1l1.5-1.5M17.6 6.4l1.5-1.5"/>',
+            moon:    '<path d="M20.2 14.6A8.6 8.6 0 0 1 9.4 3.8a8.6 8.6 0 1 0 10.8 10.8z"/>',
+            'arrow-up':   '<path d="M12 19.4V5.2"/><path d="M5.9 11.3 12 5.2l6.1 6.1"/>',
+            'arrow-down': '<path d="M12 4.6v14.2"/><path d="M5.9 12.7 12 18.8l6.1-6.1"/>',
+            plus:    '<path d="M12 5.2v13.6"/><path d="M5.2 12h13.6"/>',
+            trash:   '<path d="M4.4 6.9h15.2"/><path d="M9.6 6.9V5.1A1.2 1.2 0 0 1 10.8 3.9h2.4a1.2 1.2 0 0 1 1.2 1.2v1.8"/><path d="M6.6 6.9l.9 12.1a1.5 1.5 0 0 0 1.5 1.4h6a1.5 1.5 0 0 0 1.5-1.4l.9-12.1"/>',
+            ruler:   '<rect x="2.8" y="8.6" width="18.4" height="6.8" rx="1.4"/><path d="M7.4 8.6v3.2M12 8.6v4.2M16.6 8.6v3.2"/>',
+            equal:   '<rect x="4.4" y="3.6" width="15.2" height="7" rx="1.4"/><rect x="4.4" y="13.4" width="15.2" height="7" rx="1.4"/>'
+        };
 
-        let originalImage = null;
+        function renderIcons(root) {
+            (root || document).querySelectorAll('i[data-icon]').forEach(el => {
+                const name = el.getAttribute('data-icon');
+                if (!ICONS[name] || el.dataset.iconDone) return;
+                el.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" '
+                    + 'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">'
+                    + ICONS[name] + '</svg>';
+                el.dataset.iconDone = '1';
+            });
+        }
+        renderIcons();
+
+        /* ============ 元素參照 ============ */
+        const $ = (id) => document.getElementById(id);
+
+        const fileInput = $('fileInput');
+        const pickFileBtn = $('pickFileBtn');
+        const addMoreBtn = $('addMoreBtn');
+        const clearAllBtn = $('clearAllBtn');
+        const imgList = $('imgList');
+        const importEmptyState = $('importEmptyState');
+        const importFilledState = $('importFilledState');
+
+        const modeFixedBtn = $('modeFixedBtn');
+        const modeEqualBtn = $('modeEqualBtn');
+        const fixedPane = $('fixedPane');
+        const equalPane = $('equalPane');
+        const splitHeightInput = $('splitHeight');
+        const splitHeightRange = $('splitHeightRange');
+        const equalPartsInput = $('equalParts');
+        const equalPartsRange = $('equalPartsRange');
+        const equalDerived = $('equalDerived');
+        const overlapHeightInput = $('overlapHeight');
+        const overlapHeightRange = $('overlapHeightRange');
+        const chunkMinLabel = $('chunkMinLabel');
+        const chunkMaxLabel = $('chunkMaxLabel');
+        const partsMaxLabel = $('partsMaxLabel');
+        const overlapMaxLabel = $('overlapMaxLabel');
+
+        const scrollContainer = $('scrollContainer');
+        const imageWrapper = $('imageWrapper');
+        const sourceImage = $('sourceImage');
+        const overlayLayer = $('overlayLayer');
+        const dropZone = $('dropZone');
+
+        const minimapPanel = $('minimapPanel');
+        const minimapBox = $('minimapBox');
+        const minimapImg = $('minimapImg');
+        const minimapOverlayLayer = $('minimapOverlayLayer');
+        const minimapViewport = $('minimapViewport');
+        const minimapCount = $('minimapCount');
+        const minimapToggleBtn = $('minimapToggleBtn');
+
+        const imageInfo = $('imageInfo');
+        const calcInfo = $('calcInfo');
+        const zoomLevelDisplay = $('zoomLevelDisplay');
+
+        const resultSection = $('resultSection');
+        const resultGallery = $('resultGallery');
+        const downloadAllBtn = $('downloadAllBtn');
+        const closeResultBtn = $('closeResultBtn');
+        const processBtn = $('processBtn');
+        const progressInfo = $('progressInfo');
+        const progressText = $('progressText');
+        const progressBar = $('progressBar');
+        const progressBarFill = $('progressBarFill');
+
+        const openHelpBtn = $('openHelpBtn');
+        const closeHelpBtn = $('closeHelpBtn');
+        const helpModal = $('helpModal');
+
+        const alertModal = $('alertModal');
+        const alertTitleText = $('alertTitleText');
+        const alertBody = $('alertBody');
+        const alertOkBtn = $('alertOkBtn');
+        const alertCancelBtn = $('alertCancelBtn');
+        const alertCloseBtn = $('alertCloseBtn');
+
+        const lightbox = $('lightbox');
+        const lightboxImg = $('lightboxImg');
+        const themeToggle = $('themeToggle');
+        const toast = $('toast');
+        const toastIcon = $('toastIcon');
+        const toastText = $('toastText');
+
+        /* ============ 狀態 ============ */
+        // sourceItems: 使用者匯入的原始圖片（依顯示順序）
+        let sourceItems = [];
+        // composite: 接合後的成品，統一供預覽/導覽地圖/輸出使用
+        // { source: HTMLImageElement|HTMLCanvasElement, width, height, url }
+        let composite = null;
+        let compositeUrl = null;
+        let splitMode = 'fixed';
         let currentScale = 1.0;
-        let currentObjectUrl = null;
         let minimapThumbUrl = null;
         let generatedUrls = [];
         let generatedBlobs = [];
+        let fileInputMode = 'replace';
+        let uid = 0;
+        // 接合期間鎖住「生成」，避免用到還沒更新完的舊影像
+        let isRebuilding = false;
+
+        // Canvas 尺寸上限保護（各家瀏覽器約在此範圍，超過會靜默產生空白圖）
+        const MAX_CANVAS_SIDE = 32760;
+        const MAX_CANVAS_AREA = 268000000;
+
+        const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
         // rAF 節流：同一畫面內最多執行一次，避免 wheel/scroll/drag 期間過度重算
         function rafThrottle(fn) {
             let scheduled = false;
-            return function(...args) {
+            return function (...args) {
                 if (scheduled) return;
                 scheduled = true;
                 requestAnimationFrame(() => {
@@ -840,254 +1437,610 @@
             };
         }
 
-        // 計算分割邊界，main 預覽、迷你地圖分頁標示、實際輸出都共用同一份計算結果
-        function computeSlices(totalHeight, chunkHeight, overlap) {
-            const step = chunkHeight - overlap;
-            const slices = [];
-            let currentY = 0;
-            while (currentY < totalHeight) {
-                let h = chunkHeight;
-                if (currentY + h > totalHeight) h = totalHeight - currentY;
-                slices.push({ start: currentY, end: currentY + h });
-                if (currentY + h >= totalHeight) break;
-                currentY += step;
-            }
-            return slices;
+        /* ============ 深色模式 ============ */
+        function syncThemeToggle() {
+            themeToggle.setAttribute('aria-checked',
+                String(document.documentElement.getAttribute('data-theme') === 'dark'));
         }
+        syncThemeToggle();
 
-        function getValidSlices() {
-            if (!originalImage) return null;
-            const totalHeight = originalImage.height;
-            const chunkHeight = parseInt(splitHeightInput.value);
-            const overlap = parseInt(overlapHeightInput.value);
-            if (chunkHeight >= totalHeight || overlap >= chunkHeight) return null;
-            return { slices: computeSlices(totalHeight, chunkHeight, overlap), totalHeight };
-        }
-
-        // 在迷你地圖上疊加分頁色塊與編號，讓使用者能對應每張輸出圖片的位置
-        function renderMinimapBands(slices, totalHeight) {
-            minimapOverlayLayer.innerHTML = '';
-            const mapImgH = minimapImg.clientHeight;
-            if (!mapImgH) return;
-            const fragment = document.createDocumentFragment();
-            slices.forEach((slice, i) => {
-                const band = document.createElement('div');
-                band.className = 'minimap-band ' + (i % 2 === 0 ? 'even' : 'odd');
-                band.style.top = `${(slice.start / totalHeight) * mapImgH}px`;
-                band.style.height = `${((slice.end - slice.start) / totalHeight) * mapImgH}px`;
-                const label = document.createElement('span');
-                label.className = 'minimap-band-label';
-                label.textContent = i + 1;
-                band.appendChild(label);
-                fragment.appendChild(band);
-            });
-            minimapOverlayLayer.appendChild(fragment);
-        }
-
-        function openHelpModal() {
-            helpModal.classList.add('active');
-            closeHelpBtn.focus();
-        }
-        function closeHelpModal() {
-            helpModal.classList.remove('active');
-            openHelpBtn.focus();
-        }
-
-        openHelpBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            openHelpModal();
+        themeToggle.addEventListener('click', () => {
+            const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            try { localStorage.setItem('splitter-theme', next); } catch (e) { /* 無法保存時仍套用本次切換 */ }
+            syncThemeToggle();
+            scheduleUpdateMinimap();
         });
 
-        closeHelpBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            closeHelpModal();
-        });
+        /* ============ 非阻斷提示 toast ============ */
+        let toastTimer = null;
+        function showToast(message, iconName) {
+            toastIcon.removeAttribute('data-icon-done');
+            toastIcon.setAttribute('data-icon', iconName || 'check');
+            renderIcons(toast);
+            toastText.textContent = message;
+            toast.classList.add('show');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toast.classList.remove('show'), 2400);
+        }
 
-        helpModal.addEventListener('click', () => {
-            closeHelpModal();
+        /* ============ 自製警示視窗（不使用原生 alert/confirm） ============ */
+        let alertOnConfirm = null;
+        function openAlertModal({ title, bodyHTML, okText, onConfirm }) {
+            alertTitleText.textContent = title;
+            alertBody.innerHTML = bodyHTML;
+            alertOkBtn.innerHTML = '<i data-icon="image"></i>' + (okText || '重新選擇圖片');
+            renderIcons(alertModal);
+            alertOnConfirm = onConfirm || null;
+            alertModal.classList.add('active');
+            alertOkBtn.focus();
+        }
+        function closeAlertModal() {
+            alertModal.classList.remove('active');
+            alertOnConfirm = null;
+        }
+        alertOkBtn.addEventListener('click', () => {
+            const fn = alertOnConfirm;
+            closeAlertModal();
+            if (fn) fn();
         });
+        alertCancelBtn.addEventListener('click', closeAlertModal);
+        alertCloseBtn.addEventListener('click', closeAlertModal);
+        alertModal.addEventListener('click', closeAlertModal);
+        alertModal.querySelector('.modal-content').addEventListener('click', (e) => e.stopPropagation());
 
-        helpModal.querySelector('.modal-content').addEventListener('click', (e) => {
-            e.stopPropagation();
-        });
+        /* ============ 說明視窗 ============ */
+        function openHelpModal() { helpModal.classList.add('active'); closeHelpBtn.focus(); }
+        function closeHelpModal() { helpModal.classList.remove('active'); openHelpBtn.focus(); }
+
+        openHelpBtn.addEventListener('click', (e) => { e.stopPropagation(); openHelpModal(); });
+        closeHelpBtn.addEventListener('click', (e) => { e.stopPropagation(); closeHelpModal(); });
+        helpModal.addEventListener('click', closeHelpModal);
+        helpModal.querySelector('.modal-content').addEventListener('click', (e) => e.stopPropagation());
 
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                if (helpModal.classList.contains('active')) closeHelpModal();
-                if (!lightbox.classList.contains('hidden')) closeLightbox();
-            }
+            if (e.key !== 'Escape') return;
+            if (helpModal.classList.contains('active')) closeHelpModal();
+            if (alertModal.classList.contains('active')) closeAlertModal();
+            if (!lightbox.classList.contains('hidden')) closeLightbox();
         });
 
-        // 燈箱：點擊分割結果縮圖可放大檢視
-        function openLightbox(src) {
-            lightboxImg.src = src;
-            lightbox.classList.remove('hidden');
-        }
-        function closeLightbox() {
-            lightbox.classList.add('hidden');
-            lightboxImg.src = '';
-        }
+        /* ============ 燈箱 ============ */
+        function openLightbox(src) { lightboxImg.src = src; lightbox.classList.remove('hidden'); }
+        function closeLightbox() { lightbox.classList.add('hidden'); lightboxImg.src = ''; }
         lightbox.addEventListener('click', closeLightbox);
 
-        // 窄螢幕下的導覽地圖收合切換
-        minimapToggleBtn.addEventListener('click', () => {
-            minimapPanel.classList.toggle('collapsed');
-        });
+        minimapToggleBtn.addEventListener('click', () => minimapPanel.classList.toggle('collapsed'));
 
-        // 側欄「選擇圖片／更換圖片」按鈕與空狀態拖放區，皆觸發同一個隱藏的檔案輸入框
-        pickFileBtn.addEventListener('click', () => fileInput.click());
-        changeFileBtn.addEventListener('click', () => fileInput.click());
-        dropZone.addEventListener('click', () => fileInput.click());
+        /* ============ 匯入：檔案選取與拖放 ============ */
+        function openPicker(mode) {
+            fileInputMode = mode;
+            fileInput.value = '';
+            fileInput.click();
+        }
+        pickFileBtn.addEventListener('click', () => openPicker('replace'));
+        addMoreBtn.addEventListener('click', () => openPicker('append'));
+        dropZone.addEventListener('click', () => openPicker('replace'));
         dropZone.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                fileInput.click();
-            }
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPicker('replace'); }
         });
 
-        // 拖放上傳：整個預覽區都是拖放目標，即使已匯入圖片也能拖曳新圖片取代
+        clearAllBtn.addEventListener('click', () => {
+            openAlertModal({
+                title: '移除所有圖片？',
+                bodyHTML: '<p>將清空目前的 <strong>' + sourceItems.length + '</strong> 張圖片與預覽，此動作無法復原。</p>',
+                okText: '確定移除',
+                onConfirm: () => { clearAllImages(); showToast('已移除所有圖片', 'check'); }
+            });
+            alertOkBtn.innerHTML = '<i data-icon="trash"></i>確定移除';
+            renderIcons(alertOkBtn);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const files = [...e.target.files].filter(f => f.type.startsWith('image/'));
+            if (files.length) addImages(files, fileInputMode);
+        });
+
+        // 整個預覽區都是拖放目標；已有圖片時拖入視為追加
         ['dragenter', 'dragover'].forEach(evt => {
             scrollContainer.addEventListener(evt, (e) => {
                 e.preventDefault();
-                scrollContainer.classList.add('drag-over-active');
-                if (!originalImage) dropZone.classList.add('drag-over');
+                scrollContainer.classList.add('is-drag-over');
+                if (!composite) dropZone.classList.add('is-drag-over');
             });
         });
         ['dragleave', 'drop'].forEach(evt => {
             scrollContainer.addEventListener(evt, (e) => {
                 e.preventDefault();
-                scrollContainer.classList.remove('drag-over-active');
-                dropZone.classList.remove('drag-over');
+                scrollContainer.classList.remove('is-drag-over');
+                dropZone.classList.remove('is-drag-over');
             });
         });
         scrollContainer.addEventListener('drop', (e) => {
-            const file = e.dataTransfer.files[0];
-            if (file && file.type.startsWith('image/')) {
-                loadImageFile(file);
-            }
+            const files = [...e.dataTransfer.files].filter(f => f.type.startsWith('image/'));
+            if (!files.length) { showToast('僅支援圖片檔案', 'alert'); return; }
+            addImages(files, sourceItems.length ? 'append' : 'replace');
         });
 
-        // 圖片匯入處理（改用 Object URL，避免 base64 編碼的記憶體與 CPU 開銷）
-        fileInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            loadImageFile(file);
-        });
-
-        function loadImageFile(file) {
-            imageInfo.innerHTML = '讀取圖片中...';
-
-            if (currentObjectUrl) {
-                URL.revokeObjectURL(currentObjectUrl);
-            }
-            const objectUrl = URL.createObjectURL(file);
-            currentObjectUrl = objectUrl;
-
-            originalImage = new Image();
-            originalImage.onload = function() {
-                sourceImage.src = objectUrl;
-                imageWrapper.style.width = `${originalImage.width}px`;
-                dropZone.classList.add('hidden');
-                imageWrapper.classList.remove('hidden');
-                minimapPanel.classList.remove('hidden');
-
-                currentScale = 1.0;
-                updateZoom();
-
-                const megapixels = (originalImage.width * originalImage.height / 1e6).toFixed(1);
-                let sizeWarning = '';
-                if (originalImage.width * originalImage.height > 25000000) {
-                    sizeWarning = '<br><span style="color:#c0392b;">⚠️ 圖片解析度較大，處理與預覽可能較慢</span>';
-                }
-                imageInfo.innerHTML = `
-                    <strong>原始尺寸:</strong> ${originalImage.width} x ${originalImage.height} px (約 ${megapixels} MP)${sizeWarning}
-                `;
-
-                sidebarThumb.src = objectUrl;
-                importFileName.textContent = file.name;
-                importFileSize.textContent = `${originalImage.width} x ${originalImage.height} px`;
-                importEmptyState.classList.add('hidden');
-                importFilledState.classList.remove('hidden');
-
-                if(originalImage.height < parseInt(splitHeightInput.value)) {
-                    const newHeight = Math.floor(originalImage.height / 2);
-                    splitHeightInput.value = newHeight;
-                    splitHeightRange.value = newHeight;
-                }
-
-                updateVisualization();
-                updateMinimapThumbnail();
-            };
-            originalImage.onerror = function() {
-                imageInfo.innerHTML = '圖片載入失敗，請重新選擇檔案。';
-            };
-            originalImage.src = objectUrl;
+        function loadOneImage(file) {
+            return new Promise((resolve) => {
+                const url = URL.createObjectURL(file);
+                const img = new Image();
+                img.onload = () => resolve({
+                    id: ++uid, name: file.name, url, img,
+                    w: img.naturalWidth, h: img.naturalHeight
+                });
+                img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+                img.src = url;
+            });
         }
 
-        // 數值連動與更新（rAF 節流，避免拖曳滑桿時過度重繪）
+        async function addImages(files, mode) {
+            // 整個匯入（解碼→等寬檢查→接合）期間都鎖住生成，避免用到還沒更新完的舊影像
+            setRebuilding(true);
+            try {
+                await addImagesInner(files, mode);
+            } finally {
+                setRebuilding(false);
+            }
+        }
+
+        async function addImagesInner(files, mode) {
+            imageInfo.className = 'info-display is-empty';
+            imageInfo.textContent = `讀取 ${files.length} 張圖片中…`;
+
+            const loaded = (await Promise.all(files.map(loadOneImage))).filter(Boolean);
+            const failedCount = files.length - loaded.length;
+            if (!loaded.length) {
+                imageInfo.className = 'info-display has-error';
+                imageInfo.textContent = '圖片載入失敗，請重新選擇檔案。';
+                showToast('圖片載入失敗', 'alert');
+                return;
+            }
+
+            const base = mode === 'append' ? sourceItems : [];
+            const merged = base.concat(loaded);
+
+            // 等寬檢查：以第一張為基準
+            const baseWidth = merged[0].w;
+            const bad = merged.filter(it => it.w !== baseWidth);
+            if (bad.length) {
+                loaded.forEach(it => URL.revokeObjectURL(it.url));   // 這批不採用，立即釋放
+                const rows = merged.map(it => {
+                    const isBad = it.w !== baseWidth;
+                    return `<tr class="${isBad ? 'is-bad' : ''}">
+                        <td>${escapeHTML(it.name)}</td>
+                        <td class="num">${it.w}</td>
+                        <td class="num">${it.h}</td>
+                    </tr>`;
+                }).join('');
+                openAlertModal({
+                    title: '圖片寬度不一致',
+                    bodyHTML: `
+                        <p>接合長圖需要所有圖片<strong>寬度相同</strong>。以第一張的寬度
+                        <strong>${baseWidth} px</strong> 為基準，下列標紅的圖片不符，因此這次匯入未被套用。</p>
+                        <p>請重新匯入等寬的圖片（例如同一支手機、同一次截圖的成果）。</p>
+                        <table class="mismatch-table">
+                            <thead><tr><th>檔案</th><th class="num">寬</th><th class="num">高</th></tr></thead>
+                            <tbody>${rows}</tbody>
+                        </table>`,
+                    okText: '重新選擇圖片',
+                    onConfirm: () => openPicker('replace')
+                });
+                refreshImageInfo();
+                return;
+            }
+
+            if (mode !== 'append') clearAllImages(true);
+            sourceItems = merged;
+
+            if (failedCount > 0) showToast(`有 ${failedCount} 個檔案無法讀取`, 'alert');
+            await rebuildComposite();
+            showToast(`已加入 ${loaded.length} 張圖片`, 'check');
+        }
+
+        function escapeHTML(s) {
+            return String(s).replace(/[&<>"']/g, c => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[c]));
+        }
+
+        function clearAllImages(keepSilent) {
+            sourceItems.forEach(it => URL.revokeObjectURL(it.url));
+            sourceItems = [];
+            if (!keepSilent) {
+                releaseComposite();
+                composite = null;
+                imageWrapper.classList.add('hidden');
+                dropZone.classList.remove('hidden');
+                minimapPanel.classList.add('hidden');
+                minimapToggleBtn.classList.add('hidden');
+                overlayLayer.innerHTML = '';
+                minimapOverlayLayer.innerHTML = '';
+                importFilledState.classList.add('hidden');
+                importEmptyState.classList.remove('hidden');
+                imageInfo.className = 'info-display is-empty';
+                imageInfo.textContent = '尚未選擇圖片';
+                calcInfo.className = 'info-display is-empty';
+                calcInfo.textContent = '預計分割張數：—';
+                minimapCount.textContent = '—';
+            }
+        }
+
+        function releaseComposite() {
+            if (compositeUrl) { URL.revokeObjectURL(compositeUrl); compositeUrl = null; }
+        }
+
+        /* ============ 接合成一張長圖 ============ */
+        function setRebuilding(busy) {
+            isRebuilding = busy;
+            processBtn.disabled = busy;
+            processBtn.innerHTML = '<i data-icon="scissors"></i>' + (busy ? '接合圖片中…' : '生成分割圖片');
+            renderIcons(processBtn);
+        }
+
+        async function rebuildComposite() {
+            if (!sourceItems.length) { clearAllImages(); return; }
+            setRebuilding(true);
+            try {
+                await rebuildCompositeInner();
+            } finally {
+                setRebuilding(false);
+            }
+        }
+
+        async function rebuildCompositeInner() {
+            const W = sourceItems[0].w;
+            const totalH = sourceItems.reduce((s, it) => s + it.h, 0);
+
+            if (totalH > MAX_CANVAS_SIDE || W * totalH > MAX_CANVAS_AREA) {
+                openAlertModal({
+                    title: '接合後的圖片過大',
+                    bodyHTML: `<p>接合後尺寸為 <strong>${W} × ${totalH}</strong> px，超過瀏覽器 Canvas 的處理上限
+                        （單邊 ${MAX_CANVAS_SIDE} px 或總面積約 ${Math.round(MAX_CANVAS_AREA / 1e6)} MP）。</p>
+                        <p>請移除部分圖片後再試。</p>`,
+                    okText: '我知道了',
+                    onConfirm: null
+                });
+                alertOkBtn.innerHTML = '<i data-icon="check"></i>我知道了';
+                renderIcons(alertOkBtn);
+                return;
+            }
+
+            releaseComposite();
+
+            if (sourceItems.length === 1) {
+                // 單張時直接沿用原圖，省下一次完整複製的記憶體與編碼成本
+                const it = sourceItems[0];
+                composite = { source: it.img, width: it.w, height: it.h, url: it.url, seams: [] };
+                sourceImage.src = it.url;
+            } else {
+                const canvas = document.createElement('canvas');
+                canvas.width = W;
+                canvas.height = totalH;
+                const ctx = canvas.getContext('2d');
+                const seams = [];
+                let y = 0;
+                sourceItems.forEach((it, i) => {
+                    ctx.drawImage(it.img, 0, y, W, it.h);
+                    y += it.h;
+                    if (i < sourceItems.length - 1) seams.push(y);
+                });
+                const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+                compositeUrl = URL.createObjectURL(blob);
+                composite = { source: canvas, width: W, height: totalH, url: compositeUrl, seams };
+                sourceImage.src = compositeUrl;
+            }
+
+            imageWrapper.style.width = `${composite.width}px`;
+            dropZone.classList.add('hidden');
+            imageWrapper.classList.remove('hidden');
+            minimapPanel.classList.remove('hidden');
+            minimapToggleBtn.classList.remove('hidden');
+            importEmptyState.classList.add('hidden');
+            importFilledState.classList.remove('hidden');
+
+            currentScale = 1.0;
+            updateZoom();
+            applyLimits();
+            renderImageList();
+            refreshImageInfo();
+            updateVisualization();
+            updateMinimapThumbnail();
+        }
+
+        function refreshImageInfo() {
+            if (!composite) return;
+            const mp = (composite.width * composite.height / 1e6).toFixed(1);
+            imageInfo.className = 'info-display';
+            const partLabel = sourceItems.length > 1
+                ? `由 <strong>${sourceItems.length}</strong> 張接合　` : '';
+            imageInfo.innerHTML = `${partLabel}總尺寸 <strong>${composite.width} × ${composite.height}</strong> px（約 ${mp} MP）`;
+            if (composite.width * composite.height > 25000000) {
+                const warn = document.createElement('div');
+                warn.className = 'info-warn';
+                warn.innerHTML = '<i data-icon="alert"></i>解析度較大，處理與預覽可能較慢';
+                imageInfo.appendChild(warn);
+                renderIcons(imageInfo);
+            }
+        }
+
+        /* ============ 匯入清單（可調整順序） ============ */
+        function renderImageList() {
+            imgList.innerHTML = '';
+            const frag = document.createDocumentFragment();
+            sourceItems.forEach((it, i) => {
+                const li = document.createElement('li');
+                li.className = 'img-item';
+                li.innerHTML = `
+                    <span class="img-item-idx">${i + 1}</span>
+                    <img class="img-item-thumb" src="${it.url}" alt="">
+                    <div class="img-item-meta">
+                        <div class="img-item-name" title="${escapeHTML(it.name)}">${escapeHTML(it.name)}</div>
+                        <div class="img-item-size">${it.w} × ${it.h}</div>
+                    </div>
+                    <div class="img-item-ops">
+                        <button type="button" class="op-btn" data-act="up" data-id="${it.id}"
+                            aria-label="上移" title="上移" ${i === 0 ? 'disabled' : ''}><i data-icon="arrow-up"></i></button>
+                        <button type="button" class="op-btn" data-act="down" data-id="${it.id}"
+                            aria-label="下移" title="下移" ${i === sourceItems.length - 1 ? 'disabled' : ''}><i data-icon="arrow-down"></i></button>
+                        <button type="button" class="op-btn op-del" data-act="del" data-id="${it.id}"
+                            aria-label="移除這張" title="移除這張"><i data-icon="x"></i></button>
+                    </div>`;
+                frag.appendChild(li);
+            });
+            imgList.appendChild(frag);
+            renderIcons(imgList);
+        }
+
+        imgList.addEventListener('click', async (e) => {
+            const btn = e.target.closest('.op-btn');
+            if (!btn || btn.disabled) return;
+            const id = Number(btn.dataset.id);
+            const idx = sourceItems.findIndex(it => it.id === id);
+            if (idx < 0) return;
+
+            if (btn.dataset.act === 'up' && idx > 0) {
+                [sourceItems[idx - 1], sourceItems[idx]] = [sourceItems[idx], sourceItems[idx - 1]];
+            } else if (btn.dataset.act === 'down' && idx < sourceItems.length - 1) {
+                [sourceItems[idx + 1], sourceItems[idx]] = [sourceItems[idx], sourceItems[idx + 1]];
+            } else if (btn.dataset.act === 'del') {
+                URL.revokeObjectURL(sourceItems[idx].url);
+                sourceItems.splice(idx, 1);
+                if (!sourceItems.length) { clearAllImages(); showToast('已移除所有圖片', 'check'); return; }
+            } else {
+                return;
+            }
+            await rebuildComposite();
+        });
+
+        /* ============ 參數上下限（依圖片實際高度） ============ */
+        function applyLimits() {
+            if (!composite) return;
+            const H = composite.height;
+
+            // 單張高度上限即圖片總高，超過就沒有意義
+            const minChunk = Math.max(1, Math.min(100, Math.floor(H / 2)));
+            splitHeightInput.min = splitHeightRange.min = minChunk;
+            splitHeightInput.max = splitHeightRange.max = H;
+            chunkMinLabel.textContent = minChunk;
+            chunkMaxLabel.textContent = H;
+            let chunk = parseInt(splitHeightInput.value);
+            if (!Number.isFinite(chunk)) chunk = Math.min(1500, H);
+            chunk = Math.max(minChunk, Math.min(H, chunk));
+            splitHeightInput.value = splitHeightRange.value = chunk;
+
+            const maxOverlap = Math.max(0, Math.floor(H / 2));
+            overlapHeightInput.max = maxOverlap;
+            overlapHeightRange.max = Math.min(500, maxOverlap);
+            overlapMaxLabel.textContent = overlapHeightRange.max;
+            let ov = parseInt(overlapHeightInput.value);
+            if (!Number.isFinite(ov)) ov = 0;
+            ov = Math.max(0, Math.min(maxOverlap, ov));
+            overlapHeightInput.value = ov;
+            overlapHeightRange.value = Math.min(ov, Number(overlapHeightRange.max));
+
+            const maxParts = Math.max(2, Math.min(50, H));
+            equalPartsInput.max = maxParts;
+            equalPartsRange.max = Math.min(20, maxParts);
+            partsMaxLabel.textContent = equalPartsRange.max;
+            let parts = parseInt(equalPartsInput.value);
+            if (!Number.isFinite(parts)) parts = 2;
+            parts = Math.max(2, Math.min(maxParts, parts));
+            equalPartsInput.value = parts;
+            equalPartsRange.value = Math.min(parts, Number(equalPartsRange.max));
+        }
+
+        /* ============ 分割方式切換 ============ */
+        function setMode(mode) {
+            splitMode = mode;
+            const isFixed = mode === 'fixed';
+            modeFixedBtn.classList.toggle('is-active', isFixed);
+            modeEqualBtn.classList.toggle('is-active', !isFixed);
+            modeFixedBtn.setAttribute('aria-selected', String(isFixed));
+            modeEqualBtn.setAttribute('aria-selected', String(!isFixed));
+            fixedPane.classList.toggle('hidden', !isFixed);
+            equalPane.classList.toggle('hidden', isFixed);
+            updateVisualization();
+        }
+        modeFixedBtn.addEventListener('click', () => setMode('fixed'));
+        modeEqualBtn.addEventListener('click', () => setMode('equal'));
+
+        /* ============ 分割計畫（預覽、導覽地圖、輸出共用同一份計算） ============ */
+        function getSplitPlan() {
+            if (!composite) return null;
+            const H = composite.height;
+            const overlap = parseInt(overlapHeightInput.value);
+            if (!Number.isFinite(overlap) || overlap < 0) return { error: '請輸入有效的重疊高度。' };
+            if (overlap >= H) return { error: '重疊高度不可大於或等於圖片總高度。' };
+
+            if (splitMode === 'equal') {
+                const n = parseInt(equalPartsInput.value);
+                if (!Number.isFinite(n) || n < 2) return { error: '等分張數至少為 2。' };
+                if (n > H) return { error: `等分張數不可超過圖片高度（${H}）。` };
+                // H = n*h - (n-1)*overlap  →  h = (H + (n-1)*overlap) / n
+                const h = Math.ceil((H + (n - 1) * overlap) / n);
+                if (h <= overlap) return { error: '重疊高度過大，無法等分成這麼多張。' };
+                const step = h - overlap;
+                const slices = [];
+                for (let i = 0; i < n; i++) {
+                    // 最後一張以 H-h 對齊底部，確保每張都是同樣高度且完整覆蓋
+                    const start = Math.min(i * step, H - h);
+                    slices.push({ start, end: start + h });
+                }
+                return { slices, totalHeight: H, chunkHeight: h, overlap, mode: 'equal' };
+            }
+
+            const chunk = parseInt(splitHeightInput.value);
+            if (!Number.isFinite(chunk) || chunk < 1) return { error: '請輸入有效的分割高度。' };
+            if (chunk > H) return { error: `分割高度不可超過圖片總高度（${H} px）。` };
+            if (overlap >= chunk) return { error: '重疊高度不可大於或等於分割高度。' };
+            if (chunk === H) {
+                return { slices: [{ start: 0, end: H }], totalHeight: H, chunkHeight: H, overlap, mode: 'fixed', single: true };
+            }
+
+            const step = chunk - overlap;
+            const slices = [];
+            let y = 0;
+            while (y < H) {
+                let h = chunk;
+                if (y + h > H) h = H - y;
+                slices.push({ start: y, end: y + h });
+                if (y + h >= H) break;
+                y += step;
+            }
+            return { slices, totalHeight: H, chunkHeight: chunk, overlap, mode: 'fixed' };
+        }
+
+        /* ============ 數值連動 ============ */
+        // 輸入過程中不提前判錯（讓使用者能打完），離開欄位才夾到合法範圍
         const throttledUpdateVisualization = rafThrottle(updateVisualization);
 
-        function syncInputs(input, range) {
+        function bindPair(input, range) {
             input.addEventListener('input', () => {
-                range.value = input.value;
+                const v = parseInt(input.value);
+                if (Number.isFinite(v)) {
+                    range.value = Math.max(Number(range.min), Math.min(Number(range.max), v));
+                }
                 throttledUpdateVisualization();
             });
             range.addEventListener('input', () => {
                 input.value = range.value;
+                input.classList.remove('is-invalid');
                 throttledUpdateVisualization();
             });
+            input.addEventListener('change', () => {
+                let v = parseInt(input.value);
+                const min = Number(input.min), max = Number(input.max);
+                if (!Number.isFinite(v)) v = min;
+                v = Math.max(min, Math.min(max, v));
+                input.value = v;
+                range.value = Math.max(Number(range.min), Math.min(Number(range.max), v));
+                input.classList.remove('is-invalid');
+                updateVisualization();
+            });
         }
+        bindPair(splitHeightInput, splitHeightRange);
+        bindPair(overlapHeightInput, overlapHeightRange);
+        bindPair(equalPartsInput, equalPartsRange);
 
-        syncInputs(splitHeightInput, splitHeightRange);
-        syncInputs(overlapHeightInput, overlapHeightRange);
-
-        // 縮放功能 (Ctrl + 滾輪)
-        scrollContainer.addEventListener('wheel', function(e) {
-            if (e.ctrlKey) {
-                e.preventDefault();
-                const zoomFactor = -0.001 * e.deltaY;
-                let newScale = currentScale + zoomFactor;
-                newScale = Math.min(Math.max(0.1, newScale), 5.0);
-                currentScale = newScale;
-                updateZoom();
-            }
+        /* ============ 縮放（Ctrl + 滾輪） ============ */
+        scrollContainer.addEventListener('wheel', function (e) {
+            if (!e.ctrlKey) return;
+            e.preventDefault();
+            currentScale = Math.min(Math.max(0.1, currentScale + (-0.001 * e.deltaY)), 5.0);
+            updateZoom();
         }, { passive: false });
 
         function updateZoom() {
-            if (!originalImage) return;
+            if (!composite) return;
             // 用 transform:scale 取代改變 width，縮放走合成層而非觸發版面重排(reflow)
             imageWrapper.style.transform = `scale(${currentScale})`;
-            zoomLevelDisplay.innerText = `縮放: ${Math.round(currentScale * 100)}%`;
+            zoomLevelDisplay.textContent = `縮放 ${Math.round(currentScale * 100)}%`;
             scheduleUpdateMinimap();
         }
 
-        // 產生迷你地圖用的縮圖（避免用原圖 dataURL，減少解碼與記憶體成本）
+        /* ============ 導覽地圖 ============ */
+        // 產生地圖用縮圖，避免直接載入原圖造成的解碼與記憶體成本
         function updateMinimapThumbnail() {
-            if (!originalImage) return;
-            const targetWidth = 180;
-            const scale = targetWidth / originalImage.width;
-            const targetHeight = Math.max(1, Math.round(originalImage.height * scale));
+            if (!composite) return;
+            const targetWidth = 190;
+            const scale = targetWidth / composite.width;
+            const targetHeight = Math.max(1, Math.round(composite.height * scale));
 
             const canvas = document.createElement('canvas');
             canvas.width = targetWidth;
             canvas.height = targetHeight;
-            canvas.getContext('2d').drawImage(originalImage, 0, 0, targetWidth, targetHeight);
+            canvas.getContext('2d').drawImage(composite.source, 0, 0, targetWidth, targetHeight);
 
             canvas.toBlob((blob) => {
                 if (!blob) return;
                 if (minimapThumbUrl) URL.revokeObjectURL(minimapThumbUrl);
-                const url = URL.createObjectURL(blob);
-                minimapThumbUrl = url;
+                minimapThumbUrl = URL.createObjectURL(blob);
                 minimapImg.onload = () => updateMinimap();
-                minimapImg.src = url;
+                minimapImg.src = minimapThumbUrl;
             }, 'image/jpeg', 0.7);
         }
 
-        // Minimap 連動邏輯 (含自動捲動)
+        // 分頁色塊 + 邊界實線 + 置中編號，讓使用者一眼看出每張輸出圖的範圍
+        function renderMinimapBands(plan) {
+            minimapOverlayLayer.innerHTML = '';
+            const mapH = minimapImg.clientHeight;
+            if (!mapH || !plan || plan.error) { minimapCount.textContent = '—'; return; }
+
+            const { slices, totalHeight, overlap } = plan;
+            const toY = (px) => (px / totalHeight) * mapH;
+            const frag = document.createDocumentFragment();
+
+            slices.forEach((slice, i) => {
+                const top = toY(slice.start);
+                const height = toY(slice.end - slice.start);
+
+                const band = document.createElement('div');
+                band.className = 'mm-band ' + (i % 2 === 0 ? 'even' : 'odd');
+                band.style.top = `${top}px`;
+                band.style.height = `${height}px`;
+                frag.appendChild(band);
+
+                // 每張的起始邊界畫實線（第一張的頂端就是圖片頂端，不需要）
+                if (i > 0) {
+                    const divider = document.createElement('div');
+                    divider.className = 'mm-divider';
+                    divider.style.top = `${top}px`;
+                    frag.appendChild(divider);
+                }
+
+                // 與下一張共用的重疊區
+                if (overlap > 0 && i < slices.length - 1) {
+                    const ovTop = toY(slices[i + 1].start);
+                    const ovH = toY(slice.end - slices[i + 1].start);
+                    if (ovH > 0.5) {
+                        const ov = document.createElement('div');
+                        ov.className = 'mm-overlap';
+                        ov.style.top = `${ovTop}px`;
+                        ov.style.height = `${ovH}px`;
+                        frag.appendChild(ov);
+                    }
+                }
+
+                // 色塊太薄時放不下編號，略過避免互相疊字
+                if (height >= 15) {
+                    const chip = document.createElement('span');
+                    chip.className = 'mm-chip';
+                    chip.style.top = `${top + height / 2}px`;
+                    chip.textContent = `第 ${i + 1} 張`;
+                    frag.appendChild(chip);
+                }
+            });
+
+            minimapOverlayLayer.appendChild(frag);
+            minimapCount.textContent = `共 ${slices.length} 張`;
+        }
+
         // 縮放走 transform:scale，scrollWidth/scrollHeight 不會反映縮放後的實際尺寸，
         // 因此改用 getBoundingClientRect 取繪製後的真實矩形，確保視窗框與可視範圍等比例。
         function updateMinimap() {
-            if (!originalImage) return;
+            if (!composite) return;
 
             const mapW = minimapImg.clientWidth;
             const mapH = minimapImg.clientHeight;
@@ -1119,99 +2072,124 @@
 
                     const boxScrollTop = minimapBox.scrollTop;
                     const boxClientHeight = minimapBox.clientHeight;
-
                     if (miniTop < boxScrollTop || (miniTop + miniRectH) > (boxScrollTop + boxClientHeight)) {
                         minimapBox.scrollTop = miniTop - (boxClientHeight / 2) + (miniRectH / 2);
                     }
                 }
             }
 
-            const valid = getValidSlices();
-            if (valid) {
-                renderMinimapBands(valid.slices, valid.totalHeight);
-            } else {
-                minimapOverlayLayer.innerHTML = '';
-            }
+            renderMinimapBands(getSplitPlan());
         }
 
-        // scroll/resize 用 rAF 節流，避免每個事件都同步重算版面
         const scheduleUpdateMinimap = rafThrottle(updateMinimap);
         scrollContainer.addEventListener('scroll', scheduleUpdateMinimap);
         window.addEventListener('resize', scheduleUpdateMinimap);
 
-        // 視覺化邏輯（用 DocumentFragment 一次性寫入 DOM，避免多次觸發重排）
+        // 點擊導覽地圖直接跳到對應位置
+        minimapBox.addEventListener('click', (e) => {
+            if (!composite) return;
+            const mapRect = minimapImg.getBoundingClientRect();
+            if (!mapRect.height) return;
+            const frac = Math.max(0, Math.min(1, (e.clientY - mapRect.top) / mapRect.height));
+
+            const imgRect = sourceImage.getBoundingClientRect();
+            const contRect = scrollContainer.getBoundingClientRect();
+            const imgTopInContent = (imgRect.top - contRect.top) + scrollContainer.scrollTop;
+            const target = imgTopInContent + frac * imgRect.height - scrollContainer.clientHeight / 2;
+            scrollContainer.scrollTop = Math.max(0, target);
+        });
+
+        /* ============ 預覽視覺化（DocumentFragment 一次寫入，避免多次重排） ============ */
         function updateVisualization() {
-            if (!originalImage) return;
+            if (!composite) return;
+            const plan = getSplitPlan();
 
-            const totalHeight = originalImage.height;
-            const chunkHeight = parseInt(splitHeightInput.value);
-            const overlap = parseInt(overlapHeightInput.value);
-
-            if (chunkHeight >= totalHeight) {
+            if (!plan || plan.error) {
                 overlayLayer.innerHTML = '';
                 minimapOverlayLayer.innerHTML = '';
-                calcInfo.textContent = "分割高度大於圖片高度，無需分割。";
-                return;
-            }
-            if (overlap >= chunkHeight) {
-                overlayLayer.innerHTML = '';
-                minimapOverlayLayer.innerHTML = '';
-                calcInfo.textContent = "錯誤：重疊高度不可大於分割高度。";
+                minimapCount.textContent = '—';
+                calcInfo.className = 'info-display has-error';
+                calcInfo.innerHTML = `<span class="info-err"><i data-icon="alert"></i>${escapeHTML(plan ? plan.error : '參數有誤')}</span>`;
+                renderIcons(calcInfo);
+                if (splitMode === 'equal') equalDerived.textContent = '每張高度：—';
                 return;
             }
 
-            const slices = computeSlices(totalHeight, chunkHeight, overlap);
-            const fragment = document.createDocumentFragment();
+            const { slices, totalHeight, overlap, chunkHeight } = plan;
+            const frag = document.createDocumentFragment();
+
+            // 多圖接合處
+            (composite.seams || []).forEach(y => {
+                const seam = document.createElement('div');
+                seam.className = 'seam-line';
+                seam.style.top = ((y / totalHeight) * 100) + '%';
+                frag.appendChild(seam);
+            });
 
             slices.forEach((slice, i) => {
                 if (i >= slices.length - 1) return;
-                const lineTopPercent = (slice.end / totalHeight) * 100;
                 const line = document.createElement('div');
                 line.className = 'cut-line';
-                line.style.top = lineTopPercent + '%';
+                line.style.top = ((slice.end / totalHeight) * 100) + '%';
                 line.setAttribute('data-index', `第 ${i + 1} 張結束`);
-                fragment.appendChild(line);
+                frag.appendChild(line);
 
-                if (overlap > 0) {
-                    const zoneTopPercent = ((slice.end - overlap) / totalHeight) * 100;
-                    const zoneHeightPercent = (overlap / totalHeight) * 100;
+                const ovStart = slices[i + 1].start;
+                const ovH = slice.end - ovStart;
+                if (ovH > 0) {
                     const zone = document.createElement('div');
                     zone.className = 'overlap-zone';
-                    zone.style.top = zoneTopPercent + '%';
-                    zone.style.height = zoneHeightPercent + '%';
-                    fragment.appendChild(zone);
+                    zone.style.top = ((ovStart / totalHeight) * 100) + '%';
+                    zone.style.height = ((ovH / totalHeight) * 100) + '%';
+                    frag.appendChild(zone);
                 }
             });
 
             overlayLayer.innerHTML = '';
-            overlayLayer.appendChild(fragment);
-            calcInfo.innerHTML = `預計分割成 <strong>${slices.length}</strong> 張圖片<br>每張保留 <strong>${overlap}px</strong> 重疊`;
+            overlayLayer.appendChild(frag);
 
-            renderMinimapBands(slices, totalHeight);
+            calcInfo.className = 'info-display';
+            if (plan.single) {
+                calcInfo.innerHTML = '分割高度等於圖片總高，將輸出 <strong>1</strong> 張原圖。';
+            } else {
+                calcInfo.innerHTML = `預計分割成 <strong>${slices.length}</strong> 張圖片`
+                    + `<br>每張高 <strong>${chunkHeight}</strong> px，重疊 <strong>${overlap}</strong> px`;
+            }
+
+            if (splitMode === 'equal') {
+                equalDerived.innerHTML = `每張高度：<strong>${chunkHeight}</strong> px（含重疊 ${overlap} px）`;
+            }
+
+            renderMinimapBands(plan);
         }
 
-        // 分割與下載
-        processBtn.addEventListener('click', function() {
-            if (!originalImage) {
-                alert('請先匯入圖片！');
-                return;
-            }
+        /* ============ 分割與下載 ============ */
+        processBtn.addEventListener('click', function () {
+            if (isRebuilding) { showToast('圖片接合中，請稍候', 'alert'); return; }
+            if (!composite) { showToast('請先匯入圖片', 'alert'); return; }
+            const plan = getSplitPlan();
+            if (!plan || plan.error) { showToast(plan ? plan.error : '參數有誤', 'alert'); return; }
+
             resultSection.classList.remove('hidden');
             resultGallery.innerHTML = '';
             downloadAllBtn.classList.add('hidden');
             progressInfo.classList.remove('hidden');
-            progressText.textContent = '準備中...';
-            progressBarFill.style.width = '0%';
+            setProgress(0, '準備影像資料…');
             processBtn.disabled = true;
-            processBtn.textContent = '處理中...';
-            setTimeout(generateSlices, 50);
+            processBtn.innerHTML = '<i data-icon="scissors"></i>處理中…';
+            renderIcons(processBtn);
+            setTimeout(() => generateSlices(plan), 50);
         });
 
-        document.getElementById('closeResultBtn').addEventListener('click', () => {
-            resultSection.classList.add('hidden');
-        });
+        closeResultBtn.addEventListener('click', () => resultSection.classList.add('hidden'));
 
-        async function generateSlices() {
+        function setProgress(pct, text) {
+            progressBarFill.style.width = `${pct}%`;
+            progressBar.setAttribute('aria-valuenow', String(Math.round(pct)));
+            if (text) progressText.textContent = text;
+        }
+
+        async function generateSlices(plan) {
             resultGallery.innerHTML = '';
 
             // 釋放上一輪產生的 blob URL，避免記憶體洩漏
@@ -1219,32 +2197,29 @@
             generatedUrls = [];
             generatedBlobs = [];
 
-            const totalHeight = originalImage.height;
-            const width = originalImage.width;
-            const chunkHeight = parseInt(splitHeightInput.value);
-            const overlap = parseInt(overlapHeightInput.value);
+            const width = composite.width;
+            const { slices } = plan;
+            const totalSlices = slices.length;
 
-            // 優先用 ImageBitmap 作為繪製來源，不支援時退回原本的 Image
-            let drawSource = originalImage;
+            // 優先用 ImageBitmap 作為繪製來源，不支援時退回原本的來源
+            let drawSource = composite.source;
             let usedBitmap = false;
             if (window.createImageBitmap) {
                 try {
-                    drawSource = await createImageBitmap(originalImage);
+                    drawSource = await createImageBitmap(composite.source);
                     usedBitmap = true;
                 } catch (err) {
-                    drawSource = originalImage;
+                    drawSource = composite.source;
                 }
             }
 
-            const slices = computeSlices(totalHeight, chunkHeight, overlap);
-            const totalSlices = slices.length;
-            let completedSlices = 0;
+            setProgress(2, `準備輸出 ${totalSlices} 張圖片…`);
+            await sleep(120);
 
+            let completed = 0;
             function reportProgress() {
-                completedSlices++;
-                const pct = Math.round((completedSlices / totalSlices) * 100);
-                progressText.textContent = `處理中... 第 ${completedSlices} / ${totalSlices} 張`;
-                progressBarFill.style.width = `${pct}%`;
+                completed++;
+                setProgress((completed / totalSlices) * 100, `逐張處理中… 第 ${completed} / ${totalSlices} 張`);
             }
 
             const promises = [];
@@ -1253,28 +2228,33 @@
                 const index = i + 1;
                 const h = slice.end - slice.start;
                 const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-
                 canvas.width = width;
                 canvas.height = h;
-                ctx.drawImage(drawSource, 0, slice.start, width, h, 0, 0, width, h);
+                canvas.getContext('2d').drawImage(drawSource, 0, slice.start, width, h, 0, 0, width, h);
 
                 const div = document.createElement('div');
                 div.className = 'result-item';
+                div.style.animationDelay = `${Math.min(i * 30, 300)}ms`;
+
                 const badge = document.createElement('div');
                 badge.className = 'result-item-badge';
                 badge.textContent = index;
+
                 const imgDisplay = document.createElement('img');
                 imgDisplay.alt = `分割圖片 ${index}`;
+
+                const sizeLabel = document.createElement('div');
+                sizeLabel.className = 'result-item-size';
+                sizeLabel.textContent = `${width} × ${h}`;
+
                 const dwnBtn = document.createElement('button');
-                dwnBtn.innerText = `下載圖 ${index}`;
-                dwnBtn.className = 'btn';
-                dwnBtn.style.fontSize = '0.8em';
-                dwnBtn.style.padding = '5px';
+                dwnBtn.className = 'btn btn-secondary btn-sm';
+                dwnBtn.style.width = '100%';
+                dwnBtn.innerHTML = `<i data-icon="download"></i>下載圖 ${index}`;
 
                 const fileName = `split_${index.toString().padStart(2, '0')}.jpg`;
 
-                const p = new Promise((resolve) => {
+                promises.push(new Promise((resolve) => {
                     canvas.toBlob((blob) => {
                         const url = URL.createObjectURL(blob);
                         generatedUrls.push(url);
@@ -1285,55 +2265,60 @@
                             a.href = url;
                             a.download = fileName;
                             a.click();
+                            showToast(`已下載 ${fileName}`, 'check');
                         };
-                        generatedBlobs.push({ name: fileName, blob: blob });
+                        generatedBlobs.push({ name: fileName, blob });
                         reportProgress();
                         resolve();
                     }, 'image/jpeg', 0.95);
-                });
-                promises.push(p);
+                }));
 
                 div.appendChild(badge);
                 div.appendChild(imgDisplay);
+                div.appendChild(sizeLabel);
                 div.appendChild(dwnBtn);
                 resultGallery.appendChild(div);
+                renderIcons(div);
             });
 
             await Promise.all(promises);
+            setProgress(100, '完成');
+            await sleep(150);
+
             progressInfo.classList.add('hidden');
             downloadAllBtn.classList.remove('hidden');
             processBtn.disabled = false;
-            processBtn.textContent = '生成分割圖片';
-            if (usedBitmap && drawSource.close) {
-                drawSource.close();
-            }
+            processBtn.innerHTML = '<i data-icon="scissors"></i>生成分割圖片';
+            renderIcons(processBtn);
+            showToast(`已產生 ${totalSlices} 張圖片`, 'check');
+
+            if (usedBitmap && drawSource.close) drawSource.close();
         }
 
-        downloadAllBtn.addEventListener('click', function() {
+        downloadAllBtn.addEventListener('click', function () {
             if (generatedBlobs.length === 0) return;
 
             const zip = new JSZip();
-            generatedBlobs.forEach(item => {
-                zip.file(item.name, item.blob);
-            });
+            generatedBlobs.forEach(item => zip.file(item.name, item.blob));
 
-            downloadAllBtn.innerText = "壓縮中...";
             downloadAllBtn.disabled = true;
+            downloadAllBtn.innerHTML = '<i data-icon="package"></i>壓縮中…';
+            renderIcons(downloadAllBtn);
 
-            zip.generateAsync({type:"blob"})
-            .then(function(content) {
+            zip.generateAsync({ type: 'blob' }).then(function (content) {
                 const zipUrl = URL.createObjectURL(content);
                 const a = document.createElement('a');
                 a.href = zipUrl;
-                a.download = "split_images.zip";
+                a.download = 'split_images.zip';
                 a.click();
                 setTimeout(() => URL.revokeObjectURL(zipUrl), 1000);
 
-                downloadAllBtn.innerText = "📦 打包下載所有圖片 (.zip)";
                 downloadAllBtn.disabled = false;
+                downloadAllBtn.innerHTML = '<i data-icon="package"></i>打包下載所有圖片 (.zip)';
+                renderIcons(downloadAllBtn);
+                showToast('已匯出 split_images.zip', 'check');
             });
         });
-
     </script>
 </body>
 </html>

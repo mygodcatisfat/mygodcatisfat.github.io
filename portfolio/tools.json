@@ -85,7 +85,7 @@
       "id": "pic2pdf",
       "title": "圖片轉換PDF",
       "tags": ["偵查工作", "圖片", "PDF"],
-      "version": "v115080303",
+      "version": "v115083005",
       "status": "active",
       "description": "這是一個可以將多種圖片轉換成PDF的工具。",
       "url": "https://mygodcatisfat.github.io/Pic2PDF/index.html"

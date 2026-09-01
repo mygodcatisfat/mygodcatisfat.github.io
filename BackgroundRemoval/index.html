@@ -205,6 +205,9 @@ input[type=file] { display: none; }
 .file-info.show { display: flex; }
 .file-info .fi-name { color: var(--ink); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+/* 只在手機顯示的提示；由 JS 依實際偵測結果決定要不要拿掉 hidden */
+.mobile-only { display: none; }
+
 /* 模型預載狀態 */
 .model-state { display: inline-flex; align-items: center; gap: 5px; }
 .model-state.is-ready { color: var(--ok); }
@@ -602,7 +605,8 @@ kbd {
             <button class="btn-accent" id="downloadBtn" type="button"><i data-icon="file-down"></i>下載 PNG</button>
             <button id="resetBtn" type="button"><i data-icon="image"></i>處理另一張圖片</button>
         </div>
-        <div class="hint"><i data-icon="lock"></i>圖片自始至終只在你的瀏覽器裡運算，不會被上傳到任何伺服器。下載的 PNG 為原始解析度。</div>
+        <div class="hint"><i data-icon="lock"></i>圖片自始至終只在你的瀏覽器裡運算，不會被上傳到任何伺服器。輸出的 PNG 為原始解析度。</div>
+        <div class="hint mobile-only"><i data-icon="info"></i>手機會跳出系統分享選單，可選擇「儲存影像」存進相簿，或直接分享到其他 App。</div>
     </section>
 </main>
 
@@ -795,7 +799,19 @@ const els = {
 };
 
 /* ============ 全域狀態 ============ */
-const MAX_WORK = 1600;   // 編輯用的工作解析度上限（長邊）；匯出時仍還原成原始解析度
+// 行動裝置（特別是 iOS Safari）對單一分頁的 WebAssembly 記憶體上限很嚴格，
+// 超過就會在推論階段丟出一個裸數字（記憶體位址）而非正常的錯誤訊息。
+// 因此在手機上把工作解析度與模型都降一階，換取能真的跑完。
+const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+    // iPadOS 會偽裝成 Macintosh，靠觸控點數補判
+    || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
+
+// iOS Safari 不支援 <a download>：點下去只會在分頁裡把圖片打開，不會存檔。
+// 因此匯出時要優先走系統分享面板（Web Share），這裡單獨判斷。
+const IS_IOS = /iPhone|iPad|iPod/i.test(navigator.userAgent)
+    || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
+
+const MAX_WORK = IS_MOBILE ? 1024 : 1600;   // 編輯用的工作解析度上限（長邊）；匯出時仍還原成原始解析度
 
 const state = {
     file: null,
@@ -873,7 +889,13 @@ const ASSET_BASE = 'https://staticimgly.com/@imgly/background-removal-data/1.5.5
 // publicPath 保護，在部分環境（file:// 開啟、防毒/公司代理攔截 Worker 腳本等）
 // 會直接導致「no available backend found」。關掉它讓一切都在主執行緒進行，
 // 只依賴我們已經驗證可行的一般 fetch。
-const MODEL_CONFIG = { model: 'isnet_fp16', publicPath: ASSET_BASE, proxyToWorker: false, device: 'cpu' };
+// 手機用量化過的小模型（權重約只有 fp16 的一半），這是能不能跑得完的關鍵。
+const MODEL_CONFIG = {
+    model: IS_MOBILE ? 'isnet_quint8' : 'isnet_fp16',
+    publicPath: ASSET_BASE,
+    proxyToWorker: false,
+    device: 'cpu'
+};
 
 function showEnvWarning(html) {
     els.envWarn.innerHTML = html;
@@ -1088,18 +1110,33 @@ async function runRemoval() {
     els.progressPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
     try {
-        // 準備送進模型的圖（ROI 裁切後的範圍就是最終輸出範圍）
-        let inputBlob;
+        // 全解析度的裁切結果留給匯出用（RGB 取自這裡，畫質不打折）
         if (state.roi) {
             const c = document.createElement('canvas');
             c.width = state.roi.w; c.height = state.roi.h;
             c.getContext('2d').drawImage(state.srcBitmap, -state.roi.x, -state.roi.y);
-            inputBlob = await new Promise(res => c.toBlob(res, 'image/png'));
             state.cropBitmap = await createImageBitmap(c);
         } else {
-            inputBlob = state.file;
             state.cropBitmap = state.srcBitmap;
         }
+
+        // 送進模型的則是縮到工作解析度的版本。
+        // 反正 buildEditor 拿到遮罩後也是縮到 MAX_WORK 才使用、匯出時再放大回原尺寸，
+        // 先前直接把整張原圖丟進去等於白付記憶體代價，正是手機上爆掉的原因。
+        const makeInputBlob = async (maxEdge) => {
+            const src = state.cropBitmap;
+            const s = Math.min(1, maxEdge / Math.max(src.width, src.height));
+            const w = Math.max(1, Math.round(src.width * s));
+            const h = Math.max(1, Math.round(src.height * s));
+            const c = document.createElement('canvas');
+            c.width = w; c.height = h;
+            const cx = c.getContext('2d');
+            cx.imageSmoothingEnabled = true;
+            cx.imageSmoothingQuality = 'high';
+            cx.drawImage(src, 0, 0, w, h);
+            return await new Promise(res => c.toBlob(res, 'image/png'));
+        };
+        const inputBlob = await makeInputBlob(MAX_WORK);
 
         const onProgress = (key, current, total) => {
             if (total <= 0) return;
@@ -1115,23 +1152,37 @@ async function runRemoval() {
             }
         };
 
-        // 「no available backend / Failed to fetch」這類是模型後端初始化失敗，
-        // 通常換一顆更小的量化模型（isnet_quint8，路徑最單純）就能繞過去，
-        // 值得自動重試一次，不要讓使用者手動再點一次「開始去背」。
-        let resultBlob;
-        try {
-            resultBlob = await removeBackground(inputBlob, { ...MODEL_CONFIG, progress: onProgress });
-        } catch (firstErr) {
-            const msg = (firstErr && firstErr.message) ? firstErr.message : String(firstErr);
-            const looksLikeBackendInit = /no available backend|failed to fetch|publicpath/i.test(msg);
-            if (!looksLikeBackendInit || MODEL_CONFIG.model === 'isnet_quint8') throw firstErr;
-            console.warn('第一次去背失敗，改用較小的量化模型重試：', firstErr);
-            setStatus('初次嘗試失敗，正在改用備用模型重試…', '', 'loader');
-            setProgress(0.02);
-            resultBlob = await removeBackground(inputBlob, {
-                ...MODEL_CONFIG, model: 'isnet_quint8', progress: onProgress
-            });
+        // 逐步退讓的重試階梯：每一階都同時降低模型大小與輸入尺寸，
+        // 因為記憶體不足時 WASM 丟出來的是一個裸數字（記憶體位址）而非可讀訊息，
+        // 光看錯誤字串分不出原因，索性讓它自己往下退到跑得動為止。
+        const LADDER = [
+            { model: MODEL_CONFIG.model, edge: MAX_WORK, note: null },
+            { model: 'isnet_quint8', edge: Math.min(MAX_WORK, 1024), note: '正在改用較小的模型重試…' },
+            { model: 'isnet_quint8', edge: 768, note: '記憶體不足，正在以更小的尺寸重試…' }
+        ];
+
+        let resultBlob = null, lastErr = null;
+        for (let i = 0; i < LADDER.length; i++) {
+            const step = LADDER[i];
+            // 與上一階完全相同的組合就不必重跑一次
+            if (i > 0 && step.model === LADDER[i - 1].model && step.edge === LADDER[i - 1].edge) continue;
+            try {
+                if (step.note) {
+                    console.warn('去背失敗，退一階重試：', lastErr);
+                    setStatus(step.note, '', 'loader');
+                    setProgress(0.02);
+                }
+                const blob = i === 0 ? inputBlob : await makeInputBlob(step.edge);
+                resultBlob = await removeBackground(blob, {
+                    ...MODEL_CONFIG, model: step.model, progress: onProgress
+                });
+                lastErr = null;
+                break;
+            } catch (e) {
+                lastErr = e;
+            }
         }
+        if (lastErr) throw lastErr;
 
         setStages(STAGE_NAMES, 2);
         setStatus('正在準備編輯器…');
@@ -1149,16 +1200,29 @@ async function runRemoval() {
         stopClock();
         setProgress(1, 'is-err');
         const raw = (err && err.message) ? err.message : String(err);
-        // 把函式庫那句看不懂的錯誤，翻譯成使用者真的能照做的指示
+        // WASM 記憶體不足時丟出來的是裸的記憶體位址（純數字），直接顯示對使用者毫無意義
+        const isOutOfMemory = /^\d+$/.test(raw.trim())
+            || /out of memory|enlarge memory|allocation failed/i.test(raw);
         const isAssetFailure = /failed to fetch|no available backend|publicPath|networkerror/i.test(raw);
-        let advice = '';
-        if (isAssetFailure) {
-            advice = '\n\n原因：無法下載 AI 模型檔。請確認網路連線正常，'
+
+        let text, toastMsg;
+        if (isOutOfMemory) {
+            text = '處理失敗：這張圖片超出了瀏覽器可用的記憶體上限。\n\n建議：'
+                + '\n• 關掉其他分頁後再試一次'
+                + (IS_MOBILE ? '\n• 手機可用的記憶體較少，改用電腦處理大圖會穩定很多' : '')
+                + '\n• 或先把圖片尺寸縮小一些再上傳';
+            toastMsg = '記憶體不足，請試試較小的圖片';
+        } else if (isAssetFailure) {
+            text = '處理失敗：無法下載 AI 模型檔。\n\n請確認網路連線正常，'
                 + '並檢查防火牆或廣告封鎖擴充功能是否擋住了 staticimgly.com。';
+            toastMsg = '無法下載 AI 模型，請檢查網路';
+        } else {
+            text = '處理失敗：' + raw;
+            toastMsg = '處理失敗';
         }
-        setStatus('處理失敗：' + raw + advice, 'is-err', 'alert');
+        setStatus(text, 'is-err', 'alert');
         els.progressPanel.classList.add('has-error');
-        toast(isAssetFailure ? '無法下載 AI 模型，請檢查網路' : '處理失敗', 'alert');
+        toast(toastMsg, 'alert');
     }
 }
 
@@ -1739,6 +1803,53 @@ els.shadowStr.addEventListener('input', () => {
 });
 
 /* ============ 匯出（還原成原始解析度） ============ */
+// 手機上會走系統分享面板（iOS 非用不可，Android 則是更順的流程），
+// 按鈕若還寫「下載」會讓人以為檔案跑進下載資料夾，這裡把字面改成中性的「儲存」。
+if (IS_MOBILE) {
+    els.downloadBtn.innerHTML = '<i data-icon="file-down"></i>儲存 PNG';
+    renderIcons(els.downloadBtn);
+    document.querySelectorAll('.mobile-only').forEach(el => { el.style.display = ''; });
+}
+
+/* 把成品交給使用者。各平台的能力差很多：
+   - 桌機 / Android：<a download> 正常運作，直接存檔最省事
+   - iOS Safari：完全不支援 download 屬性，點了只會把圖片開在分頁裡，
+     必須改走系統分享面板才能存進「照片」或「檔案」
+   回傳 shared / cancelled / downloaded / opened，讓呼叫端給對應的提示。 */
+async function deliverResult(blob, fileName) {
+    const file = new File([blob], fileName, { type: 'image/png' });
+    const canShareFile = typeof navigator.canShare === 'function'
+        && typeof navigator.share === 'function'
+        && navigator.canShare({ files: [file] });
+
+    // 桌機即使支援分享也優先直接下載：那才是使用者對「下載 PNG」的預期
+    if (canShareFile && IS_MOBILE) {
+        try {
+            await navigator.share({ files: [file] });
+            return 'shared';
+        } catch (e) {
+            // 使用者自己按取消，不算失敗
+            if (e && e.name === 'AbortError') return 'cancelled';
+            // NotAllowedError 通常是產圖耗時太久、使用者手勢的有效期already過了，
+            // 這種情況往下走一般下載路徑，不要讓使用者拿不到檔案
+            console.warn('系統分享無法使用，改用一般下載：', e);
+        }
+    }
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.rel = 'noopener';
+    // iOS 不吃 download 屬性，至少讓圖片開在新分頁讓使用者能長按儲存
+    if (IS_IOS && !canShareFile) a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    return (IS_IOS && !canShareFile) ? 'opened' : 'downloaded';
+}
+
 els.downloadBtn.addEventListener('click', async () => {
     if (!state.finalMask) return;
     els.downloadBtn.disabled = true;
@@ -1780,16 +1891,20 @@ els.downloadBtn.addEventListener('click', async () => {
         renderOutput(out, fc, FW / state.workW);
 
         const blob = await new Promise(res => out.toBlob(res, 'image/png'));
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
         const baseName = (state.file.name || 'image').replace(/\.[^.]+$/, '');
-        a.download = `${baseName}-去背.png`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 60000);
-        toast(`已下載（${FW}×${FH}，${formatBytes(blob.size)}）`, 'file-down');
+        const fileName = `${baseName}-去背.png`;
+        const sizeNote = `${FW}×${FH}，${formatBytes(blob.size)}`;
+
+        const how = await deliverResult(blob, fileName);
+        if (how === 'shared') {
+            toast(`已開啟分享選單（${sizeNote}）`, 'file-down');
+        } else if (how === 'cancelled') {
+            // 使用者自己在分享面板按取消，不是錯誤，不用打擾他
+        } else if (how === 'opened') {
+            toast('圖片已開啟，長按圖片即可「加入照片」', 'info');
+        } else {
+            toast(`已下載（${sizeNote}）`, 'file-down');
+        }
     } catch (e) {
         console.error(e);
         toast('匯出失敗：' + (e.message || '未知錯誤'), 'alert');

@@ -1,0 +1,1830 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>圖片去背工具</title>
+
+<!-- 主題判斷必須在任何 <style> 之前同步執行，避免載入時閃一下錯誤主題（FOUC） -->
+<script>
+(function () {
+    var theme = null;
+    // localStorage 在部分環境會被停用，單獨包 try/catch，
+    // 讓「讀取偏好」失敗時仍能優雅退回「跟隨系統」，而不是整段判斷被跳過
+    try { theme = localStorage.getItem('bgremove-theme'); } catch (e) {}
+    if (theme !== 'dark' && theme !== 'light') {
+        theme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)
+            ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', theme);
+})();
+</script>
+
+
+<style>
+/* ============ 色彩系統 ============ */
+:root {
+    --primary: #1a365d;
+    --primary-text: var(--primary);
+    --primary-light: #2b6cb0;
+    --accent: #2c7a7b;
+    --bg: #eff3f8;
+    --card-bg: #ffffff;
+    --line: #cbd5e0;
+    --line-soft: #e2e8f0;
+    --ink: #1a202c;
+    --muted: #5a6b7f;
+    --err: #c53030;
+    --ok: #276749;
+    --warn: #b7791f;
+    --radius: 9px;
+    --shadow: 0 1px 2px rgba(16,42,67,.06), 0 5px 14px rgba(16,42,67,.06);
+    --field-bg: #ffffff;
+    --tint: #f2f6fb;
+    --track: #dde5ef;
+    --checker: rgba(26,54,93,.07);
+    --stage-bg: #f2f6fb;
+}
+:root[data-theme="dark"] {
+    --primary-text: #7fb0e8;
+    --primary-light: #5b9fe0;
+    --accent: #3fb6ae;
+    --bg: #0b1119;
+    --card-bg: #151e2c;
+    --line: #33455c;
+    --line-soft: #243144;
+    --ink: #e2e8f0;
+    --muted: #8b98ab;
+    --err: #f56565;
+    --ok: #48bb78;
+    --warn: #ecc94b;
+    --field-bg: #101927;
+    --tint: #172236;
+    --track: #26344a;
+    --checker: rgba(226,232,240,.06);
+    --stage-bg: #111a27;
+}
+
+/* 分類色（區塊左側色條＋淡底） */
+.cat-src  { --cat: #2b6cb0; --cat-tint: #eef3fa; --cat-line: #c3d6ec; }
+.cat-edit { --cat: #2c7a7b; --cat-tint: #eef7f7; --cat-line: #bcdcdb; }
+.cat-out  { --cat: #975a16; --cat-tint: #fdf5e7; --cat-line: #ecd9ae; }
+:root[data-theme="dark"] .cat-src  { --cat: #7fb0e8; --cat-tint: #172236; --cat-line: #2b4260; }
+:root[data-theme="dark"] .cat-edit { --cat: #5fd0c9; --cat-tint: #142826; --cat-line: #2a4c49; }
+:root[data-theme="dark"] .cat-out  { --cat: #f0b45e; --cat-tint: #2c2211; --cat-line: #503d1c; }
+
+* { box-sizing: border-box; }
+html { background: var(--bg); }
+body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", "Noto Sans TC", sans-serif;
+    font-size: 14px;
+    transition: background-color .15s ease, color .15s ease;
+}
+h1, h2, h3 { margin: 0; }
+body.is-dragging, body.is-dragging * { -webkit-user-select: none; user-select: none; }
+
+/* ============ 置頂頁首（品牌深色底、白字） ============ */
+header {
+    position: sticky;
+    top: 0;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 9px 16px;
+    background: var(--primary);
+    color: #fff;
+}
+.header-left { display: flex; align-items: center; gap: 9px; min-width: 0; }
+header h1 {
+    font-size: 1.02rem; font-weight: 700; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+    display: flex; align-items: center; gap: 7px;
+}
+header .sub { font-size: .72rem; color: rgba(255,255,255,.66); white-space: nowrap; }
+.header-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.hdr-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    text-decoration: none; color: #fff; font-family: inherit; font-size: .78rem;
+    height: 30px; padding: 0 10px;
+    border: 1px solid rgba(255,255,255,.28); border-radius: 6px;
+    background: transparent; cursor: pointer;
+    transition: background .15s ease, border-color .15s ease;
+}
+.hdr-btn:hover { background: rgba(255,255,255,.13); border-color: rgba(255,255,255,.45); }
+.hdr-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+@media (max-width: 700px) {
+    header .sub { display: none; }
+    .hdr-btn span { display: none; }
+    .hdr-btn { padding: 0 8px; }
+}
+
+/* ============ 深色模式切換（iOS 風格滑桿） ============ */
+.switch {
+    position: relative; width: 52px; height: 27px; border-radius: 14px; flex: none;
+    background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.38);
+    cursor: pointer; padding: 0;
+    transition: background .15s ease, border-color .15s ease;
+}
+.switch:hover { background: rgba(255,255,255,.2); }
+.switch .sw-ic {
+    position: absolute; top: 50%; margin-top: -7px; width: 14px; height: 14px;
+    color: #fff; opacity: .72; transition: opacity .15s ease;
+}
+.switch .sw-sun { left: 6px; }
+.switch .sw-moon { right: 6px; }
+.switch::after {
+    content: ""; position: absolute; top: 2px; left: 2px;
+    width: 21px; height: 21px; border-radius: 50%; background: #fff;
+    box-shadow: 0 1px 3px rgba(11,17,25,.35);
+    transition: transform .15s ease;
+}
+.switch[aria-checked="false"]::after { transform: translateX(25px); }
+.switch[aria-checked="false"] .sw-moon { opacity: 0; }
+.switch[aria-checked="true"]::after { transform: translateX(0); }
+.switch[aria-checked="true"] .sw-sun { opacity: 0; }
+.switch:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+/* ============ 圖示 ============ */
+i[data-icon] { display: inline-flex; width: 1.05em; height: 1.05em; flex-shrink: 0; }
+i[data-icon] svg { width: 100%; height: 100%; display: block; }
+i.icon-lg { width: 1.25em; height: 1.25em; }
+.spin { animation: spin 1.1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ============ 主內容 ============ */
+main { max-width: 1180px; margin: 0 auto; padding: 18px 16px 56px; }
+
+.panel {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 14px 16px 16px;
+    margin-bottom: 14px;
+    border-left: 4px solid var(--primary-light);
+    animation: panelIn .3s cubic-bezier(.4,0,.2,1);
+}
+@keyframes panelIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.panel.has-error { border-left-color: var(--err); }
+.panel.is-done { border-left-color: var(--ok); }
+.hidden { display: none !important; }
+
+.sec-head {
+    display: flex; align-items: center; gap: 7px;
+    background: var(--cat-tint); border-left: 3px solid var(--cat); color: var(--cat);
+    font-size: .8rem; font-weight: 700;
+    padding: 5px 10px; border-radius: 0 5px 5px 0;
+    margin: 0 0 12px;
+}
+.sec-head .sec-note { margin-left: auto; font-weight: 400; font-size: .74rem; opacity: .85; }
+.sec-head + .sec-body { margin-bottom: 16px; }
+
+/* 拖放區 */
+.drop {
+    border: 1.5px dashed var(--line);
+    border-radius: var(--radius);
+    padding: 30px 20px; text-align: center; cursor: pointer;
+    transition: border-color .15s ease, background .15s ease;
+}
+.drop:hover, .drop.over { border-color: var(--primary-light); background: var(--tint); }
+.drop .drop-ic { color: var(--primary-light); width: 30px; height: 30px; margin-bottom: 6px; }
+.drop strong { display: block; font-size: .92rem; margin-bottom: 3px; }
+.drop span { color: var(--muted); font-size: .78rem; }
+input[type=file] { display: none; }
+.file-info {
+    display: none; align-items: center; gap: 7px; margin-top: 10px;
+    font-size: .8rem; color: var(--muted);
+    background: var(--tint); border: 1px solid var(--line-soft);
+    border-radius: 5px; padding: 6px 10px;
+}
+.file-info.show { display: flex; }
+.file-info .fi-name { color: var(--ink); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* 模型預載狀態 */
+.model-state { display: inline-flex; align-items: center; gap: 5px; }
+.model-state.is-ready { color: var(--ok); }
+.model-state.is-err { color: var(--err); }
+
+/* 環境問題警告（連不到模型 CDN、以 file:// 開啟等） */
+.env-warn {
+    display: flex; gap: 9px; align-items: flex-start;
+    margin-top: 11px; padding: 11px 13px;
+    background: rgba(197,48,48,.07); border: 1px solid var(--err);
+    border-left-width: 4px; border-radius: 0 6px 6px 0;
+    font-size: .8rem; line-height: 1.7; color: var(--ink);
+}
+:root[data-theme="dark"] .env-warn { background: rgba(245,101,101,.09); }
+.env-warn i[data-icon] { color: var(--err); margin-top: .25em; width: 1.15em; height: 1.15em; }
+.env-warn strong { color: var(--err); }
+.env-warn code {
+    background: var(--tint); border: 1px solid var(--line-soft);
+    padding: 1px 5px; border-radius: 4px; font-size: .78rem;
+    user-select: all; word-break: break-all;
+}
+
+/* ============ ROI 框選 ============ */
+.roi-stage {
+    position: relative; display: inline-block; max-width: 100%;
+    line-height: 0; border-radius: 6px; overflow: hidden;
+    border: 1px solid var(--line-soft); touch-action: none;
+}
+.roi-stage img { max-width: 100%; max-height: 54vh; display: block; }
+.roi-shade { position: absolute; inset: 0; background: rgba(11,17,25,.55); pointer-events: none; }
+.roi-rect {
+    position: absolute; border: 2px solid #fff;
+    box-shadow: 0 0 0 1px rgba(11,17,25,.5), 0 0 0 9999px rgba(11,17,25,.55);
+    cursor: move; touch-action: none;
+}
+.roi-h {
+    position: absolute; width: 15px; height: 15px; background: #fff;
+    border: 1px solid var(--primary); border-radius: 3px; touch-action: none;
+}
+.roi-h[data-h="nw"] { left: -8px; top: -8px; cursor: nwse-resize; }
+.roi-h[data-h="ne"] { right: -8px; top: -8px; cursor: nesw-resize; }
+.roi-h[data-h="sw"] { left: -8px; bottom: -8px; cursor: nesw-resize; }
+.roi-h[data-h="se"] { right: -8px; bottom: -8px; cursor: nwse-resize; }
+
+/* ============ 進度 ============ */
+.prog-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+.prog-pct { font-size: 1.1rem; font-weight: 700; color: var(--primary-text); font-variant-numeric: tabular-nums; }
+.prog-elapsed { margin-left: auto; font-size: .75rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.bar { height: 6px; background: var(--track); border-radius: 3px; overflow: hidden; margin: 4px 0 9px; }
+.bar > div { height: 100%; width: 0; background: var(--primary-light); transition: width .25s ease; }
+.bar.is-ok > div { background: var(--ok); }
+.bar.is-err > div { background: var(--err); }
+.status { font-size: .8rem; color: var(--muted); line-height: 1.7; white-space: pre-wrap; word-break: break-word; display: flex; gap: 6px; align-items: flex-start; }
+.status i[data-icon] { margin-top: .25em; }
+.status.is-err { color: var(--err); }
+.status.is-ok { color: var(--ok); }
+.stages { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.stage {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: .72rem; padding: 3px 8px; border-radius: 9px;
+    background: var(--line-soft); color: var(--muted);
+    transition: background .15s ease, color .15s ease;
+}
+.stage.active { background: rgba(43,108,176,.15); color: var(--primary-light); font-weight: 700; }
+.stage.done { background: rgba(39,103,73,.14); color: var(--ok); }
+:root[data-theme="dark"] .stage.done { background: rgba(72,187,120,.16); }
+
+/* ============ 編輯器 ============ */
+.editor-grid { display: grid; grid-template-columns: 1fr 306px; gap: 16px; align-items: start; }
+@media (max-width: 940px) { .editor-grid { grid-template-columns: 1fr; } }
+
+.stage-bar {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    margin-bottom: 8px; font-size: .77rem; color: var(--muted);
+}
+.stage-bar .spacer { flex: 1 1 auto; }
+.stage-wrap {
+    /* inline-block 讓外框緊貼畫布，疊在上面的 overlay 才會和畫布完全對齊（座標換算靠這個） */
+    position: relative; line-height: 0; display: inline-block; max-width: 100%;
+    border: 1px solid var(--line-soft); border-radius: 7px; overflow: hidden;
+    background:
+        linear-gradient(45deg,#0000 25%,var(--checker) 25%,var(--checker) 50%,#0000 50%,#0000 75%,var(--checker) 75%,var(--checker)),
+        linear-gradient(45deg,#0000 25%,var(--checker) 25%,var(--checker) 50%,#0000 50%,#0000 75%,var(--checker) 75%,var(--checker)),
+        var(--stage-bg);
+    background-size: 18px 18px, 18px 18px, auto; background-position: 0 0, 9px 9px, 0 0;
+}
+/* 同時限制寬與高，長條形的圖才不會把版面撐爆；replaced element 會自動維持比例 */
+.stage-wrap canvas { display: block; width: auto; height: auto; max-width: 100%; max-height: 72vh; }
+#overlayCanvas { position: absolute; left: 0; top: 0; width: 100%; height: 100%; cursor: crosshair; touch-action: none; }
+.stage-wrap.is-busy { opacity: .6; }
+
+/* 控制欄 */
+.ctrl { margin-bottom: 11px; }
+.ctrl-row { display: flex; align-items: center; gap: 8px; }
+.ctrl-label {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: .74rem; color: var(--muted); margin-bottom: 4px;
+}
+.ctrl-label b { color: var(--ink); font-variant-numeric: tabular-nums; font-weight: 700; }
+input[type=range] {
+    width: 100%; margin: 0; accent-color: var(--primary-light);
+    background: transparent; height: 18px;
+}
+input[type=range]:focus-visible { outline: 2px solid var(--primary-light); outline-offset: 2px; }
+
+.tool-group { display: flex; gap: 6px; margin-bottom: 11px; }
+.tool-group button { flex: 1; padding: 7px 4px; font-size: .75rem; flex-direction: column; gap: 3px; }
+.tool-group button i[data-icon] { width: 1.3em; height: 1.3em; }
+.tool-group button[aria-pressed="true"] {
+    background: var(--primary-light); border-color: var(--primary-light); color: #fff; font-weight: 700;
+}
+.tool-group button[aria-pressed="true"]:hover { background: #245e9b; }
+
+.seg { display: flex; gap: 0; }
+.seg button { flex: 1; border-radius: 0; margin-left: -1px; font-size: .75rem; padding: 6px 4px; }
+.seg button:first-child { border-radius: 5px 0 0 5px; margin-left: 0; }
+.seg button:last-child { border-radius: 0 5px 5px 0; }
+.seg button[aria-pressed="true"] {
+    background: var(--primary-light); border-color: var(--primary-light); color: #fff; font-weight: 700;
+    position: relative; z-index: 1;
+}
+
+.chk {
+    display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+    font-size: .78rem; color: var(--ink);
+    padding: 5px 10px; border: 1px solid var(--line); border-radius: 6px;
+    background: var(--card-bg); transition: border-color .15s ease, background .15s ease;
+}
+.chk:hover { border-color: var(--primary-light); }
+.chk input { accent-color: var(--primary-light); margin: 0; }
+
+input[type=color] {
+    width: 100%; height: 30px; padding: 2px; cursor: pointer;
+    border: 1px solid var(--line); border-radius: 5px;
+    background: var(--field-bg);
+}
+.color-pair { display: flex; gap: 7px; }
+.color-pair > div { flex: 1; }
+
+.actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; align-items: center; }
+
+/* 按鈕 */
+button {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    font-family: inherit; cursor: pointer;
+    border-radius: 6px; border: 1px solid var(--line);
+    background: var(--card-bg); color: var(--ink);
+    padding: 7px 13px; font-size: .82rem;
+    transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+button:hover:not(:disabled) { background: var(--tint); border-color: var(--primary-light); }
+button.btn-sm { padding: 5px 10px; font-size: .77rem; }
+button.btn-main {
+    background: var(--primary-light); border-color: var(--primary-light);
+    color: #fff; font-weight: 700; padding: 8px 18px;
+}
+button.btn-main:hover:not(:disabled) { background: #245e9b; border-color: #245e9b; }
+button.btn-accent { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+button.btn-accent:hover:not(:disabled) { filter: brightness(.92); }
+button.btn-danger { background: var(--card-bg); border-color: var(--err); color: var(--err); }
+button.btn-danger:hover:not(:disabled) { background: var(--err); color: #fff; }
+button:disabled { background: var(--line-soft); border-color: var(--line-soft); color: var(--muted); cursor: not-allowed; }
+button:focus-visible { outline: 2px solid var(--primary-light); outline-offset: 2px; }
+a.dl-link { text-decoration: none; }
+
+kbd {
+    display: inline-block; font-family: inherit; font-size: .66rem; font-weight: 700;
+    line-height: 1; padding: 2px 4px; margin: 0 1px;
+    border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 3px;
+    background: var(--card-bg); color: var(--muted);
+}
+
+.hint { font-size: .75rem; color: var(--muted); margin-top: 10px; line-height: 1.65; display: flex; gap: 6px; align-items: flex-start; }
+.hint i[data-icon] { margin-top: .2em; opacity: .8; }
+
+/* Modal */
+.modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(11,17,25,.5); z-index: 100;
+    align-items: center; justify-content: center; padding: 20px;
+}
+.modal-overlay.show { display: flex; animation: modalIn .18s cubic-bezier(.4,0,.2,1); }
+@keyframes modalIn { from { opacity: 0; } to { opacity: 1; } }
+.modal-box {
+    background: var(--card-bg); border-radius: var(--radius);
+    max-width: 580px; width: 100%; max-height: 82vh; overflow: auto;
+    padding: 18px 20px; box-shadow: 0 12px 38px rgba(16,42,67,.3); color: var(--ink);
+    animation: modalBoxIn .24s cubic-bezier(.4,0,.2,1);
+}
+@keyframes modalBoxIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+.modal-box h3 { margin: 0 0 12px; font-size: 1rem; color: var(--primary-text); display: flex; align-items: center; gap: 7px; }
+.modal-box h4 { margin: 15px 0 5px; font-size: .83rem; color: var(--ink); display: flex; align-items: center; gap: 6px; }
+.modal-box p, .modal-box li { font-size: .8rem; line-height: 1.75; color: var(--muted); }
+.modal-box ul { margin: 4px 0; padding-left: 1.25em; }
+.modal-box li { margin-bottom: 3px; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+
+/* Toast */
+.toast {
+    position: fixed; left: 50%; bottom: 26px; transform: translate(-50%, 10px);
+    display: flex; align-items: center; gap: 7px;
+    background: var(--primary); color: #fff;
+    font-size: .82rem; padding: 9px 16px; border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(11,17,25,.35);
+    opacity: 0; pointer-events: none; z-index: 120;
+    transition: opacity .2s cubic-bezier(.4,0,.2,1), transform .2s cubic-bezier(.4,0,.2,1);
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+
+<header>
+    <div class="header-left">
+        <h1><i data-icon="image" class="icon-lg"></i>圖片去背工具</h1>
+        <span class="sub">純前端運算，圖片不離開本機</span>
+    </div>
+    <div class="header-right">
+        <button id="theme-toggle" class="switch" type="button" role="switch" aria-checked="false" aria-label="深色模式">
+            <i data-icon="sun" class="sw-ic sw-sun"></i>
+            <i data-icon="moon" class="sw-ic sw-moon"></i>
+        </button>
+        <button class="hdr-btn" id="help-btn" type="button"><i data-icon="book"></i><span>功能說明</span></button>
+        <a class="hdr-btn" href="https://mygodcatisfat.github.io" target="_blank" rel="noopener"><i data-icon="home"></i><span>回到首頁</span></a>
+    </div>
+</header>
+
+<main>
+    <!-- 來源圖片 -->
+    <section class="panel cat-src" id="sourcePanel">
+        <div class="sec-head">
+            <i data-icon="upload"></i>來源圖片
+            <span class="sec-note model-state" id="modelState"><i data-icon="loader" class="spin"></i>AI 模型準備中…</span>
+        </div>
+        <div class="drop" id="drop" tabindex="0" role="button" aria-label="選擇圖片">
+            <i data-icon="upload" class="drop-ic"></i>
+            <strong>點此選擇圖片，或直接拖曳進來</strong>
+            <span>支援 JPG / PNG / WebP，建議檔案小於 10MB</span>
+        </div>
+        <input type="file" id="fileInput" accept="image/*">
+        <div class="env-warn hidden" id="envWarn"></div>
+        <div class="file-info" id="fileInfo">
+            <i data-icon="image"></i>
+            <span class="fi-name" id="fiName"></span>
+            <span id="fiMeta"></span>
+            <button class="btn-sm btn-danger" id="clearFile" type="button" style="margin-left:auto">
+                <i data-icon="x"></i>移除
+            </button>
+        </div>
+    </section>
+
+    <!-- ROI 框選 -->
+    <section class="panel cat-src hidden" id="roiPanel">
+        <div class="sec-head"><i data-icon="crop"></i>框出主體範圍<span class="sec-note">可略過，但框選能讓細節更好</span></div>
+        <div class="roi-stage" id="roiStage">
+            <img id="roiImg" alt="待去背的圖片">
+            <div class="roi-rect" id="roiRect">
+                <span class="roi-h" data-h="nw"></span><span class="roi-h" data-h="ne"></span>
+                <span class="roi-h" data-h="sw"></span><span class="roi-h" data-h="se"></span>
+            </div>
+        </div>
+        <div class="actions">
+            <button class="btn-main" id="runBtn" type="button"><i data-icon="sparkle"></i>開始去背</button>
+            <button id="roiFullBtn" type="button"><i data-icon="maximize"></i>使用完整圖片</button>
+            <button class="btn-sm btn-danger" id="roiCancelBtn" type="button" style="margin-left:auto"><i data-icon="x"></i>重新選圖</button>
+        </div>
+        <div class="hint"><i data-icon="info"></i>AI 模型會把圖片縮放到固定尺寸再辨識，所以把主體框起來、去掉無關的邊緣，主體在模型眼中的佔比會變大，<strong>細節通常會更準確</strong>。框選後的輸出範圍就是這個框。</div>
+    </section>
+
+    <!-- 處理進度 -->
+    <section class="panel cat-edit hidden" id="progressPanel">
+        <div class="sec-head"><i data-icon="sparkle"></i>處理進度</div>
+        <div class="prog-head">
+            <span class="prog-pct" id="progPct">0%</span>
+            <span class="prog-elapsed" id="progElapsed"></span>
+        </div>
+        <div class="bar" id="bar"><div id="barFill"></div></div>
+        <div class="status" id="status"></div>
+        <div class="stages" id="stages"></div>
+    </section>
+
+    <!-- 精修與輸出 -->
+    <section class="panel cat-out hidden" id="editorPanel">
+        <div class="sec-head"><i data-icon="brush"></i>精修與輸出<span class="sec-note" id="editNote"></span></div>
+
+        <div class="editor-grid">
+            <!-- 畫布 -->
+            <div>
+                <div class="stage-bar">
+                    <label class="chk"><input type="checkbox" id="showMask"> 顯示被移除的區域</label>
+                    <button class="btn-sm" id="compareBtn" type="button" title="按住可看原圖"><i data-icon="eye"></i>按住看原圖</button>
+                    <span class="spacer"></span>
+                    <span id="zoomNote"></span>
+                </div>
+                <div class="stage-wrap" id="stageWrap">
+                    <canvas id="editCanvas"></canvas>
+                    <canvas id="overlayCanvas"></canvas>
+                </div>
+                <div class="hint"><i data-icon="info"></i>用左邊的工具在圖上塗抹即可修補。<kbd>[</kbd><kbd>]</kbd> 調整筆刷大小，<kbd>Ctrl</kbd>+<kbd>Z</kbd> 復原、<kbd>Ctrl</kbd>+<kbd>Y</kbd> 重做。</div>
+            </div>
+
+            <!-- 控制欄 -->
+            <div>
+                <div class="sec-head cat-src"><i data-icon="brush"></i>修補工具</div>
+                <div class="sec-body">
+                    <div class="tool-group">
+                        <button id="toolKeep" type="button" aria-pressed="true" title="把塗到的地方變回不透明"><i data-icon="brush"></i>保留</button>
+                        <button id="toolRemove" type="button" aria-pressed="false" title="把塗到的地方變透明"><i data-icon="eraser"></i>移除</button>
+                        <button id="toolWand" type="button" aria-pressed="false" title="點一下自動補整塊顏色相近的區域"><i data-icon="wand"></i>魔術棒</button>
+                    </div>
+                    <div class="ctrl" id="brushCtrls">
+                        <div class="ctrl-label"><span>筆刷大小</span><b id="brushSizeVal">40 px</b></div>
+                        <input type="range" id="brushSize" min="4" max="240" value="40">
+                        <div class="ctrl-label" style="margin-top:8px"><span>筆刷硬度</span><b id="brushHardVal">70%</b></div>
+                        <input type="range" id="brushHard" min="0" max="100" value="70">
+                    </div>
+                    <div class="ctrl hidden" id="wandCtrls">
+                        <div class="ctrl-label"><span>魔術棒作用</span></div>
+                        <div class="seg" style="margin-bottom:9px">
+                            <button id="wandKeep" type="button" aria-pressed="true">補回保留</button>
+                            <button id="wandRemove" type="button" aria-pressed="false">整塊移除</button>
+                        </div>
+                        <div class="ctrl-label"><span>顏色容差</span><b id="wandTolVal">28</b></div>
+                        <input type="range" id="wandTol" min="1" max="100" value="28">
+                    </div>
+                    <div class="ctrl-row">
+                        <button class="btn-sm" id="undoBtn" type="button" disabled style="flex:1"><i data-icon="undo"></i>復原</button>
+                        <button class="btn-sm" id="redoBtn" type="button" disabled style="flex:1"><i data-icon="redo"></i>重做</button>
+                    </div>
+                    <div class="ctrl-row" style="margin-top:7px">
+                        <button class="btn-sm btn-danger" id="clearPaintBtn" type="button" style="flex:1"><i data-icon="x"></i>清除所有塗抹</button>
+                    </div>
+                </div>
+
+                <div class="sec-head cat-edit"><i data-icon="sliders"></i>邊緣調整</div>
+                <div class="sec-body">
+                    <div class="ctrl">
+                        <div class="ctrl-label"><span>遮罩門檻</span><b id="thrVal">50</b></div>
+                        <input type="range" id="thr" min="1" max="99" value="50">
+                    </div>
+                    <div class="ctrl">
+                        <div class="ctrl-label"><span>邊緣柔度</span><b id="softVal">12</b></div>
+                        <input type="range" id="soft" min="0" max="100" value="12">
+                    </div>
+                    <div class="ctrl">
+                        <div class="ctrl-label"><span>收縮 / 擴張</span><b id="chokeVal">0</b></div>
+                        <input type="range" id="choke" min="-12" max="12" value="0">
+                    </div>
+                    <div class="ctrl">
+                        <div class="ctrl-label"><span>羽化</span><b id="featherVal">0</b></div>
+                        <input type="range" id="feather" min="0" max="20" value="0">
+                    </div>
+                    <button class="btn-sm" id="resetEdgeBtn" type="button" style="width:100%"><i data-icon="undo"></i>重設邊緣參數</button>
+                    <div class="hint" style="margin-top:8px"><i data-icon="info"></i>邊緣留有一圈原本的背景色時，把「收縮」往負向調１～３通常就能消掉。</div>
+                </div>
+
+                <div class="sec-head cat-out"><i data-icon="palette"></i>輸出樣式</div>
+                <div class="sec-body">
+                    <div class="ctrl">
+                        <div class="ctrl-label"><span>背景</span></div>
+                        <div class="seg">
+                            <button id="bgNone" type="button" aria-pressed="true">透明</button>
+                            <button id="bgSolid" type="button" aria-pressed="false">純色</button>
+                            <button id="bgGrad" type="button" aria-pressed="false">漸層</button>
+                        </div>
+                        <div class="color-pair hidden" id="bgColors" style="margin-top:7px">
+                            <div><input type="color" id="bgC1" value="#ffffff"></div>
+                            <div id="bgC2Wrap"><input type="color" id="bgC2" value="#2b6cb0"></div>
+                        </div>
+                    </div>
+                    <div class="ctrl">
+                        <label class="chk" style="width:100%"><input type="checkbox" id="outlineOn"> 白色描邊（貼紙感）</label>
+                        <div class="hidden" id="outlineCtrls" style="margin-top:7px">
+                            <div class="ctrl-label"><span>描邊寬度</span><b id="outlineWVal">8</b></div>
+                            <input type="range" id="outlineW" min="1" max="40" value="8">
+                            <input type="color" id="outlineC" value="#ffffff" style="margin-top:6px">
+                        </div>
+                    </div>
+                    <div class="ctrl">
+                        <label class="chk" style="width:100%"><input type="checkbox" id="shadowOn"> 陰影</label>
+                        <div class="hidden" id="shadowCtrls" style="margin-top:7px">
+                            <div class="ctrl-label"><span>陰影強度</span><b id="shadowVal">40%</b></div>
+                            <input type="range" id="shadowStr" min="5" max="100" value="40">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button class="btn-accent" id="downloadBtn" type="button"><i data-icon="file-down"></i>下載 PNG</button>
+            <button id="resetBtn" type="button"><i data-icon="image"></i>處理另一張圖片</button>
+        </div>
+        <div class="hint"><i data-icon="lock"></i>圖片自始至終只在你的瀏覽器裡運算，不會被上傳到任何伺服器。下載的 PNG 為原始解析度。</div>
+    </section>
+</main>
+
+<!-- 功能說明 Modal -->
+<div class="modal-overlay" id="help-modal" role="dialog" aria-modal="true" aria-labelledby="help-title">
+    <div class="modal-box">
+        <h3 id="help-title"><i data-icon="book" class="icon-lg"></i>功能說明</h3>
+        <p>把圖片拖進來，AI 會自動辨識主體並移除背景。如果結果不完美，可以用內建的修補工具把它調到滿意為止——所有修補都是即時的，<strong>不需要重跑 AI</strong>。全部運算都在你的瀏覽器裡完成，圖片不會上傳到任何伺服器。</p>
+
+        <h4><i data-icon="crop"></i>事前：框出主體範圍</h4>
+        <p>AI 模型會把圖片縮放到固定尺寸再辨識。先把主體框起來、去掉無關的邊緣，主體在模型眼中的佔比就會變大，<strong>細節通常會更準確</strong>。不想框也可以直接按「使用完整圖片」。</p>
+
+        <h4><i data-icon="brush"></i>事後：修補工具</h4>
+        <ul>
+            <li><strong>保留筆刷</strong>：AI 把不該去掉的地方吃掉了（手指、髮尾、細桿子），塗回來。</li>
+            <li><strong>移除筆刷</strong>：背景殘留沒清乾淨，塗掉。</li>
+            <li><strong>魔術棒</strong>：點一下就處理整塊顏色相近的區域，比慢慢塗快得多。容差調高選取範圍越大。</li>
+            <li>勾選「顯示被移除的區域」會用紫色標示哪些地方會被去掉，比較容易看出哪裡切錯。</li>
+            <li>「按住看原圖」可以隨時比對原始畫面。</li>
+        </ul>
+
+        <h4><i data-icon="sliders"></i>邊緣調整</h4>
+        <ul>
+            <li><strong>遮罩門檻</strong>：控制半透明區域要算前景還是背景。頭髮毛邊被砍光時往下調。</li>
+            <li><strong>邊緣柔度</strong>：門檻的過渡範圍，越大邊緣越軟。</li>
+            <li><strong>收縮 / 擴張</strong>：邊緣留了一圈原本的背景色（白邊、綠邊）時，往負向調１～３通常就能消掉。</li>
+            <li><strong>羽化</strong>：整體模糊邊緣，讓它跟新背景融合得更自然。</li>
+        </ul>
+
+        <h4><i data-icon="palette"></i>輸出樣式</h4>
+        <p>可以換成純色或漸層背景、加上白色描邊做出貼紙感、或加陰影。這些都只影響輸出外觀，不會動到去背本身。</p>
+
+        <h4><i data-icon="keyboard"></i>鍵盤快捷鍵</h4>
+        <ul>
+            <li><kbd>[</kbd> / <kbd>]</kbd>　縮小 / 放大筆刷</li>
+            <li><kbd>Ctrl</kbd>+<kbd>Z</kbd>　復原　　<kbd>Ctrl</kbd>+<kbd>Y</kbd>　重做</li>
+        </ul>
+
+        <h4><i data-icon="alert"></i>使用限制</h4>
+        <ul>
+            <li><strong>需要網路連線。</strong>AI 模型（數十 MB）在頁面開啟時就會於背景開始下載，剛好和你挑圖、框選主體的時間重疊，所以通常輪到你按「開始去背」時它已經就緒。</li>
+            <li>模型不會被保留在本機，<strong>每次重新開啟頁面都會重新下載一次</strong>（這是函式庫在 Web Worker 內自行抓取造成的，頁面端無法攔截快取）。所以同一批圖片建議在同一個分頁裡連續處理完，不要中途重整。</li>
+            <li>修補作業在縮放後的畫面上進行（長邊上限 1600px），匯出時會還原成原始解析度。極細的髮絲若有些微軟化屬正常現象。</li>
+            <li>建議使用 Chrome / Edge 等現代瀏覽器。</li>
+        </ul>
+
+        <div class="modal-actions">
+            <button class="btn-main" id="help-close-btn" type="button"><i data-icon="check"></i>我知道了</button>
+        </div>
+    </div>
+</div>
+
+<!-- 確認 Modal（危險操作二次確認） -->
+<div class="modal-overlay" id="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+    <div class="modal-box" style="max-width:420px">
+        <h3 id="confirm-title"><i data-icon="help" class="icon-lg"></i><span id="confirm-title-text">請確認</span></h3>
+        <p id="confirm-text"></p>
+        <div class="modal-actions">
+            <button id="confirm-cancel" type="button"><i data-icon="x"></i>取消</button>
+            <button class="btn-danger" id="confirm-ok" type="button"><i data-icon="check"></i>確定</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast" role="status" aria-live="polite">
+    <i data-icon="check" id="toast-icon"></i><span id="toast-text"></span>
+</div>
+
+<script type="module">
+import { removeBackground, preload } from "https://esm.sh/@imgly/background-removal@1.5.5";
+
+/* ============ 圖示表：名稱 → SVG path，載入時統一替換 ============ */
+const ICONS = {
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+    moon: '<path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/>',
+    home: '<path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/>',
+    book: '<path d="M4 4.5A1.5 1.5 0 015.5 3H19v18H5.5A1.5 1.5 0 014 19.5z"/><path d="M4 17.2h15"/><path d="M8 7.5h7"/>',
+    image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M4 17l4.5-4.5a2 2 0 012.8 0L15 16l1.5-1.5a2 2 0 012.8 0L21 16.5"/>',
+    upload: '<path d="M12 16V4"/><path d="M8 8l4-4 4 4"/><path d="M4 16v3a2 2 0 002 2h12a2 2 0 002-2v-3"/>',
+    'file-down': '<path d="M12 4v11"/><path d="M8 11l4 4 4-4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/>',
+    sparkle: '<path d="M12 3l1.6 4.7L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.3z"/><path d="M18.5 14l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/>',
+    lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5.2l3.2 2"/>',
+    check: '<path d="M4 12.5l5 5L20 6.5"/>',
+    x: '<path d="M6 6l12 12"/><path d="M18 6L6 18"/>',
+    alert: '<path d="M12 3l9.5 16.5H2.5L12 3z"/><path d="M12 10v4"/><path d="M12 17.5v.01"/>',
+    info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8v.01"/>',
+    help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.6 2.6 0 015 .5c0 1.8-2.5 2-2.5 3.8"/><path d="M12 17v.01"/>',
+    loader: '<path d="M12 3v4"/><path d="M12 17v4"/><path d="M5 12H1"/><path d="M23 12h-4"/><path d="M6.3 6.3l2.8 2.8"/><path d="M14.9 14.9l2.8 2.8"/><path d="M6.3 17.7l2.8-2.8"/><path d="M14.9 9.1l2.8-2.8"/>',
+    crop: '<path d="M6 2v14a2 2 0 002 2h14"/><path d="M18 22V8a2 2 0 00-2-2H2"/>',
+    maximize: '<path d="M3 9V4h5"/><path d="M21 9V4h-5"/><path d="M3 15v5h5"/><path d="M21 15v5h-5"/>',
+    brush: '<path d="M9.5 14.5L4 20s3.5 1.2 5.3-.6c1.2-1.2.7-2.6.7-2.6z"/><path d="M11 13l8.2-8.2a1.8 1.8 0 012.5 2.5L13.5 15.5z"/>',
+    eraser: '<path d="M8.5 20H20"/><path d="M15.5 4.5l4 4a1.7 1.7 0 010 2.4l-8 8a1.7 1.7 0 01-2.4 0l-4-4a1.7 1.7 0 010-2.4l8-8a1.7 1.7 0 012.4 0z"/>',
+    wand: '<path d="M4 20L15 9"/><path d="M17 3l.9 2.6L20.5 6.5 17.9 7.4 17 10l-.9-2.6L13.5 6.5l2.6-.9z"/><path d="M6 4l.6 1.7L8.3 6.3 6.6 6.9 6 8.6 5.4 6.9 3.7 6.3 5.4 5.7z"/>',
+    undo: '<path d="M4 8h11a5 5 0 010 10h-6"/><path d="M8 4L4 8l4 4"/>',
+    redo: '<path d="M20 8H9a5 5 0 000 10h6"/><path d="M16 4l4 4-4 4"/>',
+    sliders: '<path d="M4 8h10"/><path d="M18 8h2"/><path d="M4 16h4"/><path d="M12 16h8"/><circle cx="16" cy="8" r="2"/><circle cx="10" cy="16" r="2"/>',
+    palette: '<path d="M12 21a9 9 0 110-18c4.9 0 9 3.3 9 7.4 0 2.3-2 3.6-4 3.6h-1.6c-1.3 0-2.4 1-2.4 2.3 0 .6.2 1 .5 1.5.3.4.5.8.5 1.2 0 1.1-.9 2-2 2z"/><circle cx="7.5" cy="10.5" r="1"/><circle cx="12" cy="7.5" r="1"/><circle cx="16.5" cy="10.5" r="1"/>',
+    eye: '<path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/>',
+    keyboard: '<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10v.01M10 10v.01M14 10v.01M18 10v.01M8 14h8"/>'
+};
+function renderIcons(root = document) {
+    root.querySelectorAll('i[data-icon]').forEach(el => {
+        const path = ICONS[el.dataset.icon];
+        if (!path) return;
+        el.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+            + 'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" '
+            + 'aria-hidden="true">' + path + '</svg>';
+    });
+}
+renderIcons();
+
+/* ============ 主題切換 ============ */
+const themeToggle = document.getElementById('theme-toggle');
+const THEME_KEY = 'bgremove-theme';
+function syncThemeSwitch() {
+    themeToggle.setAttribute('aria-checked',
+        document.documentElement.dataset.theme === 'dark' ? 'true' : 'false');
+}
+syncThemeSwitch(); // <head> 的 inline script 已設好屬性，這裡只同步 ARIA 狀態
+themeToggle.addEventListener('click', () => {
+    const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = next;
+    syncThemeSwitch();
+    try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+});
+
+/* ============ Modal / Toast ============ */
+const helpModal = document.getElementById('help-modal');
+document.getElementById('help-btn').addEventListener('click', () => helpModal.classList.add('show'));
+document.getElementById('help-close-btn').addEventListener('click', () => helpModal.classList.remove('show'));
+helpModal.addEventListener('click', e => { if (e.target === helpModal) helpModal.classList.remove('show'); });
+
+const cfModal = document.getElementById('confirm-modal');
+let cfResolve = null;
+function askConfirm(text, title) {
+    document.getElementById('confirm-text').textContent = text;
+    document.getElementById('confirm-title-text').textContent = title || '請確認';
+    cfModal.classList.add('show');
+    return new Promise(res => { cfResolve = res; });
+}
+function closeConfirm(v) { cfModal.classList.remove('show'); if (cfResolve) { cfResolve(v); cfResolve = null; } }
+document.getElementById('confirm-ok').addEventListener('click', () => closeConfirm(true));
+document.getElementById('confirm-cancel').addEventListener('click', () => closeConfirm(false));
+cfModal.addEventListener('click', e => { if (e.target === cfModal) closeConfirm(false); });
+
+const toastEl = document.getElementById('toast');
+let toastTimer = null;
+function toast(msg, icon = 'check') {
+    document.getElementById('toast-text').textContent = msg;
+    const ic = document.getElementById('toast-icon');
+    ic.dataset.icon = icon;
+    renderIcons(toastEl);
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2400);
+}
+
+/* ============ 元素參照 ============ */
+const $ = id => document.getElementById(id);
+const els = {
+    modelState: $('modelState'), envWarn: $('envWarn'),
+    drop: $('drop'), fileInput: $('fileInput'), fileInfo: $('fileInfo'),
+    fiName: $('fiName'), fiMeta: $('fiMeta'), clearFile: $('clearFile'),
+    roiPanel: $('roiPanel'), roiStage: $('roiStage'), roiImg: $('roiImg'), roiRect: $('roiRect'),
+    runBtn: $('runBtn'), roiFullBtn: $('roiFullBtn'), roiCancelBtn: $('roiCancelBtn'),
+    progressPanel: $('progressPanel'), progPct: $('progPct'), progElapsed: $('progElapsed'),
+    bar: $('bar'), barFill: $('barFill'), status: $('status'), stages: $('stages'),
+    editorPanel: $('editorPanel'), editNote: $('editNote'),
+    editCanvas: $('editCanvas'), overlayCanvas: $('overlayCanvas'), stageWrap: $('stageWrap'),
+    showMask: $('showMask'), compareBtn: $('compareBtn'), zoomNote: $('zoomNote'),
+    toolKeep: $('toolKeep'), toolRemove: $('toolRemove'), toolWand: $('toolWand'),
+    brushCtrls: $('brushCtrls'), wandCtrls: $('wandCtrls'),
+    brushSize: $('brushSize'), brushSizeVal: $('brushSizeVal'),
+    brushHard: $('brushHard'), brushHardVal: $('brushHardVal'),
+    wandTol: $('wandTol'), wandTolVal: $('wandTolVal'),
+    wandKeep: $('wandKeep'), wandRemove: $('wandRemove'),
+    undoBtn: $('undoBtn'), redoBtn: $('redoBtn'), clearPaintBtn: $('clearPaintBtn'),
+    thr: $('thr'), thrVal: $('thrVal'), soft: $('soft'), softVal: $('softVal'),
+    choke: $('choke'), chokeVal: $('chokeVal'), feather: $('feather'), featherVal: $('featherVal'),
+    resetEdgeBtn: $('resetEdgeBtn'),
+    bgNone: $('bgNone'), bgSolid: $('bgSolid'), bgGrad: $('bgGrad'),
+    bgColors: $('bgColors'), bgC1: $('bgC1'), bgC2: $('bgC2'), bgC2Wrap: $('bgC2Wrap'),
+    outlineOn: $('outlineOn'), outlineCtrls: $('outlineCtrls'),
+    outlineW: $('outlineW'), outlineWVal: $('outlineWVal'), outlineC: $('outlineC'),
+    shadowOn: $('shadowOn'), shadowCtrls: $('shadowCtrls'),
+    shadowStr: $('shadowStr'), shadowVal: $('shadowVal'),
+    downloadBtn: $('downloadBtn'), resetBtn: $('resetBtn')
+};
+
+/* ============ 全域狀態 ============ */
+const MAX_WORK = 1600;   // 編輯用的工作解析度上限（長邊）；匯出時仍還原成原始解析度
+
+const state = {
+    file: null,
+    srcBitmap: null,      // 原圖（完整）
+    roi: null,            // {x,y,w,h} 自然座標；null = 全圖
+    cropBitmap: null,     // 實際送進 AI、也是輸出範圍的圖（可能等於原圖）
+    workW: 0, workH: 0,
+    srcData: null,        // 工作解析度的原圖 RGBA（RGB 有效）
+    baseMask: null,       // AI 原始遮罩（不可變）
+    adjMask: null,        // 套用邊緣參數後
+    finalMask: null,      // 再套用塗抹後
+    paintKeep: null,      // 0-255 強制保留強度
+    paintRemove: null,    // 0-255 強制移除強度
+    tool: 'keep',
+    wandMode: 'keep',
+    bgMode: 'none',
+    undo: [], redo: []
+};
+const UNDO_LIMIT = 24;
+
+let ectx = null, octx = null;
+let maskTintCanvas = null;   // 快取的遮罩紫色覆蓋層，避免每次移動滑鼠都重算
+let subjectCanvas = null;    // 工作解析度的合成結果（RGB + alpha）
+let clockTimer = null, clockT0 = 0;
+
+function formatBytes(n) {
+    if (n < 1024) return n + ' B';
+    if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
+    return (n / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+/* ============ 進度顯示 ============ */
+function setStatus(msg, cls = '', icon = 'loader') {
+    els.status.className = 'status ' + cls;
+    els.status.innerHTML = '<i data-icon="' + icon + '"'
+        + (icon === 'loader' ? ' class="spin"' : '') + '></i><span></span>';
+    els.status.querySelector('span').textContent = msg;
+    renderIcons(els.status);
+}
+function setProgress(p, cls = '') {
+    const v = Math.min(100, Math.max(0, p * 100));
+    els.bar.className = 'bar ' + cls;
+    els.barFill.style.width = v + '%';
+    els.progPct.textContent = Math.round(v) + '%';
+}
+function setStages(names, index) {
+    els.stages.innerHTML = names.map((n, i) =>
+        `<span class="stage ${i < index ? 'done' : i === index ? 'active' : ''}">`
+        + `<i data-icon="${i < index ? 'check' : i === index ? 'loader' : 'clock'}"></i>${n}</span>`).join('');
+    renderIcons(els.stages);
+}
+function startClock() {
+    clockT0 = Date.now();
+    els.progElapsed.textContent = '已耗時 0 秒';
+    clearInterval(clockTimer);
+    clockTimer = setInterval(() => {
+        const s = Math.round((Date.now() - clockT0) / 1000);
+        els.progElapsed.textContent = s < 60 ? `已耗時 ${s} 秒` : `已耗時 ${Math.floor(s / 60)} 分 ${s % 60} 秒`;
+    }, 1000);
+}
+function stopClock() { clearInterval(clockTimer); clockTimer = null; }
+const STAGE_NAMES = ['下載 AI 模型', 'AI 運算中', '準備編輯器'];
+
+/* ============ 模型設定 ============ */
+// ONNX Runtime 的 wasm 與模型檔都放在這個 CDN 底下。publicPath 一定要寫成絕對路徑：
+// 若交給函式庫自行推導，以 file:// 開啟時會被解析成本機不存在的路徑，
+// 導致「no available backend found … Failed to fetch」。
+const ASSET_BASE = 'https://staticimgly.com/@imgly/background-removal-data/1.5.5/dist/';
+
+// preload() 不帶參數是空操作（實測 0ms 就 resolve、什麼都沒下載），
+// 一定要傳 config 才會真的抓模型；而且這份 config 必須和 removeBackground 用的完全一致，
+// 否則會變成預載了一個模型、實際推論時又去下載另一個。
+// proxyToWorker 預設為 true：函式庫會另外建立一個 Worker 來跑 WASM 運算，
+// 而那個 Worker 腳本是從函式庫自己的 CDN（esm.sh）載入的，不受我們設定的
+// publicPath 保護，在部分環境（file:// 開啟、防毒/公司代理攔截 Worker 腳本等）
+// 會直接導致「no available backend found」。關掉它讓一切都在主執行緒進行，
+// 只依賴我們已經驗證可行的一般 fetch。
+const MODEL_CONFIG = { model: 'isnet_fp16', publicPath: ASSET_BASE, proxyToWorker: false, device: 'cpu' };
+
+function showEnvWarning(html) {
+    els.envWarn.innerHTML = html;
+    els.envWarn.classList.remove('hidden');
+    renderIcons(els.envWarn);
+}
+function setModelState(icon, text, cls) {
+    els.modelState.className = 'sec-note model-state' + (cls ? ' ' + cls : '');
+    els.modelState.innerHTML = `<i data-icon="${icon}"></i>${text}`;
+    renderIcons(els.modelState);
+}
+
+/* ============ 背景預載模型 ============ */
+let modelReady = false;
+let assetsReachable = null;
+
+(async function preloadModel() {
+    // 先單獨探測 CDN，才能把「網路連不到」跟「其他執行錯誤」分開回報，
+    // 而不是等去背失敗後丟一句看不懂的函式庫錯誤給使用者
+    try {
+        const r = await fetch(ASSET_BASE + 'resources.json', { cache: 'no-store' });
+        assetsReachable = r.ok;
+    } catch (e) {
+        assetsReachable = false;
+    }
+
+    if (!assetsReachable) {
+        setModelState('alert', '無法連線到模型伺服器', 'is-err');
+        showEnvWarning(
+            '<i data-icon="alert"></i><div><strong>連不到 AI 模型伺服器</strong>，去背功能將無法使用。<br>'
+            + '此工具需要從 <code>staticimgly.com</code> 下載 AI 模型，請確認：'
+            + '<br>• 目前有網路連線'
+            + '<br>• 防火牆、公司網路或廣告封鎖擴充功能沒有擋住該網域'
+            + '</div>'
+        );
+        return;
+    }
+
+    try {
+        await preload(MODEL_CONFIG);
+        modelReady = true;
+        setModelState('check', 'AI 模型已就緒', 'is-ready');
+    } catch (e) {
+        // 探測得到 CDN 但預載失敗：不擋使用者流程，等真的要去背時再回報詳細錯誤
+        console.warn('模型預載失敗：', e);
+        setModelState('info', '模型將於首次去背時下載');
+    }
+})();
+
+/* ============ 選檔 ============ */
+els.drop.addEventListener('click', () => els.fileInput.click());
+els.drop.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); els.fileInput.click(); }
+});
+els.drop.addEventListener('dragover', e => { e.preventDefault(); els.drop.classList.add('over'); });
+els.drop.addEventListener('dragleave', () => els.drop.classList.remove('over'));
+els.drop.addEventListener('drop', e => {
+    e.preventDefault();
+    els.drop.classList.remove('over');
+    if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+els.fileInput.addEventListener('change', e => {
+    if (e.target.files[0]) handleFile(e.target.files[0]);
+});
+els.clearFile.addEventListener('click', resetAll);
+els.resetBtn.addEventListener('click', resetAll);
+els.roiCancelBtn.addEventListener('click', resetAll);
+
+let roiObjectUrl = null;
+
+function resetAll() {
+    state.file = null; state.srcBitmap = null; state.cropBitmap = null; state.roi = null;
+    state.baseMask = state.adjMask = state.finalMask = null;
+    state.paintKeep = state.paintRemove = state.srcData = null;
+    state.undo = []; state.redo = [];
+    els.fileInfo.classList.remove('show');
+    els.fileInput.value = '';
+    els.roiPanel.classList.add('hidden');
+    els.progressPanel.classList.add('hidden');
+    els.editorPanel.classList.add('hidden');
+    stopClock();
+}
+
+async function handleFile(file) {
+    if (!file.type.startsWith('image/')) {
+        toast('請選擇圖片檔案（JPG / PNG / WebP）', 'alert');
+        return;
+    }
+    state.file = file;
+    els.fiName.textContent = file.name;
+    els.fiMeta.textContent = formatBytes(file.size);
+    els.fileInfo.classList.add('show');
+    els.progressPanel.classList.add('hidden');
+    els.editorPanel.classList.add('hidden');
+
+    try {
+        state.srcBitmap = await createImageBitmap(file);
+    } catch (e) {
+        toast('無法讀取這個圖片檔', 'alert');
+        return;
+    }
+    els.fiMeta.textContent = `${formatBytes(file.size)}　${state.srcBitmap.width}×${state.srcBitmap.height}`;
+
+    // 進入 ROI 框選（onload 要在設定 src 之前掛，避免快取命中時錯過事件）
+    if (roiObjectUrl) URL.revokeObjectURL(roiObjectUrl);
+    roiObjectUrl = URL.createObjectURL(file);
+    els.roiPanel.classList.remove('hidden');
+    els.roiImg.onload = () => initRoi();
+    els.roiImg.src = roiObjectUrl;
+    els.roiPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+/* ============ ROI 框選 ============ */
+// 用正規化座標(0-1)保存框選範圍，視窗縮放時才不會把使用者框好的範圍弄丟
+let roiN = { x: .07, y: .07, w: .86, h: .86 };
+
+function drawRoi() {
+    const r = els.roiImg.getBoundingClientRect();
+    if (!r.width) return;
+    els.roiRect.style.left = roiN.x * r.width + 'px';
+    els.roiRect.style.top = roiN.y * r.height + 'px';
+    els.roiRect.style.width = roiN.w * r.width + 'px';
+    els.roiRect.style.height = roiN.h * r.height + 'px';
+}
+function initRoi() {
+    // 預設框住中央 86%，留一點邊讓使用者看得出這是可調整的框
+    roiN = { x: .07, y: .07, w: .86, h: .86 };
+    drawRoi();
+}
+window.addEventListener('resize', () => {
+    if (!els.roiPanel.classList.contains('hidden')) drawRoi();
+});
+
+(function setupRoiDrag() {
+    let mode = null, sx = 0, sy = 0, start = null;
+    const MIN_PX = 28;
+
+    function onDown(e) {
+        const h = e.target.closest('.roi-h');
+        if (h) mode = h.dataset.h;
+        else if (e.target.closest('.roi-rect')) mode = 'move';
+        else return;
+        e.preventDefault();
+        sx = e.clientX; sy = e.clientY;
+        start = { ...roiN };
+        document.body.classList.add('is-dragging');
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerup', onUp);
+    }
+    function onMove(e) {
+        const r = els.roiImg.getBoundingClientRect();
+        const W = r.width, H = r.height;
+        const dx = e.clientX - sx, dy = e.clientY - sy;
+        // 換算成像素做邊界處理，改完再轉回正規化座標
+        let b = { x: start.x * W, y: start.y * H, w: start.w * W, h: start.h * H };
+        const s = { x: b.x, y: b.y, w: b.w, h: b.h };
+        if (mode === 'move') {
+            b.x = Math.max(0, Math.min(W - b.w, s.x + dx));
+            b.y = Math.max(0, Math.min(H - b.h, s.y + dy));
+        } else {
+            if (mode.includes('w')) { b.x = s.x + dx; b.w = s.w - dx; }
+            if (mode.includes('e')) { b.w = s.w + dx; }
+            if (mode.includes('n')) { b.y = s.y + dy; b.h = s.h - dy; }
+            if (mode.includes('s')) { b.h = s.h + dy; }
+            // 夾在圖片範圍內，並確保不會被拖成負寬高
+            if (b.w < MIN_PX) { if (mode.includes('w')) b.x = s.x + s.w - MIN_PX; b.w = MIN_PX; }
+            if (b.h < MIN_PX) { if (mode.includes('n')) b.y = s.y + s.h - MIN_PX; b.h = MIN_PX; }
+            if (b.x < 0) { b.w += b.x; b.x = 0; }
+            if (b.y < 0) { b.h += b.y; b.y = 0; }
+            if (b.x + b.w > W) b.w = W - b.x;
+            if (b.y + b.h > H) b.h = H - b.y;
+        }
+        roiN = { x: b.x / W, y: b.y / H, w: b.w / W, h: b.h / H };
+        drawRoi();
+    }
+    function onUp() {
+        mode = null;
+        document.body.classList.remove('is-dragging');
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+    }
+    els.roiStage.addEventListener('pointerdown', onDown);
+})();
+
+els.roiFullBtn.addEventListener('click', () => { state.roi = null; runRemoval(); });
+els.runBtn.addEventListener('click', () => {
+    const BW = state.srcBitmap.width, BH = state.srcBitmap.height;
+    // 幾乎等於全圖時就不必裁切，省一次繪製
+    if (roiN.w >= .98 && roiN.h >= .98) {
+        state.roi = null;
+    } else {
+        const x = Math.max(0, Math.round(roiN.x * BW));
+        const y = Math.max(0, Math.round(roiN.y * BH));
+        state.roi = {
+            x, y,
+            w: Math.max(1, Math.min(BW - x, Math.round(roiN.w * BW))),
+            h: Math.max(1, Math.min(BH - y, Math.round(roiN.h * BH)))
+        };
+    }
+    runRemoval();
+});
+
+/* ============ 執行去背 ============ */
+async function runRemoval() {
+    els.roiPanel.classList.add('hidden');
+    els.progressPanel.classList.remove('hidden');
+    els.progressPanel.classList.remove('has-error', 'is-done');
+    setStages(STAGE_NAMES, modelReady ? 1 : 0);
+    setProgress(0.02);
+    setStatus(modelReady ? 'AI 運算中…' : '正在下載 AI 模型（背景預載尚未完成）…');
+    startClock();
+    els.progressPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    try {
+        // 準備送進模型的圖（ROI 裁切後的範圍就是最終輸出範圍）
+        let inputBlob;
+        if (state.roi) {
+            const c = document.createElement('canvas');
+            c.width = state.roi.w; c.height = state.roi.h;
+            c.getContext('2d').drawImage(state.srcBitmap, -state.roi.x, -state.roi.y);
+            inputBlob = await new Promise(res => c.toBlob(res, 'image/png'));
+            state.cropBitmap = await createImageBitmap(c);
+        } else {
+            inputBlob = state.file;
+            state.cropBitmap = state.srcBitmap;
+        }
+
+        const onProgress = (key, current, total) => {
+            if (total <= 0) return;
+            const pct = current / total;
+            if (key && key.includes('fetch')) {
+                setStages(STAGE_NAMES, 0);
+                setProgress(pct);
+                setStatus(`下載模型中… ${Math.round(pct * 100)}%`);
+            } else {
+                setStages(STAGE_NAMES, 1);
+                setProgress(pct);
+                setStatus(`AI 運算中… ${Math.round(pct * 100)}%`);
+            }
+        };
+
+        // 「no available backend / Failed to fetch」這類是模型後端初始化失敗，
+        // 通常換一顆更小的量化模型（isnet_quint8，路徑最單純）就能繞過去，
+        // 值得自動重試一次，不要讓使用者手動再點一次「開始去背」。
+        let resultBlob;
+        try {
+            resultBlob = await removeBackground(inputBlob, { ...MODEL_CONFIG, progress: onProgress });
+        } catch (firstErr) {
+            const msg = (firstErr && firstErr.message) ? firstErr.message : String(firstErr);
+            const looksLikeBackendInit = /no available backend|failed to fetch|publicpath/i.test(msg);
+            if (!looksLikeBackendInit || MODEL_CONFIG.model === 'isnet_quint8') throw firstErr;
+            console.warn('第一次去背失敗，改用較小的量化模型重試：', firstErr);
+            setStatus('初次嘗試失敗，正在改用備用模型重試…', '', 'loader');
+            setProgress(0.02);
+            resultBlob = await removeBackground(inputBlob, {
+                ...MODEL_CONFIG, model: 'isnet_quint8', progress: onProgress
+            });
+        }
+
+        setStages(STAGE_NAMES, 2);
+        setStatus('正在準備編輯器…');
+        await buildEditor(resultBlob);
+
+        setProgress(1, 'is-ok');
+        setStatus('去背完成，可以開始精修了', 'is-ok', 'check');
+        stopClock();
+        els.progressPanel.classList.add('is-done');
+        els.editorPanel.classList.remove('hidden');
+        els.editorPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        toast('去背完成！', 'check');
+    } catch (err) {
+        console.error(err);
+        stopClock();
+        setProgress(1, 'is-err');
+        const raw = (err && err.message) ? err.message : String(err);
+        // 把函式庫那句看不懂的錯誤，翻譯成使用者真的能照做的指示
+        const isAssetFailure = /failed to fetch|no available backend|publicPath|networkerror/i.test(raw);
+        let advice = '';
+        if (isAssetFailure) {
+            advice = '\n\n原因：無法下載 AI 模型檔。請確認網路連線正常，'
+                + '並檢查防火牆或廣告封鎖擴充功能是否擋住了 staticimgly.com。';
+        }
+        setStatus('處理失敗：' + raw + advice, 'is-err', 'alert');
+        els.progressPanel.classList.add('has-error');
+        toast(isAssetFailure ? '無法下載 AI 模型，請檢查網路' : '處理失敗', 'alert');
+    }
+}
+
+/* ============ 建立編輯器狀態 ============ */
+async function buildEditor(resultBlob) {
+    const src = state.cropBitmap;
+    const scale = Math.min(1, MAX_WORK / Math.max(src.width, src.height));
+    const W = state.workW = Math.max(1, Math.round(src.width * scale));
+    const H = state.workH = Math.max(1, Math.round(src.height * scale));
+
+    // 工作解析度的原圖 RGB
+    const sc = document.createElement('canvas');
+    sc.width = W; sc.height = H;
+    const sctx = sc.getContext('2d', { willReadFrequently: true });
+    sctx.drawImage(src, 0, 0, W, H);
+    state.srcData = sctx.getImageData(0, 0, W, H).data;
+
+    // 從去背結果的 alpha 取出遮罩（RGB 一律沿用原圖，所以塗回來的區域顏色才會正確）
+    const rb = await createImageBitmap(resultBlob);
+    const mc = document.createElement('canvas');
+    mc.width = W; mc.height = H;
+    const mctx = mc.getContext('2d', { willReadFrequently: true });
+    mctx.drawImage(rb, 0, 0, W, H);
+    const md = mctx.getImageData(0, 0, W, H).data;
+
+    const n = W * H;
+    state.baseMask = new Uint8ClampedArray(n);
+    for (let i = 0; i < n; i++) state.baseMask[i] = md[i * 4 + 3];
+    state.adjMask = new Uint8ClampedArray(n);
+    state.finalMask = new Uint8ClampedArray(n);
+    state.paintKeep = new Uint8Array(n);
+    state.paintRemove = new Uint8Array(n);
+    state.undo = []; state.redo = [];
+    updateUndoButtons();
+
+    els.editCanvas.width = W; els.editCanvas.height = H;
+    els.overlayCanvas.width = W; els.overlayCanvas.height = H;
+    ectx = els.editCanvas.getContext('2d');
+    octx = els.overlayCanvas.getContext('2d');
+    subjectCanvas = document.createElement('canvas');
+    subjectCanvas.width = W; subjectCanvas.height = H;
+
+    els.editNote.textContent = `${src.width}×${src.height}${state.roi ? '（已框選）' : ''}`;
+    els.zoomNote.textContent = `編輯解析度 ${W}×${H}`;
+
+    rebuildAdjusted();
+    rebuildFinalAndRender();
+}
+
+/* ============ 遮罩運算 ============ */
+// 門檻 + 柔度：把原始遮罩的灰階值重新映射成想要的軟硬程度
+function applyThreshold(src, dst, n, thr, soft) {
+    const c = thr * 2.55;
+    const w = Math.max(1, soft * 2.55);
+    const lo = c - w / 2, inv = 255 / w;
+    for (let i = 0; i < n; i++) {
+        const v = (src[i] - lo) * inv;
+        dst[i] = v < 0 ? 0 : v > 255 ? 255 : v;
+    }
+}
+// 可分離的形態學運算：r>0 擴張、r<0 收縮
+function morph(buf, W, H, r, dilate) {
+    if (r <= 0) return;
+    const tmp = new Uint8ClampedArray(buf.length);
+    const pick = dilate ? Math.max : Math.min;
+    for (let y = 0; y < H; y++) {
+        const row = y * W;
+        for (let x = 0; x < W; x++) {
+            let v = buf[row + x];
+            const x0 = Math.max(0, x - r), x1 = Math.min(W - 1, x + r);
+            for (let k = x0; k <= x1; k++) v = pick(v, buf[row + k]);
+            tmp[row + x] = v;
+        }
+    }
+    for (let x = 0; x < W; x++) {
+        for (let y = 0; y < H; y++) {
+            let v = tmp[y * W + x];
+            const y0 = Math.max(0, y - r), y1 = Math.min(H - 1, y + r);
+            for (let k = y0; k <= y1; k++) v = pick(v, tmp[k * W + x]);
+            buf[y * W + x] = v;
+        }
+    }
+}
+// 可分離的箱型模糊（跑兩次近似高斯），用滑動累加和維持 O(w*h)
+function blur(buf, W, H, r) {
+    if (r <= 0) return;
+    const tmp = new Uint8ClampedArray(buf.length);
+    const span = r * 2 + 1;
+    const hpass = (src, dst) => {
+        for (let y = 0; y < H; y++) {
+            const row = y * W;
+            let sum = 0;
+            for (let i = -r; i <= r; i++) sum += src[row + Math.max(0, Math.min(W - 1, i))];
+            for (let x = 0; x < W; x++) {
+                dst[row + x] = sum / span;
+                sum -= src[row + Math.max(0, x - r)];
+                sum += src[row + Math.min(W - 1, x + r + 1)];
+            }
+        }
+    };
+    const vpass = (src, dst) => {
+        for (let x = 0; x < W; x++) {
+            let sum = 0;
+            for (let i = -r; i <= r; i++) sum += src[Math.max(0, Math.min(H - 1, i)) * W + x];
+            for (let y = 0; y < H; y++) {
+                dst[y * W + x] = sum / span;
+                sum -= src[Math.max(0, y - r) * W + x];
+                sum += src[Math.min(H - 1, y + r + 1) * W + x];
+            }
+        }
+    };
+    hpass(buf, tmp); vpass(tmp, buf);
+    hpass(buf, tmp); vpass(tmp, buf);
+}
+
+function rebuildAdjusted() {
+    const { workW: W, workH: H } = state;
+    const n = W * H;
+    const thr = +els.thr.value, soft = +els.soft.value;
+    const choke = +els.choke.value, feather = +els.feather.value;
+    applyThreshold(state.baseMask, state.adjMask, n, thr, soft);
+    if (choke !== 0) morph(state.adjMask, W, H, Math.abs(choke), choke > 0);
+    if (feather > 0) blur(state.adjMask, W, H, feather);
+}
+
+function rebuildFinal() {
+    const n = state.workW * state.workH;
+    const adj = state.adjMask, k = state.paintKeep, r = state.paintRemove, f = state.finalMask;
+    for (let i = 0; i < n; i++) {
+        let a = adj[i];
+        if (k[i]) a = Math.max(a, k[i]);
+        if (r[i]) a = Math.min(a, 255 - r[i]);
+        f[i] = a;
+    }
+}
+
+/* ============ 合成與繪製 ============ */
+function buildSubject(canvas, W, H, srcRGBA, mask) {
+    const ctx = canvas.getContext('2d');
+    const out = ctx.createImageData(W, H);
+    const d = out.data;
+    for (let i = 0, p = 0; i < mask.length; i++, p += 4) {
+        d[p] = srcRGBA[p]; d[p + 1] = srcRGBA[p + 1]; d[p + 2] = srcRGBA[p + 2];
+        d[p + 3] = mask[i];
+    }
+    ctx.putImageData(out, 0, 0);
+}
+
+// 貼紙描邊：把主體往四面八方各畫一次形成加粗的輪廓，再用 source-in 塗成指定顏色
+function makeOutline(subject, width, color) {
+    const W = subject.width, H = subject.height;
+    const pad = Math.ceil(width);
+    const c = document.createElement('canvas');
+    c.width = W + pad * 2; c.height = H + pad * 2;
+    const ctx = c.getContext('2d');
+    const steps = 32;
+    for (let i = 0; i < steps; i++) {
+        const a = (i / steps) * Math.PI * 2;
+        ctx.drawImage(subject, pad + Math.cos(a) * width, pad + Math.sin(a) * width);
+    }
+    ctx.globalCompositeOperation = 'source-in';
+    ctx.fillStyle = color;
+    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.drawImage(subject, pad, pad);
+    return { canvas: c, pad };
+}
+
+// 依「背景 → 陰影 → 描邊 → 主體」的順序合成最終畫面
+function renderOutput(target, subject, scale) {
+    const W = target.width, H = target.height;
+    const ctx = target.getContext('2d');
+    ctx.clearRect(0, 0, W, H);
+
+    if (state.bgMode === 'solid') {
+        ctx.fillStyle = els.bgC1.value;
+        ctx.fillRect(0, 0, W, H);
+    } else if (state.bgMode === 'grad') {
+        const g = ctx.createLinearGradient(0, 0, 0, H);
+        g.addColorStop(0, els.bgC1.value);
+        g.addColorStop(1, els.bgC2.value);
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, W, H);
+    }
+
+    let layer = subject, ox = 0, oy = 0;
+    if (els.outlineOn.checked) {
+        const o = makeOutline(subject, +els.outlineW.value * scale, els.outlineC.value);
+        layer = o.canvas; ox = -o.pad; oy = -o.pad;
+    }
+
+    if (els.shadowOn.checked) {
+        const s = +els.shadowStr.value / 100;
+        ctx.save();
+        ctx.shadowColor = `rgba(0,0,0,${(s * 0.75).toFixed(3)})`;
+        ctx.shadowBlur = 18 * scale * (0.4 + s);
+        ctx.shadowOffsetY = 8 * scale * (0.4 + s);
+        ctx.drawImage(layer, ox, oy);
+        ctx.restore();
+    } else {
+        ctx.drawImage(layer, ox, oy);
+    }
+}
+
+function renderPreview() {
+    buildSubject(subjectCanvas, state.workW, state.workH, state.srcData, state.finalMask);
+    renderOutput(els.editCanvas, subjectCanvas, 1);
+    maskTintCanvas = null;   // 遮罩變了，紫色覆蓋層的快取失效
+    drawOverlay();
+}
+
+function rebuildFinalAndRender() {
+    rebuildFinal();
+    renderPreview();
+}
+
+/* 遮罩紫色覆蓋（PPT 風格）：標示「將被移除的區域」 */
+function buildMaskTint() {
+    const W = state.workW, H = state.workH;
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const ctx = c.getContext('2d');
+    const img = ctx.createImageData(W, H);
+    const d = img.data, m = state.finalMask;
+    for (let i = 0, p = 0; i < m.length; i++, p += 4) {
+        d[p] = 138; d[p + 1] = 43; d[p + 2] = 196;
+        d[p + 3] = (255 - m[i]) * 0.5;
+    }
+    ctx.putImageData(img, 0, 0);
+    return c;
+}
+
+let cursorPos = null;
+function drawOverlay() {
+    const W = state.workW, H = state.workH;
+    octx.clearRect(0, 0, W, H);
+    if (els.showMask.checked) {
+        if (!maskTintCanvas) maskTintCanvas = buildMaskTint();
+        octx.drawImage(maskTintCanvas, 0, 0);
+    }
+    if (cursorPos && state.tool !== 'wand') {
+        const r = +els.brushSize.value / 2;
+        octx.lineWidth = Math.max(1.2, W / 600);
+        octx.strokeStyle = state.tool === 'keep' ? 'rgba(72,187,120,.95)' : 'rgba(245,101,101,.95)';
+        octx.beginPath();
+        octx.arc(cursorPos.x, cursorPos.y, r, 0, Math.PI * 2);
+        octx.stroke();
+        octx.strokeStyle = 'rgba(255,255,255,.75)';
+        octx.lineWidth = Math.max(.8, W / 1100);
+        octx.stroke();
+    }
+}
+
+/* ============ 塗抹 ============ */
+function canvasPos(e) {
+    const r = els.overlayCanvas.getBoundingClientRect();
+    return {
+        x: (e.clientX - r.left) / r.width * state.workW,
+        y: (e.clientY - r.top) / r.height * state.workH
+    };
+}
+
+let painting = false, lastPt = null, strokeBefore = null, dirty = null;
+
+function markDirty(x0, y0, x1, y1) {
+    if (!dirty) dirty = { x0, y0, x1, y1 };
+    else {
+        dirty.x0 = Math.min(dirty.x0, x0); dirty.y0 = Math.min(dirty.y0, y0);
+        dirty.x1 = Math.max(dirty.x1, x1); dirty.y1 = Math.max(dirty.y1, y1);
+    }
+}
+
+function stampBrush(cx, cy) {
+    const W = state.workW, H = state.workH;
+    const r = +els.brushSize.value / 2;
+    const hard = +els.brushHard.value / 100;
+    const keep = state.tool === 'keep';
+    const target = keep ? state.paintKeep : state.paintRemove;
+    const other = keep ? state.paintRemove : state.paintKeep;
+    const x0 = Math.max(0, Math.floor(cx - r)), x1 = Math.min(W - 1, Math.ceil(cx + r));
+    const y0 = Math.max(0, Math.floor(cy - r)), y1 = Math.min(H - 1, Math.ceil(cy + r));
+    if (x1 < x0 || y1 < y0) return;
+    // 硬度決定筆刷從實心到邊緣衰減的起點
+    const inner = r * hard;
+    const falloff = Math.max(0.0001, r - inner);
+    for (let y = y0; y <= y1; y++) {
+        const dy = y - cy;
+        for (let x = x0; x <= x1; x++) {
+            const dx = x - cx;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > r) continue;
+            const t = dist <= inner ? 1 : 1 - (dist - inner) / falloff;
+            const v = Math.round(255 * t);
+            const i = y * W + x;
+            if (v > target[i]) target[i] = v;
+            // 同時削弱反向筆刷的痕跡，兩支筆才能互相覆蓋修正
+            if (other[i]) other[i] = Math.max(0, other[i] - v);
+        }
+    }
+    markDirty(x0, y0, x1, y1);
+}
+
+function strokeTo(pt) {
+    if (!lastPt) { stampBrush(pt.x, pt.y); lastPt = pt; return; }
+    // 沿著兩點之間補畫，避免快速拖曳時筆跡斷斷續續
+    const dx = pt.x - lastPt.x, dy = pt.y - lastPt.y;
+    const dist = Math.hypot(dx, dy);
+    const step = Math.max(1, +els.brushSize.value / 8);
+    const steps = Math.ceil(dist / step);
+    for (let i = 1; i <= steps; i++) {
+        stampBrush(lastPt.x + dx * (i / steps), lastPt.y + dy * (i / steps));
+    }
+    lastPt = pt;
+}
+
+els.overlayCanvas.addEventListener('pointerdown', e => {
+    if (!state.finalMask) return;
+    e.preventDefault();
+    // 指標擷取失敗不該中斷整個塗抹流程
+    try { els.overlayCanvas.setPointerCapture(e.pointerId); } catch (err) {}
+    const pt = canvasPos(e);
+    if (state.tool === 'wand') { doMagicWand(pt); return; }
+    painting = true;
+    lastPt = null;
+    dirty = null;
+    strokeBefore = { keep: state.paintKeep.slice(), remove: state.paintRemove.slice() };
+    strokeTo(pt);
+    scheduleRender();
+});
+els.overlayCanvas.addEventListener('pointermove', e => {
+    if (!state.finalMask) return;
+    cursorPos = canvasPos(e);
+    if (painting) { strokeTo(cursorPos); scheduleRender(); }
+    else scheduleOverlay();
+});
+els.overlayCanvas.addEventListener('pointerleave', () => { cursorPos = null; scheduleOverlay(); });
+function endStroke() {
+    if (!painting) return;
+    painting = false; lastPt = null;
+    commitStroke();
+}
+els.overlayCanvas.addEventListener('pointerup', endStroke);
+els.overlayCanvas.addEventListener('pointercancel', endStroke);
+
+// 只把「這一筆真正改到的矩形範圍」存進復原堆疊，避免每筆都存整張遮罩
+function commitStroke() {
+    if (!dirty || !strokeBefore) { strokeBefore = null; return; }
+    const patch = extractPatch(strokeBefore.keep, strokeBefore.remove, dirty);
+    pushUndo(patch);
+    strokeBefore = null; dirty = null;
+}
+function extractPatch(keepArr, removeArr, box) {
+    const W = state.workW;
+    const w = box.x1 - box.x0 + 1, h = box.y1 - box.y0 + 1;
+    const keep = new Uint8Array(w * h), remove = new Uint8Array(w * h);
+    for (let y = 0; y < h; y++) {
+        const s = (box.y0 + y) * W + box.x0;
+        keep.set(keepArr.subarray(s, s + w), y * w);
+        remove.set(removeArr.subarray(s, s + w), y * w);
+    }
+    return { x: box.x0, y: box.y0, w, h, keep, remove };
+}
+// 套用修補並回傳「反向修補」，讓復原與重做共用同一套邏輯
+function applyPatch(p) {
+    const W = state.workW;
+    const inv = { x: p.x, y: p.y, w: p.w, h: p.h, keep: new Uint8Array(p.w * p.h), remove: new Uint8Array(p.w * p.h) };
+    for (let y = 0; y < p.h; y++) {
+        const s = (p.y + y) * W + p.x;
+        inv.keep.set(state.paintKeep.subarray(s, s + p.w), y * p.w);
+        inv.remove.set(state.paintRemove.subarray(s, s + p.w), y * p.w);
+        state.paintKeep.set(p.keep.subarray(y * p.w, (y + 1) * p.w), s);
+        state.paintRemove.set(p.remove.subarray(y * p.w, (y + 1) * p.w), s);
+    }
+    return inv;
+}
+function pushUndo(patch) {
+    state.undo.push(patch);
+    if (state.undo.length > UNDO_LIMIT) state.undo.shift();
+    state.redo = [];
+    updateUndoButtons();
+}
+function updateUndoButtons() {
+    els.undoBtn.disabled = state.undo.length === 0;
+    els.redoBtn.disabled = state.redo.length === 0;
+}
+els.undoBtn.addEventListener('click', () => {
+    if (!state.undo.length) return;
+    state.redo.push(applyPatch(state.undo.pop()));
+    updateUndoButtons();
+    rebuildFinalAndRender();
+});
+els.redoBtn.addEventListener('click', () => {
+    if (!state.redo.length) return;
+    state.undo.push(applyPatch(state.redo.pop()));
+    updateUndoButtons();
+    rebuildFinalAndRender();
+});
+
+/* ============ 魔術棒 ============ */
+function doMagicWand(pt) {
+    const W = state.workW, H = state.workH, n = W * H;
+    const sx = Math.round(pt.x), sy = Math.round(pt.y);
+    if (sx < 0 || sy < 0 || sx >= W || sy >= H) return;
+    const d = state.srcData;
+    const si = (sy * W + sx) * 4;
+    const r0 = d[si], g0 = d[si + 1], b0 = d[si + 2];
+    const tol = +els.wandTol.value * 2.55;
+    const limit = tol * tol * 3;
+
+    const before = { keep: state.paintKeep.slice(), remove: state.paintRemove.slice() };
+    const visited = new Uint8Array(n);
+    const stack = new Int32Array(n);
+    let sp = 0;
+    stack[sp++] = sy * W + sx;
+    visited[sy * W + sx] = 1;
+    const wandKeep = state.wandMode === 'keep';
+    const target = wandKeep ? state.paintKeep : state.paintRemove;
+    const other = wandKeep ? state.paintRemove : state.paintKeep;
+    let minX = sx, maxX = sx, minY = sy, maxY = sy, count = 0;
+
+    while (sp > 0) {
+        const idx = stack[--sp];
+        const p = idx * 4;
+        const dr = d[p] - r0, dg = d[p + 1] - g0, db = d[p + 2] - b0;
+        if (dr * dr + dg * dg + db * db > limit) continue;
+        target[idx] = 255;
+        other[idx] = 0;
+        count++;
+        const x = idx % W, y = (idx - x) / W;
+        if (x < minX) minX = x; if (x > maxX) maxX = x;
+        if (y < minY) minY = y; if (y > maxY) maxY = y;
+        if (x > 0 && !visited[idx - 1]) { visited[idx - 1] = 1; stack[sp++] = idx - 1; }
+        if (x < W - 1 && !visited[idx + 1]) { visited[idx + 1] = 1; stack[sp++] = idx + 1; }
+        if (y > 0 && !visited[idx - W]) { visited[idx - W] = 1; stack[sp++] = idx - W; }
+        if (y < H - 1 && !visited[idx + W]) { visited[idx + W] = 1; stack[sp++] = idx + W; }
+    }
+
+    if (!count) { toast('這個位置沒有選到區域，試著調高容差', 'info'); return; }
+    pushUndo(extractPatch(before.keep, before.remove, { x0: minX, y0: minY, x1: maxX, y1: maxY }));
+    rebuildFinalAndRender();
+    toast(`已${wandKeep ? '補回' : '移除'} ${count.toLocaleString()} 個像素`, 'wand');
+}
+
+/* ============ 繪製排程（把同一影格內的多次要求合併成一次） ============ */
+let renderPending = false, overlayPending = false;
+function scheduleRender() {
+    if (renderPending) return;
+    renderPending = true;
+    requestAnimationFrame(() => { renderPending = false; rebuildFinalAndRender(); });
+}
+function scheduleOverlay() {
+    if (overlayPending) return;
+    overlayPending = true;
+    requestAnimationFrame(() => { overlayPending = false; drawOverlay(); });
+}
+let edgePending = false;
+function scheduleEdgeRebuild() {
+    if (edgePending) return;
+    edgePending = true;
+    requestAnimationFrame(() => {
+        edgePending = false;
+        rebuildAdjusted();
+        rebuildFinalAndRender();
+    });
+}
+
+/* ============ 工具切換 ============ */
+function setTool(t) {
+    state.tool = t;
+    els.toolKeep.setAttribute('aria-pressed', String(t === 'keep'));
+    els.toolRemove.setAttribute('aria-pressed', String(t === 'remove'));
+    els.toolWand.setAttribute('aria-pressed', String(t === 'wand'));
+    els.brushCtrls.classList.toggle('hidden', t === 'wand');
+    els.wandCtrls.classList.toggle('hidden', t !== 'wand');
+    scheduleOverlay();
+}
+els.toolKeep.addEventListener('click', () => setTool('keep'));
+els.toolRemove.addEventListener('click', () => setTool('remove'));
+els.toolWand.addEventListener('click', () => setTool('wand'));
+
+function setWandMode(m) {
+    state.wandMode = m;
+    els.wandKeep.setAttribute('aria-pressed', String(m === 'keep'));
+    els.wandRemove.setAttribute('aria-pressed', String(m === 'remove'));
+}
+els.wandKeep.addEventListener('click', () => setWandMode('keep'));
+els.wandRemove.addEventListener('click', () => setWandMode('remove'));
+
+els.clearPaintBtn.addEventListener('click', async () => {
+    if (!state.paintKeep) return;
+    const ok = await askConfirm('這會清除你在圖上的所有塗抹修補（邊緣參數不受影響），且無法用「復原」救回。確定要清除嗎？', '清除所有塗抹');
+    if (!ok) return;
+    state.paintKeep.fill(0);
+    state.paintRemove.fill(0);
+    state.undo = []; state.redo = [];
+    updateUndoButtons();
+    rebuildFinalAndRender();
+    toast('已清除所有塗抹', 'x');
+});
+
+/* ============ 滑桿 ============ */
+els.brushSize.addEventListener('input', () => {
+    els.brushSizeVal.textContent = els.brushSize.value + ' px';
+    scheduleOverlay();
+});
+els.brushHard.addEventListener('input', () => { els.brushHardVal.textContent = els.brushHard.value + '%'; });
+els.wandTol.addEventListener('input', () => { els.wandTolVal.textContent = els.wandTol.value; });
+
+[['thr', 'thrVal'], ['soft', 'softVal'], ['choke', 'chokeVal'], ['feather', 'featherVal']]
+    .forEach(([id, valId]) => {
+        els[id].addEventListener('input', () => {
+            els[valId].textContent = els[id].value;
+            scheduleEdgeRebuild();
+        });
+    });
+
+const EDGE_DEFAULTS = { thr: 50, soft: 12, choke: 0, feather: 0 };
+els.resetEdgeBtn.addEventListener('click', () => {
+    for (const [k, v] of Object.entries(EDGE_DEFAULTS)) {
+        els[k].value = v;
+        els[k + 'Val'].textContent = v;
+    }
+    scheduleEdgeRebuild();
+    toast('已重設邊緣參數', 'undo');
+});
+
+els.showMask.addEventListener('change', scheduleOverlay);
+
+// 按住比對原圖
+let comparing = false;
+function showOriginal(on) {
+    if (!state.srcData || comparing === on) return;
+    comparing = on;
+    if (on) {
+        const img = ectx.createImageData(state.workW, state.workH);
+        img.data.set(state.srcData);
+        for (let p = 3; p < img.data.length; p += 4) img.data[p] = 255;
+        ectx.putImageData(img, 0, 0);
+        octx.clearRect(0, 0, state.workW, state.workH);
+    } else {
+        renderPreview();
+    }
+}
+['pointerdown'].forEach(ev => els.compareBtn.addEventListener(ev, () => showOriginal(true)));
+['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => els.compareBtn.addEventListener(ev, () => showOriginal(false)));
+
+/* ============ 輸出樣式 ============ */
+function setBgMode(m) {
+    state.bgMode = m;
+    els.bgNone.setAttribute('aria-pressed', String(m === 'none'));
+    els.bgSolid.setAttribute('aria-pressed', String(m === 'solid'));
+    els.bgGrad.setAttribute('aria-pressed', String(m === 'grad'));
+    els.bgColors.classList.toggle('hidden', m === 'none');
+    els.bgC2Wrap.classList.toggle('hidden', m !== 'grad');
+    if (state.finalMask) renderPreview();
+}
+els.bgNone.addEventListener('click', () => setBgMode('none'));
+els.bgSolid.addEventListener('click', () => setBgMode('solid'));
+els.bgGrad.addEventListener('click', () => setBgMode('grad'));
+[els.bgC1, els.bgC2, els.outlineC].forEach(el =>
+    el.addEventListener('input', () => { if (state.finalMask) renderPreview(); }));
+
+els.outlineOn.addEventListener('change', () => {
+    els.outlineCtrls.classList.toggle('hidden', !els.outlineOn.checked);
+    if (state.finalMask) renderPreview();
+});
+els.outlineW.addEventListener('input', () => {
+    els.outlineWVal.textContent = els.outlineW.value;
+    if (state.finalMask) renderPreview();
+});
+els.shadowOn.addEventListener('change', () => {
+    els.shadowCtrls.classList.toggle('hidden', !els.shadowOn.checked);
+    if (state.finalMask) renderPreview();
+});
+els.shadowStr.addEventListener('input', () => {
+    els.shadowVal.textContent = els.shadowStr.value + '%';
+    if (state.finalMask) renderPreview();
+});
+
+/* ============ 匯出（還原成原始解析度） ============ */
+els.downloadBtn.addEventListener('click', async () => {
+    if (!state.finalMask) return;
+    els.downloadBtn.disabled = true;
+    els.stageWrap.classList.add('is-busy');
+    try {
+        const src = state.cropBitmap;
+        const FW = src.width, FH = src.height;
+
+        // 把工作解析度的遮罩平滑放大回原始尺寸
+        const mc = document.createElement('canvas');
+        mc.width = state.workW; mc.height = state.workH;
+        const mctx = mc.getContext('2d');
+        const mimg = mctx.createImageData(state.workW, state.workH);
+        for (let i = 0, p = 0; i < state.finalMask.length; i++, p += 4) {
+            mimg.data[p] = mimg.data[p + 1] = mimg.data[p + 2] = state.finalMask[i];
+            mimg.data[p + 3] = 255;
+        }
+        mctx.putImageData(mimg, 0, 0);
+
+        const up = document.createElement('canvas');
+        up.width = FW; up.height = FH;
+        const uctx = up.getContext('2d', { willReadFrequently: true });
+        uctx.imageSmoothingEnabled = true;
+        uctx.imageSmoothingQuality = 'high';
+        uctx.drawImage(mc, 0, 0, FW, FH);
+        const upData = uctx.getImageData(0, 0, FW, FH).data;
+
+        // 原始 RGB + 放大後的遮罩 → 全解析度主體
+        const fc = document.createElement('canvas');
+        fc.width = FW; fc.height = FH;
+        const fctx = fc.getContext('2d', { willReadFrequently: true });
+        fctx.drawImage(src, 0, 0);
+        const fimg = fctx.getImageData(0, 0, FW, FH);
+        for (let p = 0; p < fimg.data.length; p += 4) fimg.data[p + 3] = upData[p];
+        fctx.putImageData(fimg, 0, 0);
+
+        const out = document.createElement('canvas');
+        out.width = FW; out.height = FH;
+        renderOutput(out, fc, FW / state.workW);
+
+        const blob = await new Promise(res => out.toBlob(res, 'image/png'));
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const baseName = (state.file.name || 'image').replace(/\.[^.]+$/, '');
+        a.download = `${baseName}-去背.png`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+        toast(`已下載（${FW}×${FH}，${formatBytes(blob.size)}）`, 'file-down');
+    } catch (e) {
+        console.error(e);
+        toast('匯出失敗：' + (e.message || '未知錯誤'), 'alert');
+    } finally {
+        els.downloadBtn.disabled = false;
+        els.stageWrap.classList.remove('is-busy');
+    }
+});
+
+/* ============ 鍵盤快捷鍵 ============ */
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+        if (helpModal.classList.contains('show')) helpModal.classList.remove('show');
+        else if (cfModal.classList.contains('show')) closeConfirm(false);
+        return;
+    }
+    if (els.editorPanel.classList.contains('hidden')) return;
+    const tag = (e.target.tagName || '').toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+
+    if (e.key === '[' || e.key === ']') {
+        const d = e.key === '[' ? -1 : 1;
+        const step = Math.max(2, Math.round(+els.brushSize.value * 0.15));
+        els.brushSize.value = Math.max(4, Math.min(240, +els.brushSize.value + d * step));
+        els.brushSizeVal.textContent = els.brushSize.value + ' px';
+        scheduleOverlay();
+        e.preventDefault();
+    } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        (e.shiftKey ? els.redoBtn : els.undoBtn).click();
+    } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        els.redoBtn.click();
+    }
+});
+</script>
+</body>
+</html>

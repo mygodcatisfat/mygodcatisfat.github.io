@@ -44,6 +44,8 @@
     --track: #dde5ef;
     --checker: rgba(26,54,93,.07);
     --stage-bg: #f2f6fb;
+    --pop-bg: #1a365d;
+    --pop-ink: #ffffff;
 }
 :root[data-theme="dark"] {
     --primary-text: #7fb0e8;
@@ -63,6 +65,8 @@
     --track: #26344a;
     --checker: rgba(226,232,240,.06);
     --stage-bg: #111a27;
+    --pop-bg: #e2e8f0;
+    --pop-ink: #0b1119;
 }
 
 /* 分類色（區塊左側色條＋淡底） */
@@ -416,12 +420,14 @@ body.is-touch .desktop-only { display: none; }
 /* 控制欄 */
 .ctrl { margin-bottom: 11px; }
 .ctrl-row { display: flex; align-items: center; gap: 8px; }
-/* 標籤緊貼著它所控制的滑桿，兩者才會讀成同一組；
-   滑桿自身的 18px 高度裡上下各有留白，所以這裡用負值把空隙收掉。 */
 .ctrl-label {
     display: flex; justify-content: space-between; align-items: baseline;
-    font-size: .74rem; color: var(--muted); margin-bottom: -2px;
+    font-size: .74rem; color: var(--muted); margin-bottom: 3px;
 }
+/* 讓標籤貼近它所控制的滑桿。負值只加在滑桿上，不動 .ctrl-label——
+   同一個 class 也用在後面接分段按鈕的標籤，那裡沒有留白可吸收，
+   收在標籤上會直接把文字壓掉。 */
+input[type=range] { margin-top: -5px; }
 .ctrl-label b { color: var(--ink); font-variant-numeric: tabular-nums; font-weight: 700; }
 input[type=range] {
     width: 100%; margin: 0; accent-color: var(--primary-light);
@@ -467,8 +473,40 @@ input[type=color] {
     border: 1px solid var(--line); border-radius: 5px;
     background: var(--field-bg);
 }
+/* 核取方塊與它的說明鈕排成一列，避免說明鈕把標籤文字擠到換行 */
+.chk-row { display: flex; align-items: center; gap: 2px; min-width: 0; }
+.chk-row .chk { min-width: 0; }
+
 .color-pair { display: flex; gap: 7px; }
-.color-pair > div { flex: 1; }
+.color-pair > * { flex: 1; min-width: 0; }
+
+/* 原本只放一個裸的 <input type="color">，在手機上就是一個看不出用途的空框。
+   改成「色票 ＋ 名稱 ＋ 色碼」的一列，讓人一眼看出這是可以點開選顏色的。 */
+.color-field {
+    display: flex; align-items: center; gap: 9px; cursor: pointer;
+    padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px;
+    background: var(--card-bg); min-width: 0;
+    transition: border-color .15s ease, background .15s ease;
+}
+@media (hover: hover) { .color-field:hover { border-color: var(--primary-light); background: var(--tint); } }
+.color-field:focus-within { outline: 2px solid var(--primary-light); outline-offset: 2px; }
+/* 真正的 input 藏在色票底下，點整列都能叫出系統選色器 */
+.color-field input[type=color] {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: 0;
+    opacity: 0; pointer-events: none;
+}
+.cf-swatch {
+    width: 26px; height: 26px; border-radius: 5px; flex: none;
+    border: 1px solid var(--line);
+    box-shadow: inset 0 0 0 2px var(--card-bg);
+    background: var(--cf-color, #fff);
+}
+.cf-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.3; }
+.cf-text b { font-size: .76rem; color: var(--ink); font-weight: 600; }
+.cf-text em {
+    font-style: normal; font-size: .68rem; color: var(--muted);
+    font-variant-numeric: tabular-nums;
+}
 
 .actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; align-items: center; }
 
@@ -497,9 +535,12 @@ input[type=color] {
     .roi-actions > button { flex: 1 1 0; min-width: 0; }
     .roi-actions > button i[data-icon] { flex-shrink: 0; }
 
-    /* 上方的檢視切換各佔一半，寬度才夠顯示完整文字 */
+    /* 上方的檢視切換各佔一半，寬度才夠顯示完整文字。
+       說明鈕要排除在外，否則會被當成一般按鈕撐成半排寬的橢圓。 */
     .stage-bar { gap: 6px; }
-    .stage-bar .chk, .stage-bar button { flex: 1 1 calc(50% - 3px); justify-content: center; }
+    .stage-bar .chk-row,
+    .stage-bar > button:not(.tip) { flex: 1 1 calc(50% - 3px); justify-content: center; }
+    .stage-bar .chk-row .chk { flex: 1 1 auto; justify-content: center; }
     .stage-bar .spacer { display: none; }
     .stage-bar #zoomNote { flex: 1 1 100%; text-align: right; }
 
@@ -510,7 +551,9 @@ input[type=color] {
 /* 觸控裝置：把互動元件放大到手指按得準的尺寸（約 44px）。
    標題列的按鈕例外——它們有自己的緊湊尺寸，跟著放大會把橫幅撐得又高又笨重。 */
 @media (pointer: coarse) {
-    button:not(.hdr-btn):not(.switch) { padding: 10px 14px; min-height: 44px; }
+    button:not(.hdr-btn):not(.switch):not(.tip) { padding: 10px 14px; min-height: 44px; }
+    /* 提示鈕維持小圓點的外觀，但用隱形範圍把實際可點區域撐到約 40px */
+    .tip::before { content: ''; position: absolute; inset: -12px; border-radius: 50%; }
     button.btn-sm { padding: 9px 12px; min-height: 40px; }
     .tool-group button { padding: 8px 6px; min-height: 42px; }
     .seg button { padding: 10px 4px; min-height: 42px; }
@@ -519,8 +562,8 @@ input[type=color] {
     input[type=color] { height: 40px; }
     /* 滑桿的拇指預設偏小，手機上很難精準拖動 */
     input[type=range] { height: 30px; }
-    /* 觸控版滑桿更高、內部留白更多，標籤要再往下貼一點 */
-    .ctrl-label { margin-bottom: -6px; }
+    /* 觸控版滑桿更高、內部留白更多，可以再往上收一點 */
+    input[type=range] { margin-top: -9px; }
     .file-info button { min-height: 40px; }
 }
 
@@ -621,6 +664,95 @@ kbd {
     .panel { padding: 10px 12px 12px; margin-bottom: 10px; }
     .hint { margin-top: 7px; }
 }
+
+
+
+/* ============ 輸出樣式的選項卡片 ============ */
+/* 把開關和它所屬的設定收進同一張卡片，開啟時整張卡片變色，
+   一眼就看得出「這些設定是屬於哪個開關的」。 */
+.opt-card {
+    border: 1px solid var(--line-soft); border-radius: 8px;
+    padding: 4px; margin-bottom: 9px;
+    background: var(--card-bg);
+    transition: border-color .15s ease, background .15s ease;
+}
+.opt-card:last-child { margin-bottom: 0; }
+.opt-card.is-on { border-color: var(--cat-line); background: var(--cat-tint); }
+/* 卡片內的核取方塊不需要自己的外框，卡片本身已經是它的容器 */
+.opt-card .chk { border-color: transparent; background: transparent; width: 100%; }
+.opt-card .opt-body {
+    padding: 2px 9px 7px; margin-top: 2px;
+    border-top: 1px dashed var(--line-soft);
+}
+.opt-card.is-on .opt-body { border-top-color: var(--cat-line); }
+
+/* ============ 放大鏡 ============ */
+/* 手機上手指會正好蓋住要修的地方，所以固定顯示在角落而不是跟著指標跑；
+   指標靠近時自動換到另一角，才不會被手擋住。 */
+/* 選擇器要寫得比 `.stage-wrap canvas`（權重 0,1,1）更高，
+   否則放大鏡的尺寸會被那條規則的 width/height:auto 蓋掉。 */
+.stage-wrap canvas.loupe {
+    position: absolute; top: 8px; left: 8px;
+    width: 118px; height: 118px; max-width: none; max-height: none; border-radius: 50%;
+    /* 雙層邊框：內層白、外層深色，不論底下是亮是暗都看得出輪廓 */
+    border: 3px solid var(--card-bg);
+    box-shadow: 0 4px 16px rgba(11,17,25,.45), 0 0 0 1px rgba(11,17,25,.35);
+    background: var(--stage-bg);
+    opacity: 0; visibility: hidden; pointer-events: none; z-index: 5;
+    transition: opacity .12s ease, visibility .12s;
+}
+.stage-wrap canvas.loupe.show { opacity: 1; visibility: visible; }
+.stage-wrap canvas.loupe.to-right { left: auto; right: 8px; }
+@media (max-width: 640px) { .stage-wrap canvas.loupe { width: 104px; height: 104px; } }
+
+/* ============ 名詞說明泡泡 ============ */
+/* 桌機用 hover、手機用點擊。兩者共用同一個 .is-open 類別，
+   差別只在桌機多一條 hover 規則（包在 hover: hover 裡，觸控裝置不會誤觸）。 */
+.tip {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 17px; height: 17px; min-height: 0; flex: none;
+    padding: 0; margin-left: 5px; border-radius: 50%;
+    border: 1px solid var(--line); background: var(--card-bg);
+    color: var(--muted); cursor: help; position: relative; vertical-align: middle;
+}
+.tip i[data-icon] { width: 11px; height: 11px; }
+.tip:hover, .tip.is-open { border-color: var(--primary-light); color: var(--primary-light); }
+.tip-pop {
+    /* 用 fixed 定位並在顯示當下由 JS 算好座標：
+       絕對定位的泡泡即使隱藏也會撐大版面、產生橫向捲軸，
+       而且量測時容易受尚未穩定的版面影響。fixed 兩個問題都沒有。 */
+    position: fixed; left: 0; top: 0;
+    transform: translate(var(--tip-x, 0px), var(--tip-y, 0px));
+    width: max-content; max-width: min(250px, calc(100vw - 24px));
+    background: var(--pop-bg); color: var(--pop-ink);
+    font-size: .72rem; font-weight: 400; line-height: 1.6; text-align: left;
+    padding: 7px 10px; border-radius: 7px;
+    box-shadow: 0 8px 26px rgba(11,17,25,.35), 0 0 0 1px rgba(255,255,255,.10);
+    opacity: 0; visibility: hidden; pointer-events: none; z-index: 120;
+    transition: opacity .15s ease, visibility .15s;
+    white-space: normal;
+}
+/* 小箭頭指向按鈕 */
+/* 箭頭固定指向按鈕中心：位置由 JS 以 --tip-arrow 給定 */
+.tip-pop::after {
+    content: ''; position: absolute; top: 100%;
+    left: var(--tip-arrow, 50%); margin-left: -5px;
+    border: 5px solid transparent; border-top-color: var(--pop-bg);
+}
+/* 上方空間不足而翻到按鈕下方時，箭頭要改成朝上 */
+.tip-pop.is-below::after {
+    top: auto; bottom: 100%;
+    border-top-color: transparent; border-bottom-color: var(--pop-bg);
+}
+.tip.is-open .tip-pop {
+    opacity: 1; visibility: visible;
+}
+@media (hover: hover) {
+    .tip:hover .tip-pop {
+        opacity: 1; visibility: visible;
+    }
+}
+
 
 /* Toast */
 .toast {
@@ -723,7 +855,7 @@ kbd {
             <!-- 畫布 -->
             <div>
                 <div class="stage-bar">
-                    <label class="chk"><input type="checkbox" id="showMask"> 顯示被移除的區域</label>
+                    <div class="chk-row"><label class="chk"><input type="checkbox" id="showMask"> 顯示被移除的區域</label><button class="tip" type="button" aria-label="說明"><i data-icon="help"></i><span class="tip-pop">把會被去掉的地方蓋上一層紫色，方便檢查哪裡切多了或切少了。</span></button></div>
                     <button class="btn-sm" id="compareBtn" type="button" title="按住可看原圖"><i data-icon="eye"></i>按住看原圖</button>
                     <span class="spacer"></span>
                     <span id="zoomNote"></span>
@@ -732,9 +864,10 @@ kbd {
                     <div class="stage-wrap" id="stageWrap">
                         <canvas id="editCanvas"></canvas>
                         <canvas id="overlayCanvas"></canvas>
+                        <canvas class="loupe" id="loupe" width="190" height="190" aria-hidden="true"></canvas>
                     </div>
                 </div>
-                <div class="hint desktop-only"><i data-icon="info"></i>用下方的工具在圖上塗抹即可修補。<kbd>[</kbd><kbd>]</kbd> 調整筆刷大小，<kbd>Ctrl</kbd>+<kbd>Z</kbd> 復原、<kbd>Ctrl</kbd>+<kbd>Y</kbd> 重做。</div>
+                <div class="hint desktop-only"><i data-icon="info"></i>用下方的工具在圖上塗抹即可修補。<kbd>[</kbd><kbd>]</kbd> 調整筆刷大小，<kbd>Ctrl</kbd>+<kbd>Z</kbd> 復原、<kbd>Ctrl</kbd>+<kbd>Y</kbd> 取消復原。</div>
                 <div class="hint mobile-only"><i data-icon="info"></i>用下方的工具直接在圖上塗抹即可修補。</div>
             </div>
 
@@ -758,21 +891,21 @@ kbd {
                     <div class="ctrl" id="brushCtrls">
                         <div class="ctrl-label"><span>筆刷大小</span><b id="brushSizeVal">40 px</b></div>
                         <input type="range" id="brushSize" min="4" max="240" value="40">
-                        <div class="ctrl-label" style="margin-top:8px"><span>筆刷硬度</span><b id="brushHardVal">70%</b></div>
+                        <div class="ctrl-label" style="margin-top:8px"><span>筆刷硬度<button class="tip" type="button" aria-label="說明"><i data-icon="help"></i><span class="tip-pop">數值越低，筆刷邊緣越柔和、和周圍融合得越自然；數值越高邊緣越銳利。修毛髮建議調低。</span></button></span><b id="brushHardVal">70%</b></div>
                         <input type="range" id="brushHard" min="0" max="100" value="70">
                     </div>
                     <div class="ctrl hidden" id="wandCtrls">
-                        <div class="ctrl-label"><span>魔術棒作用</span></div>
+                        <div class="ctrl-label"><span>魔術棒作用<button class="tip" type="button" aria-label="說明"><i data-icon="help"></i><span class="tip-pop">決定點下去之後，那一整塊顏色相近的區域要被「補回來」還是「整塊移除」。</span></button></span></div>
                         <div class="seg" style="margin-bottom:9px">
                             <button id="wandKeep" type="button" aria-pressed="true">補回保留</button>
                             <button id="wandRemove" type="button" aria-pressed="false">整塊移除</button>
                         </div>
-                        <div class="ctrl-label"><span>顏色容差</span><b id="wandTolVal">28</b></div>
+                        <div class="ctrl-label"><span>顏色容差<button class="tip" type="button" aria-label="說明"><i data-icon="help"></i><span class="tip-pop">決定魔術棒一次選取的範圍。數值越大，顏色差越多的相鄰區域也會被一起選進來。</span></button></span><b id="wandTolVal">28</b></div>
                         <input type="range" id="wandTol" min="1" max="100" value="28">
                     </div>
                     <div class="ctrl-row">
                         <button class="btn-sm" id="undoBtn" type="button" disabled style="flex:1"><i data-icon="undo"></i>復原</button>
-                        <button class="btn-sm" id="redoBtn" type="button" disabled style="flex:1"><i data-icon="redo"></i>重做</button>
+                        <button class="btn-sm" id="redoBtn" type="button" disabled style="flex:1"><i data-icon="redo"></i>取消復原</button>
                     </div>
                     <div class="ctrl-row" style="margin-top:7px">
                         <button class="btn-sm btn-danger" id="clearPaintBtn" type="button" style="flex:1"><i data-icon="x"></i>清除所有塗抹</button>
@@ -784,19 +917,19 @@ kbd {
                 <div class="sec-head"><i data-icon="sliders"></i>邊緣調整</div>
                 <div class="sec-body">
                     <div class="ctrl">
-                        <div class="ctrl-label"><span>遮罩門檻</span><b id="thrVal">50</b></div>
+                        <div class="ctrl-label"><span>遮罩門檻<button class="tip" type="button" aria-label="說明"><i data-icon="help"></i><span class="tip-pop">AI 對每個像素給的「是主體」信心值要超過多少才算保留。調高會讓主體變瘦、調低會變胖。</span></button></span><b id="thrVal">50</b></div>
                         <input type="range" id="thr" min="1" max="99" value="50">
                     </div>
                     <div class="ctrl">
-                        <div class="ctrl-label"><span>邊緣柔度</span><b id="softVal">12</b></div>
+                        <div class="ctrl-label"><span>邊緣柔度<button class="tip" type="button" aria-label="說明"><i data-icon="help"></i><span class="tip-pop">讓主體與背景的交界變得柔和，避免出現鋸齒狀的硬邊。</span></button></span><b id="softVal">12</b></div>
                         <input type="range" id="soft" min="0" max="100" value="12">
                     </div>
                     <div class="ctrl">
-                        <div class="ctrl-label"><span>收縮 / 擴張</span><b id="chokeVal">0</b></div>
+                        <div class="ctrl-label"><span>收縮 / 擴張<button class="tip" type="button" aria-label="說明"><i data-icon="help"></i><span class="tip-pop">整體往內縮或往外擴。邊緣若殘留一圈原本的背景色，往負的方向調 1～3 通常就能消掉。</span></button></span><b id="chokeVal">0</b></div>
                         <input type="range" id="choke" min="-12" max="12" value="0">
                     </div>
                     <div class="ctrl">
-                        <div class="ctrl-label"><span>羽化</span><b id="featherVal">0</b></div>
+                        <div class="ctrl-label"><span>羽化<button class="tip" type="button" aria-label="說明"><i data-icon="help"></i><span class="tip-pop">讓邊緣由實轉透明的漸層更寬，成品看起來更柔、更融入新背景。</span></button></span><b id="featherVal">0</b></div>
                         <input type="range" id="feather" min="0" max="20" value="0">
                     </div>
                     <button class="btn-sm" id="resetEdgeBtn" type="button" style="width:100%"><i data-icon="undo"></i>重設邊緣參數</button>
@@ -815,21 +948,33 @@ kbd {
                             <button id="bgGrad" type="button" aria-pressed="false">漸層</button>
                         </div>
                         <div class="color-pair hidden" id="bgColors" style="margin-top:7px">
-                            <div><input type="color" id="bgC1" value="#ffffff"></div>
-                            <div id="bgC2Wrap"><input type="color" id="bgC2" value="#2b6cb0"></div>
+                            <label class="color-field">
+                                <input type="color" id="bgC1" value="#ffffff">
+                                <span class="cf-swatch" aria-hidden="true"></span>
+                                <span class="cf-text"><b id="bgC1Label">背景顏色</b><em id="bgC1Val">#FFFFFF</em></span>
+                            </label>
+                            <label class="color-field" id="bgC2Wrap">
+                                <input type="color" id="bgC2" value="#2b6cb0">
+                                <span class="cf-swatch" aria-hidden="true"></span>
+                                <span class="cf-text"><b>漸層第二色</b><em id="bgC2Val">#2B6CB0</em></span>
+                            </label>
                         </div>
                     </div>
-                    <div class="ctrl">
-                        <label class="chk" style="width:100%"><input type="checkbox" id="outlineOn"> 白色描邊（貼紙感）</label>
-                        <div class="hidden" id="outlineCtrls" style="margin-top:7px">
+                    <div class="opt-card" id="outlineCard">
+                        <div class="chk-row"><label class="chk" style="flex:1"><input type="checkbox" id="outlineOn"> 白色描邊（貼紙感）</label><button class="tip" type="button" aria-label="說明"><i data-icon="help"></i><span class="tip-pop">沿著主體外圍加一圈白邊，做出像貼紙、限動人物貼圖那樣的效果。</span></button></div>
+                        <div class="hidden opt-body" id="outlineCtrls">
                             <div class="ctrl-label"><span>描邊寬度</span><b id="outlineWVal">8</b></div>
                             <input type="range" id="outlineW" min="1" max="40" value="8">
-                            <input type="color" id="outlineC" value="#ffffff" style="margin-top:6px">
+                            <label class="color-field" style="margin-top:8px">
+                                <input type="color" id="outlineC" value="#ffffff">
+                                <span class="cf-swatch" aria-hidden="true"></span>
+                                <span class="cf-text"><b>描邊顏色</b><em id="outlineCVal">#FFFFFF</em></span>
+                            </label>
                         </div>
                     </div>
-                    <div class="ctrl">
-                        <label class="chk" style="width:100%"><input type="checkbox" id="shadowOn"> 陰影</label>
-                        <div class="hidden" id="shadowCtrls" style="margin-top:7px">
+                    <div class="opt-card" id="shadowCard">
+                        <div class="chk-row"><label class="chk" style="flex:1"><input type="checkbox" id="shadowOn"> 陰影</label><button class="tip" type="button" aria-label="說明"><i data-icon="help"></i><span class="tip-pop">在主體下方加一層柔和陰影，讓它看起來浮在新背景上而不是硬貼上去。</span></button></div>
+                        <div class="hidden opt-body" id="shadowCtrls">
                             <div class="ctrl-label"><span>陰影強度</span><b id="shadowVal">40%</b></div>
                             <input type="range" id="shadowStr" min="5" max="100" value="40">
                         </div>
@@ -881,7 +1026,7 @@ kbd {
             <h4><i data-icon="keyboard"></i>鍵盤快捷鍵</h4>
             <ul>
                 <li><kbd>[</kbd> / <kbd>]</kbd>　縮小 / 放大筆刷</li>
-                <li><kbd>Ctrl</kbd>+<kbd>Z</kbd>　復原　　<kbd>Ctrl</kbd>+<kbd>Y</kbd>　重做</li>
+                <li><kbd>Ctrl</kbd>+<kbd>Z</kbd>　復原　　<kbd>Ctrl</kbd>+<kbd>Y</kbd>　取消復原</li>
             </ul>
         </div>
 
@@ -1032,11 +1177,12 @@ const els = {
     resetEdgeBtn: $('resetEdgeBtn'),
     bgNone: $('bgNone'), bgSolid: $('bgSolid'), bgGrad: $('bgGrad'),
     bgColors: $('bgColors'), bgC1: $('bgC1'), bgC2: $('bgC2'), bgC2Wrap: $('bgC2Wrap'),
-    outlineOn: $('outlineOn'), outlineCtrls: $('outlineCtrls'),
+    bgC1Label: $('bgC1Label'),
+    outlineOn: $('outlineOn'), outlineCtrls: $('outlineCtrls'), outlineCard: $('outlineCard'),
     outlineW: $('outlineW'), outlineWVal: $('outlineWVal'), outlineC: $('outlineC'),
-    shadowOn: $('shadowOn'), shadowCtrls: $('shadowCtrls'),
+    shadowOn: $('shadowOn'), shadowCtrls: $('shadowCtrls'), shadowCard: $('shadowCard'),
     shadowStr: $('shadowStr'), shadowVal: $('shadowVal'),
-    downloadBtn: $('downloadBtn'), resetBtn: $('resetBtn')
+    downloadBtn: $('downloadBtn'), resetBtn: $('resetBtn'), loupe: $('loupe')
 };
 
 /* ============ 全域狀態 ============ */
@@ -1771,6 +1917,8 @@ function buildMaskTint() {
 
 let cursorPos = null;
 function drawOverlay() {
+    // 編輯器還沒建立完成就被事件觸發時直接跳過，避免對 null 的繪圖環境操作
+    if (!octx || !state.finalMask) return;
     const W = state.workW, H = state.workH;
     octx.clearRect(0, 0, W, H);
     if (els.showMask.checked) {
@@ -1858,6 +2006,7 @@ els.overlayCanvas.addEventListener('pointerdown', e => {
     // 指標擷取失敗不該中斷整個塗抹流程
     try { els.overlayCanvas.setPointerCapture(e.pointerId); } catch (err) {}
     const pt = canvasPos(e);
+    cursorPos = pt;
     if (state.tool === 'wand') { doMagicWand(pt); return; }
     painting = true;
     lastPt = null;
@@ -1871,12 +2020,103 @@ els.overlayCanvas.addEventListener('pointermove', e => {
     cursorPos = canvasPos(e);
     if (painting) { strokeTo(cursorPos); scheduleRender(); }
     else scheduleOverlay();
+    // 觸控時只在真的在塗抹才顯示（手指沒碰畫面就沒有「指標位置」可言）
+    if (painting || !IS_TOUCH) scheduleLoupe(cursorPos); else hideLoupe();
 });
-els.overlayCanvas.addEventListener('pointerleave', () => { cursorPos = null; scheduleOverlay(); });
+els.overlayCanvas.addEventListener('pointerleave', () => {
+    cursorPos = null; hideLoupe(); scheduleOverlay();
+});
+
+/* ============ 放大鏡 ============ */
+/* 塗抹時（手機上尤其）手指會擋住正在修的位置，所以把指標周圍的畫面
+   放大顯示在角落。畫的是「合成後的結果」，使用者才能即時看出邊緣修得如何。 */
+const loupeCtx = els.loupe.getContext('2d');
+let loupeRaf = 0;
+
+function hideLoupe() { els.loupe.classList.remove('show'); }
+
+function drawLoupe(pt) {
+    if (!state.finalMask || !pt) { hideLoupe(); return; }
+    const LW = els.loupe.width, LH = els.loupe.height;
+
+    // 倍率跟著筆刷大小走：讓筆刷圓圈固定佔放大鏡約 55%，
+    // 這樣不論筆刷調大調小，都能同時看到筆頭和它周圍的邊緣。
+    // 下限設為 1（等比例，不縮小）——筆刷本來就夠大時不需要再放大，
+    // 但也不該把畫面縮得比實際還小。
+    const brushD = Math.max(1, +els.brushSize.value);
+    const zoom = Math.min(8, Math.max(1, (LW * 0.55) / brushD));
+    const srcW = LW / zoom, srcH = LH / zoom;
+    const sx = pt.x - srcW / 2, sy = pt.y - srcH / 2;
+
+    loupeCtx.clearRect(0, 0, LW, LH);
+    // 棋盤底：讓透明的地方一眼看得出來
+    loupeCtx.fillStyle = '#ffffff';
+    loupeCtx.fillRect(0, 0, LW, LH);
+    const CH = 10;
+    loupeCtx.fillStyle = 'rgba(0,0,0,.07)';
+    for (let y = 0; y < LH; y += CH) {
+        for (let x = 0; x < LW; x += CH) {
+            if (((x / CH) + (y / CH)) % 2 === 0) loupeCtx.fillRect(x, y, CH, CH);
+        }
+    }
+    loupeCtx.imageSmoothingEnabled = false;   // 保持像素邊界清晰，才看得出邊緣切在哪
+    loupeCtx.drawImage(els.editCanvas, sx, sy, srcW, srcH, 0, 0, LW, LH);
+    // 只疊「被移除區域」的紫色標示；筆刷圈另外自己畫，
+    // 直接把疊圖放大會讓圈線跟著糊掉、粗細也失真。
+    if (els.showMask.checked && maskTintCanvas) {
+        loupeCtx.drawImage(maskTintCanvas, sx, sy, srcW, srcH, 0, 0, LW, LH);
+    }
+
+    // 依實際倍率畫出筆刷範圍，維持與畫布上一致的相對大小。
+    // 筆刷大到圓圈放不進來時，改在邊緣畫一圈色環表示「整個視野都在筆刷內」，
+    // 否則畫一個看不到邊的大圓只會讓人困惑。
+    if (state.tool !== 'wand') {
+        const rr = (brushD / 2) * zoom;
+        const tone = state.tool === 'keep' ? 'rgba(56,161,105,' : 'rgba(229,62,62,';
+        if (rr * 2 <= LW * 0.95) {
+            loupeCtx.lineWidth = 2;
+            loupeCtx.strokeStyle = tone + '.95)';
+            loupeCtx.beginPath();
+            loupeCtx.arc(LW / 2, LH / 2, rr, 0, Math.PI * 2);
+            loupeCtx.stroke();
+            loupeCtx.lineWidth = 1;
+            loupeCtx.strokeStyle = 'rgba(255,255,255,.9)';
+            loupeCtx.stroke();
+        } else {
+            loupeCtx.lineWidth = 6;
+            loupeCtx.strokeStyle = tone + '.55)';
+            loupeCtx.beginPath();
+            loupeCtx.arc(LW / 2, LH / 2, LW / 2 - 3, 0, Math.PI * 2);
+            loupeCtx.stroke();
+        }
+    }
+
+    // 中心十字，標出筆刷正中央的位置
+    loupeCtx.strokeStyle = 'rgba(255,255,255,.95)';
+    loupeCtx.lineWidth = 3;
+    loupeCtx.beginPath();
+    loupeCtx.moveTo(LW / 2 - 8, LH / 2); loupeCtx.lineTo(LW / 2 + 8, LH / 2);
+    loupeCtx.moveTo(LW / 2, LH / 2 - 8); loupeCtx.lineTo(LW / 2, LH / 2 + 8);
+    loupeCtx.stroke();
+    loupeCtx.strokeStyle = 'rgba(17,26,39,.85)';
+    loupeCtx.lineWidth = 1.2;
+    loupeCtx.stroke();
+
+    // 指標若靠近放大鏡所在的那一角，就換到另一邊，免得被手指擋住
+    const nearLeft = pt.x < state.workW * 0.45 && pt.y < state.workH * 0.45;
+    els.loupe.classList.toggle('to-right', nearLeft);
+    els.loupe.classList.add('show');
+}
+
+function scheduleLoupe(pt) {
+    if (loupeRaf) return;
+    loupeRaf = requestAnimationFrame(() => { loupeRaf = 0; drawLoupe(pt); });
+}
 function endStroke() {
     if (!painting) return;
     painting = false; lastPt = null;
     commitStroke();
+    if (IS_TOUCH) { cursorPos = null; hideLoupe(); scheduleOverlay(); }
 }
 els.overlayCanvas.addEventListener('pointerup', endStroke);
 els.overlayCanvas.addEventListener('pointercancel', endStroke);
@@ -2041,6 +2281,7 @@ els.clearPaintBtn.addEventListener('click', async () => {
 els.brushSize.addEventListener('input', () => {
     els.brushSizeVal.textContent = els.brushSize.value + ' px';
     scheduleOverlay();
+    if (cursorPos) scheduleLoupe(cursorPos);   // 倍率跟著筆刷走，要同步重畫
 });
 els.brushHard.addEventListener('input', () => { els.brushHardVal.textContent = els.brushHard.value + '%'; });
 els.wandTol.addEventListener('input', () => { els.wandTolVal.textContent = els.wandTol.value; });
@@ -2070,6 +2311,7 @@ let comparing = false;
 function showOriginal(on) {
     if (!state.srcData || comparing === on) return;
     comparing = on;
+    if (!ectx || !octx || !state.finalMask) return;   // 編輯器尚未建立時直接略過
     if (on) {
         const img = ectx.createImageData(state.workW, state.workH);
         img.data.set(state.srcData);
@@ -2090,17 +2332,38 @@ function setBgMode(m) {
     els.bgSolid.setAttribute('aria-pressed', String(m === 'solid'));
     els.bgGrad.setAttribute('aria-pressed', String(m === 'grad'));
     els.bgColors.classList.toggle('hidden', m === 'none');
-    els.bgC2Wrap.classList.toggle('hidden', m !== 'grad');
+    syncColorLabels(m);
     if (state.finalMask) renderPreview();
 }
 els.bgNone.addEventListener('click', () => setBgMode('none'));
 els.bgSolid.addEventListener('click', () => setBgMode('solid'));
 els.bgGrad.addEventListener('click', () => setBgMode('grad'));
-[els.bgC1, els.bgC2, els.outlineC].forEach(el =>
-    el.addEventListener('input', () => { if (state.finalMask) renderPreview(); }));
+// 色票與旁邊的色碼要跟著實際選到的顏色走，使用者才看得出自己選了什麼
+function syncColorField(input) {
+    const field = input.closest('.color-field');
+    if (!field) return;
+    field.style.setProperty('--cf-color', input.value);
+    const val = field.querySelector('.cf-text em');
+    if (val) val.textContent = input.value.toUpperCase();
+}
+[els.bgC1, els.bgC2, els.outlineC].forEach(el => {
+    syncColorField(el);
+    el.addEventListener('input', () => {
+        syncColorField(el);
+        if (state.finalMask) renderPreview();
+    });
+});
+
+// 純色模式只需要一個顏色，第二個色票（漸層用）要收起來，
+// 並把第一個色票的名稱換成當下的語意
+function syncColorLabels(mode) {
+    els.bgC2Wrap.classList.toggle('hidden', mode !== 'grad');
+    els.bgC1Label.textContent = mode === 'grad' ? '漸層第一色' : '背景顏色';
+}
 
 els.outlineOn.addEventListener('change', () => {
     els.outlineCtrls.classList.toggle('hidden', !els.outlineOn.checked);
+    els.outlineCard.classList.toggle('is-on', els.outlineOn.checked);
     if (state.finalMask) renderPreview();
 });
 els.outlineW.addEventListener('input', () => {
@@ -2109,6 +2372,7 @@ els.outlineW.addEventListener('input', () => {
 });
 els.shadowOn.addEventListener('change', () => {
     els.shadowCtrls.classList.toggle('hidden', !els.shadowOn.checked);
+    els.shadowCard.classList.toggle('is-on', els.shadowOn.checked);
     if (state.finalMask) renderPreview();
 });
 els.shadowStr.addEventListener('input', () => {
@@ -2124,6 +2388,73 @@ if (IS_MOBILE) {
     renderIcons(els.downloadBtn);
 }
 
+/* 名詞說明泡泡。
+   桌機的顯示/隱藏交給 CSS 的 :hover；這裡只處理點擊（手機的主要操作方式），
+   同時確保一次只開一個、點畫面任一處就關掉。
+   泡泡預設置中對齊，若會超出畫面就改成靠右對齊，避免被裁掉。 */
+(function setupTips() {
+    function closeAll(except) {
+        document.querySelectorAll('.tip.is-open').forEach(t => {
+            if (t !== except) t.classList.remove('is-open');
+        });
+    }
+    // 桌機 hover 顯示時同樣要先算好座標
+    document.addEventListener('pointerover', e => {
+        const tip = e.target.closest && e.target.closest('.tip');
+        if (tip) placeTip(tip);
+    });
+    document.addEventListener('click', e => {
+        const tip = e.target.closest('.tip');
+        if (!tip) { closeAll(null); return; }
+        e.preventDefault();
+        e.stopPropagation();
+        const willOpen = !tip.classList.contains('is-open');
+        closeAll(tip);
+        tip.classList.toggle('is-open', willOpen);
+        if (willOpen) placeTip(tip);
+    });
+
+    // 泡泡即使在隱藏狀態也會佔位，超出視窗就會撐出橫向捲軸，
+    // 所以不能只在打開時才調整；一律先幫所有提示鈕算好該貼哪一側。
+    // 泡泡是 fixed 定位，座標在「要顯示的當下」才算，這時版面已經穩定。
+    function placeTip(tip) {
+        const pop = tip.querySelector('.tip-pop');
+        if (!pop) return;
+        const tr = tip.getBoundingClientRect();
+        if (!tr.width) return;
+        const M = 8;
+        const vw = document.documentElement.clientWidth;
+        const w = pop.offsetWidth, h = pop.offsetHeight;
+        const cx = tr.left + tr.width / 2;
+        // 水平置中對齊按鈕，超出畫面就往內收
+        const x = Math.max(M, Math.min(cx - w / 2, vw - M - w));
+        // 預設放在按鈕上方；上方空間不夠就翻到下方
+        let y = tr.top - h - 7;
+        let below = false;
+        if (y < M) { y = tr.bottom + 7; below = true; }
+        pop.style.setProperty('--tip-x', Math.round(x) + 'px');
+        pop.style.setProperty('--tip-y', Math.round(y) + 'px');
+        pop.style.setProperty('--tip-arrow', Math.round(cx - x) + 'px');
+        pop.classList.toggle('is-below', below);
+
+        // 元件剛顯示時寬度可能還沒定案，用實際量到的位置再修正一次殘餘的溢出
+        const rr = pop.getBoundingClientRect();
+        let fix = 0;
+        if (rr.right > vw - M) fix = (vw - M) - rr.right;
+        else if (rr.left < M) fix = M - rr.left;
+        if (fix) {
+            const nx = x + fix;
+            pop.style.setProperty('--tip-x', Math.round(nx) + 'px');
+            pop.style.setProperty('--tip-arrow', Math.round(cx - nx) + 'px');
+        }
+    }
+    window.__placeTips = () => {};   // fixed 定位不需要預先擺放
+
+    window.addEventListener('resize', () => closeAll(null));
+    window.addEventListener('scroll', () => closeAll(null), { passive: true });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(null); });
+})();
+
 /* 工具分頁切換。分頁列本身只在窄螢幕顯示（CSS 控制），
    但 is-active 一律維持正確，桌機切回來時三個區塊仍照常全部展開。 */
 (function setupToolTabs() {
@@ -2132,6 +2463,7 @@ if (IS_MOBILE) {
     function activate(name) {
         tabs.forEach(t => t.setAttribute('aria-selected', String(t.dataset.tab === name)));
         groups.forEach(g => g.classList.toggle('is-active', g.dataset.tab === name));
+        if (window.__placeTips) window.__placeTips();   // 剛顯示出來的提示鈕要重新判斷貼齊方向
     }
     tabs.forEach(t => t.addEventListener('click', () => activate(t.dataset.tab)));
     activate('src');

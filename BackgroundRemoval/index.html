@@ -87,6 +87,17 @@ body {
 h1, h2, h3 { margin: 0; }
 body.is-dragging, body.is-dragging * { -webkit-user-select: none; user-select: none; }
 
+/* 這是一個以塗抹、拖曳為主的工具，長按幾乎都是為了操作而不是選字。
+   預設關掉選取與 iOS 的長按浮出選單，再對真正需要複製的內容個別開回來。 */
+body {
+    -webkit-user-select: none; user-select: none;
+    -webkit-touch-callout: none;
+}
+.status, .env-warn, code, .modal-body, .modal-body * {
+    -webkit-user-select: text; user-select: text;
+    -webkit-touch-callout: default;
+}
+
 /* ============ 置頂頁首（品牌深色底、白字） ============ */
 header {
     position: sticky;
@@ -116,7 +127,7 @@ header .sub { font-size: .72rem; color: rgba(255,255,255,.66); white-space: nowr
     background: transparent; cursor: pointer;
     transition: background .15s ease, border-color .15s ease;
 }
-.hdr-btn:hover { background: rgba(255,255,255,.13); border-color: rgba(255,255,255,.45); }
+@media (hover: hover) { .hdr-btn:hover { background: rgba(255,255,255,.13); border-color: rgba(255,255,255,.45); } }
 .hdr-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 @media (max-width: 700px) {
     header .sub { display: none; }
@@ -131,7 +142,7 @@ header .sub { font-size: .72rem; color: rgba(255,255,255,.66); white-space: nowr
     cursor: pointer; padding: 0;
     transition: background .15s ease, border-color .15s ease;
 }
-.switch:hover { background: rgba(255,255,255,.2); }
+@media (hover: hover) { .switch:hover { background: rgba(255,255,255,.2); } }
 .switch .sw-ic {
     position: absolute; top: 50%; margin-top: -7px; width: 14px; height: 14px;
     color: #fff; opacity: .72; transition: opacity .15s ease;
@@ -158,7 +169,14 @@ i.icon-lg { width: 1.25em; height: 1.25em; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ============ 主內容 ============ */
-main { max-width: 1180px; margin: 0 auto; padding: 18px 16px 56px; }
+main {
+    max-width: 1180px; margin: 0 auto;
+    padding: 18px 16px 56px;
+    /* iPhone 橫向時內容會被瀏海遮住，直向時底部會被home指示條蓋到 */
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+    padding-bottom: calc(56px + env(safe-area-inset-bottom));
+}
 
 .panel {
     background: var(--card-bg);
@@ -184,6 +202,41 @@ main { max-width: 1180px; margin: 0 auto; padding: 18px 16px 56px; }
 .sec-head .sec-note { margin-left: auto; font-weight: 400; font-size: .74rem; opacity: .85; }
 .sec-head + .sec-body { margin-bottom: 16px; }
 
+/* 讓「哪些控制項屬於哪一區」一眼看得出來：
+   區塊標題底下的內容用一條與標題同色的細線串起來，形成明確的視覺歸屬。 */
+.sec-group { margin-bottom: 18px; }
+.sec-group > .sec-head { margin-bottom: 0; border-radius: 0 5px 0 0; }
+.sec-group > .sec-body {
+    border-left: 3px solid var(--cat-line, var(--line-soft));
+    padding: 12px 0 2px 11px; margin-left: 0;
+}
+.sec-group:last-child { margin-bottom: 0; }
+
+/* 工具分頁：只在窄螢幕啟用。桌機空間夠，三區塊直接並排展開比較好用。 */
+/* 做成真正的頁籤：靠底部的色條和與內容相連的白底來表達「目前在這一頁」，
+   而不是把整顆按鈕塗成實心色塊（那看起來只是被按下的按鈕）。 */
+.tool-tabs {
+    display: none; gap: 0;
+    border-bottom: 2px solid var(--line-soft);
+}
+.tool-tabs button {
+    flex: 1 1 0; min-width: 0; gap: 5px; font-size: .78rem;
+    padding: 7px 4px; min-height: 0;
+    background: transparent; border: none; border-radius: 6px 6px 0 0;
+    color: var(--muted); font-weight: 600;
+    margin-bottom: -2px; border-bottom: 2px solid transparent;
+}
+.tool-tabs button i[data-icon] { opacity: .85; }
+.tool-tabs button[aria-selected="true"] {
+    color: var(--primary-text); font-weight: 700;
+    border-bottom-color: var(--primary-light);
+    background: transparent;
+}
+.tool-tabs button[aria-selected="true"] i[data-icon] { opacity: 1; }
+@media (hover: hover) {
+    .tool-tabs button:hover:not([aria-selected="true"]) { color: var(--ink); background: var(--tint); }
+}
+
 /* 拖放區 */
 .drop {
     border: 1.5px dashed var(--line);
@@ -191,7 +244,8 @@ main { max-width: 1180px; margin: 0 auto; padding: 18px 16px 56px; }
     padding: 30px 20px; text-align: center; cursor: pointer;
     transition: border-color .15s ease, background .15s ease;
 }
-.drop:hover, .drop.over { border-color: var(--primary-light); background: var(--tint); }
+.drop.over { border-color: var(--primary-light); background: var(--tint); }
+@media (hover: hover) { .drop:hover { border-color: var(--primary-light); background: var(--tint); } }
 .drop .drop-ic { color: var(--primary-light); width: 30px; height: 30px; margin-bottom: 6px; }
 .drop strong { display: block; font-size: .92rem; margin-bottom: 3px; }
 .drop span { color: var(--muted); font-size: .78rem; }
@@ -203,10 +257,20 @@ input[type=file] { display: none; }
     border-radius: 5px; padding: 6px 10px;
 }
 .file-info.show { display: flex; }
+
+/* 選好檔案後就把那塊大上傳區收起來——它已經完成任務了，
+   繼續佔著近 280px 的高度只會把後面的步驟推出畫面（手機上特別明顯）。
+   點檔案列上的「更換」仍可換圖。 */
+#sourcePanel.has-file .drop { display: none; }
+.fi-change { margin-left: auto; }
+.file-info .fi-meta { white-space: nowrap; }
 .file-info .fi-name { color: var(--ink); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* 只在手機顯示的提示；由 JS 依實際偵測結果決定要不要拿掉 hidden */
+/* 手機 / 桌機各自專屬的內容；由 JS 依實際偵測結果切換，
+   避免在手機上顯示鍵盤快捷鍵這種根本按不到的提示。 */
 .mobile-only { display: none; }
+body.is-touch .mobile-only { display: block; }
+body.is-touch .desktop-only { display: none; }
 
 /* 模型預載狀態 */
 .model-state { display: inline-flex; align-items: center; gap: 5px; }
@@ -252,14 +316,45 @@ input[type=file] { display: none; }
 .roi-h[data-h="sw"] { left: -8px; bottom: -8px; cursor: nesw-resize; }
 .roi-h[data-h="se"] { right: -8px; bottom: -8px; cursor: nwse-resize; }
 
+/* 手指的接觸面積遠大於游標：15px 的把手很容易按不中，
+   感覺就像「拖不動」。用 ::before 撐開實際可點範圍到約 44px，
+   視覺大小維持不變，不會讓畫面變得笨重。 */
+@media (pointer: coarse) {
+    .roi-h { width: 20px; height: 20px; }
+    .roi-h[data-h="nw"], .roi-h[data-h="ne"] { top: -10px; }
+    .roi-h[data-h="sw"], .roi-h[data-h="se"] { bottom: -10px; }
+    .roi-h[data-h="nw"], .roi-h[data-h="sw"] { left: -10px; }
+    .roi-h[data-h="ne"], .roi-h[data-h="se"] { right: -10px; }
+    .roi-h::before { content: ''; position: absolute; inset: -12px; }
+}
+
 /* ============ 進度 ============ */
 .prog-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
 .prog-pct { font-size: 1.1rem; font-weight: 700; color: var(--primary-text); font-variant-numeric: tabular-nums; }
 .prog-elapsed { margin-left: auto; font-size: .75rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 .bar { height: 6px; background: var(--track); border-radius: 3px; overflow: hidden; margin: 4px 0 9px; }
-.bar > div { height: 100%; width: 0; background: var(--primary-light); transition: width .25s ease; }
+/* 用 transform 而非 width 推進：AI 推論會把主執行緒整個佔住（實測連續阻塞近 7 秒），
+   只有交給 compositor 的 transform / opacity 動畫能在那段期間繼續跑。 */
+.bar > div {
+    height: 100%; width: 100%; background: var(--primary-light);
+    transform: scaleX(0); transform-origin: left center;
+    transition: transform .25s ease;
+}
+.bar.is-creeping > div {
+    transition: none;
+    /* 接近線性、尾端略為放慢：太前傾的曲線會在第一秒就衝到九成，反而不像在「逐步完成」 */
+    animation: barCreep var(--creep-dur, 8000ms) cubic-bezier(.25,.5,.5,1) forwards;
+}
+@keyframes barCreep {
+    from { transform: scaleX(var(--creep-from, .05)); }
+    to   { transform: scaleX(.93); }
+}
 .bar.is-ok > div { background: var(--ok); }
 .bar.is-err > div { background: var(--err); }
+@media (prefers-reduced-motion: reduce) {
+    .bar > div { transition: none; }
+    .bar.is-creeping > div { animation-duration: .01ms; }
+}
 .status { font-size: .8rem; color: var(--muted); line-height: 1.7; white-space: pre-wrap; word-break: break-word; display: flex; gap: 6px; align-items: flex-start; }
 .status i[data-icon] { margin-top: .25em; }
 .status.is-err { color: var(--err); }
@@ -277,7 +372,17 @@ input[type=file] { display: none; }
 
 /* ============ 編輯器 ============ */
 .editor-grid { display: grid; grid-template-columns: 1fr 306px; gap: 16px; align-items: start; }
-@media (max-width: 940px) { .editor-grid { grid-template-columns: 1fr; } }
+@media (max-width: 940px) {
+    .editor-grid { grid-template-columns: 1fr; gap: 10px; }
+
+    /* 改成分頁：一次只顯示一組工具，畫布就不會被推到畫面外 */
+    .tool-tabs { display: flex; margin-bottom: 10px; }
+    .editor-grid .sec-group { display: none; margin-bottom: 0; }
+    .editor-grid .sec-group.is-active { display: block; }
+    /* 分頁標題已經說明了目前在哪一區，區塊內再重複一次標題就顯得囉嗦 */
+    .editor-grid .sec-group > .sec-head { display: none; }
+    .editor-grid .sec-group > .sec-body { border-left: none; padding-left: 0; padding-top: 0; }
+}
 
 .stage-bar {
     display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
@@ -296,15 +401,26 @@ input[type=file] { display: none; }
 }
 /* 同時限制寬與高，長條形的圖才不會把版面撐爆；replaced element 會自動維持比例 */
 .stage-wrap canvas { display: block; width: auto; height: auto; max-width: 100%; max-height: 72vh; }
+/* 這條必須放在上面那條之後：兩者選擇器權重相同，靠順序決勝負。
+   窄螢幕時把畫布壓低，讓工具面板能和圖片同時出現在一個畫面裡。 */
+@media (max-width: 940px) { .stage-wrap canvas { max-height: 32vh; } }
+
+/* roi-stage 與 stage-wrap 都是 inline-block（為了讓外框和疊層貼齊圖片），
+   在窄螢幕上會靠左擠成一條，右側整片留白。用父層 text-align 把它們置中。 */
+@media (max-width: 940px) {
+    .roi-stage-wrap, .stage-scroll { text-align: center; }
+}
 #overlayCanvas { position: absolute; left: 0; top: 0; width: 100%; height: 100%; cursor: crosshair; touch-action: none; }
 .stage-wrap.is-busy { opacity: .6; }
 
 /* 控制欄 */
 .ctrl { margin-bottom: 11px; }
 .ctrl-row { display: flex; align-items: center; gap: 8px; }
+/* 標籤緊貼著它所控制的滑桿，兩者才會讀成同一組；
+   滑桿自身的 18px 高度裡上下各有留白，所以這裡用負值把空隙收掉。 */
 .ctrl-label {
     display: flex; justify-content: space-between; align-items: baseline;
-    font-size: .74rem; color: var(--muted); margin-bottom: 4px;
+    font-size: .74rem; color: var(--muted); margin-bottom: -2px;
 }
 .ctrl-label b { color: var(--ink); font-variant-numeric: tabular-nums; font-weight: 700; }
 input[type=range] {
@@ -314,12 +430,12 @@ input[type=range] {
 input[type=range]:focus-visible { outline: 2px solid var(--primary-light); outline-offset: 2px; }
 
 .tool-group { display: flex; gap: 6px; margin-bottom: 11px; }
-.tool-group button { flex: 1; padding: 7px 4px; font-size: .75rem; flex-direction: column; gap: 3px; }
-.tool-group button i[data-icon] { width: 1.3em; height: 1.3em; }
+.tool-group button { flex: 1; padding: 7px 6px; font-size: .75rem; flex-direction: row; gap: 5px; }
+.tool-group button i[data-icon] { width: 1.05em; height: 1.05em; }
 .tool-group button[aria-pressed="true"] {
     background: var(--primary-light); border-color: var(--primary-light); color: #fff; font-weight: 700;
 }
-.tool-group button[aria-pressed="true"]:hover { background: #245e9b; }
+@media (hover: hover) { .tool-group button[aria-pressed="true"]:hover { background: #245e9b; } }
 
 .seg { display: flex; gap: 0; }
 .seg button { flex: 1; border-radius: 0; margin-left: -1px; font-size: .75rem; padding: 6px 4px; }
@@ -329,6 +445,13 @@ input[type=range]:focus-visible { outline: 2px solid var(--primary-light); outli
     background: var(--primary-light); border-color: var(--primary-light); color: #fff; font-weight: 700;
     position: relative; z-index: 1;
 }
+
+/* 深色模式的 --primary-light 偏亮，配白字對比只有 2.81（遠低於 AA 的 4.5）。
+   改用深色文字，對比拉到 6 以上。 */
+:root[data-theme="dark"] .tool-group button[aria-pressed="true"],
+:root[data-theme="dark"] .seg button[aria-pressed="true"],
+:root[data-theme="dark"] button.btn-main,
+:root[data-theme="dark"] button.btn-accent { color: var(--bg); }
 
 .chk {
     display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
@@ -349,6 +472,58 @@ input[type=color] {
 
 .actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; align-items: center; }
 
+/* ============ 手機版調整 ============ */
+@media (max-width: 640px) {
+    main { padding: 12px 10px 40px; }
+    .panel { padding: 12px 12px 14px; border-radius: 10px; }
+
+    /* 標題列壓縮，不讓它在小螢幕上佔掉太多垂直空間 */
+    header { padding: 6px 10px; gap: 8px; }
+    header h1 { font-size: .94rem; gap: 6px; }
+    header h1 i[data-icon] { width: 1.1em; height: 1.1em; }
+    .header-right { gap: 6px; }
+    .hdr-btn { height: 34px; min-height: 34px; padding: 0 10px; }
+    .switch { width: 46px; height: 25px; }
+    .switch .sw-ic { width: 12px; height: 12px; margin-top: -6px; }
+    .switch::after { width: 19px; height: 19px; }
+    .switch[aria-checked="false"]::after { transform: translateX(21px); }
+
+    /* 主要動作在手機上排成整列，避免被擠成兩個很窄的按鈕 */
+    .actions { gap: 7px; }
+    .actions > button { flex: 1 1 100%; }
+    .actions > button.btn-sm { flex: 0 0 auto; margin-left: 0 !important; }
+
+    /* 框選的兩顆按鈕維持同一行：左邊「選取完整範圍」、右邊「開始去背」 */
+    .roi-actions > button { flex: 1 1 0; min-width: 0; }
+    .roi-actions > button i[data-icon] { flex-shrink: 0; }
+
+    /* 上方的檢視切換各佔一半，寬度才夠顯示完整文字 */
+    .stage-bar { gap: 6px; }
+    .stage-bar .chk, .stage-bar button { flex: 1 1 calc(50% - 3px); justify-content: center; }
+    .stage-bar .spacer { display: none; }
+    .stage-bar #zoomNote { flex: 1 1 100%; text-align: right; }
+
+    .roi-stage img { max-height: 42vh; }
+    .color-pair { flex-wrap: wrap; }
+}
+
+/* 觸控裝置：把互動元件放大到手指按得準的尺寸（約 44px）。
+   標題列的按鈕例外——它們有自己的緊湊尺寸，跟著放大會把橫幅撐得又高又笨重。 */
+@media (pointer: coarse) {
+    button:not(.hdr-btn):not(.switch) { padding: 10px 14px; min-height: 44px; }
+    button.btn-sm { padding: 9px 12px; min-height: 40px; }
+    .tool-group button { padding: 8px 6px; min-height: 42px; }
+    .seg button { padding: 10px 4px; min-height: 42px; }
+    .chk { padding: 9px 12px; min-height: 42px; }
+    .chk input { width: 18px; height: 18px; }
+    input[type=color] { height: 40px; }
+    /* 滑桿的拇指預設偏小，手機上很難精準拖動 */
+    input[type=range] { height: 30px; }
+    /* 觸控版滑桿更高、內部留白更多，標籤要再往下貼一點 */
+    .ctrl-label { margin-bottom: -6px; }
+    .file-info button { min-height: 40px; }
+}
+
 /* 按鈕 */
 button {
     display: inline-flex; align-items: center; justify-content: center; gap: 6px;
@@ -358,17 +533,17 @@ button {
     padding: 7px 13px; font-size: .82rem;
     transition: background .15s ease, border-color .15s ease, color .15s ease;
 }
-button:hover:not(:disabled) { background: var(--tint); border-color: var(--primary-light); }
+@media (hover: hover) { button:hover:not(:disabled) { background: var(--tint); border-color: var(--primary-light); } }
 button.btn-sm { padding: 5px 10px; font-size: .77rem; }
 button.btn-main {
     background: var(--primary-light); border-color: var(--primary-light);
     color: #fff; font-weight: 700; padding: 8px 18px;
 }
-button.btn-main:hover:not(:disabled) { background: #245e9b; border-color: #245e9b; }
+@media (hover: hover) { button.btn-main:hover:not(:disabled) { background: #245e9b; border-color: #245e9b; } }
 button.btn-accent { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
-button.btn-accent:hover:not(:disabled) { filter: brightness(.92); }
+@media (hover: hover) { button.btn-accent:hover:not(:disabled) { filter: brightness(.92); } }
 button.btn-danger { background: var(--card-bg); border-color: var(--err); color: var(--err); }
-button.btn-danger:hover:not(:disabled) { background: var(--err); color: #fff; }
+@media (hover: hover) { button.btn-danger:hover:not(:disabled) { background: var(--err); color: #fff; } }
 button:disabled { background: var(--line-soft); border-color: var(--line-soft); color: var(--muted); cursor: not-allowed; }
 button:focus-visible { outline: 2px solid var(--primary-light); outline-offset: 2px; }
 a.dl-link { text-decoration: none; }
@@ -380,8 +555,14 @@ kbd {
     background: var(--card-bg); color: var(--muted);
 }
 
-.hint { font-size: .75rem; color: var(--muted); margin-top: 10px; line-height: 1.65; display: flex; gap: 6px; align-items: flex-start; }
-.hint i[data-icon] { margin-top: .2em; opacity: .8; }
+/* 這裡刻意不用 flex：提示文字裡有 <kbd> 等行內元素，
+   一旦父層是 flex，每個 <kbd> 都會變成獨立的 flex item，
+   在窄螢幕上會被各自壓成一欄直書。改用「絕對定位的圖示 + 正常文字流」。 */
+.hint {
+    font-size: .75rem; color: var(--muted); margin-top: 10px; line-height: 1.65;
+    position: relative; padding-left: 1.45em;
+}
+.hint i[data-icon] { position: absolute; left: 0; top: .28em; opacity: .8; }
 
 /* Modal */
 .modal-overlay {
@@ -405,9 +586,48 @@ kbd {
 .modal-box li { margin-bottom: 3px; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
 
+/* 說明視窗在手機上要留出安全區域，也不需要維持桌機那種留白 */
+@media (max-width: 640px) {
+    .modal-overlay { padding: 12px; align-items: flex-end; }
+    .modal-box {
+        max-height: 88vh; padding: 16px 15px;
+        padding-bottom: calc(16px + env(safe-area-inset-bottom));
+        border-radius: 14px;
+    }
+    .modal-actions button { flex: 1 1 auto; }
+}
+
+/* 按住看原圖：觸控時按住不該同時捲動頁面 */
+#compareBtn { touch-action: none; }
+
+@media (max-width: 640px) {
+    /* 區塊標題已經標出尺寸，這裡再寫一次只是雜訊 */
+    #zoomNote { display: none; }
+    /* 進到編輯階段後，上方的來源檔案列就沒有用途了，收起來讓畫布往上移。
+       要換圖可以用下方的「處理另一張圖片」。 */
+    body.is-editing #sourcePanel { display: none; }
+    body.is-editing #progressPanel.is-done { display: none; }
+}
+
+/* 手機轉橫向時寬度可能超過 640px，但垂直空間反而更緊（常只有 375px）。
+   這裡以「高度」而非寬度判斷，套用同一組省空間規則。 */
+@media (max-height: 560px) {
+    #zoomNote { display: none; }
+    body.is-editing #sourcePanel { display: none; }
+    body.is-editing #progressPanel.is-done { display: none; }
+    .stage-wrap canvas { max-height: 44vh; }
+    .roi-stage img { max-height: 40vh; }
+    header { padding: 5px 12px; }
+    .panel { padding: 10px 12px 12px; margin-bottom: 10px; }
+    .hint { margin-top: 7px; }
+}
+
 /* Toast */
 .toast {
-    position: fixed; left: 50%; bottom: 26px; transform: translate(-50%, 10px);
+    position: fixed; left: 50%; transform: translate(-50%, 10px);
+    /* 避開 iPhone 底部的 home 指示條，否則提示會被蓋住 */
+    bottom: calc(26px + env(safe-area-inset-bottom));
+    max-width: calc(100vw - 32px);
     display: flex; align-items: center; gap: 7px;
     background: var(--primary); color: #fff;
     font-size: .82rem; padding: 9px 16px; border-radius: 8px;
@@ -448,7 +668,8 @@ kbd {
         </div>
         <div class="drop" id="drop" tabindex="0" role="button" aria-label="選擇圖片">
             <i data-icon="upload" class="drop-ic"></i>
-            <strong>點此選擇圖片，或直接拖曳進來</strong>
+            <strong class="desktop-only">點此選擇圖片，或直接拖曳進來</strong>
+            <strong class="mobile-only">點此從相簿選擇圖片</strong>
             <span>支援 JPG / PNG / WebP，建議檔案小於 10MB</span>
         </div>
         <input type="file" id="fileInput" accept="image/*">
@@ -456,9 +677,9 @@ kbd {
         <div class="file-info" id="fileInfo">
             <i data-icon="image"></i>
             <span class="fi-name" id="fiName"></span>
-            <span id="fiMeta"></span>
-            <button class="btn-sm btn-danger" id="clearFile" type="button" style="margin-left:auto">
-                <i data-icon="x"></i>移除
+            <span class="fi-meta" id="fiMeta"></span>
+            <button class="btn-sm fi-change" id="changeFile" type="button">
+                <i data-icon="image"></i>更換
             </button>
         </div>
     </section>
@@ -466,6 +687,7 @@ kbd {
     <!-- ROI 框選 -->
     <section class="panel cat-src hidden" id="roiPanel">
         <div class="sec-head"><i data-icon="crop"></i>框出主體範圍<span class="sec-note">可略過，但框選能讓細節更好</span></div>
+        <div class="roi-stage-wrap">
         <div class="roi-stage" id="roiStage">
             <img id="roiImg" alt="待去背的圖片">
             <div class="roi-rect" id="roiRect">
@@ -473,10 +695,10 @@ kbd {
                 <span class="roi-h" data-h="sw"></span><span class="roi-h" data-h="se"></span>
             </div>
         </div>
-        <div class="actions">
+        </div>
+        <div class="actions roi-actions">
+            <button id="roiFullBtn" type="button"><i data-icon="maximize"></i>選取完整範圍</button>
             <button class="btn-main" id="runBtn" type="button"><i data-icon="sparkle"></i>開始去背</button>
-            <button id="roiFullBtn" type="button"><i data-icon="maximize"></i>使用完整圖片</button>
-            <button class="btn-sm btn-danger" id="roiCancelBtn" type="button" style="margin-left:auto"><i data-icon="x"></i>重新選圖</button>
         </div>
         <div class="hint"><i data-icon="info"></i>AI 模型會把圖片縮放到固定尺寸再辨識，所以把主體框起來、去掉無關的邊緣，主體在模型眼中的佔比會變大，<strong>細節通常會更準確</strong>。框選後的輸出範圍就是這個框。</div>
     </section>
@@ -506,16 +728,27 @@ kbd {
                     <span class="spacer"></span>
                     <span id="zoomNote"></span>
                 </div>
-                <div class="stage-wrap" id="stageWrap">
-                    <canvas id="editCanvas"></canvas>
-                    <canvas id="overlayCanvas"></canvas>
+                <div class="stage-scroll">
+                    <div class="stage-wrap" id="stageWrap">
+                        <canvas id="editCanvas"></canvas>
+                        <canvas id="overlayCanvas"></canvas>
+                    </div>
                 </div>
-                <div class="hint"><i data-icon="info"></i>用左邊的工具在圖上塗抹即可修補。<kbd>[</kbd><kbd>]</kbd> 調整筆刷大小，<kbd>Ctrl</kbd>+<kbd>Z</kbd> 復原、<kbd>Ctrl</kbd>+<kbd>Y</kbd> 重做。</div>
+                <div class="hint desktop-only"><i data-icon="info"></i>用下方的工具在圖上塗抹即可修補。<kbd>[</kbd><kbd>]</kbd> 調整筆刷大小，<kbd>Ctrl</kbd>+<kbd>Z</kbd> 復原、<kbd>Ctrl</kbd>+<kbd>Y</kbd> 重做。</div>
+                <div class="hint mobile-only"><i data-icon="info"></i>用下方的工具直接在圖上塗抹即可修補。</div>
             </div>
 
             <!-- 控制欄 -->
             <div>
-                <div class="sec-head cat-src"><i data-icon="brush"></i>修補工具</div>
+                <!-- 窄螢幕時三個區塊改成分頁，讓畫布和工具能同時待在一個畫面裡 -->
+                <div class="tool-tabs" id="toolTabs" role="tablist">
+                    <button type="button" role="tab" data-tab="src" aria-selected="true"><i data-icon="brush"></i>修補</button>
+                    <button type="button" role="tab" data-tab="edit" aria-selected="false"><i data-icon="sliders"></i>邊緣</button>
+                    <button type="button" role="tab" data-tab="out" aria-selected="false"><i data-icon="palette"></i>輸出</button>
+                </div>
+
+                <div class="sec-group cat-src" data-tab="src">
+                <div class="sec-head"><i data-icon="brush"></i>修補工具</div>
                 <div class="sec-body">
                     <div class="tool-group">
                         <button id="toolKeep" type="button" aria-pressed="true" title="把塗到的地方變回不透明"><i data-icon="brush"></i>保留</button>
@@ -545,8 +778,10 @@ kbd {
                         <button class="btn-sm btn-danger" id="clearPaintBtn" type="button" style="flex:1"><i data-icon="x"></i>清除所有塗抹</button>
                     </div>
                 </div>
+                </div>
 
-                <div class="sec-head cat-edit"><i data-icon="sliders"></i>邊緣調整</div>
+                <div class="sec-group cat-edit" data-tab="edit">
+                <div class="sec-head"><i data-icon="sliders"></i>邊緣調整</div>
                 <div class="sec-body">
                     <div class="ctrl">
                         <div class="ctrl-label"><span>遮罩門檻</span><b id="thrVal">50</b></div>
@@ -567,8 +802,10 @@ kbd {
                     <button class="btn-sm" id="resetEdgeBtn" type="button" style="width:100%"><i data-icon="undo"></i>重設邊緣參數</button>
                     <div class="hint" style="margin-top:8px"><i data-icon="info"></i>邊緣留有一圈原本的背景色時，把「收縮」往負向調１～３通常就能消掉。</div>
                 </div>
+                </div>
 
-                <div class="sec-head cat-out"><i data-icon="palette"></i>輸出樣式</div>
+                <div class="sec-group cat-out" data-tab="out">
+                <div class="sec-head"><i data-icon="palette"></i>輸出樣式</div>
                 <div class="sec-body">
                     <div class="ctrl">
                         <div class="ctrl-label"><span>背景</span></div>
@@ -597,6 +834,7 @@ kbd {
                             <input type="range" id="shadowStr" min="5" max="100" value="40">
                         </div>
                     </div>
+                </div>
                 </div>
             </div>
         </div>
@@ -639,11 +877,13 @@ kbd {
         <h4><i data-icon="palette"></i>輸出樣式</h4>
         <p>可以換成純色或漸層背景、加上白色描邊做出貼紙感、或加陰影。這些都只影響輸出外觀，不會動到去背本身。</p>
 
-        <h4><i data-icon="keyboard"></i>鍵盤快捷鍵</h4>
-        <ul>
-            <li><kbd>[</kbd> / <kbd>]</kbd>　縮小 / 放大筆刷</li>
-            <li><kbd>Ctrl</kbd>+<kbd>Z</kbd>　復原　　<kbd>Ctrl</kbd>+<kbd>Y</kbd>　重做</li>
-        </ul>
+        <div class="desktop-only">
+            <h4><i data-icon="keyboard"></i>鍵盤快捷鍵</h4>
+            <ul>
+                <li><kbd>[</kbd> / <kbd>]</kbd>　縮小 / 放大筆刷</li>
+                <li><kbd>Ctrl</kbd>+<kbd>Z</kbd>　復原　　<kbd>Ctrl</kbd>+<kbd>Y</kbd>　重做</li>
+            </ul>
+        </div>
 
         <h4><i data-icon="alert"></i>使用限制</h4>
         <ul>
@@ -771,12 +1011,13 @@ const $ = id => document.getElementById(id);
 const els = {
     modelState: $('modelState'), envWarn: $('envWarn'),
     drop: $('drop'), fileInput: $('fileInput'), fileInfo: $('fileInfo'),
-    fiName: $('fiName'), fiMeta: $('fiMeta'), clearFile: $('clearFile'),
+    fiName: $('fiName'), fiMeta: $('fiMeta'), changeFile: $('changeFile'),
+    sourcePanel: $('sourcePanel'),
     roiPanel: $('roiPanel'), roiStage: $('roiStage'), roiImg: $('roiImg'), roiRect: $('roiRect'),
-    runBtn: $('runBtn'), roiFullBtn: $('roiFullBtn'), roiCancelBtn: $('roiCancelBtn'),
+    runBtn: $('runBtn'), roiFullBtn: $('roiFullBtn'),
     progressPanel: $('progressPanel'), progPct: $('progPct'), progElapsed: $('progElapsed'),
     bar: $('bar'), barFill: $('barFill'), status: $('status'), stages: $('stages'),
-    editorPanel: $('editorPanel'), editNote: $('editNote'),
+    editorPanel: $('editorPanel'), editNote: $('editNote'), toolTabs: $('toolTabs'),
     editCanvas: $('editCanvas'), overlayCanvas: $('overlayCanvas'), stageWrap: $('stageWrap'),
     showMask: $('showMask'), compareBtn: $('compareBtn'), zoomNote: $('zoomNote'),
     toolKeep: $('toolKeep'), toolRemove: $('toolRemove'), toolWand: $('toolWand'),
@@ -810,6 +1051,10 @@ const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
 // 因此匯出時要優先走系統分享面板（Web Share），這裡單獨判斷。
 const IS_IOS = /iPhone|iPad|iPod/i.test(navigator.userAgent)
     || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
+
+// 觸控與否用實際的輸入裝置判斷（比 UA 準）：決定放大點擊區、隱藏鍵盤快捷鍵提示等。
+const IS_TOUCH = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+if (IS_TOUCH) document.body.classList.add('is-touch');
 
 const MAX_WORK = IS_MOBILE ? 1024 : 1600;   // 編輯用的工作解析度上限（長邊）；匯出時仍還原成原始解析度
 
@@ -852,10 +1097,29 @@ function setStatus(msg, cls = '', icon = 'loader') {
     renderIcons(els.status);
 }
 function setProgress(p, cls = '') {
-    const v = Math.min(100, Math.max(0, p * 100));
-    els.bar.className = 'bar ' + cls;
-    els.barFill.style.width = v + '%';
-    els.progPct.textContent = Math.round(v) + '%';
+    const v = Math.min(1, Math.max(0, p));
+    els.bar.className = 'bar ' + cls;   // 一併清掉 is-creeping：有明確進度就不該再自己爬
+    els.barFill.style.transform = `scaleX(${v})`;
+    els.progPct.textContent = Math.round(v * 100) + '%';
+}
+
+/* AI 推論是一段完全阻塞主執行緒的同步運算，中途拿不到任何進度回報，
+   JS 也無法在那期間更新畫面。這裡改用 CSS 動畫讓進度條依「預估耗時」平順前進——
+   動畫跑在 compositor 上，不受阻塞影響。數字會停格，所以那段期間改顯示文字而非百分比。 */
+let lastInferMs = 0;   // 記住上一次實際耗時，下一張圖的預估會更準
+function startCreep(fromP, estimatedMs) {
+    els.bar.style.setProperty('--creep-from', fromP);
+    els.bar.style.setProperty('--creep-dur', Math.round(estimatedMs) + 'ms');
+    els.barFill.style.transform = `scaleX(${fromP})`;
+    // 強制重排一次，確保接著加上的動畫會從 fromP 開始播
+    void els.barFill.offsetWidth;
+    els.bar.classList.add('is-creeping');
+    els.progPct.textContent = '運算中';
+}
+function estimateInferMs(w, h) {
+    if (lastInferMs) return lastInferMs;
+    const mp = (w * h) / 1e6;
+    return Math.min(40000, Math.max(2500, mp * (IS_MOBILE ? 9000 : 4200)));
 }
 function setStages(names, index) {
     els.stages.innerHTML = names.map((n, i) =>
@@ -960,9 +1224,9 @@ els.drop.addEventListener('drop', e => {
 els.fileInput.addEventListener('change', e => {
     if (e.target.files[0]) handleFile(e.target.files[0]);
 });
-els.clearFile.addEventListener('click', resetAll);
+// 「更換」直接開啟選檔，比先清空再重選少一個步驟
+els.changeFile.addEventListener('click', () => els.fileInput.click());
 els.resetBtn.addEventListener('click', resetAll);
-els.roiCancelBtn.addEventListener('click', resetAll);
 
 let roiObjectUrl = null;
 
@@ -972,6 +1236,8 @@ function resetAll() {
     state.paintKeep = state.paintRemove = state.srcData = null;
     state.undo = []; state.redo = [];
     els.fileInfo.classList.remove('show');
+    els.sourcePanel.classList.remove('has-file');
+    document.body.classList.remove('is-editing');
     els.fileInput.value = '';
     els.roiPanel.classList.add('hidden');
     els.progressPanel.classList.add('hidden');
@@ -988,6 +1254,8 @@ async function handleFile(file) {
     els.fiName.textContent = file.name;
     els.fiMeta.textContent = formatBytes(file.size);
     els.fileInfo.classList.add('show');
+    els.sourcePanel.classList.add('has-file');
+    document.body.classList.remove('is-editing');
     els.progressPanel.classList.add('hidden');
     els.editorPanel.classList.add('hidden');
 
@@ -1012,8 +1280,9 @@ async function handleFile(file) {
 // 用正規化座標(0-1)保存框選範圍，視窗縮放時才不會把使用者框好的範圍弄丟
 let roiN = { x: .07, y: .07, w: .86, h: .86 };
 
-function drawRoi() {
-    const r = els.roiImg.getBoundingClientRect();
+// 拖曳時會把已量好的尺寸傳進來，省下一次會觸發版面重算的量測
+function drawRoi(cached) {
+    const r = cached || els.roiImg.getBoundingClientRect();
     if (!r.width) return;
     els.roiRect.style.left = roiN.x * r.width + 'px';
     els.roiRect.style.top = roiN.y * r.height + 'px';
@@ -1031,6 +1300,11 @@ window.addEventListener('resize', () => {
 
 (function setupRoiDrag() {
     let mode = null, sx = 0, sy = 0, start = null;
+    // 拖曳期間圖片尺寸不會變，開始時量一次就好。
+    // 先前每次 pointermove 都呼叫 getBoundingClientRect() 再立刻寫入樣式，
+    // 讀寫交錯會逼瀏覽器反覆重算版面（layout thrashing），在手機上就是明顯的卡頓。
+    let rect = null;
+    let raf = 0, pending = null;
     const MIN_PX = 28;
 
     function onDown(e) {
@@ -1039,16 +1313,29 @@ window.addEventListener('resize', () => {
         else if (e.target.closest('.roi-rect')) mode = 'move';
         else return;
         e.preventDefault();
+        rect = els.roiImg.getBoundingClientRect();
+        if (!rect.width) { mode = null; return; }
         sx = e.clientX; sy = e.clientY;
         start = { ...roiN };
         document.body.classList.add('is-dragging');
-        window.addEventListener('pointermove', onMove);
+        // 指標擷取讓手指滑出元素後仍持續收到事件，避免拖到一半「斷線」
+        try { els.roiStage.setPointerCapture(e.pointerId); } catch (err) {}
+        window.addEventListener('pointermove', onMove, { passive: false });
         window.addEventListener('pointerup', onUp);
+        window.addEventListener('pointercancel', onUp);
     }
+    // 高更新率螢幕一秒可送上百個 pointermove，全部處理是浪費；
+    // 只保留最後一個座標，交給下一個動畫影格套用。
     function onMove(e) {
-        const r = els.roiImg.getBoundingClientRect();
-        const W = r.width, H = r.height;
-        const dx = e.clientX - sx, dy = e.clientY - sy;
+        e.preventDefault();
+        pending = { x: e.clientX, y: e.clientY };
+        if (!raf) raf = requestAnimationFrame(applyMove);
+    }
+    function applyMove() {
+        raf = 0;
+        if (!mode || !pending || !rect) return;
+        const W = rect.width, H = rect.height;
+        const dx = pending.x - sx, dy = pending.y - sy;
         // 換算成像素做邊界處理，改完再轉回正規化座標
         let b = { x: start.x * W, y: start.y * H, w: start.w * W, h: start.h * H };
         const s = { x: b.x, y: b.y, w: b.w, h: b.h };
@@ -1069,18 +1356,25 @@ window.addEventListener('resize', () => {
             if (b.y + b.h > H) b.h = H - b.y;
         }
         roiN = { x: b.x / W, y: b.y / H, w: b.w / W, h: b.h / H };
-        drawRoi();
+        drawRoi(rect);
     }
     function onUp() {
-        mode = null;
+        mode = null; pending = null; rect = null;
+        if (raf) { cancelAnimationFrame(raf); raf = 0; }
         document.body.classList.remove('is-dragging');
         window.removeEventListener('pointermove', onMove);
         window.removeEventListener('pointerup', onUp);
+        window.removeEventListener('pointercancel', onUp);
     }
     els.roiStage.addEventListener('pointerdown', onDown);
 })();
 
-els.roiFullBtn.addEventListener('click', () => { state.roi = null; runRemoval(); });
+// 把選取框拉到最大，而不是直接開始去背——讓使用者仍能先看到範圍再決定
+els.roiFullBtn.addEventListener('click', () => {
+    roiN = { x: 0, y: 0, w: 1, h: 1 };
+    drawRoi();
+    toast('已選取完整範圍', 'maximize');
+});
 els.runBtn.addEventListener('click', () => {
     const BW = state.srcBitmap.width, BH = state.srcBitmap.height;
     // 幾乎等於全圖時就不必裁切，省一次繪製
@@ -1138,18 +1432,28 @@ async function runRemoval() {
         };
         const inputBlob = await makeInputBlob(MAX_WORK);
 
+        // 下載階段佔進度條前 45%（這段有真實的位元組進度可用），
+        // 其餘留給推論階段的預估動畫
+        const DL_SHARE = 0.45;
+        let sawFetch = false;
         const onProgress = (key, current, total) => {
             if (total <= 0) return;
             const pct = current / total;
             if (key && key.includes('fetch')) {
+                sawFetch = true;
                 setStages(STAGE_NAMES, 0);
-                setProgress(pct);
+                setProgress(pct * DL_SHARE);
                 setStatus(`下載模型中… ${Math.round(pct * 100)}%`);
-            } else {
-                setStages(STAGE_NAMES, 1);
-                setProgress(pct);
-                setStatus(`AI 運算中… ${Math.round(pct * 100)}%`);
             }
+        };
+
+        // 推論一開始就啟動預估動畫。這段期間主執行緒會被 WASM 完全佔住，
+        // 任何 JS 更新都不會生效，只有 compositor 上的 CSS 動畫能繼續前進。
+        const startInfer = () => {
+            setStages(STAGE_NAMES, 1);
+            setStatus('AI 運算中…');
+            const from = sawFetch ? DL_SHARE : 0.06;
+            startCreep(from, estimateInferMs(state.cropBitmap.width, state.cropBitmap.height));
         };
 
         // 逐步退讓的重試階梯：每一階都同時降低模型大小與輸入尺寸，
@@ -1173,9 +1477,14 @@ async function runRemoval() {
                     setProgress(0.02);
                 }
                 const blob = i === 0 ? inputBlob : await makeInputBlob(step.edge);
+                startInfer();
+                // 讓瀏覽器先把動畫掛上去，再進入會卡住主執行緒的推論
+                await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+                const inferT0 = performance.now();
                 resultBlob = await removeBackground(blob, {
                     ...MODEL_CONFIG, model: step.model, progress: onProgress
                 });
+                lastInferMs = performance.now() - inferT0;   // 下一張圖的預估會更貼近實際
                 lastErr = null;
                 break;
             } catch (e) {
@@ -1185,6 +1494,7 @@ async function runRemoval() {
         if (lastErr) throw lastErr;
 
         setStages(STAGE_NAMES, 2);
+        setProgress(0.95);          // 同時停掉預估動畫，交回真實進度
         setStatus('正在準備編輯器…');
         await buildEditor(resultBlob);
 
@@ -1193,7 +1503,11 @@ async function runRemoval() {
         stopClock();
         els.progressPanel.classList.add('is-done');
         els.editorPanel.classList.remove('hidden');
-        els.editorPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        // 成功後進度面板已無資訊價值。是否收起交給 CSS 依實際可用空間決定，
+        // 比用 UA 判斷可靠（橫向手機、小視窗桌機都能受益）。失敗時 is-done
+        // 不會被加上，錯誤訊息因此保留得住。
+        document.body.classList.add('is-editing');
+        els.editorPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
         toast('去背完成！', 'check');
     } catch (err) {
         console.error(err);
@@ -1808,8 +2122,20 @@ els.shadowStr.addEventListener('input', () => {
 if (IS_MOBILE) {
     els.downloadBtn.innerHTML = '<i data-icon="file-down"></i>儲存 PNG';
     renderIcons(els.downloadBtn);
-    document.querySelectorAll('.mobile-only').forEach(el => { el.style.display = ''; });
 }
+
+/* 工具分頁切換。分頁列本身只在窄螢幕顯示（CSS 控制），
+   但 is-active 一律維持正確，桌機切回來時三個區塊仍照常全部展開。 */
+(function setupToolTabs() {
+    const tabs = els.toolTabs.querySelectorAll('button');
+    const groups = document.querySelectorAll('.editor-grid .sec-group');
+    function activate(name) {
+        tabs.forEach(t => t.setAttribute('aria-selected', String(t.dataset.tab === name)));
+        groups.forEach(g => g.classList.toggle('is-active', g.dataset.tab === name));
+    }
+    tabs.forEach(t => t.addEventListener('click', () => activate(t.dataset.tab)));
+    activate('src');
+})();
 
 /* 把成品交給使用者。各平台的能力差很多：
    - 桌機 / Android：<a download> 正常運作，直接存檔最省事
